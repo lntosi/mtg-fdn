@@ -1788,3 +1788,150 @@ body {
     background: linear-gradient(135deg, #9b59b6, #8e44ad);
     transform: translateX(-50%) scale(1.05);
 }
+
+/* === Botão de Conceder === */
+.btn-concede {
+    background: linear-gradient(135deg, #7f8c8d, #95a5a6) !important;
+    color: white !important;
+    border: 1px solid #bdc3c7 !important;
+    opacity: 0.8;
+    transition: all 0.2s;
+}
+
+.btn-concede:hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
+    border-color: #e74c3c !important;
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* === Modal de Conceder === */
+.concede-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.concede-content h2 {
+    color: #e74c3c;
+}
+
+.concede-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.btn-confirm-concede {
+    padding: 12px 30px;
+    font-size: 1em;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-confirm-concede:hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+.btn-cancel-concede {
+    padding: 12px 30px;
+    font-size: 1em;
+    background: linear-gradient(135deg, #5d6d7e, #85929e);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-cancel-concede:hover {
+    background: linear-gradient(135deg, #85929e, #5d6d7e);
+    transform: scale(1.05);
+}
+
+/* === Modal de Cemitério === */
+.graveyard-modal-content {
+    max-width: 800px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.graveyard-modal-content h2 {
+    margin-bottom: 5px;
+}
+
+#graveyard-modal-count {
+    color: #a080a0;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.graveyard-modal-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    min-height: 150px;
+}
+
+.graveyard-modal-cards .card {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.graveyard-modal-cards .card:hover {
+    transform: scale(1.15);
+    z-index: 10;
+}
+
+.graveyard-modal-cards .graveyard-empty {
+    color: #a080a0;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.btn-close-modal {
+    margin-top: 20px;
+    padding: 12px 40px;
+    font-size: 1em;
+    background: linear-gradient(135deg, #5d6d7e, #85929e);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: linear-gradient(135deg, #85929e, #5d6d7e);
+    transform: scale(1.05);
+}
+
+/* Tornar cemitério clicável */
+.graveyard {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.graveyard:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(180, 100, 180, 0.5);
+}

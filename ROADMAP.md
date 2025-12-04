@@ -86,8 +86,9 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Animações de combate**: Cartas se movendo ao atacar/bloquear
 - [x] **Efeitos visuais de dano**: Flash vermelho quando jogador/criatura recebe dano
 - [x] **Arrastar cartas**: Drag & drop para jogar cartas no campo de batalha
-- [x] **Zoom no cemitério**: Ver cartas do cemitério em tamanho maior (popup melhorado)
+- [x] **Zoom no cemitério**: Ver cartas do cemitério em tamanho maior (modal com clique)
 - [x] **Tooltip de keywords**: Explicação ao passar mouse sobre flying, lifelink, etc.
+- [x] **Botão de Conceder**: Opção para conceder a partida ao oponente
 
 ### 2.3 Prioridade Baixa
 

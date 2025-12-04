@@ -110,7 +110,11 @@ class GameUI {
         this.btnBlock.addEventListener('click', () => this.onBlockClick());
         this.btnPass.addEventListener('click', () => this.game.pass());
 
-        // Hover no cemitério
+        // Clique no cemitério para abrir modal
+        this.playerGraveyard.addEventListener('click', () => this.showGraveyardModal('player'));
+        this.opponentGraveyard.addEventListener('click', () => this.showGraveyardModal('opponent'));
+
+        // Hover no cemitério (popup rápido mantido como preview)
         this.playerGraveyard.addEventListener('mouseenter', (e) => this.showGraveyardPopup(e, 'player'));
         this.playerGraveyard.addEventListener('mouseleave', () => this.hideGraveyardPopup());
         this.opponentGraveyard.addEventListener('mouseenter', (e) => this.showGraveyardPopup(e, 'opponent'));
@@ -119,6 +123,28 @@ class GameUI {
         // Manter popup visível enquanto mouse está sobre ele
         this.graveyardPopup.addEventListener('mouseenter', () => this.keepGraveyardPopup());
         this.graveyardPopup.addEventListener('mouseleave', () => this.hideGraveyardPopup());
+
+        // Botão de conceder
+        const btnConcede = document.getElementById('btn-concede');
+        if (btnConcede) {
+            btnConcede.addEventListener('click', () => this.showConcedeModal());
+        }
+
+        // Modal de conceder
+        const btnConfirmConcede = document.getElementById('btn-confirm-concede');
+        const btnCancelConcede = document.getElementById('btn-cancel-concede');
+        if (btnConfirmConcede) {
+            btnConfirmConcede.addEventListener('click', () => this.confirmConcede());
+        }
+        if (btnCancelConcede) {
+            btnCancelConcede.addEventListener('click', () => this.hideConcedeModal());
+        }
+
+        // Fechar modal de cemitério
+        const btnCloseGraveyard = document.getElementById('btn-close-graveyard');
+        if (btnCloseGraveyard) {
+            btnCloseGraveyard.addEventListener('click', () => this.hideGraveyardModal());
+        }
     }
 
     // === Log Panel ===
@@ -857,6 +883,78 @@ class GameUI {
             clearTimeout(this.graveyardPopupTimeout);
             this.graveyardPopupTimeout = null;
         }
+    }
+
+    // === Modal de Cemitério ===
+
+    showGraveyardModal(owner) {
+        if (!this.game.player || !this.game.opponent) return;
+
+        const modal = document.getElementById('graveyard-modal');
+        const title = document.getElementById('graveyard-modal-title');
+        const count = document.getElementById('graveyard-modal-count');
+        const cardsContainer = document.getElementById('graveyard-modal-cards');
+
+        if (!modal) return;
+
+        const graveyard = owner === 'player' ? this.game.player.graveyard : this.game.opponent.graveyard;
+        const ownerName = owner === 'player' ? 'Seu Cemitério' : 'Cemitério do Oponente';
+
+        title.textContent = ownerName;
+        count.textContent = `${graveyard.length} carta${graveyard.length !== 1 ? 's' : ''}`;
+
+        cardsContainer.innerHTML = '';
+
+        if (graveyard.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'graveyard-empty';
+            emptyMsg.textContent = 'Nenhuma carta no cemitério';
+            cardsContainer.appendChild(emptyMsg);
+        } else {
+            // Mostrar cartas da mais recente para a mais antiga
+            [...graveyard].reverse().forEach(card => {
+                const cardEl = this.createCardElement(card, true);
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                cardsContainer.appendChild(cardEl);
+            });
+        }
+
+        // Esconder o popup hover se estiver visível
+        this.hideGraveyardPopup();
+
+        modal.classList.remove('hidden');
+    }
+
+    hideGraveyardModal() {
+        const modal = document.getElementById('graveyard-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // === Sistema de Conceder Partida ===
+
+    showConcedeModal() {
+        // Não permitir conceder se o jogo já acabou
+        if (this.game.gameOver) return;
+
+        const modal = document.getElementById('concede-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    hideConcedeModal() {
+        const modal = document.getElementById('concede-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    confirmConcede() {
+        this.hideConcedeModal();
+        this.game.concede();
     }
 
     renderPhase() {

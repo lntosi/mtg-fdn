@@ -44,6 +44,7 @@
                 <button id="btn-attack" disabled>Atacar</button>
                 <button id="btn-block" disabled>Não Bloquear</button>
                 <button id="btn-pass" disabled>Passar</button>
+                <button id="btn-concede" class="btn-concede">Conceder</button>
             </div>
             <div id="message-log"></div>
             <div id="stack"></div>
@@ -189,6 +190,28 @@
             <p id="discard-text">Selecione cartas para descartar:</p>
             <div id="discard-hand" class="discard-hand"></div>
             <button id="btn-confirm-discard" class="btn-confirm" disabled>Confirmar Descarte (0)</button>
+        </div>
+    </div>
+
+    <!-- Modal de Cemitério -->
+    <div id="graveyard-modal" class="modal hidden">
+        <div class="modal-content graveyard-modal-content">
+            <h2 id="graveyard-modal-title">Cemitério</h2>
+            <p id="graveyard-modal-count">0 cartas</p>
+            <div id="graveyard-modal-cards" class="graveyard-modal-cards"></div>
+            <button id="btn-close-graveyard" class="btn-close-modal">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Conceder -->
+    <div id="concede-modal" class="modal hidden">
+        <div class="modal-content concede-content">
+            <h2>Conceder Partida?</h2>
+            <p>Tem certeza que deseja conceder a partida? Isso contará como uma derrota.</p>
+            <div class="concede-buttons">
+                <button id="btn-confirm-concede" class="btn-confirm-concede">Sim, Conceder</button>
+                <button id="btn-cancel-concede" class="btn-cancel-concede">Cancelar</button>
+            </div>
         </div>
     </div>
 

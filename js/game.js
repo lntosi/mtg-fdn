@@ -1477,6 +1477,14 @@ class GameState {
         location.reload();
     }
 
+    // Conceder partida
+    concede() {
+        if (this.gameOver) return;
+
+        this.ui.log('Você concedeu a partida.');
+        this.handleGameOver('opponent', 'Você concedeu a partida.');
+    }
+
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
