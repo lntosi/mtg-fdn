@@ -92,6 +92,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 2.3 Prioridade Baixa
 
+- [ ] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
+- [ ] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide (evitar cruz/caveira para não confundir com mana)
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
 - [ ] **Modo tela cheia**: Otimização para fullscreen
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
