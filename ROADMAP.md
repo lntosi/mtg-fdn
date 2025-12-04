@@ -40,7 +40,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 |-------|------|--------|--------------|--------|
 | Vampire Interloper | Vampires | Não pode bloquear | Baixa | ✅ |
 | Leonin Vanguard | Cats | Ganha 1 vida ao atacar com outra criatura | Média | ✅ |
-| Frenzied Goblin | Goblins | Pague R ao atacar: impede bloqueio | Alta | ⏳ (parcial) |
+| Frenzied Goblin | Goblins | Pague R ao atacar: impede bloqueio | Alta | ✅ |
 
 ### 1.5 Prioridade Média - Triggers de Fase/Turno
 
@@ -57,7 +57,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 | Jazal Goldmane | Cats | 3WW: atacantes ganham +X/+X | Alta | ✅ |
 | Goblin Smuggler | Goblins | T: criatura com poder ≤2 não pode ser bloqueada | Alta | ✅ |
 | Vampire Neonate | Vampires | 2, T: drena 1 vida | Média | ✅ |
-| Elvish Archdruid | Elves | T: add G por cada Elfo (falta mana) | Média | ⏳ (parcial) |
+| Elvish Archdruid | Elves | T: add G por cada Elfo (floating mana) | Média | ✅ |
 | Wildheart Invoker | Elves | 8: criatura ganha +5/+5 e trample | Alta | ✅ |
 | Veteran's Goblin Firebomb | Goblins | 1, T, Sacrifica: 2 dano | Alta | ✅ |
 
@@ -90,13 +90,13 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Tooltip de keywords**: Explicação ao passar mouse sobre flying, lifelink, etc.
 - [x] **Botão de Conceder**: Opção para conceder a partida ao oponente
 
-### 2.3 Prioridade Baixa
+### 2.3 Prioridade Baixa ✅ CONCLUÍDA
 
-- [ ] **Personalização do jogador**: No início da partida, permitir ao jogador inserir seu nome e selecionar um avatar entre 6 planeswalkers tradicionais (incluindo 2 femininos). Nome salvo no localStorage para próxima sessão.
-- [ ] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
-- [ ] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide (evitar cruz/caveira para não confundir com mana)
-- [ ] **Reposicionar botão Conceder**: Mover para local menos propenso a cliques acidentais
-- [ ] **Linha de conexão atacante-defensor**: Desenhar linha conectando bloqueador ao atacante durante declaração de bloqueio
+- [x] **Personalização do jogador**: No início da partida, permitir ao jogador inserir seu nome e selecionar um avatar entre 6 planeswalkers tradicionais (incluindo 2 femininos). Nome salvo no localStorage para próxima sessão.
+- [x] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
+- [x] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide 🪦
+- [x] **Reposicionar botão Conceder**: Movido para canto superior esquerdo como botão flutuante (menos propenso a cliques acidentais)
+- [x] **Linha de conexão atacante-defensor**: Linhas SVG conectando bloqueador ao atacante durante declaração de bloqueio
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
 - [ ] **Modo tela cheia**: Otimização para fullscreen
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
@@ -219,6 +219,15 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 4. ✅ Morte por deck vazio (mill)
 5. ✅ Sistema visual de contadores (+1/+1, -1/-1)
 6. ✅ Modo de visualização pós-jogo
+
+### Fase 3.6 - Habilidades de Cartas e UI/UX ✅ CONCLUÍDA
+1. ✅ Frenzied Goblin - habilidade de impedir bloqueio pagando R
+2. ✅ Elvish Archdruid - produção de floating mana verde por elfo
+3. ✅ Personalização do jogador (nome e avatar)
+4. ✅ Vida inicial configurável (10/20/30/40)
+5. ✅ Ícone do cemitério (tumba 🪦)
+6. ✅ Reposicionamento do botão Conceder
+7. ✅ Linhas de conexão atacante-bloqueador
 
 ### Fase 4 - IA e Polish
 1. IA usar remoções

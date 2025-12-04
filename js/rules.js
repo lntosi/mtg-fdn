@@ -121,6 +121,17 @@ class RulesEngine {
             }
         });
 
+        // Adicionar floating mana
+        const playerKey = player === this.game.player ? 'player' : 'opponent';
+        if (this.game.floatingMana && this.game.floatingMana[playerKey]) {
+            const floating = this.game.floatingMana[playerKey];
+            for (const color in floating) {
+                if (floating[color] > 0) {
+                    mana[color] += floating[color];
+                }
+            }
+        }
+
         return mana;
     }
 
@@ -171,9 +182,20 @@ class RulesEngine {
             c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
         );
 
+        // Obter floating mana do jogador
+        const playerKey = player === this.game.player ? 'player' : 'opponent';
+        const floating = this.game.floatingMana ? this.game.floatingMana[playerKey] : null;
+
         // Pagar custos coloridos primeiro
         for (const color in cost.colored) {
             let needed = cost.colored[color];
+
+            // Usar floating mana primeiro
+            if (floating && floating[color] > 0) {
+                const fromFloating = Math.min(floating[color], needed);
+                floating[color] -= fromFloating;
+                needed -= fromFloating;
+            }
 
             // Usar terrenos da cor
             for (const land of lands) {
@@ -205,6 +227,18 @@ class RulesEngine {
 
         // Pagar custo genérico
         let genericNeeded = cost.generic;
+
+        // Usar floating mana para genérico
+        if (floating) {
+            for (const color of ['W', 'U', 'B', 'R', 'G', 'C']) {
+                if (genericNeeded <= 0) break;
+                if (floating[color] > 0) {
+                    const fromFloating = Math.min(floating[color], genericNeeded);
+                    floating[color] -= fromFloating;
+                    genericNeeded -= fromFloating;
+                }
+            }
+        }
 
         for (const land of lands) {
             if (genericNeeded <= 0) break;

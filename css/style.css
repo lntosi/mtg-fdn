@@ -137,10 +137,9 @@ body {
 }
 
 .graveyard::before {
-    content: 'GY';
-    color: rgba(150, 100, 150, 0.5);
-    font-size: 1.2em;
-    font-weight: bold;
+    content: '🪦';
+    font-size: 1.8em;
+    opacity: 0.6;
 }
 
 .graveyard-count {
@@ -276,6 +275,11 @@ body {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(180, 100, 180, 0.3);
     border-radius: 8px;
+}
+
+.player-avatar {
+    font-size: 1.4em;
+    line-height: 1;
 }
 
 .player-name {
@@ -1037,9 +1041,19 @@ body {
     animation: mana-pulse 2s ease-in-out infinite;
 }
 
+.mana-icon.floating-mana {
+    animation: floating-mana-glow 0.8s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+}
+
 @keyframes mana-pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
+}
+
+@keyframes floating-mana-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.6); transform: scale(1); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); transform: scale(1.15); }
 }
 
 /* === Indicador de Turno Melhorado === */
@@ -1815,20 +1829,61 @@ body {
     transform: translateX(-50%) scale(1.05);
 }
 
-/* === Botão de Conceder === */
-.btn-concede {
-    background: linear-gradient(135deg, #7f8c8d, #95a5a6) !important;
-    color: white !important;
-    border: 1px solid #bdc3c7 !important;
-    opacity: 0.8;
-    transition: all 0.2s;
+/* === Botão de Conceder Flutuante === */
+.btn-concede-floating {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    padding: 8px 16px;
+    font-size: 0.85em;
+    font-weight: bold;
+    background: rgba(50, 50, 50, 0.8);
+    color: rgba(200, 200, 200, 0.8);
+    border: 1px solid rgba(100, 100, 100, 0.5);
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 3000;
+    transition: all 0.3s;
+    opacity: 0.6;
 }
 
-.btn-concede:hover {
-    background: linear-gradient(135deg, #c0392b, #e74c3c) !important;
-    border-color: #e74c3c !important;
+.btn-concede-floating:hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+    border-color: #e74c3c;
     opacity: 1;
     transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+}
+
+/* === SVG Overlay para linhas de combate === */
+.combat-lines-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 500;
+}
+
+.combat-line {
+    stroke: #e74c3c;
+    stroke-width: 3;
+    stroke-linecap: round;
+    fill: none;
+    filter: drop-shadow(0 0 5px rgba(231, 76, 60, 0.8));
+    animation: combat-line-pulse 1s ease-in-out infinite;
+}
+
+.combat-line-arrow {
+    fill: #e74c3c;
+    filter: drop-shadow(0 0 5px rgba(231, 76, 60, 0.8));
+}
+
+@keyframes combat-line-pulse {
+    0%, 100% { stroke-opacity: 0.8; }
+    50% { stroke-opacity: 1; }
 }
 
 /* === Modal de Conceder === */
@@ -1960,4 +2015,234 @@ body {
 .graveyard:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(180, 100, 180, 0.5);
+}
+
+/* === Modal do Frenzied Goblin === */
+.frenzied-goblin-content {
+    max-width: 700px;
+}
+
+.frenzied-goblin-content h2 {
+    color: #e74c3c;
+}
+
+.frenzied-goblin-content p {
+    margin-bottom: 15px;
+}
+
+.mana-cost-R {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #922b21, #e74c3c);
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.9em;
+    vertical-align: middle;
+    margin: 0 3px;
+}
+
+.frenzied-goblin-creatures {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 150px;
+}
+
+.frenzied-goblin-creatures .card {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.frenzied-goblin-creatures .card:hover {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.8);
+}
+
+.frenzied-goblin-creatures .card.frenzied-target {
+    border: 2px solid transparent;
+}
+
+.frenzied-goblin-creatures .card.frenzied-target:hover {
+    border-color: #e74c3c;
+}
+
+.btn-skip {
+    padding: 12px 40px;
+    font-size: 1em;
+    background: linear-gradient(135deg, #5d6d7e, #85929e);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-skip:hover {
+    background: linear-gradient(135deg, #85929e, #5d6d7e);
+    transform: scale(1.05);
+}
+
+/* === Personalização do Jogador === */
+.customization-content {
+    max-width: 550px;
+}
+
+.customization-section {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.customization-section label {
+    display: block;
+    margin-bottom: 10px;
+    color: #e0c0e0;
+    font-weight: bold;
+}
+
+#player-name-input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1.1em;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(180, 100, 180, 0.4);
+    border-radius: 8px;
+    color: #fff;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#player-name-input:focus {
+    border-color: rgba(180, 100, 180, 0.8);
+    box-shadow: 0 0 15px rgba(180, 100, 180, 0.3);
+}
+
+#player-name-input::placeholder {
+    color: rgba(200, 150, 200, 0.5);
+}
+
+.avatar-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.avatar-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 10px;
+    background: rgba(100, 50, 100, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.avatar-option:hover {
+    background: rgba(150, 80, 150, 0.3);
+    border-color: rgba(180, 100, 180, 0.4);
+}
+
+.avatar-option input {
+    display: none;
+}
+
+.avatar-option input:checked + .avatar-icon {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    box-shadow: 0 0 20px rgba(155, 89, 182, 0.6);
+    transform: scale(1.1);
+}
+
+.avatar-option input:checked ~ .avatar-name {
+    color: #ffcc00;
+}
+
+.avatar-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    border: 2px solid rgba(180, 100, 180, 0.3);
+}
+
+.avatar-name {
+    font-size: 0.85em;
+    color: #c0a0c0;
+    transition: color 0.2s;
+}
+
+.btn-continue {
+    padding: 16px 50px;
+    font-size: 1.2em;
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 0 20px rgba(150, 50, 200, 0.4);
+    margin-top: 15px;
+}
+
+.btn-continue:hover {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(150, 50, 200, 0.6);
+}
+
+/* === Seleção de Vida Inicial === */
+.starting-life-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.starting-life-section label {
+    color: #e0c0e0;
+    font-weight: bold;
+}
+
+#starting-life {
+    padding: 8px 20px;
+    font-size: 1em;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(180, 100, 180, 0.4);
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+    outline: none;
+}
+
+#starting-life:focus {
+    border-color: rgba(180, 100, 180, 0.8);
+}
+
+#starting-life option {
+    background: #2d1b3d;
+    color: #fff;
 }

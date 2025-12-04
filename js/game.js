@@ -25,6 +25,9 @@ class GameState {
         this.priorityPlayer = null; // Quem tem prioridade atualmente
         this.waitingForPriority = false;
 
+        // === Floating Mana (mana flutuante) ===
+        this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+
         // === Mulligan ===
         this.mulliganCount = { player: 0, opponent: 0 };
         this.mulliganPhase = false;
@@ -163,10 +166,15 @@ class GameState {
         localStorage.removeItem('mtg_game_state');
     }
 
-    startGame(playerDecks, aiDecks) {
+    startGame(playerDecks, aiDecks, options = {}) {
         // Salvar escolha de decks
         this.playerDeckKeys = playerDecks;
         this.aiDeckKeys = aiDecks;
+
+        // Opções de jogo
+        const startingLife = options.startingLife || 20;
+        const playerName = options.playerName || 'Você';
+        const playerAvatar = options.playerAvatar || 'jace';
 
         // Resetar estado de fim de jogo
         this.gameOver = false;
@@ -175,8 +183,8 @@ class GameState {
         this.viewingBattlefield = false;
 
         // Criar jogadores
-        this.player = this.createPlayer('Você', playerDecks);
-        this.opponent = this.createPlayer('Oponente', aiDecks);
+        this.player = this.createPlayer(playerName, playerDecks, startingLife, playerAvatar);
+        this.opponent = this.createPlayer('Oponente (IA)', aiDecks, startingLife, 'opponent');
 
         // Embaralhar decks
         this.player.library = shuffleDeck(this.player.library);
@@ -257,17 +265,18 @@ class GameState {
         this.saveGame();
     }
 
-    createPlayer(name, deckKeys) {
+    createPlayer(name, deckKeys, startingLife = 20, avatar = null) {
         const deck = createCombinedDeck(deckKeys[0], deckKeys[1]);
 
         return {
             name: name,
-            life: 20,
+            life: startingLife,
             library: deck,
             hand: [],
             battlefield: [],
             graveyard: [],
-            landsPlayedThisTurn: 0
+            landsPlayedThisTurn: 0,
+            avatar: avatar
         };
     }
 
@@ -818,6 +827,46 @@ class GameState {
         });
     }
 
+    // Trigger Frenzied Goblin - ao atacar, pagar R para impedir uma criatura de bloquear
+    async triggerFrenziedGoblin(attackers, attackingPlayer) {
+        const opponent = attackingPlayer === this.player ? this.opponent : this.player;
+
+        // Verificar se Frenzied Goblin está atacando
+        const frenziedGoblin = attackers.find(a => a.id === 'frenzied_goblin');
+        if (!frenziedGoblin) return;
+
+        // Verificar se tem mana vermelho disponível
+        const availableMana = this.rules.calculateAvailableMana(attackingPlayer);
+        if (availableMana.R < 1 && availableMana.any < 1) return;
+
+        // Verificar se oponente tem criaturas que podem bloquear
+        const potentialBlockers = opponent.battlefield.filter(c =>
+            c.type === 'creature' && !c.tapped
+        );
+        if (potentialBlockers.length === 0) return;
+
+        // Se é o jogador humano, perguntar se quer pagar
+        if (attackingPlayer === this.player) {
+            const shouldPay = await this.ui.promptFrenziedGoblin(potentialBlockers);
+            if (shouldPay && shouldPay.target) {
+                // Pagar o custo R
+                this.payColoredMana({ R: 1 }, attackingPlayer);
+                this.unblockableThisTurn.push(shouldPay.target.instanceId);
+                this.ui.log(`Frenzied Goblin: ${shouldPay.target.name} não pode bloquear neste turno`);
+            }
+        } else {
+            // IA decide automaticamente - escolhe a criatura mais forte
+            const target = potentialBlockers.sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            )[0];
+            if (target) {
+                this.payColoredMana({ R: 1 }, attackingPlayer);
+                this.unblockableThisTurn.push(target.instanceId);
+                this.ui.log(`Frenzied Goblin: ${target.name} não pode bloquear neste turno`);
+            }
+        }
+    }
+
     // === HABILIDADES ATIVADAS ===
 
     // Verifica se uma carta tem habilidade ativada e pode usá-la
@@ -912,8 +961,10 @@ class GameState {
                 const elfCount = player.battlefield.filter(c =>
                     c.type === 'creature' && c.subtype && c.subtype.includes('Elf')
                 ).length;
-                // Não implementamos pool de mana flutuante, então apenas logamos
-                this.ui.log(`Elvish Archdruid: Adicionaria ${elfCount} mana verde`);
+                // Adicionar floating mana verde
+                const playerKey = player === this.player ? 'player' : 'opponent';
+                this.floatingMana[playerKey].G += elfCount;
+                this.ui.log(`Elvish Archdruid: Adicionou ${elfCount} mana verde`);
                 break;
 
             case 'wildheart_invoker':
@@ -1060,6 +1111,9 @@ class GameState {
     }
 
     async handlePhase() {
+        // Esvaziar floating mana no início de cada fase (regras MTG)
+        this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
 
         switch (this.phase) {
@@ -1170,6 +1224,9 @@ class GameState {
                 attacker.tapped = true;
             }
         });
+
+        // Trigger Frenzied Goblin - pagar R para impedir bloqueio
+        await this.triggerFrenziedGoblin(attackers, attackingPlayer);
 
         // Trigger Leonin Vanguard - ganha vida se atacar com outra criatura
         this.triggerLeoninVanguard(attackers, attackingPlayer);

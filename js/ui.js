@@ -68,9 +68,11 @@ class GameUI {
         this.btnBlock = document.getElementById('btn-block');
         this.btnPass = document.getElementById('btn-pass');
 
-        // Modal
+        // Modals
+        this.playerCustomization = document.getElementById('player-customization');
         this.deckSelection = document.getElementById('deck-selection');
         this.btnStartGame = document.getElementById('btn-start-game');
+        this.btnContinueToDecks = document.getElementById('btn-continue-to-decks');
 
         // Popup do cemitério
         this.graveyardPopup = document.getElementById('graveyard-popup');
@@ -96,6 +98,14 @@ class GameUI {
     }
 
     bindEvents() {
+        // Personalização do jogador - carregar dados salvos
+        this.loadPlayerCustomization();
+
+        // Continuar para seleção de decks
+        if (this.btnContinueToDecks) {
+            this.btnContinueToDecks.addEventListener('click', () => this.continueToDecks());
+        }
+
         // Seleção de decks
         const checkboxes = document.querySelectorAll('input[name="deck"]');
         checkboxes.forEach(cb => {
@@ -184,6 +194,61 @@ class GameUI {
         if (btnShowLog) {
             btnShowLog.classList.add('hidden');
         }
+    }
+
+    // === Player Customization ===
+    loadPlayerCustomization() {
+        // Carregar dados salvos do localStorage
+        const savedName = localStorage.getItem('mtg_player_name');
+        const savedAvatar = localStorage.getItem('mtg_player_avatar');
+
+        const nameInput = document.getElementById('player-name-input');
+        if (nameInput && savedName) {
+            nameInput.value = savedName;
+        }
+
+        if (savedAvatar) {
+            const avatarRadio = document.querySelector(`input[name="avatar"][value="${savedAvatar}"]`);
+            if (avatarRadio) {
+                avatarRadio.checked = true;
+            }
+        }
+    }
+
+    continueToDecks() {
+        // Salvar dados de personalização
+        const nameInput = document.getElementById('player-name-input');
+        const avatarRadio = document.querySelector('input[name="avatar"]:checked');
+
+        const playerName = nameInput?.value?.trim() || 'Jogador';
+        const playerAvatar = avatarRadio?.value || 'jace';
+
+        localStorage.setItem('mtg_player_name', playerName);
+        localStorage.setItem('mtg_player_avatar', playerAvatar);
+
+        // Guardar para uso posterior
+        this.playerName = playerName;
+        this.playerAvatar = playerAvatar;
+
+        // Esconder personalização e mostrar seleção de decks
+        if (this.playerCustomization) {
+            this.playerCustomization.classList.add('hidden');
+        }
+        if (this.deckSelection) {
+            this.deckSelection.classList.remove('hidden');
+        }
+    }
+
+    getAvatarEmoji(avatar) {
+        const avatars = {
+            jace: '🧙‍♂️',
+            chandra: '🔥',
+            liliana: '💀',
+            gideon: '⚔️',
+            nissa: '🌿',
+            ajani: '🦁'
+        };
+        return avatars[avatar] || '🧙‍♂️';
     }
 
     // === Card Preview ===
@@ -324,8 +389,16 @@ class GameUI {
         const allDecks = ['cats', 'goblins', 'vampires', 'elves'];
         const aiDecks = allDecks.filter(d => !selectedDecks.includes(d));
 
+        // Obter vida inicial selecionada
+        const startingLifeSelect = document.getElementById('starting-life');
+        const startingLife = startingLifeSelect ? parseInt(startingLifeSelect.value) : 20;
+
+        // Obter nome e avatar do jogador (do localStorage ou valores padrão)
+        const playerName = localStorage.getItem('mtg_player_name') || 'Você';
+        const playerAvatar = localStorage.getItem('mtg_player_avatar') || 'jace';
+
         this.deckSelection.classList.add('hidden');
-        this.game.startGame(selectedDecks, aiDecks);
+        this.game.startGame(selectedDecks, aiDecks, { startingLife, playerName, playerAvatar });
     }
 
     onAttackClick() {
@@ -360,6 +433,14 @@ class GameUI {
         this.renderPlayerInfo();
         this.renderPhase();
         this.updateButtons();
+
+        // Desenhar linhas de combate se estivermos esperando bloqueadores
+        if (this.waitingForBlockers) {
+            // Pequeno delay para garantir que os elementos foram renderizados
+            setTimeout(() => this.drawCombatLines(), 50);
+        } else {
+            this.clearCombatLines();
+        }
     }
 
     renderHand(player, container, isPlayer) {
@@ -572,6 +653,11 @@ class GameUI {
         const cardEl = document.createElement('div');
         cardEl.className = 'card';
 
+        // Adicionar data-instance-id para referência (para linhas de combate)
+        if (card.instanceId) {
+            cardEl.dataset.instanceId = card.instanceId;
+        }
+
         if (!showFace) {
             // Carta virada (mão do oponente)
             cardEl.innerHTML = '<div class="card-back">MTG</div>';
@@ -714,17 +800,26 @@ class GameUI {
     updateManaDisplay(mana) {
         // Atualizar cada ícone de mana
         const colors = ['W', 'U', 'B', 'R', 'G'];
-        let anyMana = 0;
+
+        // Verificar floating mana
+        const floating = this.game.floatingMana ? this.game.floatingMana.player : null;
 
         colors.forEach(color => {
             const icon = this.manaIcons[color];
             if (icon) {
                 const amount = mana[color] || 0;
+                const floatAmount = floating ? (floating[color] || 0) : 0;
                 icon.textContent = amount;
                 if (amount > 0) {
                     icon.classList.add('has-mana');
                 } else {
                     icon.classList.remove('has-mana');
+                }
+                // Destacar se tem floating mana
+                if (floatAmount > 0) {
+                    icon.classList.add('floating-mana');
+                } else {
+                    icon.classList.remove('floating-mana');
                 }
             }
         });
@@ -742,9 +837,34 @@ class GameUI {
         }
     }
 
+    updatePlayerInfo() {
+        // Atualizar nome e avatar do jogador
+        const playerNameEl = document.getElementById('player-name-display');
+        const playerAvatarEl = document.getElementById('player-avatar');
+        if (playerNameEl && this.game.player) {
+            playerNameEl.textContent = this.game.player.name;
+        }
+        if (playerAvatarEl && this.game.player) {
+            playerAvatarEl.textContent = this.getAvatarEmoji(this.game.player.avatar);
+        }
+
+        // Atualizar nome e avatar do oponente
+        const opponentNameEl = document.getElementById('opponent-name');
+        const opponentAvatarEl = document.getElementById('opponent-avatar');
+        if (opponentNameEl && this.game.opponent) {
+            opponentNameEl.textContent = this.game.opponent.name;
+        }
+        if (opponentAvatarEl) {
+            opponentAvatarEl.textContent = '🤖'; // Emoji de robô para IA
+        }
+    }
+
     renderLibraryAndGraveyard() {
         // Verificar se o jogo foi inicializado
         if (!this.game.player || !this.game.opponent) return;
+
+        // Atualizar nomes e avatares dos jogadores
+        this.updatePlayerInfo();
 
         // Jogador
         const playerLibCount = this.playerLibrary.querySelector('.library-count');
@@ -1312,6 +1432,115 @@ class GameUI {
 
             modal.classList.remove('hidden');
         });
+    }
+
+    // === PROMPT FRENZIED GOBLIN ===
+
+    promptFrenziedGoblin(potentialBlockers) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('frenzied-goblin-modal');
+            if (!modal) {
+                // Se o modal não existir, retornar null (não usa a habilidade)
+                resolve(null);
+                return;
+            }
+
+            const creaturesContainer = document.getElementById('frenzied-goblin-creatures');
+            const btnSkip = document.getElementById('btn-frenzied-skip');
+
+            // Renderizar criaturas do oponente
+            creaturesContainer.innerHTML = '';
+            potentialBlockers.forEach(creature => {
+                const cardEl = this.createCardElement(creature, true);
+                cardEl.classList.add('frenzied-target');
+                cardEl.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    resolve({ target: creature });
+                });
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                creaturesContainer.appendChild(cardEl);
+            });
+
+            // Botão para pular
+            btnSkip.onclick = () => {
+                modal.classList.add('hidden');
+                resolve(null);
+            };
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    // === LINHAS DE CONEXÃO ATACANTE-BLOQUEADOR ===
+
+    drawCombatLines() {
+        const svg = document.getElementById('combat-lines-overlay');
+        if (!svg) return;
+
+        // Limpar linhas anteriores
+        svg.innerHTML = '';
+
+        // Verificar se temos bloqueadores assignados
+        if (!this.blockerAssignments || Object.keys(this.blockerAssignments).length === 0) return;
+
+        // Desenhar linhas para cada par bloqueador-atacante
+        // blockerAssignments é {attackerInstanceId: [blocker1, blocker2, ...]}
+        for (const [attackerInstanceId, blockers] of Object.entries(this.blockerAssignments)) {
+            const attackerEl = document.querySelector(`[data-instance-id="${attackerInstanceId}"]`);
+            if (!attackerEl) continue;
+
+            for (const blocker of blockers) {
+                const blockerEl = document.querySelector(`[data-instance-id="${blocker.instanceId}"]`);
+                if (blockerEl) {
+                    this.drawLineBetweenCards(svg, blockerEl, attackerEl);
+                }
+            }
+        }
+    }
+
+    drawLineBetweenCards(svg, fromEl, toEl) {
+        const fromRect = fromEl.getBoundingClientRect();
+        const toRect = toEl.getBoundingClientRect();
+
+        // Calcular centros das cartas
+        const fromX = fromRect.left + fromRect.width / 2;
+        const fromY = fromRect.top + fromRect.height / 2;
+        const toX = toRect.left + toRect.width / 2;
+        const toY = toRect.top + toRect.height / 2;
+
+        // Criar linha
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', fromX);
+        line.setAttribute('y1', fromY);
+        line.setAttribute('x2', toX);
+        line.setAttribute('y2', toY);
+        line.setAttribute('class', 'combat-line');
+        svg.appendChild(line);
+
+        // Criar seta no meio da linha apontando para o atacante
+        const midX = (fromX + toX) / 2;
+        const midY = (fromY + toY) / 2;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+
+        const arrowSize = 10;
+        const arrowPoints = [
+            [midX + arrowSize * Math.cos(angle), midY + arrowSize * Math.sin(angle)],
+            [midX + arrowSize * Math.cos(angle + 2.5), midY + arrowSize * Math.sin(angle + 2.5)],
+            [midX + arrowSize * Math.cos(angle - 2.5), midY + arrowSize * Math.sin(angle - 2.5)]
+        ];
+
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        arrow.setAttribute('points', arrowPoints.map(p => p.join(',')).join(' '));
+        arrow.setAttribute('class', 'combat-line-arrow');
+        svg.appendChild(arrow);
+    }
+
+    clearCombatLines() {
+        const svg = document.getElementById('combat-lines-overlay');
+        if (svg) {
+            svg.innerHTML = '';
+        }
     }
 
     // === SISTEMA VISUAL DE CONTADORES ===
