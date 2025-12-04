@@ -150,14 +150,40 @@ class GameUI {
     // === Log Panel ===
     initLogPanel() {
         const btnToggle = document.getElementById('btn-toggle-log');
+        const btnShowLog = document.getElementById('btn-show-log');
+
         if (btnToggle) {
             btnToggle.addEventListener('click', () => this.toggleLogPanel());
+        }
+
+        if (btnShowLog) {
+            btnShowLog.addEventListener('click', () => this.showLogPanel());
         }
     }
 
     toggleLogPanel() {
-        this.logPanel.classList.toggle('collapsed');
+        const isCollapsed = this.logPanel.classList.toggle('collapsed');
         this.gameContainer.classList.toggle('log-collapsed');
+
+        // Mostrar/esconder botão flutuante
+        const btnShowLog = document.getElementById('btn-show-log');
+        if (btnShowLog) {
+            if (isCollapsed) {
+                btnShowLog.classList.remove('hidden');
+            } else {
+                btnShowLog.classList.add('hidden');
+            }
+        }
+    }
+
+    showLogPanel() {
+        this.logPanel.classList.remove('collapsed');
+        this.gameContainer.classList.remove('log-collapsed');
+
+        const btnShowLog = document.getElementById('btn-show-log');
+        if (btnShowLog) {
+            btnShowLog.classList.add('hidden');
+        }
     }
 
     // === Card Preview ===
