@@ -174,7 +174,7 @@ class GameState {
 
         this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
         this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
-        this.ui.log('Seu turno - Fase Principal 1');
+        this.ui.logTurnStart(1, 'Você');
 
         this.ui.render();
         this.saveGame(); // Auto-save inicial
@@ -1195,7 +1195,7 @@ class GameState {
         // Trocar jogador ativo
         if (this.activePlayer === this.player) {
             this.activePlayer = this.opponent;
-            this.ui.log('--- Turno do Oponente ---');
+            this.ui.logTurnStart(this.turnNumber, 'Oponente');
 
             // Executar turno da IA
             await this.executeAITurn();
@@ -1204,7 +1204,7 @@ class GameState {
             this.activePlayer = this.player;
             this.turnNumber++;
             this.phase = PHASES.UNTAP;
-            this.ui.log(`--- Seu Turno ${this.turnNumber} ---`);
+            this.ui.logTurnStart(this.turnNumber, 'Você');
             await this.handlePhase();
         }
 

@@ -70,7 +70,14 @@
             <div class="player-info">
                 <span class="player-name">Você</span>
                 <span class="life-total" id="player-life">20</span>
-                <span class="mana-pool" id="player-mana">Mana: 0</span>
+                <div class="mana-pool" id="player-mana">
+                    <span class="mana-icon mana-W" title="Mana Branco">0</span>
+                    <span class="mana-icon mana-U" title="Mana Azul">0</span>
+                    <span class="mana-icon mana-B" title="Mana Preto">0</span>
+                    <span class="mana-icon mana-R" title="Mana Vermelho">0</span>
+                    <span class="mana-icon mana-G" title="Mana Verde">0</span>
+                    <span class="mana-icon mana-C" title="Mana Incolor/Qualquer">0</span>
+                </div>
             </div>
         </div>
 
@@ -110,6 +117,30 @@
         <div class="graveyard-popup-title">Cemitério</div>
         <div class="graveyard-popup-cards"></div>
     </div>
+
+    <!-- Preview de Carta Ampliado -->
+    <div id="card-preview" class="card-preview hidden">
+        <div class="card-preview-image"></div>
+        <div class="card-preview-info">
+            <div class="card-preview-name"></div>
+            <div class="card-preview-type"></div>
+            <div class="card-preview-text"></div>
+            <div class="card-preview-stats"></div>
+            <div class="card-preview-keywords"></div>
+        </div>
+    </div>
+
+    <!-- Painel de Log Expandido -->
+    <div id="log-panel" class="log-panel">
+        <div class="log-panel-header">
+            <span>Histórico da Partida</span>
+            <button id="btn-toggle-log" class="btn-toggle-log">◀</button>
+        </div>
+        <div class="log-panel-content" id="log-panel-content"></div>
+    </div>
+
+    <!-- Tooltip de Keywords -->
+    <div id="keyword-tooltip" class="keyword-tooltip hidden"></div>
 
     <!-- Scripts -->
     <script src="js/cards.js"></script>

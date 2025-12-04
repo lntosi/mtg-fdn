@@ -1,5 +1,21 @@
 // === Interface do Usuário ===
 
+// === Descrições de Keywords ===
+const KEYWORD_DESCRIPTIONS = {
+    flying: 'Voar - Esta criatura só pode ser bloqueada por criaturas com voar ou alcance.',
+    lifelink: 'Vínculo Vital - O dano causado por esta criatura também faz você ganhar essa quantidade de vida.',
+    deathtouch: 'Toque Mortífero - Qualquer quantidade de dano que esta criatura cause a uma criatura é suficiente para destruí-la.',
+    trample: 'Atropelar - Se esta criatura causar dano de combate suficiente para destruir todos os bloqueadores, você pode fazer o dano restante ao jogador defensor.',
+    first_strike: 'Iniciativa - Esta criatura causa dano de combate antes das criaturas sem iniciativa.',
+    double_strike: 'Golpe Duplo - Esta criatura causa dano de combate de iniciativa e de combate normal.',
+    vigilance: 'Vigilância - Atacar com esta criatura não faz com que ela seja virada.',
+    haste: 'Ímpeto - Esta criatura pode atacar e usar habilidades de virar assim que entra no campo de batalha.',
+    reach: 'Alcance - Esta criatura pode bloquear criaturas com voar.',
+    menace: 'Ameaçar - Esta criatura só pode ser bloqueada por duas ou mais criaturas.',
+    tap_for_mana: 'Produz Mana - Vire esta permanente para adicionar mana à sua reserva.',
+    etb_draw: 'Comprar ao Entrar - Quando esta criatura entra no campo de batalha, compre uma carta.'
+};
+
 class GameUI {
     constructor(gameState) {
         this.game = gameState;
@@ -10,9 +26,16 @@ class GameUI {
         this.waitingForTarget = false;
         this.pendingAura = null;
         this.validTargets = [];
+        this.hoveredCard = null;
+        this.draggedCard = null;
+        this.previousPlayerLife = 20;
+        this.previousOpponentLife = 20;
 
         this.initElements();
         this.bindEvents();
+        this.initLogPanel();
+        this.initCardPreview();
+        this.initKeywordTooltip();
     }
 
     initElements() {
@@ -53,6 +76,23 @@ class GameUI {
         this.graveyardPopup = document.getElementById('graveyard-popup');
         this.graveyardPopupTitle = this.graveyardPopup.querySelector('.graveyard-popup-title');
         this.graveyardPopupCards = this.graveyardPopup.querySelector('.graveyard-popup-cards');
+
+        // Novos elementos de UI
+        this.cardPreview = document.getElementById('card-preview');
+        this.logPanel = document.getElementById('log-panel');
+        this.logPanelContent = document.getElementById('log-panel-content');
+        this.keywordTooltip = document.getElementById('keyword-tooltip');
+        this.gameContainer = document.getElementById('game-container');
+
+        // Mana icons
+        this.manaIcons = {
+            W: this.playerMana.querySelector('.mana-W'),
+            U: this.playerMana.querySelector('.mana-U'),
+            B: this.playerMana.querySelector('.mana-B'),
+            R: this.playerMana.querySelector('.mana-R'),
+            G: this.playerMana.querySelector('.mana-G'),
+            C: this.playerMana.querySelector('.mana-C')
+        };
     }
 
     bindEvents() {
@@ -79,6 +119,132 @@ class GameUI {
         // Manter popup visível enquanto mouse está sobre ele
         this.graveyardPopup.addEventListener('mouseenter', () => this.keepGraveyardPopup());
         this.graveyardPopup.addEventListener('mouseleave', () => this.hideGraveyardPopup());
+    }
+
+    // === Log Panel ===
+    initLogPanel() {
+        const btnToggle = document.getElementById('btn-toggle-log');
+        if (btnToggle) {
+            btnToggle.addEventListener('click', () => this.toggleLogPanel());
+        }
+    }
+
+    toggleLogPanel() {
+        this.logPanel.classList.toggle('collapsed');
+        this.gameContainer.classList.toggle('log-collapsed');
+    }
+
+    // === Card Preview ===
+    initCardPreview() {
+        // Preview será mostrado no hover das cartas
+    }
+
+    showCardPreview(card) {
+        if (!this.cardPreview || !card) return;
+
+        const previewImage = this.cardPreview.querySelector('.card-preview-image');
+        const previewName = this.cardPreview.querySelector('.card-preview-name');
+        const previewType = this.cardPreview.querySelector('.card-preview-type');
+        const previewText = this.cardPreview.querySelector('.card-preview-text');
+        const previewStats = this.cardPreview.querySelector('.card-preview-stats');
+        const previewKeywords = this.cardPreview.querySelector('.card-preview-keywords');
+
+        previewName.textContent = card.name;
+        previewType.textContent = `${card.type}${card.subtype ? ' — ' + card.subtype : ''}`;
+        previewText.textContent = card.text || '';
+
+        if (card.type === 'creature') {
+            const power = this.game.rules ? this.game.rules.getCreaturePower(card) : card.power;
+            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card) : card.toughness;
+            previewStats.textContent = `${power}/${toughness}`;
+        } else {
+            previewStats.textContent = '';
+        }
+
+        // Keywords
+        previewKeywords.innerHTML = '';
+        if (card.keywords && card.keywords.length > 0) {
+            card.keywords.forEach(kw => {
+                const badge = document.createElement('span');
+                badge.className = 'keyword-badge';
+                badge.textContent = kw.replace('_', ' ');
+                badge.dataset.keyword = kw;
+                previewKeywords.appendChild(badge);
+            });
+        }
+
+        // Carregar imagem
+        this.loadPreviewImage(card, previewImage);
+
+        this.cardPreview.classList.remove('hidden');
+    }
+
+    async loadPreviewImage(card, element) {
+        if (card.name.includes('Token')) {
+            element.style.backgroundImage = '';
+            return;
+        }
+        try {
+            const imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            if (imageUrl) {
+                element.style.backgroundImage = `url('${imageUrl}')`;
+            }
+        } catch (e) {
+            element.style.backgroundImage = '';
+        }
+    }
+
+    hideCardPreview() {
+        if (this.cardPreview) {
+            this.cardPreview.classList.add('hidden');
+        }
+    }
+
+    // === Keyword Tooltip ===
+    initKeywordTooltip() {
+        // Tooltip será mostrado via delegação de eventos
+        document.addEventListener('mouseover', (e) => {
+            const badge = e.target.closest('.keyword-badge');
+            if (badge && badge.dataset.keyword) {
+                this.showKeywordTooltip(badge.dataset.keyword, e);
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            const badge = e.target.closest('.keyword-badge');
+            if (badge) {
+                this.hideKeywordTooltip();
+            }
+        });
+    }
+
+    showKeywordTooltip(keyword, event) {
+        if (!this.keywordTooltip) return;
+
+        const description = KEYWORD_DESCRIPTIONS[keyword];
+        if (!description) return;
+
+        const parts = description.split(' - ');
+        const title = parts[0];
+        const desc = parts[1] || '';
+
+        this.keywordTooltip.innerHTML = `
+            <div class="keyword-tooltip-title">${title}</div>
+            <div class="keyword-tooltip-desc">${desc}</div>
+        `;
+
+        // Posicionar tooltip
+        const x = event.clientX + 15;
+        const y = event.clientY + 15;
+        this.keywordTooltip.style.left = `${x}px`;
+        this.keywordTooltip.style.top = `${y}px`;
+        this.keywordTooltip.classList.remove('hidden');
+    }
+
+    hideKeywordTooltip() {
+        if (this.keywordTooltip) {
+            this.keywordTooltip.classList.add('hidden');
+        }
     }
 
     onDeckSelectionChange() {
@@ -151,14 +317,72 @@ class GameUI {
             const cardEl = this.createCardElement(card, isPlayer);
 
             if (isPlayer) {
+                // Adicionar eventos de hover para card preview
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+
                 // Verificar se pode jogar
                 if (this.game.rules.canPlayCard(card, player) && this.game.isPlayerTurn()) {
                     cardEl.classList.add('playable');
+                    cardEl.classList.add('draggable');
                     cardEl.addEventListener('click', () => this.onCardClick(card, player));
+
+                    // Drag and Drop
+                    cardEl.draggable = true;
+                    cardEl.addEventListener('dragstart', (e) => this.onDragStart(e, card, player));
+                    cardEl.addEventListener('dragend', (e) => this.onDragEnd(e));
                 }
             }
 
             container.appendChild(cardEl);
+        });
+
+        // Configurar drop zones se é turno do jogador
+        if (isPlayer && this.game.isPlayerTurn()) {
+            this.setupDropZones();
+        }
+    }
+
+    // === Drag and Drop ===
+    onDragStart(event, card, player) {
+        this.draggedCard = { card, player };
+        event.target.classList.add('dragging');
+        event.dataTransfer.effectAllowed = 'move';
+
+        // Destacar zonas de drop
+        const battlefield = document.getElementById('player-battlefield');
+        if (battlefield) {
+            battlefield.classList.add('drop-zone-highlight');
+        }
+    }
+
+    onDragEnd(event) {
+        event.target.classList.remove('dragging');
+        this.draggedCard = null;
+
+        // Remover destaque das zonas
+        const battlefield = document.getElementById('player-battlefield');
+        if (battlefield) {
+            battlefield.classList.remove('drop-zone-highlight');
+        }
+    }
+
+    setupDropZones() {
+        const battlefield = document.getElementById('player-battlefield');
+        if (!battlefield) return;
+
+        battlefield.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        battlefield.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (this.draggedCard) {
+                this.game.playCard(this.draggedCard.card, this.draggedCard.player);
+                this.draggedCard = null;
+            }
+            battlefield.classList.remove('drop-zone-highlight');
         });
     }
 
@@ -179,16 +403,27 @@ class GameUI {
                 cardEl.classList.add('tapped');
             }
 
-            // Destacar atacantes (do jogador ou da IA)
-            if (this.selectedAttackers.includes(card) || this.game.currentAttackers.includes(card)) {
-                cardEl.classList.add('attacking');
+            // Indicador de Summoning Sickness
+            if (card.type === 'creature' && card.summoningSickness) {
+                cardEl.classList.add('summoning-sick');
             }
 
-            // Destacar bloqueadores
+            // Destacar atacantes (do jogador ou da IA) com animação
+            if (this.selectedAttackers.includes(card) || this.game.currentAttackers.includes(card)) {
+                cardEl.classList.add('attacking');
+                cardEl.classList.add('attacking-animation');
+            }
+
+            // Destacar bloqueadores com animação
             const isBlocking = Object.values(this.blockerAssignments).flat().includes(card);
             if (isBlocking) {
                 cardEl.classList.add('blocking');
+                cardEl.classList.add('blocking-animation');
             }
+
+            // Adicionar eventos de hover para card preview
+            cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+            cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
 
             // Destacar alvos válidos para Auras
             if (this.waitingForTarget && this.validTargets.includes(card)) {
@@ -385,15 +620,69 @@ class GameUI {
         // Verificar se o jogo foi inicializado
         if (!this.game.player || !this.game.opponent) return;
 
-        this.playerLife.textContent = this.game.player.life;
-        this.opponentLife.textContent = this.game.opponent.life;
+        // Atualizar vida com efeitos visuais
+        const currentPlayerLife = this.game.player.life;
+        const currentOpponentLife = this.game.opponent.life;
 
+        if (currentPlayerLife < this.previousPlayerLife) {
+            this.playerLife.classList.add('damage-taken');
+            setTimeout(() => this.playerLife.classList.remove('damage-taken'), 600);
+        } else if (currentPlayerLife > this.previousPlayerLife) {
+            this.playerLife.classList.add('life-gained');
+            setTimeout(() => this.playerLife.classList.remove('life-gained'), 600);
+        }
+
+        if (currentOpponentLife < this.previousOpponentLife) {
+            this.opponentLife.classList.add('damage-taken');
+            setTimeout(() => this.opponentLife.classList.remove('damage-taken'), 600);
+        } else if (currentOpponentLife > this.previousOpponentLife) {
+            this.opponentLife.classList.add('life-gained');
+            setTimeout(() => this.opponentLife.classList.remove('life-gained'), 600);
+        }
+
+        this.previousPlayerLife = currentPlayerLife;
+        this.previousOpponentLife = currentOpponentLife;
+
+        this.playerLife.textContent = currentPlayerLife;
+        this.opponentLife.textContent = currentOpponentLife;
+
+        // Atualizar mana por cor
         const mana = this.game.rules.calculateAvailableMana(this.game.player);
-        const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
-        this.playerMana.textContent = `Mana: ${totalMana}`;
+        this.updateManaDisplay(mana);
 
         // Atualizar contagem de grimório e cemitério
         this.renderLibraryAndGraveyard();
+    }
+
+    updateManaDisplay(mana) {
+        // Atualizar cada ícone de mana
+        const colors = ['W', 'U', 'B', 'R', 'G'];
+        let anyMana = 0;
+
+        colors.forEach(color => {
+            const icon = this.manaIcons[color];
+            if (icon) {
+                const amount = mana[color] || 0;
+                icon.textContent = amount;
+                if (amount > 0) {
+                    icon.classList.add('has-mana');
+                } else {
+                    icon.classList.remove('has-mana');
+                }
+            }
+        });
+
+        // Mana incolor/qualquer cor
+        const colorlessIcon = this.manaIcons.C;
+        if (colorlessIcon) {
+            const colorless = mana.C || mana.any || 0;
+            colorlessIcon.textContent = colorless;
+            if (colorless > 0) {
+                colorlessIcon.classList.add('has-mana');
+            } else {
+                colorlessIcon.classList.remove('has-mana');
+            }
+        }
     }
 
     renderLibraryAndGraveyard() {
@@ -567,7 +856,13 @@ class GameUI {
 
     renderPhase() {
         this.phaseIndicator.textContent = PHASE_NAMES[this.game.phase];
-        this.turnIndicator.textContent = `Turno: ${this.game.turnNumber} - ${this.game.isPlayerTurn() ? 'Seu turno' : 'Turno do oponente'}`;
+
+        const isPlayerTurn = this.game.isPlayerTurn();
+        this.turnIndicator.textContent = `Turno ${this.game.turnNumber} - ${isPlayerTurn ? 'SEU TURNO' : 'TURNO DO OPONENTE'}`;
+
+        // Atualizar classe para indicador visual
+        this.turnIndicator.classList.remove('player-turn', 'opponent-turn');
+        this.turnIndicator.classList.add(isPlayerTurn ? 'player-turn' : 'opponent-turn');
     }
 
     updateButtons() {
@@ -658,15 +953,49 @@ class GameUI {
     }
 
     // Log de mensagens
-    log(message) {
+    log(message, type = 'normal') {
+        // Log compacto no centro
         const entry = document.createElement('div');
         entry.textContent = `> ${message}`;
         this.messageLog.appendChild(entry);
         this.messageLog.scrollTop = this.messageLog.scrollHeight;
 
-        // Limitar histórico
+        // Limitar histórico compacto
         while (this.messageLog.children.length > 50) {
             this.messageLog.removeChild(this.messageLog.firstChild);
+        }
+
+        // Log expandido no painel lateral
+        if (this.logPanelContent) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+
+            // Adicionar classe baseada no tipo de mensagem
+            if (message.includes('dano') || message.includes('perdeu') || message.includes('destruído')) {
+                logEntry.classList.add('damage');
+            } else if (message.includes('ganhou') && message.includes('vida')) {
+                logEntry.classList.add('life-gain');
+            } else if (message.includes('jogou') || message.includes('lançou')) {
+                logEntry.classList.add('spell');
+            } else if (message.includes('Turno') && message.includes('começa')) {
+                logEntry.classList.add('turn-start');
+            }
+
+            logEntry.textContent = message;
+            this.logPanelContent.appendChild(logEntry);
+            this.logPanelContent.scrollTop = this.logPanelContent.scrollHeight;
+        }
+    }
+
+    // Log de início de turno
+    logTurnStart(turnNumber, playerName) {
+        const message = `═══ Turno ${turnNumber} - ${playerName} ═══`;
+        if (this.logPanelContent) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry turn-start';
+            logEntry.textContent = message;
+            this.logPanelContent.appendChild(logEntry);
+            this.logPanelContent.scrollTop = this.logPanelContent.scrollHeight;
         }
     }
 

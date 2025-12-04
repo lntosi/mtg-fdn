@@ -73,21 +73,21 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ## 2. Melhorias de Interface (UI/UX)
 
-### 2.1 Prioridade Alta
+### 2.1 Prioridade Alta ✅ CONCLUÍDA
 
-- [ ] **Indicador de mana por cor**: Mostrar mana disponível separado por cor (W, U, B, R, G)
-- [ ] **Preview de carta ampliado**: Área fixa para ver carta em tamanho grande ao passar mouse
-- [ ] **Histórico de log expandido**: Painel lateral com log completo da partida
-- [ ] **Indicador de turno mais visível**: Destacar claramente de quem é o turno
-- [ ] **Indicador visual de summoning sickness**: Ícone ou brilho colorido (como verde/vermelho/amarelo) para indicar criaturas com summoning sickness
+- [x] **Indicador de mana por cor**: Mostrar mana disponível separado por cor (W, U, B, R, G)
+- [x] **Preview de carta ampliado**: Área fixa para ver carta em tamanho grande ao passar mouse
+- [x] **Histórico de log expandido**: Painel lateral com log completo da partida
+- [x] **Indicador de turno mais visível**: Destacar claramente de quem é o turno
+- [x] **Indicador visual de summoning sickness**: Ícone 💤 e brilho amarelo para indicar criaturas com summoning sickness
 
-### 2.2 Prioridade Média
+### 2.2 Prioridade Média ✅ CONCLUÍDA
 
-- [ ] **Animações de combate**: Cartas se movendo ao atacar/bloquear
-- [ ] **Efeitos visuais de dano**: Flash vermelho quando jogador/criatura recebe dano
-- [ ] **Arrastar cartas**: Drag & drop para jogar cartas e atribuir bloqueadores
-- [ ] **Zoom no cemitério**: Ver cartas do cemitério em tamanho maior
-- [ ] **Tooltip de keywords**: Explicação ao passar mouse sobre flying, lifelink, etc.
+- [x] **Animações de combate**: Cartas se movendo ao atacar/bloquear
+- [x] **Efeitos visuais de dano**: Flash vermelho quando jogador/criatura recebe dano
+- [x] **Arrastar cartas**: Drag & drop para jogar cartas no campo de batalha
+- [x] **Zoom no cemitério**: Ver cartas do cemitério em tamanho maior (popup melhorado)
+- [x] **Tooltip de keywords**: Explicação ao passar mouse sobre flying, lifelink, etc.
 
 ### 2.3 Prioridade Baixa
 
@@ -190,11 +190,16 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 4. ✅ Restrições simples (Vampire Interloper)
 5. ✅ ETB triggers faltantes (Dwynen's Elite)
 
-### Fase 2 - Melhorar Experiência
-1. Indicador de mana por cor
-2. Tooltip de keywords
-3. Animações básicas de combate
-4. Histórico de log expandido
+### Fase 2 - Melhorar Experiência ✅ CONCLUÍDA
+1. ✅ Indicador de mana por cor
+2. ✅ Tooltip de keywords
+3. ✅ Animações básicas de combate
+4. ✅ Histórico de log expandido
+5. ✅ Preview de carta ampliado
+6. ✅ Indicador de turno mais visível
+7. ✅ Indicador visual de summoning sickness
+8. ✅ Efeitos visuais de dano
+9. ✅ Drag & drop para cartas
 
 ### Fase 3 - Completar Cartas Complexas ✅ CONCLUÍDA
 1. ✅ Triggers de fase (Battle-Rattle Shaman, Stromkirk Bloodthief, Vengeful Bloodwitch)
