@@ -251,6 +251,17 @@ class RulesEngine {
         // Verificar se tem Pacifism anexado
         if (this.hasPacifism(blocker)) return false;
 
+        // Vampire Interloper não pode bloquear
+        if (blocker.id === 'vampire_interloper') return false;
+
+        // Verificar se criatura não pode bloquear este atacante (Frenzied Goblin, Goblin Smuggler)
+        if (this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(attacker.instanceId)) {
+            return false;
+        }
+
+        // Menace: precisa ser bloqueado por pelo menos 2 criaturas
+        // (simplificado: não implementado completamente, mas já marcamos a keyword)
+
         // Flying: só pode ser bloqueado por flying ou reach
         if (attacker.keywords && attacker.keywords.includes('flying')) {
             const hasFlying = blocker.keywords && blocker.keywords.includes('flying');

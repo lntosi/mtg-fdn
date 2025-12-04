@@ -14,6 +14,11 @@ class GameState {
         this.blockerAssignments = {};
         this.playerDeckKeys = null;
         this.aiDeckKeys = null;
+        // Rastrear perda de vida para triggers (Bloodtithe Collector, Stromkirk Bloodthief, etc.)
+        this.opponentLostLifeThisTurn = false;
+        this.playerLostLifeThisTurn = false;
+        // Criaturas que não podem ser bloqueadas neste turno (Frenzied Goblin, Goblin Smuggler)
+        this.unblockableThisTurn = [];
     }
 
     init() {
@@ -563,9 +568,10 @@ class GameState {
 
     // Resolver triggers de entrada
     resolveETB(card, controller) {
-        if (!card.keywords) return;
+        const opponent = controller === this.player ? this.opponent : this.player;
 
-        if (card.keywords.includes('etb_draw')) {
+        // ETB Draw (Helpful Hunter)
+        if (card.keywords && card.keywords.includes('etb_draw')) {
             this.rules.drawCard(controller);
             this.ui.log(`${controller.name} comprou uma carta`);
         }
@@ -586,20 +592,65 @@ class GameState {
 
         // Vampire Spawn - drenar 2
         if (card.id === 'vampire_spawn') {
-            const opponent = controller === this.player ? this.opponent : this.player;
             opponent.life -= 2;
             controller.life += 2;
+            // Marcar que oponente perdeu vida neste turno
+            this.opponentLostLifeThisTurn = true;
             this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
         }
 
-        // Dropkick Bomber - 2 dano
+        // Dropkick Bomber - 2 dano a criatura ou planeswalker
         if (card.id === 'dropkick_bomber') {
-            const opponent = controller === this.player ? this.opponent : this.player;
             const target = opponent.battlefield.find(c => c.type === 'creature');
             if (target) {
                 target.damage = (target.damage || 0) + 2;
                 this.checkCreatureDeath(target, opponent);
                 this.ui.log(`Dropkick Bomber causou 2 de dano a ${target.name}`);
+            }
+        }
+
+        // Dwynen's Elite - cria token 1/1 Elf se controla outro Elfo
+        if (card.id === 'dwynenss_elite') {
+            const hasOtherElf = controller.battlefield.some(c =>
+                c.type === 'creature' &&
+                c.subtype && c.subtype.includes('Elf') &&
+                c.instanceId !== card.instanceId
+            );
+            if (hasOtherElf) {
+                controller.battlefield.push({
+                    instanceId: `elf_token_${Date.now()}`,
+                    name: 'Elf Warrior Token',
+                    type: 'creature',
+                    subtype: 'Elf Warrior',
+                    power: 1,
+                    toughness: 1,
+                    summoningSickness: true
+                });
+                this.ui.log(`Dwynen's Elite criou um token Elf Warrior 1/1`);
+            }
+        }
+
+        // Elvish Regrower - devolve terreno do cemitério para mão
+        if (card.id === 'elvish_regrower') {
+            const landInGraveyard = controller.graveyard.find(c => c.type === 'land');
+            if (landInGraveyard) {
+                const index = controller.graveyard.indexOf(landInGraveyard);
+                controller.graveyard.splice(index, 1);
+                controller.hand.push(landInGraveyard);
+                this.ui.log(`${landInGraveyard.name} voltou do cemitério para a mão`);
+            }
+        }
+
+        // Bloodtithe Collector - oponente descarta se perdeu vida neste turno
+        if (card.id === 'bloodtithe_collector') {
+            if (this.opponentLostLifeThisTurn) {
+                // Oponente descarta uma carta aleatória
+                if (opponent.hand.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * opponent.hand.length);
+                    const discarded = opponent.hand.splice(randomIndex, 1)[0];
+                    opponent.graveyard.push(discarded);
+                    this.ui.log(`${opponent.name} descartou ${discarded.name}`);
+                }
             }
         }
     }
@@ -618,6 +669,301 @@ class GameState {
         if (index > -1) {
             owner.battlefield.splice(index, 1);
             owner.graveyard.push(permanent);
+        }
+    }
+
+    // Trigger Vengeful Bloodwitch - ganha vida quando oponente perde vida
+    triggerVengefulBloodwitch(controller, lifeAmount) {
+        controller.battlefield.forEach(card => {
+            if (card.id === 'vengeful_bloodwitch') {
+                controller.life += lifeAmount;
+                this.ui.log(`Vengeful Bloodwitch: ${controller.name} ganhou ${lifeAmount} vida(s)`);
+            }
+        });
+    }
+
+    // Trigger Stromkirk Bloodthief - no fim do turno, +1/+1 em vampiro se oponente perdeu vida
+    triggerStromkirkBloodthief(controller) {
+        const opponentLostLife = controller === this.player ? this.opponentLostLifeThisTurn : this.playerLostLifeThisTurn;
+        if (!opponentLostLife) return;
+
+        controller.battlefield.forEach(card => {
+            if (card.id === 'stromkirk_bloodthief') {
+                // Encontrar um vampiro para colocar o contador (pode ser ele mesmo)
+                const vampires = controller.battlefield.filter(c =>
+                    c.type === 'creature' && c.subtype && c.subtype.includes('Vampire')
+                );
+                if (vampires.length > 0) {
+                    // Escolher o vampiro mais forte
+                    const target = vampires.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                    if (!target.counters) target.counters = {};
+                    target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                    this.ui.log(`Stromkirk Bloodthief: +1/+1 counter em ${target.name}`);
+                }
+            }
+        });
+    }
+
+    // Trigger Battle-Rattle Shaman - no início do combate, criatura ganha +2/+0
+    triggerBattleRattleShaman(controller) {
+        controller.battlefield.forEach(card => {
+            if (card.id === 'battle_rattle_shaman') {
+                // Encontrar uma criatura para dar +2/+0 (não ela mesma, preferencialmente)
+                const creatures = controller.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.instanceId
+                );
+                let target = creatures.length > 0 ? creatures[0] : card;
+                // Preferir a criatura com maior poder
+                if (creatures.length > 0) {
+                    target = creatures.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                }
+                target.powerModifier = (target.powerModifier || 0) + 2;
+                this.ui.log(`Battle-Rattle Shaman: ${target.name} ganhou +2/+0`);
+            }
+        });
+    }
+
+    // Trigger Leonin Vanguard - ganha 1 vida ao atacar com outra criatura
+    triggerLeoninVanguard(attackers, attackingPlayer) {
+        attackingPlayer.battlefield.forEach(card => {
+            if (card.id === 'leonin_vanguard') {
+                // Verificar se há outra criatura atacando
+                const otherAttacker = attackers.some(a => a.instanceId !== card.instanceId);
+                if (otherAttacker) {
+                    attackingPlayer.life += 1;
+                    this.ui.log(`Leonin Vanguard: ${attackingPlayer.name} ganhou 1 vida`);
+                }
+            }
+        });
+    }
+
+    // === HABILIDADES ATIVADAS ===
+
+    // Verifica se uma carta tem habilidade ativada e pode usá-la
+    canActivateAbility(card, player) {
+        if (card.tapped) return false;
+        if (card.summoningSickness && card.type === 'creature') return false;
+
+        switch (card.id) {
+            case 'vampire_neonate':
+                // 2, T: drena 1 vida
+                return this.rules.calculateAvailableMana(player).B >= 2 ||
+                       Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 2;
+
+            case 'goblin_smuggler':
+                // T: criatura com poder ≤2 não pode ser bloqueada
+                return player.battlefield.some(c =>
+                    c.type === 'creature' &&
+                    this.rules.getCreaturePower(c) <= 2 &&
+                    c.instanceId !== card.instanceId
+                );
+
+            case 'elvish_archdruid':
+                // T: adiciona G para cada Elfo
+                return true;
+
+            case 'wildheart_invoker':
+                // 8: criatura ganha +5/+5 e trample
+                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 8;
+
+            case 'jazal_goldmane':
+                // 3WW: atacantes ganham +X/+X (só durante combate)
+                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                const mana = this.rules.calculateAvailableMana(player);
+                return mana.W >= 2 && (mana.W + Object.values(mana).reduce((a,b) => a+b, 0) - mana.W) >= 3;
+
+            case 'veteran_goblin_firebomb':
+                // 1, T, Sacrifice: 2 dano a qualquer alvo
+                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 1;
+
+            default:
+                return false;
+        }
+    }
+
+    // Ativa habilidade de uma carta
+    async activateAbility(card, player) {
+        if (!this.canActivateAbility(card, player)) {
+            this.ui.log(`Não pode ativar habilidade de ${card.name}`);
+            return false;
+        }
+
+        const opponent = player === this.player ? this.opponent : this.player;
+
+        switch (card.id) {
+            case 'vampire_neonate':
+                // 2, T: cada oponente perde 1 vida e você ganha 1 vida
+                this.payGenericMana(2, player);
+                card.tapped = true;
+                opponent.life -= 1;
+                player.life += 1;
+                // Marcar perda de vida
+                if (opponent === this.player) {
+                    this.playerLostLifeThisTurn = true;
+                } else {
+                    this.opponentLostLifeThisTurn = true;
+                }
+                this.triggerVengefulBloodwitch(player, 1);
+                this.ui.log(`Vampire Neonate: ${opponent.name} perdeu 1 vida, ${player.name} ganhou 1 vida`);
+                break;
+
+            case 'goblin_smuggler':
+                // T: criatura alvo com poder ≤2 não pode ser bloqueada neste turno
+                card.tapped = true;
+                const validTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' &&
+                    this.rules.getCreaturePower(c) <= 2 &&
+                    c.instanceId !== card.instanceId
+                );
+                if (validTargets.length > 0) {
+                    // Escolher a criatura com maior poder
+                    const target = validTargets.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                    this.unblockableThisTurn.push(target.instanceId);
+                    this.ui.log(`Goblin Smuggler: ${target.name} não pode ser bloqueado neste turno`);
+                }
+                break;
+
+            case 'elvish_archdruid':
+                // T: adiciona G para cada Elfo que você controla
+                card.tapped = true;
+                const elfCount = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.subtype && c.subtype.includes('Elf')
+                ).length;
+                // Não implementamos pool de mana flutuante, então apenas logamos
+                this.ui.log(`Elvish Archdruid: Adicionaria ${elfCount} mana verde`);
+                break;
+
+            case 'wildheart_invoker':
+                // 8: criatura alvo ganha +5/+5 e trample até fim do turno
+                this.payGenericMana(8, player);
+                const creatureTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.instanceId
+                );
+                if (creatureTargets.length > 0) {
+                    const target = creatureTargets.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                    target.powerModifier = (target.powerModifier || 0) + 5;
+                    target.toughnessModifier = (target.toughnessModifier || 0) + 5;
+                    if (!target.temporaryKeywords) target.temporaryKeywords = [];
+                    target.temporaryKeywords.push('trample');
+                    this.ui.log(`Wildheart Invoker: ${target.name} ganhou +5/+5 e atropelar`);
+                }
+                break;
+
+            case 'jazal_goldmane':
+                // 3WW: criaturas atacantes ganham +X/+X onde X é número de atacantes
+                this.payColoredMana({ generic: 3, W: 2 }, player);
+                const attackerCount = this.currentAttackers.length;
+                this.currentAttackers.forEach(attacker => {
+                    attacker.powerModifier = (attacker.powerModifier || 0) + attackerCount;
+                    attacker.toughnessModifier = (attacker.toughnessModifier || 0) + attackerCount;
+                });
+                this.ui.log(`Jazal Goldmane: Atacantes ganharam +${attackerCount}/+${attackerCount}`);
+                break;
+
+            case 'veteran_goblin_firebomb':
+                // 1, T, Sacrifica: 2 dano a qualquer alvo
+                this.payGenericMana(1, player);
+                card.tapped = true;
+                // Sacrificar
+                this.destroyPermanent(card, player);
+                // 2 dano ao oponente (simplificado)
+                const creatureTarget = opponent.battlefield.find(c => c.type === 'creature');
+                if (creatureTarget) {
+                    creatureTarget.damage = (creatureTarget.damage || 0) + 2;
+                    this.checkCreatureDeath(creatureTarget, opponent);
+                    this.ui.log(`Veteran's Goblin Firebomb causou 2 de dano a ${creatureTarget.name}`);
+                } else {
+                    opponent.life -= 2;
+                    if (opponent === this.player) {
+                        this.playerLostLifeThisTurn = true;
+                    } else {
+                        this.opponentLostLifeThisTurn = true;
+                    }
+                    this.ui.log(`Veteran's Goblin Firebomb causou 2 de dano a ${opponent.name}`);
+                }
+                break;
+        }
+
+        this.ui.render();
+        this.saveGame();
+        return true;
+    }
+
+    // Paga mana genérico (tapa terrenos)
+    payGenericMana(amount, player) {
+        const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
+        const manaCreatures = player.battlefield.filter(c =>
+            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
+        );
+
+        let remaining = amount;
+
+        for (const land of lands) {
+            if (remaining <= 0) break;
+            if (!land.tapped) {
+                land.tapped = true;
+                remaining--;
+            }
+        }
+
+        for (const creature of manaCreatures) {
+            if (remaining <= 0) break;
+            if (!creature.tapped) {
+                creature.tapped = true;
+                remaining--;
+            }
+        }
+    }
+
+    // Paga mana colorido
+    payColoredMana(cost, player) {
+        const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
+        const manaCreatures = player.battlefield.filter(c =>
+            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
+        );
+
+        // Pagar custos coloridos primeiro
+        for (const color in cost) {
+            if (color === 'generic') continue;
+            let needed = cost[color];
+
+            for (const land of lands) {
+                if (needed <= 0) break;
+                if (land.produces === color && !land.tapped) {
+                    land.tapped = true;
+                    needed--;
+                }
+            }
+
+            for (const creature of manaCreatures) {
+                if (needed <= 0) break;
+                if (creature.produces === color && !creature.tapped) {
+                    creature.tapped = true;
+                    needed--;
+                }
+            }
+
+            // Usar terrenos "any"
+            for (const land of lands) {
+                if (needed <= 0) break;
+                if (land.produces === 'any' && !land.tapped) {
+                    land.tapped = true;
+                    needed--;
+                }
+            }
+        }
+
+        // Pagar genérico
+        if (cost.generic) {
+            this.payGenericMana(cost.generic, player);
         }
     }
 
@@ -644,6 +990,13 @@ class GameState {
                 this.rules.untapAll(this.activePlayer);
                 this.activePlayer.landsPlayedThisTurn = 0;
                 this.rules.removeSummoningSickness(this.activePlayer);
+                // Resetar rastreadores de perda de vida e unblockables
+                if (this.activePlayer === this.player) {
+                    this.opponentLostLifeThisTurn = false;
+                } else {
+                    this.playerLostLifeThisTurn = false;
+                }
+                this.unblockableThisTurn = [];
                 await this.nextPhase();
                 break;
 
@@ -660,6 +1013,12 @@ class GameState {
                         this.ui.log(`Oponente comprou uma carta`);
                     }
                 }
+                await this.nextPhase();
+                break;
+
+            case PHASES.COMBAT_BEGIN:
+                // Trigger Battle-Rattle Shaman no início do combate
+                this.triggerBattleRattleShaman(this.activePlayer);
                 await this.nextPhase();
                 break;
 
@@ -687,6 +1046,8 @@ class GameState {
                 break;
 
             case PHASES.END:
+                // Trigger Stromkirk Bloodthief no fim do turno
+                this.triggerStromkirkBloodthief(this.activePlayer);
                 await this.nextPhase();
                 break;
 
@@ -728,6 +1089,9 @@ class GameState {
                 attacker.tapped = true;
             }
         });
+
+        // Trigger Leonin Vanguard - ganha vida se atacar com outra criatura
+        this.triggerLeoninVanguard(attackers, attackingPlayer);
 
         const attackerNames = attackers.map(a => a.name).join(', ');
         this.ui.log(`${attackingPlayer.name} ataca com: ${attackerNames}`);
@@ -799,6 +1163,14 @@ class GameState {
             // Som de dano
             window.soundManager.playDamage();
             this.ui.log(`${defendingPlayer.name} recebeu ${results.damageToPlayers.defender} de dano`);
+            // Rastrear perda de vida
+            if (defendingPlayer === this.player) {
+                this.playerLostLifeThisTurn = true;
+            } else {
+                this.opponentLostLifeThisTurn = true;
+            }
+            // Trigger Vengeful Bloodwitch - ganha vida quando oponente perde vida
+            this.triggerVengefulBloodwitch(attackingPlayer, results.damageToPlayers.defender);
         }
 
         // Aplicar vida ganha

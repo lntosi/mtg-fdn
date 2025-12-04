@@ -206,6 +206,18 @@ class GameUI {
                 } else if (isPlayer && this.waitingForBlockers) {
                     cardEl.addEventListener('click', () => this.selectBlocker(card));
                     cardEl.style.cursor = 'pointer';
+                } else if (isPlayer && this.game.isPlayerTurn() && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    // Habilidade ativada disponível
+                    cardEl.classList.add('has-ability');
+                    cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
+                    cardEl.title = 'Clique duplo para ativar habilidade';
+                }
+            } else if ((card.type === 'artifact' || card.type === 'enchantment') && isPlayer) {
+                // Verificar habilidades ativadas em artefatos/encantamentos
+                if (this.game.isPlayerTurn() && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    cardEl.classList.add('has-ability');
+                    cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
+                    cardEl.title = 'Clique duplo para ativar habilidade';
                 }
             }
 

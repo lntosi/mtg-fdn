@@ -28,46 +28,46 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 1.3 Prioridade Média - ETB Triggers
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Dwynen's Elite | Elves | Cria token 1/1 Elf se controla outro Elfo | Baixa |
-| Elvish Regrower | Elves | Devolve terreno do cemitério para mão | Média |
-| Bloodtithe Collector | Vampires | Oponente descarta se perdeu vida | Média |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Dwynen's Elite | Elves | Cria token 1/1 Elf se controla outro Elfo | Baixa | ✅ |
+| Elvish Regrower | Elves | Devolve terreno do cemitério para mão | Média | ✅ |
+| Bloodtithe Collector | Vampires | Oponente descarta se perdeu vida | Média | ✅ |
 
 ### 1.4 Prioridade Média - Restrições e Regras
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Vampire Interloper | Vampires | Não pode bloquear | Baixa |
-| Leonin Vanguard | Cats | Ganha 1 vida ao atacar com outra criatura | Média |
-| Frenzied Goblin | Goblins | Pague R ao atacar: impede bloqueio | Alta |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Vampire Interloper | Vampires | Não pode bloquear | Baixa | ✅ |
+| Leonin Vanguard | Cats | Ganha 1 vida ao atacar com outra criatura | Média | ✅ |
+| Frenzied Goblin | Goblins | Pague R ao atacar: impede bloqueio | Alta | ⏳ (parcial) |
 
 ### 1.5 Prioridade Média - Triggers de Fase/Turno
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Battle-Rattle Shaman | Goblins | Início combate: criatura ganha +2/+0 | Média |
-| Stromkirk Bloodthief | Vampires | Fim turno: +1/+1 counter em vampiro se oponente perdeu vida | Alta |
-| Vengeful Bloodwitch | Vampires | Ganha vida quando oponente perde vida | Alta |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Battle-Rattle Shaman | Goblins | Início combate: criatura ganha +2/+0 | Média | ✅ |
+| Stromkirk Bloodthief | Vampires | Fim turno: +1/+1 counter em vampiro se oponente perdeu vida | Alta | ✅ |
+| Vengeful Bloodwitch | Vampires | Ganha vida quando oponente perde vida | Alta | ✅ |
 
 ### 1.6 Prioridade Baixa - Habilidades Ativadas
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Jazal Goldmane | Cats | 3WW: atacantes ganham +X/+X | Alta |
-| Goblin Smuggler | Goblins | T: criatura com poder ≤2 não pode ser bloqueada | Alta |
-| Vampire Neonate | Vampires | 2, T: drena 1 vida | Média |
-| Elvish Archdruid | Elves | T: add G por cada Elfo (falta mana) | Média |
-| Wildheart Invoker | Elves | 8: criatura ganha +5/+5 e trample | Alta |
-| Veteran's Goblin Firebomb | Goblins | 1, T, Sacrifica: 2 dano | Alta |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Jazal Goldmane | Cats | 3WW: atacantes ganham +X/+X | Alta | ✅ |
+| Goblin Smuggler | Goblins | T: criatura com poder ≤2 não pode ser bloqueada | Alta | ✅ |
+| Vampire Neonate | Vampires | 2, T: drena 1 vida | Média | ✅ |
+| Elvish Archdruid | Elves | T: add G por cada Elfo (falta mana) | Média | ⏳ (parcial) |
+| Wildheart Invoker | Elves | 8: criatura ganha +5/+5 e trample | Alta | ✅ |
+| Veteran's Goblin Firebomb | Goblins | 1, T, Sacrifica: 2 dano | Alta | ✅ |
 
 ### 1.7 Prioridade Baixa - Feitiços Complexos
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Snakeskin Veil | Elves | +1/+1 counter e hexproof | Média |
-| Offer Immortality | Vampires | Indestrutível, +1/+1 se vampiro | Alta |
-| Joraga Invocation | Elves | Todas criaturas +3/+3 e devem ser bloqueadas | Alta |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Snakeskin Veil | Elves | +1/+1 counter e hexproof | Média | ✅ |
+| Offer Immortality | Vampires | Indestrutível, +1/+1 se vampiro | Alta | ✅ |
+| Joraga Invocation | Elves | Todas criaturas +3/+3 e devem ser bloqueadas | Alta | ✅ |
 
 ---
 
