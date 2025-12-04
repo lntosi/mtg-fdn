@@ -1446,3 +1446,335 @@ body {
         font-size: 0.8em;
     }
 }
+
+/* === Modal de Mulligan === */
+.mulligan-content {
+    max-width: 700px;
+}
+
+.mulligan-hand {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+.mulligan-hand .card {
+    cursor: default;
+    transition: transform 0.2s;
+}
+
+.mulligan-hand .card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.mulligan-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.btn-keep, .btn-mulligan {
+    padding: 14px 40px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-keep {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+}
+
+.btn-keep:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(46, 204, 113, 0.6);
+}
+
+.btn-mulligan {
+    background: linear-gradient(135deg, #e67e22, #f39c12);
+    color: white;
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.4);
+}
+
+.btn-mulligan:hover {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(243, 156, 18, 0.6);
+}
+
+/* === Modal de Fim de Jogo === */
+.game-over-content {
+    max-width: 500px;
+    padding: 50px;
+}
+
+.game-over-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.game-over-content h2 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.game-over-content p {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+
+.game-over-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.game-over-stats .stat {
+    text-align: center;
+}
+
+.game-over-stats .stat-label {
+    display: block;
+    font-size: 0.8em;
+    color: #a080a0;
+    margin-bottom: 5px;
+}
+
+.game-over-stats .stat-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #ffcc00;
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-view, .btn-new-game {
+    padding: 14px 30px;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, #5d6d7e, #85929e);
+    color: white;
+}
+
+.btn-view:hover {
+    background: linear-gradient(135deg, #85929e, #5d6d7e);
+    transform: scale(1.05);
+}
+
+.btn-new-game {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+    box-shadow: 0 0 15px rgba(155, 89, 182, 0.4);
+}
+
+.btn-new-game:hover {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(155, 89, 182, 0.6);
+}
+
+/* Game Over - Victory */
+.game-over-content.victory .game-over-icon::before {
+    content: '\1F3C6';
+}
+
+.game-over-content.victory h2 {
+    color: #f1c40f;
+    text-shadow: 0 0 30px rgba(241, 196, 15, 0.6);
+}
+
+/* Game Over - Defeat */
+.game-over-content.defeat .game-over-icon::before {
+    content: '\1F480';
+}
+
+.game-over-content.defeat h2 {
+    color: #e74c3c;
+    text-shadow: 0 0 30px rgba(231, 76, 60, 0.6);
+}
+
+/* === Modal de Descarte === */
+.discard-content {
+    max-width: 700px;
+}
+
+.discard-hand {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+.discard-hand .card {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.discard-hand .card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.discard-hand .card.selected-discard {
+    border-color: #e74c3c;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.8);
+    transform: translateY(-10px);
+}
+
+.btn-confirm {
+    padding: 14px 40px;
+    font-size: 1.1em;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-confirm:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-confirm:not(:disabled):hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+/* === Sistema Visual de Contadores +1/+1 === */
+.card-counters {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.7em;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.counter.plus-counter {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: 2px solid #fff;
+}
+
+.counter.minus-counter {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+    border: 2px solid #fff;
+}
+
+.counter.loyalty-counter {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    color: white;
+    border: 2px solid #fff;
+}
+
+/* Animação de contadores */
+.counter.new-counter {
+    animation: counter-pop 0.4s ease-out;
+}
+
+@keyframes counter-pop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* === Modo de Visualização (após fim de jogo) === */
+#game-container.view-mode {
+    pointer-events: none;
+}
+
+#game-container.view-mode .card {
+    pointer-events: auto;
+}
+
+#game-container.view-mode .card:hover {
+    transform: scale(2.2) translateY(-50px);
+}
+
+#game-container.view-mode::after {
+    content: 'Modo Visualização - Clique fora para voltar';
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffcc00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    z-index: 9999;
+}
+
+/* Botão para sair do modo visualização */
+#btn-exit-view {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 30px;
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 10000;
+    pointer-events: auto;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+}
+
+#btn-exit-view:hover {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    transform: translateX(-50%) scale(1.05);
+}

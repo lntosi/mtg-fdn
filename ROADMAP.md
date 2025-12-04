@@ -100,20 +100,20 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ## 3. Melhorias de Gameplay
 
-### 3.1 Prioridade Alta
+### 3.1 Prioridade Alta ✅ CONCLUÍDA
 
-- [ ] **Sistema de seleção de alvo genérico**: Para feitiços que precisam escolher alvo
-- [ ] **Pilha (Stack)**: Implementar stack para responder a feitiços/habilidades
-- [ ] **Prioridade**: Sistema de passar prioridade entre jogadores
-- [ ] **Mulligan**: Opção de trocar mão inicial
-- [ ] **Tela de fim de jogo**: Ao terminar, mostrar opções para "Ver campo de batalha" (permite apenas hover/inspeção) ou "Voltar ao menu de seleção de deck"
+- [x] **Sistema de seleção de alvo genérico**: Para feitiços que precisam escolher alvo
+- [ ] **Pilha (Stack)**: Implementar stack para responder a feitiços/habilidades (estrutura básica implementada)
+- [ ] **Prioridade**: Sistema de passar prioridade entre jogadores (estrutura básica implementada)
+- [x] **Mulligan**: Opção de trocar mão inicial
+- [x] **Tela de fim de jogo**: Ao terminar, mostrar opções para "Ver campo de batalha" (permite apenas hover/inspeção) ou "Voltar ao menu de seleção de deck"
 
-### 3.2 Prioridade Média
+### 3.2 Prioridade Média ✅ CONCLUÍDA
 
-- [ ] **Fases de combate detalhadas**: Beginning of combat, end of combat triggers
-- [ ] **Descarte para tamanho de mão**: Descartar até 7 cartas no fim do turno
-- [ ] **Morte por deck vazio**: Perder ao tentar comprar de deck vazio
-- [ ] **Contadores**: Sistema visual de contadores +1/+1, -1/-1, etc.
+- [x] **Fases de combate detalhadas**: Beginning of combat, end of combat triggers
+- [x] **Descarte para tamanho de mão**: Descartar até 7 cartas no fim do turno
+- [x] **Morte por deck vazio**: Perder ao tentar comprar de deck vazio
+- [x] **Contadores**: Sistema visual de contadores +1/+1, -1/-1, etc.
 
 ### 3.3 Prioridade Baixa
 
@@ -206,11 +206,18 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 2. ✅ Habilidades ativadas básicas (Vampire Neonate, Goblin Smuggler, Wildheart Invoker, Jazal Goldmane, Veteran's Goblin Firebomb)
 3. ✅ Feitiços de buff temporário (Moment of Triumph completo)
 
+### Fase 3.5 - Melhorias de Gameplay ✅ CONCLUÍDA
+1. ✅ Sistema de mulligan com modal visual
+2. ✅ Tela de fim de jogo melhorada (ver campo de batalha / jogar novamente)
+3. ✅ Descarte para tamanho de mão (máximo 7 cartas)
+4. ✅ Morte por deck vazio (mill)
+5. ✅ Sistema visual de contadores (+1/+1, -1/-1)
+6. ✅ Modo de visualização pós-jogo
+
 ### Fase 4 - IA e Polish
 1. IA usar remoções
 2. Níveis de dificuldade
-3. Efeitos visuais de dano
-4. Configurações de som
+3. Configurações de som
 
 ### Fase 5 - Expansão
 1. Mais decks

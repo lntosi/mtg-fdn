@@ -407,6 +407,16 @@ class RulesEngine {
             }
         }
 
+        // === CONTADORES -1/-1 ===
+        if (creature.counters && creature.counters.minusOneMinusOne) {
+            const count = creature.counters.minusOneMinusOne;
+            bonuses.power -= count;
+            bonuses.toughness -= count;
+            if (count > 0) {
+                bonuses.sources.push({ name: `${count}x -1/-1 counters`, power: -count, toughness: -count });
+            }
+        }
+
         return bonuses;
     }
 
@@ -479,7 +489,7 @@ class RulesEngine {
     }
 
     // Comprar carta
-    drawCard(player) {
+    drawCard(player, checkMill = true) {
         if (player.library.length > 0) {
             const card = player.library.pop();
             player.hand.push(card);
@@ -491,6 +501,16 @@ class RulesEngine {
 
             return card;
         }
+
+        // Deck vazio - o jogador perde!
+        if (checkMill && !this.game.mulliganPhase) {
+            const isPlayer = player === this.game.player;
+            this.game.handleGameOver(
+                isPlayer ? 'opponent' : 'player',
+                `${player.name} tentou comprar de um grimório vazio!`
+            );
+        }
+
         return null;
     }
 
@@ -502,7 +522,6 @@ class RulesEngine {
         if (this.game.opponent.life <= 0) {
             return { winner: 'player', reason: 'Oponente ficou sem vida!' };
         }
-        // Mill (deck vazio ao tentar comprar)
         return null;
     }
 }

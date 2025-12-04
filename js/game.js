@@ -19,6 +19,21 @@ class GameState {
         this.playerLostLifeThisTurn = false;
         // Criaturas que não podem ser bloqueadas neste turno (Frenzied Goblin, Goblin Smuggler)
         this.unblockableThisTurn = [];
+
+        // === Stack e Prioridade ===
+        this.stack = []; // Pilha de feitiços/habilidades
+        this.priorityPlayer = null; // Quem tem prioridade atualmente
+        this.waitingForPriority = false;
+
+        // === Mulligan ===
+        this.mulliganCount = { player: 0, opponent: 0 };
+        this.mulliganPhase = false;
+
+        // === Fim de jogo ===
+        this.gameOver = false;
+        this.winner = null;
+        this.gameOverReason = '';
+        this.viewingBattlefield = false; // Modo de visualização após fim do jogo
     }
 
     init() {
@@ -153,6 +168,12 @@ class GameState {
         this.playerDeckKeys = playerDecks;
         this.aiDeckKeys = aiDecks;
 
+        // Resetar estado de fim de jogo
+        this.gameOver = false;
+        this.winner = null;
+        this.gameOverReason = '';
+        this.viewingBattlefield = false;
+
         // Criar jogadores
         this.player = this.createPlayer('Você', playerDecks);
         this.opponent = this.createPlayer('Oponente', aiDecks);
@@ -167,17 +188,73 @@ class GameState {
             this.rules.drawCard(this.opponent);
         }
 
+        // Resetar mulligan
+        this.mulliganCount = { player: 0, opponent: 0 };
+        this.mulliganPhase = true;
+
+        this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
+        this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
+
+        // Mostrar opção de mulligan
+        this.ui.showMulliganPrompt();
+    }
+
+    // Executar mulligan
+    doMulligan(keepHand) {
+        if (keepHand) {
+            // Jogador decidiu manter a mão
+            const cardsToBottom = this.mulliganCount.player;
+            if (cardsToBottom > 0) {
+                this.ui.log(`Você manteve a mão. Coloque ${cardsToBottom} carta(s) no fundo do grimório.`);
+                // Simplificado: colocar cartas aleatórias no fundo
+                for (let i = 0; i < cardsToBottom && this.player.hand.length > 0; i++) {
+                    const randomIndex = Math.floor(Math.random() * this.player.hand.length);
+                    const card = this.player.hand.splice(randomIndex, 1)[0];
+                    this.player.library.push(card);
+                }
+            }
+            this.finishMulligan();
+        } else {
+            // Jogador quer mulligan
+            this.mulliganCount.player++;
+            const newHandSize = 7 - this.mulliganCount.player;
+
+            if (newHandSize <= 0) {
+                this.ui.log('Não pode mais fazer mulligan!');
+                this.finishMulligan();
+                return;
+            }
+
+            // Devolver mão para o grimório e embaralhar
+            this.player.library = [...this.player.library, ...this.player.hand];
+            this.player.hand = [];
+            this.player.library = shuffleDeck(this.player.library);
+
+            // Comprar nova mão
+            for (let i = 0; i < 7; i++) {
+                this.rules.drawCard(this.player);
+            }
+
+            this.ui.log(`Mulligan ${this.mulliganCount.player}! Comprou 7 cartas, manterá ${newHandSize}.`);
+            this.ui.showMulliganPrompt();
+        }
+    }
+
+    finishMulligan() {
+        this.mulliganPhase = false;
+
+        // IA decide mulligan (simplificado: sempre mantém)
+        this.ui.log('Oponente manteve a mão inicial.');
+
         // Iniciar jogo
         this.turnNumber = 1;
         this.activePlayer = this.player;
         this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
+        this.priorityPlayer = this.player;
 
-        this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
-        this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
         this.ui.logTurnStart(1, 'Você');
-
         this.ui.render();
-        this.saveGame(); // Auto-save inicial
+        this.saveGame();
     }
 
     createPlayer(name, deckKeys) {
@@ -1052,13 +1129,17 @@ class GameState {
                 break;
 
             case PHASES.CLEANUP:
-                // Descartar até 7 cartas (simplificado: não implementado)
-                // Limpar dano das criaturas
+                // Limpar dano das criaturas e modificadores temporários
                 this.activePlayer.battlefield.forEach(c => {
                     c.damage = 0;
                     c.powerModifier = 0;
                     c.toughnessModifier = 0;
+                    c.temporaryKeywords = [];
                 });
+
+                // Descartar até 7 cartas
+                await this.handleDiscard(this.activePlayer);
+
                 await this.endTurn();
                 break;
 
@@ -1211,6 +1292,45 @@ class GameState {
         this.ui.render();
     }
 
+    // Descarte para tamanho de mão (máximo 7 cartas)
+    async handleDiscard(player) {
+        const maxHandSize = 7;
+        const cardsToDiscard = player.hand.length - maxHandSize;
+
+        if (cardsToDiscard <= 0) return;
+
+        if (player === this.player) {
+            // Jogador escolhe quais cartas descartar
+            this.ui.log(`Você tem ${player.hand.length} cartas. Descarte ${cardsToDiscard}.`);
+            await this.ui.promptForDiscard(cardsToDiscard);
+        } else {
+            // IA descarta automaticamente (cartas mais caras primeiro)
+            const sorted = [...player.hand].sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+            for (let i = 0; i < cardsToDiscard; i++) {
+                const cardToDiscard = sorted[i];
+                const index = player.hand.indexOf(cardToDiscard);
+                if (index > -1) {
+                    player.hand.splice(index, 1);
+                    player.graveyard.push(cardToDiscard);
+                    this.ui.log(`Oponente descartou ${cardToDiscard.name}`);
+                }
+            }
+        }
+    }
+
+    // Descarta cartas específicas do jogador
+    discardCards(cards) {
+        cards.forEach(card => {
+            const index = this.player.hand.indexOf(card);
+            if (index > -1) {
+                this.player.hand.splice(index, 1);
+                this.player.graveyard.push(card);
+                this.ui.log(`Você descartou ${card.name}`);
+            }
+        });
+        this.ui.render();
+    }
+
     async executeAITurn() {
         // Untap
         this.phase = PHASES.UNTAP;
@@ -1315,19 +1435,46 @@ class GameState {
     }
 
     checkGameOver() {
+        if (this.gameOver) return; // Já acabou
+
         const result = this.rules.checkWinCondition();
         if (result) {
-            // Limpar save ao fim do jogo
-            this.clearSavedGame();
-
-            // Som de vitória ou derrota
-            if (result.winner === 'player') {
-                window.soundManager.playVictory();
-            } else {
-                window.soundManager.playDefeat();
-            }
-            this.ui.showGameOver(result.winner, result.reason);
+            this.handleGameOver(result.winner, result.reason);
         }
+    }
+
+    handleGameOver(winner, reason) {
+        if (this.gameOver) return; // Evitar chamar múltiplas vezes
+
+        this.gameOver = true;
+        this.winner = winner;
+        this.gameOverReason = reason;
+
+        // Limpar save ao fim do jogo
+        this.clearSavedGame();
+
+        // Som de vitória ou derrota
+        if (winner === 'player') {
+            window.soundManager.playVictory();
+        } else {
+            window.soundManager.playDefeat();
+        }
+
+        // Mostrar tela de fim de jogo melhorada
+        this.ui.showGameOverScreen(winner, reason);
+    }
+
+    // Ver campo de batalha após fim do jogo
+    viewBattlefieldAfterGame() {
+        this.viewingBattlefield = true;
+        this.ui.enableViewMode();
+    }
+
+    // Voltar ao menu principal
+    returnToMenu() {
+        this.viewingBattlefield = false;
+        this.gameOver = false;
+        location.reload();
     }
 
     delay(ms) {

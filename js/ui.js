@@ -461,6 +461,11 @@ class GameUI {
                 this.renderAttachedAuras(card, cardEl);
             }
 
+            // Renderizar contadores (+1/+1, etc)
+            if (card.counters) {
+                this.renderCounters(card, cardEl);
+            }
+
             // Adicionar ao container apropriado
             if (card.type === 'land') {
                 landsContainer.appendChild(cardEl);
@@ -999,19 +1004,230 @@ class GameUI {
         }
     }
 
-    // Mostra tela de fim de jogo
-    showGameOver(winner, reason) {
-        const message = winner === 'player'
-            ? `🎉 Você venceu! ${reason}`
-            : `💀 Você perdeu! ${reason}`;
+    // === SISTEMA DE MULLIGAN ===
 
-        this.log(message);
+    showMulliganPrompt() {
+        const modal = document.getElementById('mulligan-modal');
+        const hand = document.getElementById('mulligan-hand');
+        const text = document.getElementById('mulligan-text');
+        const btnKeep = document.getElementById('btn-keep-hand');
+        const btnMulligan = document.getElementById('btn-mulligan');
 
-        setTimeout(() => {
-            if (confirm(message + '\n\nJogar novamente?')) {
-                location.reload();
+        if (!modal) return;
+
+        const mulliganCount = this.game.mulliganCount.player;
+        const newHandSize = 7 - mulliganCount;
+
+        if (mulliganCount === 0) {
+            text.textContent = 'Sua mão inicial (7 cartas):';
+        } else {
+            text.textContent = `Mulligan ${mulliganCount}! Comprou 7 cartas, manterá ${newHandSize}.`;
+        }
+
+        // Renderizar mão atual
+        hand.innerHTML = '';
+        this.game.player.hand.forEach(card => {
+            const cardEl = this.createCardElement(card, true);
+            cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+            cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+            hand.appendChild(cardEl);
+        });
+
+        // Bind eventos dos botões
+        btnKeep.onclick = () => {
+            modal.classList.add('hidden');
+            this.game.doMulligan(true);
+        };
+
+        btnMulligan.onclick = () => {
+            modal.classList.add('hidden');
+            this.game.doMulligan(false);
+        };
+
+        // Desabilitar mulligan se não pode mais
+        if (newHandSize <= 1) {
+            btnMulligan.disabled = true;
+            btnMulligan.textContent = 'Sem mais mulligans';
+        } else {
+            btnMulligan.disabled = false;
+            btnMulligan.textContent = `Mulligan (${newHandSize - 1} cartas)`;
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    // === SISTEMA DE FIM DE JOGO ===
+
+    showGameOverScreen(winner, reason) {
+        const modal = document.getElementById('game-over-modal');
+        const content = modal.querySelector('.game-over-content');
+        const icon = document.getElementById('game-over-icon');
+        const title = document.getElementById('game-over-title');
+        const reasonEl = document.getElementById('game-over-reason');
+        const playerLife = document.getElementById('final-player-life');
+        const opponentLife = document.getElementById('final-opponent-life');
+        const turns = document.getElementById('final-turns');
+        const btnView = document.getElementById('btn-view-battlefield');
+        const btnNewGame = document.getElementById('btn-new-game');
+
+        if (!modal) return;
+
+        // Configurar conteúdo
+        content.classList.remove('victory', 'defeat');
+
+        if (winner === 'player') {
+            content.classList.add('victory');
+            icon.textContent = '🏆';
+            title.textContent = 'Vitória!';
+        } else {
+            content.classList.add('defeat');
+            icon.textContent = '💀';
+            title.textContent = 'Derrota';
+        }
+
+        reasonEl.textContent = reason;
+        playerLife.textContent = this.game.player.life;
+        opponentLife.textContent = this.game.opponent.life;
+        turns.textContent = this.game.turnNumber;
+
+        // Bind eventos
+        btnView.onclick = () => {
+            modal.classList.add('hidden');
+            this.game.viewBattlefieldAfterGame();
+        };
+
+        btnNewGame.onclick = () => {
+            this.game.returnToMenu();
+        };
+
+        this.log(winner === 'player' ? `🏆 Vitória! ${reason}` : `💀 Derrota! ${reason}`);
+        modal.classList.remove('hidden');
+    }
+
+    // === MODO DE VISUALIZAÇÃO ===
+
+    enableViewMode() {
+        this.gameContainer.classList.add('view-mode');
+
+        // Adicionar botão para sair
+        let btnExit = document.getElementById('btn-exit-view');
+        if (!btnExit) {
+            btnExit = document.createElement('button');
+            btnExit.id = 'btn-exit-view';
+            btnExit.textContent = 'Voltar ao Menu';
+            btnExit.onclick = () => this.game.returnToMenu();
+            document.body.appendChild(btnExit);
+        }
+
+        this.render();
+    }
+
+    disableViewMode() {
+        this.gameContainer.classList.remove('view-mode');
+        const btnExit = document.getElementById('btn-exit-view');
+        if (btnExit) btnExit.remove();
+    }
+
+    // === SISTEMA DE DESCARTE ===
+
+    promptForDiscard(cardsToDiscard) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('discard-modal');
+            const hand = document.getElementById('discard-hand');
+            const text = document.getElementById('discard-text');
+            const btnConfirm = document.getElementById('btn-confirm-discard');
+
+            if (!modal) {
+                // Fallback se modal não existe
+                const sorted = [...this.game.player.hand].sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+                const toDiscard = sorted.slice(0, cardsToDiscard);
+                this.game.discardCards(toDiscard);
+                resolve();
+                return;
             }
-        }, 500);
+
+            text.textContent = `Você tem ${this.game.player.hand.length} cartas. Selecione ${cardsToDiscard} para descartar:`;
+
+            let selectedCards = [];
+
+            const updateButton = () => {
+                const remaining = cardsToDiscard - selectedCards.length;
+                btnConfirm.textContent = `Confirmar Descarte (${selectedCards.length}/${cardsToDiscard})`;
+                btnConfirm.disabled = selectedCards.length !== cardsToDiscard;
+            };
+
+            // Renderizar mão
+            hand.innerHTML = '';
+            this.game.player.hand.forEach(card => {
+                const cardEl = this.createCardElement(card, true);
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+
+                cardEl.addEventListener('click', () => {
+                    const index = selectedCards.indexOf(card);
+                    if (index > -1) {
+                        selectedCards.splice(index, 1);
+                        cardEl.classList.remove('selected-discard');
+                    } else if (selectedCards.length < cardsToDiscard) {
+                        selectedCards.push(card);
+                        cardEl.classList.add('selected-discard');
+                    }
+                    updateButton();
+                });
+
+                hand.appendChild(cardEl);
+            });
+
+            updateButton();
+
+            btnConfirm.onclick = () => {
+                modal.classList.add('hidden');
+                this.game.discardCards(selectedCards);
+                resolve();
+            };
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    // === SISTEMA VISUAL DE CONTADORES ===
+
+    renderCounters(card, cardEl) {
+        // Remover contadores existentes
+        const existingCounters = cardEl.querySelector('.card-counters');
+        if (existingCounters) existingCounters.remove();
+
+        if (!card.counters) return;
+
+        const countersContainer = document.createElement('div');
+        countersContainer.className = 'card-counters';
+
+        // +1/+1 counters
+        if (card.counters.plusOnePlusOne && card.counters.plusOnePlusOne > 0) {
+            const counter = document.createElement('div');
+            counter.className = 'counter plus-counter';
+            counter.textContent = `+${card.counters.plusOnePlusOne}`;
+            counter.title = `+${card.counters.plusOnePlusOne}/+${card.counters.plusOnePlusOne} counters`;
+            countersContainer.appendChild(counter);
+        }
+
+        // -1/-1 counters
+        if (card.counters.minusOneMinusOne && card.counters.minusOneMinusOne > 0) {
+            const counter = document.createElement('div');
+            counter.className = 'counter minus-counter';
+            counter.textContent = `-${card.counters.minusOneMinusOne}`;
+            counter.title = `-${card.counters.minusOneMinusOne}/-${card.counters.minusOneMinusOne} counters`;
+            countersContainer.appendChild(counter);
+        }
+
+        if (countersContainer.children.length > 0) {
+            cardEl.appendChild(countersContainer);
+        }
+    }
+
+    // Mostra tela de fim de jogo (mantido para compatibilidade)
+    showGameOver(winner, reason) {
+        this.showGameOverScreen(winner, reason);
     }
 }
 

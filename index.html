@@ -142,6 +142,56 @@
     <!-- Tooltip de Keywords -->
     <div id="keyword-tooltip" class="keyword-tooltip hidden"></div>
 
+    <!-- Modal de Mulligan -->
+    <div id="mulligan-modal" class="modal hidden">
+        <div class="modal-content mulligan-content">
+            <h2>Mulligan</h2>
+            <p id="mulligan-text">Sua mão inicial:</p>
+            <div id="mulligan-hand" class="mulligan-hand"></div>
+            <div class="mulligan-buttons">
+                <button id="btn-keep-hand" class="btn-keep">Manter Mão</button>
+                <button id="btn-mulligan" class="btn-mulligan">Mulligan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div id="game-over-modal" class="modal hidden">
+        <div class="modal-content game-over-content">
+            <div id="game-over-icon" class="game-over-icon"></div>
+            <h2 id="game-over-title">Fim de Jogo</h2>
+            <p id="game-over-reason"></p>
+            <div class="game-over-stats">
+                <div class="stat">
+                    <span class="stat-label">Sua Vida</span>
+                    <span id="final-player-life" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Vida do Oponente</span>
+                    <span id="final-opponent-life" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Turnos</span>
+                    <span id="final-turns" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="game-over-buttons">
+                <button id="btn-view-battlefield" class="btn-view">Ver Campo de Batalha</button>
+                <button id="btn-new-game" class="btn-new-game">Jogar Novamente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Descarte -->
+    <div id="discard-modal" class="modal hidden">
+        <div class="modal-content discard-content">
+            <h2>Descarte</h2>
+            <p id="discard-text">Selecione cartas para descartar:</p>
+            <div id="discard-hand" class="discard-hand"></div>
+            <button id="btn-confirm-discard" class="btn-confirm" disabled>Confirmar Descarte (0)</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/cards.js"></script>
     <script src="js/sounds.js"></script>
