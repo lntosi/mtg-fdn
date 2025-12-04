@@ -97,6 +97,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide 🪦
 - [x] **Reposicionar botão Conceder**: Movido para canto superior esquerdo como botão flutuante (menos propenso a cliques acidentais)
 - [x] **Linha de conexão atacante-defensor**: Linhas SVG conectando bloqueador ao atacante durante declaração de bloqueio
+- [ ] **Avatares com imagens reais**: Usar art_crop do Scryfall para mostrar imagens dos planeswalkers nos avatares em vez de emojis
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
 - [ ] **Modo tela cheia**: Otimização para fullscreen
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
@@ -133,6 +134,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 4.1 Prioridade Alta
 
+- [ ] **Delay nas jogadas da IA**: Adicionar delays entre ações da IA para que o jogador consiga acompanhar o que está acontecendo. Atualmente as jogadas são instantâneas e difíceis de entender sem consultar o histórico.
 - [ ] **Avaliação de board state**: IA avaliar vantagem de campo
 - [ ] **Uso de remoções**: IA usar feitiços de remoção estrategicamente
 - [ ] **Timing de feitiços**: IA jogar instants no momento certo
@@ -142,6 +144,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [ ] **Blefe e conservação**: IA guardar cartas para momentos críticos
 - [ ] **Avaliação de trades**: IA calcular melhor trocas de combate
 - [ ] **Níveis de dificuldade**: Fácil, Médio, Difícil
+- [ ] **Velocidade configurável**: Permitir ao jogador ajustar a velocidade das jogadas da IA (rápido/normal/lento)
 
 ### 4.3 Prioridade Baixa
 
