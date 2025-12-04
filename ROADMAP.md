@@ -183,12 +183,12 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ## Ordem Sugerida de Implementação
 
-### Fase 1 - Completar Mecânicas Básicas
-1. Sistema de seleção de alvo genérico
-2. Feitiços de dano (Volley, Incinerating Blast)
-3. Feitiços de remoção (Broken Wings, Felling Blow)
-4. Restrições simples (Vampire Interloper)
-5. ETB triggers faltantes (Dwynen's Elite)
+### Fase 1 - Completar Mecânicas Básicas ✅ CONCLUÍDA
+1. ✅ Sistema de seleção de alvo genérico
+2. ✅ Feitiços de dano (Volley, Incinerating Blast)
+3. ✅ Feitiços de remoção (Broken Wings, Felling Blow)
+4. ✅ Restrições simples (Vampire Interloper)
+5. ✅ ETB triggers faltantes (Dwynen's Elite)
 
 ### Fase 2 - Melhorar Experiência
 1. Indicador de mana por cor
@@ -196,10 +196,10 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 3. Animações básicas de combate
 4. Histórico de log expandido
 
-### Fase 3 - Completar Cartas Complexas
-1. Triggers de fase (Battle-Rattle Shaman)
-2. Habilidades ativadas básicas (Vampire Neonate)
-3. Feitiços de buff temporário (Moment of Triumph completo)
+### Fase 3 - Completar Cartas Complexas ✅ CONCLUÍDA
+1. ✅ Triggers de fase (Battle-Rattle Shaman, Stromkirk Bloodthief, Vengeful Bloodwitch)
+2. ✅ Habilidades ativadas básicas (Vampire Neonate, Goblin Smuggler, Wildheart Invoker, Jazal Goldmane, Veteran's Goblin Firebomb)
+3. ✅ Feitiços de buff temporário (Moment of Triumph completo)
 
 ### Fase 4 - IA e Polish
 1. IA usar remoções
