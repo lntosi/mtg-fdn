@@ -79,6 +79,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [ ] **Preview de carta ampliado**: Área fixa para ver carta em tamanho grande ao passar mouse
 - [ ] **Histórico de log expandido**: Painel lateral com log completo da partida
 - [ ] **Indicador de turno mais visível**: Destacar claramente de quem é o turno
+- [ ] **Indicador visual de summoning sickness**: Ícone ou brilho colorido (como verde/vermelho/amarelo) para indicar criaturas com summoning sickness
 
 ### 2.2 Prioridade Média
 
@@ -105,6 +106,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [ ] **Pilha (Stack)**: Implementar stack para responder a feitiços/habilidades
 - [ ] **Prioridade**: Sistema de passar prioridade entre jogadores
 - [ ] **Mulligan**: Opção de trocar mão inicial
+- [ ] **Tela de fim de jogo**: Ao terminar, mostrar opções para "Ver campo de batalha" (permite apenas hover/inspeção) ou "Voltar ao menu de seleção de deck"
 
 ### 3.2 Prioridade Média
 
