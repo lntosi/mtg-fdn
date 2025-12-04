@@ -95,6 +95,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [ ] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
 - [ ] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide (evitar cruz/caveira para não confundir com mana)
 - [ ] **Reposicionar botão Conceder**: Mover para local menos propenso a cliques acidentais
+- [ ] **Linha de conexão atacante-defensor**: Desenhar linha conectando bloqueador ao atacante durante declaração de bloqueio
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
 - [ ] **Modo tela cheia**: Otimização para fullscreen
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
