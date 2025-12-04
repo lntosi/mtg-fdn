@@ -1203,7 +1203,7 @@ body {
 }
 
 .log-panel.collapsed {
-    transform: translateX(260px);
+    transform: translateX(100%);
 }
 
 .log-panel-header {
@@ -1219,7 +1219,7 @@ body {
 }
 
 .btn-toggle-log {
-    background: transparent;
+    background: rgba(30, 15, 40, 0.95);
     border: 1px solid rgba(180, 100, 180, 0.5);
     color: #c0a0c0;
     width: 28px;
@@ -1230,11 +1230,21 @@ body {
 }
 
 .btn-toggle-log:hover {
-    background: rgba(180, 100, 180, 0.3);
+    background: rgba(180, 100, 180, 0.5);
+    color: #fff;
 }
 
+/* Quando contraído, botão fica fixo na borda direita */
 .log-panel.collapsed .btn-toggle-log {
-    transform: rotate(180deg);
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) rotate(180deg);
+    width: 36px;
+    height: 50px;
+    border-radius: 8px 0 0 8px;
+    box-shadow: -3px 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 4001;
 }
 
 .log-panel-content {
@@ -1378,7 +1388,7 @@ body {
 }
 
 #game-container.log-collapsed {
-    margin-right: 40px;
+    margin-right: 0;
 }
 
 /* === Responsividade === */
@@ -1392,7 +1402,7 @@ body {
     }
 
     #game-container.log-collapsed {
-        margin-right: 40px;
+        margin-right: 0;
     }
 
     .card-preview {
