@@ -92,6 +92,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 2.3 Prioridade Baixa
 
+- [ ] **Personalização do jogador**: No início da partida, permitir ao jogador inserir seu nome e selecionar um avatar entre 6 planeswalkers tradicionais (incluindo 2 femininos). Nome salvo no localStorage para próxima sessão.
 - [ ] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
 - [ ] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide (evitar cruz/caveira para não confundir com mana)
 - [ ] **Reposicionar botão Conceder**: Mover para local menos propenso a cliques acidentais
