@@ -8,23 +8,23 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 1.1 Prioridade Alta - Feitiços de Remoção
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Elspeth's Smite | Cats | Exila criatura atacante ou bloqueadora | Média |
-| Angelic Edict | Cats | Exila criatura ou encantamento | Média |
-| Hero's Downfall | Vampires | Destrói criatura (já funciona parcial) | Baixa |
-| Broken Wings | Elves | Destrói artefato, encantamento ou voador | Média |
-| Felling Blow | Elves | Destrói criatura com flying | Baixa |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Elspeth's Smite | Cats | Exila criatura atacante ou bloqueadora | Média | ✅ |
+| Angelic Edict | Cats | Exila criatura ou encantamento | Média | ✅ |
+| Hero's Downfall | Vampires | Destrói criatura (já funciona parcial) | Baixa | ✅ |
+| Broken Wings | Elves | Destrói artefato, encantamento ou voador | Média | ✅ |
+| Felling Blow | Elves | Destrói criatura com flying | Baixa | ✅ |
 
 ### 1.2 Prioridade Alta - Feitiços de Dano
 
-| Carta | Deck | Efeito | Complexidade |
-|-------|------|--------|--------------|
-| Volley | Goblins | 3 dano a criatura com flying | Baixa |
-| Incinerating Blast | Goblins | 5 dano a criatura | Baixa |
-| Kindled Fury | Goblins | +1/+0 e first strike até fim do turno | Média |
-| Moment of Triumph | Cats | +2/+2 até fim do turno (falta o buff) | Média |
-| Moment of Craving | Vampires | -2/-2 até fim do turno (melhorar seleção alvo) | Média |
+| Carta | Deck | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Volley | Goblins | 3 dano a criatura com flying | Baixa | ✅ |
+| Incinerating Blast | Goblins | 5 dano a criatura | Baixa | ✅ |
+| Kindled Fury | Goblins | +1/+0 e first strike até fim do turno | Média | ✅ |
+| Moment of Triumph | Cats | +2/+2 até fim do turno (falta o buff) | Média | ✅ |
+| Moment of Craving | Vampires | -2/-2 até fim do turno (melhorar seleção alvo) | Média | ✅ |
 
 ### 1.3 Prioridade Média - ETB Triggers
 
@@ -212,4 +212,4 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ---
 
-*Última atualização: Dezembro 2024*
+*Última atualização: Dezembro 2025*

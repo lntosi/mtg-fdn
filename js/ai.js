@@ -217,6 +217,48 @@ class AIPlayer {
         return assignments;
     }
 
+    // Escolhe melhor alvo para um feitiço
+    chooseBestSpellTarget(spell, validTargets) {
+        if (validTargets.length === 0) return null;
+
+        const player = this.game.player;
+
+        // Para remoções: escolher a criatura mais forte do oponente
+        if (['heros_downfall', 'moment_of_craving', 'incinerating_blast',
+             'volley', 'felling_blow', 'broken_wings', 'angelic_edict',
+             'elspeths_smite'].includes(spell.id)) {
+
+            // Filtrar criaturas do jogador (oponente da IA)
+            const enemyCreatures = validTargets.filter(c =>
+                player.battlefield.includes(c) && c.type === 'creature'
+            );
+
+            if (enemyCreatures.length > 0) {
+                // Escolher a criatura com maior poder
+                return enemyCreatures.sort((a, b) => {
+                    const aPower = this.rules.getCreaturePower(a);
+                    const bPower = this.rules.getCreaturePower(b);
+                    return bPower - aPower;
+                })[0];
+            }
+
+            // Se não há criaturas, escolher qualquer alvo válido
+            return validTargets[0];
+        }
+
+        // Para buffs: escolher nossa melhor criatura
+        if (['moment_of_triumph', 'kindled_fury', 'offer_immortality'].includes(spell.id)) {
+            return validTargets.sort((a, b) => {
+                const aPower = this.rules.getCreaturePower(a);
+                const bPower = this.rules.getCreaturePower(b);
+                return bPower - aPower;
+            })[0];
+        }
+
+        // Padrão: primeiro alvo
+        return validTargets[0];
+    }
+
     // Escolhe melhor alvo para uma Aura
     chooseBestAuraTarget(aura, validTargets, controller) {
         if (validTargets.length === 0) return null;

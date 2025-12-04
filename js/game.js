@@ -221,19 +221,49 @@ class GameState {
 
             this.ui.log(`${player.name} jogou ${card.name}`);
         } else if (card.type === 'instant' || card.type === 'sorcery') {
-            // Pagar mana
-            this.rules.payMana(card, player);
+            // Verificar se precisa de alvo
+            const needsTarget = this.spellNeedsTarget(card);
 
-            // Som de magia
-            window.soundManager.playMagic();
+            if (needsTarget && player === this.player) {
+                // Jogador precisa selecionar alvo
+                const validTargets = this.getValidSpellTargets(card, player);
 
-            // Resolver efeito (simplificado)
-            this.resolveSpell(card, player);
+                if (validTargets.length === 0) {
+                    this.ui.log(`Não há alvos válidos para ${card.name}`);
+                    player.hand.push(card);
+                    return false;
+                }
 
-            // Vai pro cemitério
-            player.graveyard.push(card);
+                // Pagar mana antes de selecionar
+                this.rules.payMana(card, player);
+                window.soundManager.playMagic();
 
-            this.ui.log(`${player.name} conjurou ${card.name}`);
+                this.ui.promptForTarget(card, validTargets, (target) => {
+                    this.resolveSpellWithTarget(card, player, target);
+                    player.graveyard.push(card);
+                    this.ui.render();
+                    this.saveGame();
+                });
+                return true;
+            } else {
+                // Sem alvo ou é IA
+                this.rules.payMana(card, player);
+                window.soundManager.playMagic();
+
+                if (needsTarget && player === this.opponent) {
+                    // IA escolhe alvo
+                    const validTargets = this.getValidSpellTargets(card, player);
+                    if (validTargets.length > 0) {
+                        const target = this.ai.chooseBestSpellTarget(card, validTargets);
+                        this.resolveSpellWithTarget(card, player, target);
+                    }
+                } else {
+                    this.resolveSpell(card, player);
+                }
+
+                player.graveyard.push(card);
+                this.ui.log(`${player.name} conjurou ${card.name}`);
+            }
         } else if (card.type === 'enchantment' && card.subtype === 'Aura') {
             // Auras precisam de um alvo
             await this.playAura(card, player);
@@ -318,18 +348,186 @@ class GameState {
         this.saveGame();
     }
 
-    // Resolver feitiços (simplificado)
-    resolveSpell(card, caster) {
-        // Implementação básica de alguns feitiços
+    // Verifica se feitiço precisa de alvo
+    spellNeedsTarget(card) {
+        const targetedSpells = [
+            'moment_of_triumph', 'moment_of_craving', 'heros_downfall',
+            'elspeths_smite', 'angelic_edict', 'kindled_fury',
+            'volley', 'incinerating_blast', 'broken_wings', 'felling_blow',
+            'snakeskin_veil', 'offer_immortality'
+        ];
+        return targetedSpells.includes(card.id);
+    }
+
+    // Retorna alvos válidos para um feitiço
+    getValidSpellTargets(card, caster) {
         const opponent = caster === this.player ? this.opponent : this.player;
+        let targets = [];
 
         switch (card.id) {
+            // === BUFFS (suas criaturas) ===
             case 'moment_of_triumph':
-                // +2/+2 e ganhar 2 vidas - simplificado: só ganha vida
-                caster.life += 2;
-                this.ui.log(`${caster.name} ganhou 2 vidas`);
+            case 'kindled_fury':
+            case 'snakeskin_veil':
+            case 'offer_immortality':
+                targets = caster.battlefield.filter(c => c.type === 'creature');
                 break;
 
+            // === REMOÇÃO (criaturas do oponente) ===
+            case 'moment_of_craving':
+            case 'heros_downfall':
+            case 'incinerating_blast':
+                targets = opponent.battlefield.filter(c => c.type === 'creature');
+                break;
+
+            // === REMOÇÃO COM RESTRIÇÃO ===
+            case 'elspeths_smite':
+                // Só atacantes ou bloqueadores (simplificado: qualquer criatura em combate)
+                targets = [...this.currentAttackers];
+                const blockersFlat = Object.values(this.blockerAssignments).flat();
+                targets.push(...blockersFlat);
+                break;
+
+            case 'volley':
+                // Só criaturas com flying
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+                );
+                break;
+
+            case 'felling_blow':
+                // Só criaturas com flying
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+                );
+                break;
+
+            case 'angelic_edict':
+                // Criatura ou encantamento
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' || c.type === 'enchantment'
+                );
+                break;
+
+            case 'broken_wings':
+                // Artefato, encantamento ou criatura com flying
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'artifact' ||
+                    c.type === 'enchantment' ||
+                    (c.type === 'creature' && c.keywords && c.keywords.includes('flying'))
+                );
+                break;
+
+            default:
+                targets = [];
+        }
+
+        return targets;
+    }
+
+    // Resolver feitiço com alvo selecionado
+    resolveSpellWithTarget(card, caster, target) {
+        const opponent = caster === this.player ? this.opponent : this.player;
+        const targetOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
+
+        switch (card.id) {
+            // === BUFFS ===
+            case 'moment_of_triumph':
+                target.powerModifier = (target.powerModifier || 0) + 2;
+                target.toughnessModifier = (target.toughnessModifier || 0) + 2;
+                caster.life += 2;
+                this.ui.log(`${target.name} ganhou +2/+2. ${caster.name} ganhou 2 vidas`);
+                break;
+
+            case 'kindled_fury':
+                target.powerModifier = (target.powerModifier || 0) + 1;
+                if (!target.temporaryKeywords) target.temporaryKeywords = [];
+                target.temporaryKeywords.push('first_strike');
+                this.ui.log(`${target.name} ganhou +1/+0 e iniciativa`);
+                break;
+
+            case 'snakeskin_veil':
+                if (!target.counters) target.counters = {};
+                target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                this.ui.log(`${target.name} ganhou um contador +1/+1 e resistência a magia`);
+                break;
+
+            case 'offer_immortality':
+                // Simplificado: só o +1/+1 se vampiro
+                if (target.subtype && target.subtype.includes('Vampire')) {
+                    if (!target.counters) target.counters = {};
+                    target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                    this.ui.log(`${target.name} ganhou indestrutível e +1/+1`);
+                } else {
+                    this.ui.log(`${target.name} ganhou indestrutível`);
+                }
+                break;
+
+            // === DANO ===
+            case 'moment_of_craving':
+                target.powerModifier = (target.powerModifier || 0) - 2;
+                target.toughnessModifier = (target.toughnessModifier || 0) - 2;
+                caster.life += 2;
+                this.ui.log(`${target.name} recebeu -2/-2. ${caster.name} ganhou 2 vidas`);
+                this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            case 'volley':
+                target.damage = (target.damage || 0) + 3;
+                this.ui.log(`Volley causou 3 de dano a ${target.name}`);
+                this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            case 'incinerating_blast':
+                target.damage = (target.damage || 0) + 5;
+                this.ui.log(`Incinerating Blast causou 5 de dano a ${target.name}`);
+                this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            // === REMOÇÃO ===
+            case 'heros_downfall':
+                this.destroyPermanent(target, targetOwner);
+                this.ui.log(`${target.name} foi destruído`);
+                break;
+
+            case 'elspeths_smite':
+                this.exilePermanent(target, targetOwner);
+                this.ui.log(`${target.name} foi exilado`);
+                break;
+
+            case 'angelic_edict':
+                this.exilePermanent(target, targetOwner);
+                this.ui.log(`${target.name} foi exilado`);
+                break;
+
+            case 'felling_blow':
+                this.destroyPermanent(target, targetOwner);
+                this.ui.log(`${target.name} foi destruído`);
+                break;
+
+            case 'broken_wings':
+                this.destroyPermanent(target, targetOwner);
+                this.ui.log(`${target.name} foi destruído`);
+                break;
+
+            default:
+                this.ui.log(`${card.name} resolvido em ${target.name}`);
+        }
+    }
+
+    // Exilar permanente (não vai pro cemitério)
+    exilePermanent(permanent, owner) {
+        const index = owner.battlefield.indexOf(permanent);
+        if (index > -1) {
+            owner.battlefield.splice(index, 1);
+            // Exílio - não adiciona ao cemitério
+            // Poderia ter uma zona de exílio se quiséssemos
+        }
+    }
+
+    // Resolver feitiços sem alvo
+    resolveSpell(card, caster) {
+        switch (card.id) {
             case 'dragon_fodder':
                 // Criar 2 tokens goblin
                 for (let i = 0; i < 2; i++) {
@@ -346,24 +544,15 @@ class GameState {
                 this.ui.log(`Criados 2 tokens Goblin 1/1`);
                 break;
 
-            case 'moment_of_craving':
-                // -2/-2 e ganhar 2 vidas
-                const target = opponent.battlefield.find(c => c.type === 'creature');
-                if (target) {
-                    target.powerModifier = (target.powerModifier || 0) - 2;
-                    target.toughnessModifier = (target.toughnessModifier || 0) - 2;
-                    this.checkCreatureDeath(target, opponent);
-                }
-                caster.life += 2;
-                break;
-
-            case 'heros_downfall':
-                // Destruir criatura
-                const creature = opponent.battlefield.find(c => c.type === 'creature');
-                if (creature) {
-                    this.destroyPermanent(creature, opponent);
-                    this.ui.log(`${creature.name} foi destruído`);
-                }
+            case 'joraga_invocation':
+                // +3/+3 para todas criaturas
+                caster.battlefield.forEach(c => {
+                    if (c.type === 'creature') {
+                        c.powerModifier = (c.powerModifier || 0) + 3;
+                        c.toughnessModifier = (c.toughnessModifier || 0) + 3;
+                    }
+                });
+                this.ui.log(`Todas as criaturas ganharam +3/+3!`);
                 break;
 
             default:

@@ -40,3 +40,4 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 ## MTG Keywords Implemented
 
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, tap_for_mana, etb_draw
+- to memorize
