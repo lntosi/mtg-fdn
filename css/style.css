@@ -1,0 +1,974 @@
+/* === Reset e Base === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a0a1f 0%, #2d1b3d 50%, #1a0a1f 100%);
+    color: #fff;
+    min-height: 100vh;
+    overflow: visible;
+}
+
+/* === Container Principal - Battlemat Style === */
+#game-container {
+    display: grid;
+    grid-template-rows: auto 1fr auto 1fr auto;
+    height: 100vh;
+    padding: 10px;
+    gap: 8px;
+    background:
+        radial-gradient(ellipse at top left, rgba(180, 50, 150, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(180, 50, 150, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at center, rgba(30, 10, 40, 0.9) 0%, transparent 100%);
+    overflow: visible;
+}
+
+/* === Área do Oponente (Topo) === */
+#opponent-area .player-info {
+    flex: 0 0 auto;
+}
+
+#opponent-hand {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    flex: 1;
+}
+
+#opponent-hand .card {
+    width: 60px;
+    height: 84px;  /* 60 * 1.4 = 84 */
+    font-size: 0.45em;
+}
+
+/* === Grimório e Cemitério === */
+.library-zone {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.library {
+    position: relative;
+    width: 70px;
+    height: 98px;
+    cursor: pointer;
+}
+
+.library-stack {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(135deg, #2c1810 0%, #1a0f0a 50%, #2c1810 100%);
+    border-radius: 5px;
+    border: 2px solid #5a3d2b;
+    box-shadow:
+        2px 2px 0 #1a0f0a,
+        4px 4px 0 #2c1810,
+        6px 6px 0 #1a0f0a,
+        0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.library-stack::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(ellipse, #c9a227 0%, #8b6914 50%, transparent 70%);
+    opacity: 0.6;
+}
+
+.library-stack::after {
+    content: 'MTG';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    color: #c9a227;
+    font-size: 0.9em;
+    text-shadow: 0 0 10px rgba(200, 150, 50, 0.8);
+}
+
+.library-count {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    color: white;
+    font-size: 0.75em;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 10px;
+    min-width: 28px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.library:hover .library-stack {
+    box-shadow:
+        2px 2px 0 #1a0f0a,
+        4px 4px 0 #2c1810,
+        6px 6px 0 #1a0f0a,
+        0 0 25px rgba(200, 150, 50, 0.4);
+}
+
+.graveyard {
+    position: relative;
+    width: 70px;
+    height: 98px;
+    background: rgba(50, 30, 50, 0.6);
+    border-radius: 5px;
+    border: 2px dashed rgba(150, 100, 150, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.graveyard::before {
+    content: 'GY';
+    color: rgba(150, 100, 150, 0.5);
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.graveyard-count {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #5d6d7e, #7f8c8d);
+    color: white;
+    font-size: 0.75em;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 10px;
+    min-width: 28px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.graveyard:hover {
+    border-color: rgba(150, 100, 150, 0.7);
+    background: rgba(80, 50, 80, 0.6);
+}
+
+.graveyard-top-card {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 3px;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6em;
+    color: rgba(200, 150, 200, 0.8);
+}
+
+.graveyard:hover .graveyard-top-card {
+    opacity: 1;
+}
+
+/* === Popup do Cemitério === */
+.graveyard-popup {
+    position: fixed;
+    background: rgba(20, 10, 25, 0.98);
+    border: 2px solid rgba(180, 100, 180, 0.6);
+    border-radius: 12px;
+    padding: 15px;
+    z-index: 10000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    max-width: 500px;
+    max-height: 400px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.graveyard-popup.hidden {
+    display: none;
+}
+
+.graveyard-popup-title {
+    color: #c0a0c0;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(180, 100, 180, 0.3);
+    padding-bottom: 8px;
+}
+
+.graveyard-popup-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 330px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.graveyard-popup-cards::-webkit-scrollbar {
+    width: 5px;
+}
+
+.graveyard-popup-cards::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.5);
+    border-radius: 3px;
+}
+
+.graveyard-popup .card {
+    width: 80px;
+    height: 112px;
+    flex-shrink: 0;
+    pointer-events: auto;
+}
+
+.graveyard-popup .card:hover {
+    transform: scale(2) translateY(-20px);
+    z-index: 10001 !important;
+}
+
+.graveyard-popup-empty {
+    color: rgba(150, 100, 150, 0.6);
+    font-style: italic;
+    padding: 20px;
+    text-align: center;
+}
+
+/* Ajustar áreas dos jogadores */
+#opponent-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 5px 10px;
+}
+
+#player-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 5px 10px;
+}
+
+/* === Info dos Jogadores === */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(180, 100, 180, 0.3);
+    border-radius: 8px;
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 1em;
+    color: #e0c0e0;
+}
+
+/* Life Total - Estilo Hexágono */
+.life-total {
+    background: linear-gradient(135deg, #8b0000, #cc0000);
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1.4em;
+    min-width: 55px;
+    text-align: center;
+    border: 2px solid rgba(255, 100, 100, 0.5);
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+}
+
+.mana-pool {
+    background: rgba(50, 100, 180, 0.6);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    border: 1px solid rgba(100, 150, 255, 0.4);
+}
+
+/* === Battlefields - Estilo Foundations === */
+.battlefield {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 2px solid rgba(180, 100, 180, 0.25);
+    position: relative;
+    min-height: 160px;
+    overflow: visible !important;
+}
+
+.battlefield::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, transparent 0%, rgba(100, 50, 100, 0.1) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+#opponent-battlefield {
+    flex-direction: column-reverse;
+}
+
+#opponent-battlefield .zone-label {
+    bottom: auto;
+    top: 8px;
+}
+
+/* Labels das zonas */
+.zone-label {
+    position: absolute;
+    font-size: 0.7em;
+    color: rgba(200, 150, 200, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.creatures {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    min-height: 100px;
+    padding: 5px;
+    position: relative;
+    overflow: visible !important;
+}
+
+.creatures::before {
+    content: 'CREATURES';
+    position: absolute;
+    top: -18px;
+    left: 15px;
+    font-size: 0.65em;
+    color: rgba(200, 150, 200, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.lands {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-height: 70px;
+    padding: 5px;
+    border-top: 1px solid rgba(180, 100, 180, 0.2);
+    position: relative;
+    overflow: visible !important;
+}
+
+/* Zona de outros permanentes (encantamentos, artefatos) */
+.other-permanents {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-height: 50px;
+    padding: 5px;
+    position: relative;
+    overflow: visible !important;
+}
+
+.other-permanents::before {
+    content: 'ENCHANTMENTS / ARTIFACTS';
+    position: absolute;
+    top: -12px;
+    right: 15px;
+    font-size: 0.55em;
+    color: rgba(200, 150, 200, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: rgba(0,0,0,0.5);
+    padding: 0 8px;
+}
+
+.other-permanents .card {
+    width: 84px;
+    height: 117px;
+}
+
+.lands::before {
+    content: 'LANDS';
+    position: absolute;
+    top: -12px;
+    left: 15px;
+    font-size: 0.65em;
+    color: rgba(200, 150, 200, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    background: rgba(0,0,0,0.5);
+    padding: 0 8px;
+}
+
+#opponent-battlefield .lands {
+    border-top: none;
+    border-bottom: 1px solid rgba(180, 100, 180, 0.2);
+}
+
+#opponent-battlefield .creatures::before {
+    top: auto;
+    bottom: -18px;
+}
+
+#opponent-battlefield .lands::before {
+    top: auto;
+    bottom: -12px;
+}
+
+/* === Zona Central - Indicador de Fases === */
+#middle-zone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 8px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(180, 100, 180, 0.3);
+    z-index: 1;
+    position: relative;
+}
+
+#phase-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+#current-phase {
+    font-size: 1em;
+    font-weight: bold;
+    color: #ffcc00;
+    text-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+}
+
+#turn-indicator {
+    font-size: 0.8em;
+    color: #c0a0c0;
+}
+
+#action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+#action-buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85em;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#action-buttons button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#btn-next-phase {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    color: white;
+}
+#btn-attack {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+}
+#btn-block {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+}
+#btn-pass {
+    background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+    color: white;
+}
+
+#action-buttons button:not(:disabled):hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+#message-log {
+    max-width: 250px;
+    max-height: 50px;
+    overflow-y: auto;
+    font-size: 0.7em;
+    color: #a080a0;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 5px;
+    border: 1px solid rgba(180, 100, 180, 0.2);
+}
+
+#stack {
+    display: none;
+}
+
+/* === Área do Jogador (Bottom) === */
+#player-area .player-info {
+    flex: 1;
+}
+
+/* === Mão do Jogador (Bottom) === */
+#player-hand {
+    display: flex;
+    gap: 10px;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    border: 2px solid rgba(180, 100, 180, 0.25);
+    min-height: 170px;
+    justify-content: center;
+    align-items: center;
+    overflow: visible !important;
+}
+
+/* === CARTAS === */
+/* Proporção oficial MTG: 63mm x 88mm = ratio 1:1.4 (ou 672x936px do Scryfall) */
+/* Tamanho base: 135x189px (50% maior que 90x126) */
+.card {
+    width: 135px;
+    height: 189px;  /* 135 * 1.4 = 189 */
+    background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, z-index 0s;
+    display: flex;
+    flex-direction: column;
+    color: #333;
+    font-size: 0.65em;
+    position: relative;
+    border: 2px solid #333;
+    overflow: hidden;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+/* === HOVER ZOOM GRANDE === */
+.card:hover {
+    transform: scale(2.5) translateY(-30px);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+    z-index: 9999 !important;
+    position: relative;
+}
+
+/* Cartas na mão - zoom ainda maior */
+#player-hand .card:hover {
+    transform: scale(2.8) translateY(-60px);
+    z-index: 9999 !important;
+}
+
+/* Cartas no battlefield - zoom lateral para não sair da tela */
+.battlefield .card:hover {
+    transform: scale(2.5);
+    z-index: 9999 !important;
+}
+
+.card.tapped {
+    transform: rotate(90deg);
+    margin: 20px 28px;
+}
+
+.card.tapped:hover {
+    transform: rotate(90deg) scale(2.2);
+    z-index: 1000;
+}
+
+.card.selected {
+    box-shadow: 0 0 25px 10px #f1c40f;
+}
+
+.card.attacking {
+    box-shadow: 0 0 25px 10px #e74c3c;
+    animation: pulse-attack 0.8s infinite;
+}
+
+.card.blocking {
+    box-shadow: 0 0 25px 10px #3498db;
+}
+
+.card.playable {
+    box-shadow: 0 0 20px 8px #2ecc71;
+}
+
+.card.valid-target {
+    box-shadow: 0 0 25px 10px #f39c12;
+    animation: pulse-target 0.6s infinite;
+}
+
+@keyframes pulse-target {
+    0%, 100% { box-shadow: 0 0 25px 10px #f39c12; }
+    50% { box-shadow: 0 0 35px 15px #e67e22; }
+}
+
+/* Auras anexadas */
+.card.has-aura {
+    position: relative;
+}
+
+.attached-auras {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.attached-aura {
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    background-size: 100% auto;
+    background-position: top center;
+    background-repeat: no-repeat;
+    border-radius: 4px 4px 0 0;
+    opacity: 0.95;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5em;
+    color: white;
+    text-shadow: 0 0 3px black;
+}
+
+@keyframes pulse-attack {
+    0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
+    50% { box-shadow: 0 0 35px 15px #ff6b6b; }
+}
+
+/* === Cartas com Imagem === */
+.card.has-image {
+    background-size: contain !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-color: #000 !important;
+    border: none;
+    border-radius: 4.5% / 3.2%; /* Proporção do arredondamento real das cartas MTG */
+}
+
+.card.has-image .card-content {
+    display: none;
+}
+
+.card.has-image .card-name,
+.card.has-image .card-type,
+.card.has-image .card-text,
+.card.has-image .card-cost,
+.card.has-image .card-stats {
+    display: none;
+}
+
+/* === Cores de Mana (bordas) === */
+.card.white { border-color: #f4d03f; background: linear-gradient(135deg, #fffef0, #f9e79f); }
+.card.blue { border-color: #3498db; background: linear-gradient(135deg, #ebf5fb, #aed6f1); }
+.card.black { border-color: #5d6d7e; background: linear-gradient(135deg, #d5d8dc, #aeb6bf); }
+.card.red { border-color: #e74c3c; background: linear-gradient(135deg, #fdedec, #f5b7b1); }
+.card.green { border-color: #27ae60; background: linear-gradient(135deg, #eafaf1, #abebc6); }
+
+/* === Elementos da Carta === */
+.card-content {
+    padding: 4px 6px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-name {
+    font-weight: bold;
+    font-size: 0.8em;
+    text-align: center;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-cost {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: bold;
+    z-index: 5;
+}
+
+.card-type {
+    font-size: 0.6em;
+    color: #666;
+    text-align: center;
+}
+
+.card-stats {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+    z-index: 5;
+}
+
+.card-stats.buffed {
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.95), rgba(46, 204, 113, 0.95));
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    animation: buff-glow 2s ease-in-out infinite;
+}
+
+@keyframes buff-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(46, 204, 113, 0.6); }
+    50% { box-shadow: 0 0 12px rgba(46, 204, 113, 0.9); }
+}
+
+.card-bonus {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.95), rgba(243, 156, 18, 0.95));
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: bold;
+    z-index: 6;
+    box-shadow: 0 0 6px rgba(241, 196, 15, 0.7);
+    cursor: help;
+}
+
+.card-text {
+    font-size: 0.55em;
+    overflow: hidden;
+    margin-top: 3px;
+    line-height: 1.2;
+    flex: 1;
+}
+
+/* Carta virada (mão do oponente) */
+.card-back {
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(135deg, #2c1810 0%, #1a0f0a 50%, #2c1810 100%),
+        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(100,50,0,0.1) 10px, rgba(100,50,0,0.1) 20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #c9a227;
+    font-size: 1em;
+    border-radius: 5px;
+    text-shadow: 0 0 10px rgba(200, 150, 50, 0.5);
+}
+
+/* === Terrenos menores no battlefield === */
+/* Tamanho: 84x117px (50% maior que 56x78) */
+.lands .card {
+    width: 84px;
+    height: 117px;  /* 84 * 1.4 = 117.6 */
+    font-size: 0.55em;
+}
+
+.lands .card .card-name {
+    font-size: 0.8em;
+}
+
+.lands .card:hover {
+    transform: scale(2.5) translateY(-50px);
+}
+
+/* === Modal de Seleção === */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 5, 15, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #2d1b3d 0%, #1a0a1f 100%);
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 480px;
+    border: 2px solid rgba(180, 100, 180, 0.5);
+    box-shadow: 0 0 50px rgba(150, 50, 150, 0.3);
+}
+
+.modal-content h2 {
+    margin-bottom: 15px;
+    color: #ffcc00;
+    font-size: 1.6em;
+    text-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+}
+
+.modal-content p {
+    margin-bottom: 25px;
+    color: #c0a0c0;
+}
+
+#deck-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.deck-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: rgba(100, 50, 100, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.deck-option:hover {
+    background: rgba(150, 80, 150, 0.3);
+    border-color: rgba(180, 100, 180, 0.5);
+}
+
+.deck-option input {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    accent-color: #9b59b6;
+}
+
+.deck-option input:checked + .deck-name {
+    color: #ffcc00;
+}
+
+.deck-option input:disabled + .deck-name {
+    opacity: 0.4;
+}
+
+.deck-name {
+    font-size: 1.15em;
+    color: #e0c0e0;
+}
+
+#btn-start-game {
+    padding: 16px 50px;
+    font-size: 1.2em;
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 0 20px rgba(150, 50, 200, 0.4);
+}
+
+#btn-start-game:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+#btn-start-game:not(:disabled):hover {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(150, 50, 200, 0.6);
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(50, 20, 50, 0.5);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.5);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(180, 100, 180, 0.7);
+}
+
+/* === Responsividade === */
+@media (max-width: 900px) {
+    .card {
+        width: 100px;
+        height: 140px;  /* 100 * 1.4 */
+    }
+
+    .card:hover {
+        transform: scale(2) translateY(-25px);
+    }
+
+    .lands .card {
+        width: 65px;
+        height: 91px;  /* 65 * 1.4 */
+    }
+
+    #action-buttons button {
+        padding: 6px 10px;
+        font-size: 0.75em;
+    }
+
+    #player-hand {
+        min-height: 160px;
+    }
+}

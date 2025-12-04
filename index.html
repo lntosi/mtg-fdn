@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTG Jumpstart - Foundations</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Topo: Info do Oponente + Mão oculta + Grimório -->
+        <div id="opponent-area">
+            <div class="player-info">
+                <span class="player-name">Oponente (IA)</span>
+                <span class="life-total" id="opponent-life">20</span>
+            </div>
+            <div class="hand" id="opponent-hand"></div>
+            <div class="library-zone">
+                <div class="library" id="opponent-library">
+                    <div class="library-stack"></div>
+                    <span class="library-count">0</span>
+                </div>
+                <div class="graveyard" id="opponent-graveyard">
+                    <span class="graveyard-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battlefield do Oponente -->
+        <div class="battlefield" id="opponent-battlefield">
+            <div class="lands" id="opponent-lands"></div>
+            <div class="other-permanents" id="opponent-other"></div>
+            <div class="creatures" id="opponent-creatures"></div>
+        </div>
+
+        <!-- Zona Central: Controles -->
+        <div id="middle-zone">
+            <div id="phase-indicator">
+                <span id="current-phase">Início do Jogo</span>
+                <span id="turn-indicator">Turno: 0</span>
+            </div>
+            <div id="action-buttons">
+                <button id="btn-next-phase" disabled>Próxima Fase</button>
+                <button id="btn-attack" disabled>Atacar</button>
+                <button id="btn-block" disabled>Não Bloquear</button>
+                <button id="btn-pass" disabled>Passar</button>
+            </div>
+            <div id="message-log"></div>
+            <div id="stack"></div>
+        </div>
+
+        <!-- Battlefield do Jogador -->
+        <div class="battlefield" id="player-battlefield">
+            <div class="creatures" id="player-creatures"></div>
+            <div class="other-permanents" id="player-other"></div>
+            <div class="lands" id="player-lands"></div>
+        </div>
+
+        <!-- Bottom: Info do Jogador + Mão + Grimório -->
+        <div id="player-area">
+            <div class="library-zone">
+                <div class="library" id="player-library">
+                    <div class="library-stack"></div>
+                    <span class="library-count">0</span>
+                </div>
+                <div class="graveyard" id="player-graveyard">
+                    <span class="graveyard-count">0</span>
+                </div>
+            </div>
+            <div class="player-info">
+                <span class="player-name">Você</span>
+                <span class="life-total" id="player-life">20</span>
+                <span class="mana-pool" id="player-mana">Mana: 0</span>
+            </div>
+        </div>
+
+        <!-- Mão do Jogador (Bottom) -->
+        <div class="hand" id="player-hand"></div>
+    </div>
+
+    <!-- Tela de Seleção de Decks -->
+    <div id="deck-selection" class="modal">
+        <div class="modal-content">
+            <h2>Escolha seus Decks</h2>
+            <p>Selecione 2 decks para formar seu baralho de 40 cartas:</p>
+            <div id="deck-options">
+                <label class="deck-option">
+                    <input type="checkbox" name="deck" value="cats">
+                    <span class="deck-name">Cats (Branco)</span>
+                </label>
+                <label class="deck-option">
+                    <input type="checkbox" name="deck" value="goblins">
+                    <span class="deck-name">Goblins (Vermelho)</span>
+                </label>
+                <label class="deck-option">
+                    <input type="checkbox" name="deck" value="vampires">
+                    <span class="deck-name">Vampires (Preto)</span>
+                </label>
+                <label class="deck-option">
+                    <input type="checkbox" name="deck" value="elves">
+                    <span class="deck-name">Elves (Verde)</span>
+                </label>
+            </div>
+            <button id="btn-start-game" disabled>Iniciar Jogo</button>
+        </div>
+    </div>
+
+    <!-- Popup de Cemitério -->
+    <div id="graveyard-popup" class="graveyard-popup hidden">
+        <div class="graveyard-popup-title">Cemitério</div>
+        <div class="graveyard-popup-cards"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/cards.js"></script>
+    <script src="js/sounds.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

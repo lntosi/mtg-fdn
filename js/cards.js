@@ -1,0 +1,151 @@
+// === Base de Dados das Cartas ===
+// 4 Decks Jumpstart do Foundations Beginner Box
+
+const CARD_DATABASE = {
+    // ==================== CATS (Branco) ====================
+    cats: {
+        name: "Cats",
+        color: "white",
+        cards: [
+            // Terrenos (7)
+            { id: "cats_plains_1", name: "Plains", type: "land", subtype: "basic", produces: "W", qty: 7 },
+            // Terreno especial (1)
+            { id: "cats_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+            // Criaturas (9)
+            { id: "savannah_lions", name: "Savannah Lions", type: "creature", subtype: "Cat", cost: "W", cmc: 1, power: 2, toughness: 1, qty: 1 },
+            { id: "leonin_vanguard", name: "Leonin Vanguard", type: "creature", subtype: "Cat Soldier", cost: "W", cmc: 1, power: 1, toughness: 1, text: "Quando atacar, se você controla outra criatura, ganha 1 vida.", keywords: ["lifelink_conditional"], qty: 1 },
+            { id: "helpful_hunter", name: "Helpful Hunter", type: "creature", subtype: "Cat", cost: "1W", cmc: 2, power: 1, toughness: 1, text: "Quando entra, compre uma carta.", keywords: ["etb_draw"], qty: 1 },
+            { id: "leonin_skyhunter", name: "Leonin Skyhunter", type: "creature", subtype: "Cat Knight", cost: "WW", cmc: 2, power: 2, toughness: 2, keywords: ["flying"], qty: 1 },
+            { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "2W", cmc: 3, power: 2, toughness: 3, text: "Outras criaturas que você controla têm +1/+0.", qty: 1 },
+            { id: "prideful_parent", name: "Prideful Parent", type: "creature", subtype: "Cat", cost: "2W", cmc: 3, power: 2, toughness: 2, keywords: ["vigilance"], text: "Quando entra, crie um token 1/1 Cat.", qty: 1 },
+            { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 4, keywords: ["lifelink"], qty: 1 },
+            { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
+            // Feitiços e Encantamentos (3)
+            { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
+            { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
+            { id: "elspeths_smite", name: "Elspeth's Smite", type: "instant", cost: "W", cmc: 1, text: "Exile criatura atacante ou bloqueadora alvo.", qty: 1 },
+            { id: "angelic_edict", name: "Angelic Edict", type: "sorcery", cost: "4W", cmc: 5, text: "Exile criatura ou encantamento alvo.", qty: 1 }
+        ]
+    },
+
+    // ==================== GOBLINS (Vermelho) ====================
+    goblins: {
+        name: "Goblins",
+        color: "red",
+        cards: [
+            // Terrenos (7)
+            { id: "goblins_mountain_1", name: "Mountain", type: "land", subtype: "basic", produces: "R", qty: 7 },
+            // Terreno especial (1)
+            { id: "goblins_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+            // Criaturas (9)
+            { id: "frenzied_goblin", name: "Frenzied Goblin", type: "creature", subtype: "Goblin Berserker", cost: "R", cmc: 1, power: 1, toughness: 1, text: "Quando ataca, pague R: criatura alvo não pode bloquear neste turno.", qty: 1 },
+            { id: "swab_goblin", name: "Swab Goblin", type: "creature", subtype: "Goblin Pirate", cost: "1R", cmc: 2, power: 2, toughness: 2, qty: 1 },
+            { id: "raging_redcap", name: "Raging Redcap", type: "creature", subtype: "Goblin", cost: "2R", cmc: 3, power: 3, toughness: 2, keywords: ["haste"], qty: 1 },
+            { id: "goblin_smuggler", name: "Goblin Smuggler", type: "creature", subtype: "Goblin Rogue", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["haste"], text: "T: Criatura alvo com poder 2 ou menos não pode ser bloqueada neste turno.", qty: 1 },
+            { id: "battle_rattle_shaman", name: "Battle-Rattle Shaman", type: "creature", subtype: "Goblin Shaman", cost: "3R", cmc: 4, power: 2, toughness: 2, text: "No início do combate, criatura alvo ganha +2/+0 até o fim do turno.", qty: 1 },
+            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin", cost: "3R", cmc: 4, power: 3, toughness: 3, keywords: ["flying"], text: "Quando entra, causa 2 de dano a criatura ou planeswalker alvo.", qty: 1 },
+            // Feitiços (5)
+            { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
+            { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },
+            { id: "volley", name: "Volley", type: "instant", cost: "1R", cmc: 2, text: "Volley causa 3 de dano a criatura alvo com voar.", qty: 1 },
+            { id: "incinerating_blast", name: "Incinerating Blast", type: "sorcery", cost: "4R", cmc: 5, text: "Causa 5 de dano a criatura ou planeswalker alvo.", qty: 1 },
+            // Artefato (1)
+            { id: "goblin_oriflamme", name: "Goblin Oriflamme", type: "enchantment", cost: "1R", cmc: 2, text: "Criaturas atacantes que você controla têm +1/+0.", qty: 1 },
+            { id: "veteran_goblin_firebomb", name: "Veteran's Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, text: "1, T, Sacrifique: Causa 2 de dano a qualquer alvo.", qty: 1 }
+        ]
+    },
+
+    // ==================== VAMPIRES (Preto) ====================
+    vampires: {
+        name: "Vampires",
+        color: "black",
+        cards: [
+            // Terrenos (7)
+            { id: "vampires_swamp_1", name: "Swamp", type: "land", subtype: "basic", produces: "B", qty: 7 },
+            // Terreno especial (1)
+            { id: "vampires_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+            // Criaturas (9)
+            { id: "vampire_neonate", name: "Vampire Neonate", type: "creature", subtype: "Vampire", cost: "B", cmc: 1, power: 0, toughness: 3, text: "2, T: Cada oponente perde 1 vida e você ganha 1 vida.", qty: 1 },
+            { id: "vampire_interloper", name: "Vampire Interloper", type: "creature", subtype: "Vampire Scout", cost: "1B", cmc: 2, power: 2, toughness: 1, keywords: ["flying"], text: "Não pode bloquear.", qty: 1 },
+            { id: "stromkirk_bloodthief", name: "Stromkirk Bloodthief", type: "creature", subtype: "Vampire Rogue", cost: "2B", cmc: 3, power: 2, toughness: 2, text: "No final do turno, coloque um contador +1/+1 em Vampiro alvo que você controla se um oponente perdeu vida neste turno.", qty: 1 },
+            { id: "highborn_vampire", name: "Highborn Vampire", type: "creature", subtype: "Vampire", cost: "3B", cmc: 4, power: 4, toughness: 3, qty: 1 },
+            { id: "vampire_spawn", name: "Vampire Spawn", type: "creature", subtype: "Vampire", cost: "2B", cmc: 3, power: 2, toughness: 3, text: "Quando entra, cada oponente perde 2 vidas e você ganha 2 vidas.", qty: 1 },
+            { id: "bloodtithe_collector", name: "Bloodtithe Collector", type: "creature", subtype: "Vampire", cost: "4B", cmc: 5, power: 3, toughness: 4, keywords: ["flying"], text: "Quando entra, se um oponente perdeu vida neste turno, cada oponente descarta uma carta.", qty: 1 },
+            { id: "vengeful_bloodwitch", name: "Vengeful Bloodwitch", type: "creature", subtype: "Vampire Warlock", cost: "3B", cmc: 4, power: 3, toughness: 3, keywords: ["flying", "deathtouch"], text: "Quando um oponente perde vida, você ganha essa quantidade de vida.", qty: 1 },
+            { id: "crossway_troublemakers", name: "Crossway Troublemakers", type: "creature", subtype: "Vampire", cost: "5B", cmc: 6, power: 5, toughness: 4, text: "Vampiros atacantes têm toque mortífero e vínculo com a vida.", qty: 1 },
+            // Feitiços (4)
+            { id: "moment_of_craving", name: "Moment of Craving", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo recebe -2/-2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
+            { id: "offer_immortality", name: "Offer Immortality", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo ganha indestrutível até o fim do turno. Se é Vampiro, coloque um contador +1/+1 nela.", qty: 1 },
+            { id: "heros_downfall", name: "Hero's Downfall", type: "instant", cost: "1BB", cmc: 3, text: "Destrua criatura ou planeswalker alvo.", qty: 1 },
+            { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
+        ]
+    },
+
+    // ==================== ELVES (Verde) ====================
+    elves: {
+        name: "Elves",
+        color: "green",
+        cards: [
+            // Terrenos (7)
+            { id: "elves_forest_1", name: "Forest", type: "land", subtype: "basic", produces: "G", qty: 7 },
+            // Terreno especial (1)
+            { id: "elves_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+            // Criaturas (9)
+            { id: "llanowar_elves", name: "Llanowar Elves", type: "creature", subtype: "Elf Druid", cost: "G", cmc: 1, power: 1, toughness: 1, text: "T: Adicione G.", keywords: ["tap_for_mana"], produces: "G", qty: 1 },
+            { id: "elvish_regrower", name: "Elvish Regrower", type: "creature", subtype: "Elf Druid", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, devolva card alvo de terreno do seu cemitério para sua mão.", qty: 1 },
+            { id: "dwynenss_elite", name: "Dwynen's Elite", type: "creature", subtype: "Elf Warrior", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, se você controla outro Elfo, crie um token 1/1 Elf Warrior.", qty: 1 },
+            { id: "beast_kin_ranger", name: "Beast-Kin Ranger", type: "creature", subtype: "Elf Ranger", cost: "2G", cmc: 3, power: 3, toughness: 3, keywords: ["trample"], qty: 1 },
+            { id: "thornweald_archer", name: "Thornweald Archer", type: "creature", subtype: "Elf Archer", cost: "1G", cmc: 2, power: 1, toughness: 2, keywords: ["reach", "deathtouch"], qty: 1 },
+            { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
+            { id: "tajuru_pathwarden", name: "Tajuru Pathwarden", type: "creature", subtype: "Elf Warrior", cost: "4G", cmc: 5, power: 5, toughness: 4, keywords: ["vigilance", "trample"], qty: 1 },
+            { id: "wildheart_invoker", name: "Wildheart Invoker", type: "creature", subtype: "Elf Shaman", cost: "2GG", cmc: 4, power: 4, toughness: 3, text: "8: Criatura alvo ganha +5/+5 e atropelar até o fim do turno.", qty: 1 },
+            // Feitiços (4)
+            { id: "snakeskin_veil", name: "Snakeskin Veil", type: "instant", cost: "G", cmc: 1, text: "Coloque um contador +1/+1 em criatura alvo que você controla. Ela ganha resistência a magia até o fim do turno.", qty: 1 },
+            { id: "broken_wings", name: "Broken Wings", type: "instant", cost: "2G", cmc: 3, text: "Destrua artefato, encantamento ou criatura com voar alvo.", qty: 1 },
+            { id: "felling_blow", name: "Felling Blow", type: "sorcery", cost: "2G", cmc: 3, text: "Destrua criatura alvo com voar.", qty: 1 },
+            { id: "joraga_invocation", name: "Joraga Invocation", type: "sorcery", cost: "4GG", cmc: 6, text: "Cada criatura que você controla recebe +3/+3 até o fim do turno e deve ser bloqueada neste turno se possível.", qty: 1 }
+        ]
+    }
+};
+
+// Função para expandir cartas com qty > 1
+function expandDeck(deckKey) {
+    const deck = CARD_DATABASE[deckKey];
+    const expandedCards = [];
+
+    deck.cards.forEach(card => {
+        const qty = card.qty || 1;
+        for (let i = 0; i < qty; i++) {
+            expandedCards.push({
+                ...card,
+                instanceId: `${card.id}_${i}`,
+                deckOrigin: deckKey
+            });
+        }
+    });
+
+    return expandedCards;
+}
+
+// Função para criar um deck combinado de 2 jumpstarts
+function createCombinedDeck(deck1Key, deck2Key) {
+    const cards1 = expandDeck(deck1Key);
+    const cards2 = expandDeck(deck2Key);
+    return [...cards1, ...cards2];
+}
+
+// Função para embaralhar
+function shuffleDeck(deck) {
+    const shuffled = [...deck];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Exportar para uso global
+window.CARD_DATABASE = CARD_DATABASE;
+window.expandDeck = expandDeck;
+window.createCombinedDeck = createCombinedDeck;
+window.shuffleDeck = shuffleDeck;
