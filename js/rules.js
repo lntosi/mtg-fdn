@@ -319,7 +319,13 @@ class RulesEngine {
 
             if (blockers.length === 0) {
                 // Dano direto ao jogador
-                const damage = this.getCreaturePower(attacker, true);
+                let damage = this.getCreaturePower(attacker, true);
+
+                // Double Strike: dobra o dano ao jogador (first strike + normal damage)
+                if (attacker.keywords && attacker.keywords.includes('double_strike')) {
+                    damage *= 2;
+                }
+
                 results.damageToPlayers.defender += damage;
 
                 // Lifelink
@@ -328,23 +334,38 @@ class RulesEngine {
                 }
             } else {
                 // Combate com bloqueadores
-                let attackerDamage = this.getCreaturePower(attacker, true);
+                let attackerPower = this.getCreaturePower(attacker, true);
                 let damageToAttacker = 0;
 
-                // First strike / Double strike (simplificado)
+                // Verificar keywords de combate
                 const hasFirstStrike = attacker.keywords &&
                     (attacker.keywords.includes('first_strike') || attacker.keywords.includes('double_strike'));
+                const hasDoubleStrike = attacker.keywords && attacker.keywords.includes('double_strike');
+
+                // Double Strike: dano total é dobrado (first strike + normal)
+                let attackerDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
 
                 blockers.forEach(blocker => {
                     const blockerPower = this.getCreaturePower(blocker);
                     const blockerToughness = this.getCreatureToughness(blocker);
 
-                    damageToAttacker += blockerPower;
+                    // Se atacante tem first strike/double strike e bloqueador não, atacante pode matar antes de receber dano
+                    const blockerHasFirstStrike = blocker.keywords &&
+                        (blocker.keywords.includes('first_strike') || blocker.keywords.includes('double_strike'));
+
+                    // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
+                    if (hasFirstStrike && !blockerHasFirstStrike && attackerPower >= blockerToughness) {
+                        // Bloqueador morre na fase de first strike, não causa dano
+                    } else {
+                        damageToAttacker += blockerPower;
+                    }
 
                     // Deathtouch do atacante
                     const attackerHasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
 
-                    if (attackerHasDeathtouch || attackerDamage >= blockerToughness) {
+                    if (attackerHasDeathtouch && attackerPower > 0) {
+                        results.creaturesDied.push(blocker);
+                    } else if (attackerDamage >= blockerToughness) {
                         results.creaturesDied.push(blocker);
                     }
 
@@ -352,7 +373,10 @@ class RulesEngine {
                     const blockerHasDeathtouch = blocker.keywords && blocker.keywords.includes('deathtouch');
 
                     if (blockerHasDeathtouch && blockerPower > 0) {
-                        results.creaturesDied.push(attacker);
+                        // Só causa dano se não morreu na fase de first strike
+                        if (!hasFirstStrike || blockerHasFirstStrike || attackerPower < blockerToughness) {
+                            results.creaturesDied.push(attacker);
+                        }
                     }
 
                     // Trample: dano excedente vai pro jogador
@@ -372,9 +396,10 @@ class RulesEngine {
                     results.creaturesDied.push(attacker);
                 }
 
-                // Lifelink do atacante
+                // Lifelink do atacante (considera dano total causado incluindo double strike)
                 if (attacker.keywords && attacker.keywords.includes('lifelink')) {
-                    results.lifeGained.attacker += this.getCreaturePower(attacker, true);
+                    let lifelinkDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                    results.lifeGained.attacker += lifelinkDamage;
                 }
             }
         });
