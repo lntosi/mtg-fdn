@@ -189,6 +189,10 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
   - ✅ Testes de feitiços com alvo (Elspeth's Smite, Volley, buffs, etc.)
   - ✅ 97 testes automatizados em 4 arquivos de teste
   - ✅ Guia completo de execução em TESTING.md
+- [x] **Validação de cartas via Scryfall**: Script para validar cartas contra a API do Scryfall
+  - ✅ Verifica existência, mana cost, power/toughness, keywords
+  - ✅ Identifica cartas sem cobertura de testes
+  - ✅ Processo documentado em TESTING.md para adicionar novas cartas
 - [ ] **Modo Debug**: Comandos para acelerar testes manuais
   - Comprar carta específica por nome
   - Setar vida de qualquer jogador
