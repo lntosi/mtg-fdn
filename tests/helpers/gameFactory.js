@@ -136,9 +136,35 @@ const CREATURES = {
         id: 'frenzied_goblin',
         name: 'Frenzied Goblin',
         subtype: 'Goblin Berserker',
-        power: 2,
+        power: 1,
         toughness: 1,
         keywords: ['haste']
+    }),
+
+    dropkickBomber: () => createCreature({
+        id: 'dropkick_bomber',
+        name: 'Dropkick Bomber',
+        subtype: 'Goblin Warrior',
+        power: 2,
+        toughness: 3,
+        keywords: ['goblin_lord']
+    }),
+
+    ragingRedcap: () => createCreature({
+        id: 'raging_redcap',
+        name: 'Raging Redcap',
+        subtype: 'Goblin Knight',
+        power: 1,
+        toughness: 2,
+        keywords: ['double_strike']
+    }),
+
+    swabGoblin: () => createCreature({
+        id: 'swab_goblin',
+        name: 'Swab Goblin',
+        subtype: 'Goblin Pirate',
+        power: 2,
+        toughness: 2
     })
 };
 

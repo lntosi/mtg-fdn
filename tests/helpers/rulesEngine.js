@@ -8,10 +8,47 @@ class TestRulesEngine {
         this.game = gameState;
     }
 
+    // Calcula bônus de lords e outras fontes estáticas
+    getCreatureBonuses(creature) {
+        const bonuses = { power: 0, toughness: 0 };
+
+        if (!this.game || !this.game.player) return bonuses;
+
+        // Encontrar o controlador da criatura
+        const isPlayerCreature = this.game.player.battlefield &&
+            this.game.player.battlefield.includes(creature);
+        const controller = isPlayerCreature ? this.game.player : this.game.opponent;
+
+        if (!controller || !controller.battlefield) return bonuses;
+
+        // Verificar lords no campo de batalha do controlador
+        controller.battlefield.forEach(card => {
+            // Elvish Archdruid: outros Elfos têm +1/+1
+            if (card.id === 'elvish_archdruid' && card !== creature &&
+                creature.subtype && creature.subtype.includes('Elf')) {
+                bonuses.power += 1;
+                bonuses.toughness += 1;
+            }
+
+            // Dropkick Bomber: outros Goblins têm +1/+1
+            if (card.id === 'dropkick_bomber' && card !== creature &&
+                creature.subtype && creature.subtype.includes('Goblin')) {
+                bonuses.power += 1;
+                bonuses.toughness += 1;
+            }
+        });
+
+        return bonuses;
+    }
+
     // Calcula o poder efetivo de uma criatura
     getCreaturePower(creature) {
         let power = creature.power || 0;
         power += creature.powerModifier || 0;
+
+        // Bônus de lords
+        const bonuses = this.getCreatureBonuses(creature);
+        power += bonuses.power;
 
         // Contadores +1/+1
         if (creature.counters && creature.counters['+1/+1']) {
@@ -30,6 +67,10 @@ class TestRulesEngine {
     getCreatureToughness(creature) {
         let toughness = creature.toughness || 0;
         toughness += creature.toughnessModifier || 0;
+
+        // Bônus de lords
+        const bonuses = this.getCreatureBonuses(creature);
+        toughness += bonuses.toughness;
 
         // Contadores +1/+1
         if (creature.counters && creature.counters['+1/+1']) {

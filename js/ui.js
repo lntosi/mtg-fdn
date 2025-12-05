@@ -13,7 +13,8 @@ const KEYWORD_DESCRIPTIONS = {
     reach: 'Alcance - Esta criatura pode bloquear criaturas com voar.',
     menace: 'Ameaçar - Esta criatura só pode ser bloqueada por duas ou mais criaturas.',
     tap_for_mana: 'Produz Mana - Vire esta permanente para adicionar mana à sua reserva.',
-    etb_draw: 'Comprar ao Entrar - Quando esta criatura entra no campo de batalha, compre uma carta.'
+    etb_draw: 'Comprar ao Entrar - Quando esta criatura entra no campo de batalha, compre uma carta.',
+    goblin_lord: 'Senhor dos Goblins - Outros Goblins que você controla recebem +1/+1.'
 };
 
 class GameUI {

@@ -43,7 +43,7 @@ const CARD_DATABASE = {
             { id: "raging_redcap", name: "Raging Redcap", type: "creature", subtype: "Goblin Knight", cost: "2R", cmc: 3, power: 1, toughness: 2, keywords: ["double_strike"], qty: 1 },
             { id: "goblin_smuggler", name: "Goblin Smuggler", type: "creature", subtype: "Goblin Rogue", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["haste"], text: "T: Criatura alvo com poder 2 ou menos não pode ser bloqueada neste turno.", qty: 1 },
             { id: "battle_rattle_shaman", name: "Battle-Rattle Shaman", type: "creature", subtype: "Goblin Shaman", cost: "3R", cmc: 4, power: 2, toughness: 2, text: "No início do combate, criatura alvo ganha +2/+0 até o fim do turno.", qty: 1 },
-            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin", cost: "3R", cmc: 4, power: 3, toughness: 3, keywords: ["flying"], text: "Quando entra, causa 2 de dano a criatura ou planeswalker alvo.", qty: 1 },
+            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin Warrior", cost: "2R", cmc: 3, power: 2, toughness: 3, keywords: ["goblin_lord"], text: "Outros Goblins que você controla recebem +1/+1.", qty: 1 },
             // Feitiços (5)
             { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
             { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },

@@ -440,6 +440,14 @@ class RulesEngine {
                 bonuses.sources.push({ name: 'Elvish Archdruid', power: 1, toughness: 1 });
             }
 
+            // Dropkick Bomber: outros Goblins têm +1/+1
+            if (card.id === 'dropkick_bomber' && card !== creature &&
+                creature.subtype && creature.subtype.includes('Goblin')) {
+                bonuses.power += 1;
+                bonuses.toughness += 1;
+                bonuses.sources.push({ name: 'Dropkick Bomber', power: 1, toughness: 1 });
+            }
+
             // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
             // (isso é tratado em getCreatureKeywords)
         });
