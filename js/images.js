@@ -92,7 +92,6 @@ class ImageManager {
         // Remover sufixos como "_1", "_2" usados para identificação interna
         let normalized = name
             .replace(/_\d+$/, '')
-            .replace(/ Token$/, '')
             .trim();
 
         // Mapeamento de cartas com nomes customizados para cartas reais do Scryfall
@@ -101,6 +100,87 @@ class ImageManager {
         };
 
         return cardNameMapping[normalized] || normalized;
+    }
+
+    // Verifica se o nome é de um token
+    isToken(cardName) {
+        return cardName.toLowerCase().includes('token');
+    }
+
+    // Busca imagem de token usando a API de busca do Scryfall
+    async getTokenImageUrl(tokenName, size = 'normal') {
+        const cacheKey = `token_${tokenName}_${size}`;
+        if (this.cache.has(cacheKey)) {
+            return this.cache.get(cacheKey);
+        }
+
+        if (this.loadingPromises.has(cacheKey)) {
+            return this.loadingPromises.get(cacheKey);
+        }
+
+        const loadPromise = this.fetchTokenImage(tokenName, size);
+        this.loadingPromises.set(cacheKey, loadPromise);
+
+        try {
+            const url = await loadPromise;
+            this.cache.set(cacheKey, url);
+            return url;
+        } finally {
+            this.loadingPromises.delete(cacheKey);
+        }
+    }
+
+    async fetchTokenImage(tokenName, size) {
+        // Respeitar rate limit
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequest;
+        if (timeSinceLastRequest < this.requestDelay) {
+            await this.delay(this.requestDelay - timeSinceLastRequest);
+        }
+        this.lastRequest = Date.now();
+
+        try {
+            // Extrair o tipo do token (ex: "Goblin Token" -> "Goblin")
+            const tokenType = tokenName.replace(/ Token$/i, '').trim();
+
+            // Buscar tokens pela API de busca do Scryfall
+            // t:token busca apenas tokens, e buscamos pelo tipo da criatura
+            const searchQuery = encodeURIComponent(`${tokenType} t:token`);
+            const response = await fetch(
+                `https://api.scryfall.com/cards/search?q=${searchQuery}&order=released&dir=desc`,
+                { headers: { 'Accept': 'application/json' } }
+            );
+
+            if (!response.ok) {
+                console.log(`Token não encontrado para: ${tokenName}`);
+                return null;
+            }
+
+            const data = await response.json();
+
+            // Procurar o token mais apropriado (preferir 1/1 simples)
+            if (data.data && data.data.length > 0) {
+                // Tentar encontrar um token básico 1/1 primeiro
+                const basicToken = data.data.find(t =>
+                    t.power === '1' && t.toughness === '1' &&
+                    (!t.oracle_text || t.oracle_text === '')
+                ) || data.data[0];
+
+                if (basicToken.image_uris && basicToken.image_uris[size]) {
+                    return basicToken.image_uris[size];
+                }
+
+                // Para tokens de duas faces
+                if (basicToken.card_faces && basicToken.card_faces[0].image_uris) {
+                    return basicToken.card_faces[0].image_uris[size];
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.log(`Erro ao buscar token ${tokenName}:`, error);
+            return null;
+        }
     }
 
     delay(ms) {

@@ -64,39 +64,48 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    background:
-        linear-gradient(135deg, #2c1810 0%, #1a0f0a 50%, #2c1810 100%);
-    border-radius: 5px;
-    border: 2px solid #5a3d2b;
+    background: #704214;
+    border-radius: 4.5% / 3.2%;
+    border: none;
     box-shadow:
-        2px 2px 0 #1a0f0a,
-        4px 4px 0 #2c1810,
-        6px 6px 0 #1a0f0a,
+        2px 2px 0 #5a3d2b,
+        4px 4px 0 #704214,
+        6px 6px 0 #5a3d2b,
         0 0 15px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
 }
 
+/* Padrão oval do card back no grimório */
 .library-stack::before {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    right: 10%;
+    bottom: 10%;
+    background:
+        radial-gradient(ellipse at center, #8b5a2b 0%, #654321 40%, #3d2314 100%);
+    border-radius: 50% / 45%;
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Círculo central com as 5 cores no grimório */
+.library-stack::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
-    background: radial-gradient(ellipse, #c9a227 0%, #8b6914 50%, transparent 70%);
-    opacity: 0.6;
-}
-
-.library-stack::after {
-    content: 'MTG';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-weight: bold;
-    color: #c9a227;
-    font-size: 0.9em;
-    text-shadow: 0 0 10px rgba(200, 150, 50, 0.8);
+    width: 50%;
+    height: 50%;
+    background:
+        radial-gradient(circle at 50% 10%, #f4d03f 10%, transparent 12%),
+        radial-gradient(circle at 85% 40%, #3498db 10%, transparent 12%),
+        radial-gradient(circle at 75% 85%, #2c3e50 10%, transparent 12%),
+        radial-gradient(circle at 25% 85%, #c0392b 10%, transparent 12%),
+        radial-gradient(circle at 15% 40%, #27ae60 10%, transparent 12%),
+        radial-gradient(ellipse at center, rgba(180, 120, 60, 0.3) 25%, transparent 55%);
+    border-radius: 50%;
 }
 
 .library-count {
@@ -117,10 +126,10 @@ body {
 
 .library:hover .library-stack {
     box-shadow:
-        2px 2px 0 #1a0f0a,
-        4px 4px 0 #2c1810,
-        6px 6px 0 #1a0f0a,
-        0 0 25px rgba(200, 150, 50, 0.4);
+        2px 2px 0 #5a3d2b,
+        4px 4px 0 #704214,
+        6px 6px 0 #5a3d2b,
+        0 0 25px rgba(200, 150, 50, 0.5);
 }
 
 .graveyard {
@@ -959,21 +968,65 @@ body {
     flex: 1;
 }
 
-/* Carta virada (mão do oponente) */
+/* Carta virada (mão do oponente) - Estilo do Card Back oficial do MTG */
 .card-back {
     width: 100%;
     height: 100%;
-    background:
-        linear-gradient(135deg, #2c1810 0%, #1a0f0a 50%, #2c1810 100%),
-        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(100,50,0,0.1) 10px, rgba(100,50,0,0.1) 20px);
+    background: #704214;
+    border-radius: 4.5% / 3.2%;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Padrão de textura do card back */
+.card-back::before {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: 8%;
+    right: 8%;
+    bottom: 8%;
+    background:
+        radial-gradient(ellipse at center, #8b5a2b 0%, #654321 40%, #3d2314 100%);
+    border-radius: 50% / 45%;
+    box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.5),
+        0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Círculo central com os símbolos das 5 cores */
+.card-back::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 55%;
+    height: 55%;
+    background:
+        radial-gradient(circle at 50% 10%, #f4d03f 8%, transparent 10%),
+        radial-gradient(circle at 85% 40%, #3498db 8%, transparent 10%),
+        radial-gradient(circle at 75% 85%, #2c3e50 8%, transparent 10%),
+        radial-gradient(circle at 25% 85%, #c0392b 8%, transparent 10%),
+        radial-gradient(circle at 15% 40%, #27ae60 8%, transparent 10%),
+        radial-gradient(ellipse at center, rgba(180, 120, 60, 0.4) 30%, transparent 60%);
+    border-radius: 50%;
+}
+
+/* Texto MTG no centro */
+.card-back-text {
+    position: relative;
+    z-index: 2;
     font-weight: bold;
+    font-size: 0.9em;
     color: #c9a227;
-    font-size: 1em;
-    border-radius: 5px;
-    text-shadow: 0 0 10px rgba(200, 150, 50, 0.5);
+    text-shadow:
+        0 0 10px rgba(200, 150, 50, 0.8),
+        1px 1px 2px rgba(0, 0, 0, 0.8);
+    letter-spacing: 2px;
 }
 
 /* === Terrenos menores no battlefield === */
@@ -1750,6 +1803,84 @@ body {
     background: linear-gradient(135deg, #f39c12, #e67e22);
     transform: scale(1.05);
     box-shadow: 0 0 25px rgba(243, 156, 18, 0.6);
+}
+
+/* === Modal de London Mulligan - Selecionar cartas para o fundo === */
+.mulligan-bottom-content {
+    max-width: 750px;
+}
+
+.mulligan-bottom-hand {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 200px;
+}
+
+.mulligan-bottom-hand .card {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mulligan-bottom-hand .card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.mulligan-bottom-hand .card.selected-bottom {
+    border: 3px solid #e74c3c;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.8);
+    transform: translateY(-15px);
+}
+
+.mulligan-bottom-hand .card.selected-bottom::before {
+    content: attr(data-bottom-order);
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e74c3c;
+    color: white;
+    font-weight: bold;
+    font-size: 1em;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.btn-confirm-bottom {
+    padding: 14px 40px;
+    font-size: 1.1em;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
+}
+
+.btn-confirm-bottom:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-confirm-bottom:not(:disabled):hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(46, 204, 113, 0.6);
 }
 
 /* === Modal de Fim de Jogo === */

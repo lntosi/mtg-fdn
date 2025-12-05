@@ -237,15 +237,11 @@ class GameState {
             // Jogador decidiu manter a mão
             const cardsToBottom = this.mulliganCount.player;
             if (cardsToBottom > 0) {
-                this.ui.log(`Você manteve a mão. Coloque ${cardsToBottom} carta(s) no fundo do grimório.`);
-                // Simplificado: colocar cartas aleatórias no fundo
-                for (let i = 0; i < cardsToBottom && this.player.hand.length > 0; i++) {
-                    const randomIndex = Math.floor(Math.random() * this.player.hand.length);
-                    const card = this.player.hand.splice(randomIndex, 1)[0];
-                    this.player.library.push(card);
-                }
+                // London Mulligan: jogador escolhe quais cartas vão para o fundo
+                this.ui.showMulliganBottomPrompt(cardsToBottom);
+            } else {
+                this.finishMulligan();
             }
-            this.finishMulligan();
         } else {
             // Jogador quer mulligan
             this.mulliganCount.player++;
@@ -270,6 +266,23 @@ class GameState {
             this.ui.log(`Mulligan ${this.mulliganCount.player}! Comprou 7 cartas, manterá ${newHandSize}.`);
             this.ui.showMulliganPrompt();
         }
+    }
+
+    // Colocar cartas selecionadas no fundo do grimório (London Mulligan)
+    putCardsOnBottom(cardInstances) {
+        const cardsToBottom = this.mulliganCount.player;
+        this.ui.log(`Você colocou ${cardsToBottom} carta(s) no fundo do grimório.`);
+
+        // Mover cartas selecionadas para o fundo do grimório na ordem selecionada
+        cardInstances.forEach(instanceId => {
+            const cardIndex = this.player.hand.findIndex(c => c.instanceId === instanceId);
+            if (cardIndex !== -1) {
+                const card = this.player.hand.splice(cardIndex, 1)[0];
+                this.player.library.push(card);
+            }
+        });
+
+        this.finishMulligan();
     }
 
     finishMulligan() {

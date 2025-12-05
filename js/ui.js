@@ -393,14 +393,20 @@ class GameUI {
     }
 
     async loadPreviewImage(card, element) {
-        if (card.name.includes('Token')) {
-            element.style.backgroundImage = '';
-            return;
-        }
         try {
-            const imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            let imageUrl;
+
+            // Verificar se é um token e usar API de busca de tokens
+            if (window.imageManager.isToken(card.name)) {
+                imageUrl = await window.imageManager.getTokenImageUrl(card.name, 'normal');
+            } else {
+                imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            }
+
             if (imageUrl) {
                 element.style.backgroundImage = `url('${imageUrl}')`;
+            } else {
+                element.style.backgroundImage = '';
             }
         } catch (e) {
             element.style.backgroundImage = '';
@@ -788,8 +794,8 @@ class GameUI {
         }
 
         if (!showFace) {
-            // Carta virada (mão do oponente)
-            cardEl.innerHTML = '<div class="card-back">MTG</div>';
+            // Carta virada (mão do oponente) - estilo card back oficial MTG
+            cardEl.innerHTML = '<div class="card-back"><span class="card-back-text">MTG</span></div>';
             return cardEl;
         }
 
@@ -891,12 +897,17 @@ class GameUI {
     }
 
     async loadCardImage(card, cardEl) {
-        // Não carregar imagem para tokens
-        if (card.name.includes('Token')) return;
-
         try {
-            // Usar 'normal' para melhor compatibilidade (488x680px, proporção correta)
-            const imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            let imageUrl;
+
+            // Verificar se é um token e usar API de busca de tokens
+            if (window.imageManager.isToken(card.name)) {
+                imageUrl = await window.imageManager.getTokenImageUrl(card.name, 'normal');
+            } else {
+                // Usar 'normal' para melhor compatibilidade (488x680px, proporção correta)
+                imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            }
+
             if (imageUrl) {
                 // Usar background shorthand para garantir que todas as propriedades são aplicadas
                 cardEl.style.background = `url('${imageUrl}') center/contain no-repeat #000`;
@@ -1063,15 +1074,20 @@ class GameUI {
     }
 
     async loadGraveyardCardImage(card, cardEl) {
-        if (card.name.includes('Token')) {
-            cardEl.textContent = card.name.split(' ')[0];
-            return;
-        }
-
         try {
-            const imageUrl = await window.imageManager.getCardImageUrl(card.name, 'small');
+            let imageUrl;
+
+            // Verificar se é um token e usar API de busca de tokens
+            if (window.imageManager.isToken(card.name)) {
+                imageUrl = await window.imageManager.getTokenImageUrl(card.name, 'small');
+            } else {
+                imageUrl = await window.imageManager.getCardImageUrl(card.name, 'small');
+            }
+
             if (imageUrl) {
                 cardEl.style.background = `url('${imageUrl}') center/contain no-repeat`;
+            } else {
+                cardEl.textContent = card.name.substring(0, 3);
             }
         } catch (e) {
             cardEl.textContent = card.name.substring(0, 3);
@@ -1531,6 +1547,86 @@ class GameUI {
             btnMulligan.textContent = `Mulligan (${newHandSize - 1} cartas)`;
         }
 
+        modal.classList.remove('hidden');
+    }
+
+    // Mostrar modal para selecionar cartas para ir para o fundo (London Mulligan)
+    showMulliganBottomPrompt(cardsToBottom) {
+        const modal = document.getElementById('mulligan-bottom-modal');
+        const hand = document.getElementById('mulligan-bottom-hand');
+        const text = document.getElementById('mulligan-bottom-text');
+        const btnConfirm = document.getElementById('btn-confirm-bottom');
+
+        if (!modal) return;
+
+        text.textContent = `Selecione ${cardsToBottom} carta(s) para colocar no fundo do grimório:`;
+
+        // Rastrear cartas selecionadas (na ordem de seleção)
+        let selectedCards = [];
+
+        // Função para atualizar estado do botão
+        const updateButton = () => {
+            const remaining = cardsToBottom - selectedCards.length;
+            if (remaining === 0) {
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = `Confirmar (${selectedCards.length}/${cardsToBottom})`;
+            } else {
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = `Selecione mais ${remaining} carta(s)`;
+            }
+        };
+
+        // Renderizar mão atual
+        hand.innerHTML = '';
+        this.game.player.hand.forEach(card => {
+            const cardEl = this.createCardElement(card, true);
+
+            // Adicionar evento de clique para selecionar/deselecionar
+            cardEl.addEventListener('click', () => {
+                const instanceId = card.instanceId;
+                const index = selectedCards.indexOf(instanceId);
+
+                if (index === -1) {
+                    // Selecionar carta (se ainda não atingiu o limite)
+                    if (selectedCards.length < cardsToBottom) {
+                        selectedCards.push(instanceId);
+                        cardEl.classList.add('selected-bottom');
+                        cardEl.dataset.bottomOrder = selectedCards.length;
+                    }
+                } else {
+                    // Deselecionar carta
+                    selectedCards.splice(index, 1);
+                    cardEl.classList.remove('selected-bottom');
+                    delete cardEl.dataset.bottomOrder;
+
+                    // Atualizar números das outras cartas selecionadas
+                    selectedCards.forEach((id, i) => {
+                        const otherEl = hand.querySelector(`[data-instance-id="${id}"]`);
+                        if (otherEl) {
+                            otherEl.dataset.bottomOrder = i + 1;
+                        }
+                    });
+                }
+
+                updateButton();
+            });
+
+            // Preview da carta
+            cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+            cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+
+            hand.appendChild(cardEl);
+        });
+
+        // Botão de confirmação
+        btnConfirm.onclick = () => {
+            if (selectedCards.length === cardsToBottom) {
+                modal.classList.add('hidden');
+                this.game.putCardsOnBottom(selectedCards);
+            }
+        };
+
+        updateButton();
         modal.classList.remove('hidden');
     }
 
