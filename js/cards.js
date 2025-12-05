@@ -16,13 +16,13 @@ const CARD_DATABASE = {
             { id: "leonin_vanguard", name: "Leonin Vanguard", type: "creature", subtype: "Cat Soldier", cost: "W", cmc: 1, power: 1, toughness: 1, text: "Quando atacar, se você controla outra criatura, ganha 1 vida.", keywords: ["lifelink_conditional"], qty: 1 },
             { id: "helpful_hunter", name: "Helpful Hunter", type: "creature", subtype: "Cat", cost: "1W", cmc: 2, power: 1, toughness: 1, text: "Quando entra, compre uma carta.", keywords: ["etb_draw"], qty: 1 },
             { id: "leonin_skyhunter", name: "Leonin Skyhunter", type: "creature", subtype: "Cat Knight", cost: "WW", cmc: 2, power: 2, toughness: 2, keywords: ["flying"], qty: 1 },
-            { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "2W", cmc: 3, power: 2, toughness: 3, text: "Outras criaturas que você controla têm +1/+0.", qty: 1 },
+            { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "4W", cmc: 5, power: 4, toughness: 4, text: "3W: Coloque um contador +1/+1 em outra criatura atacante alvo. Se ela é Cat, ganha iniciativa até o fim do turno.", qty: 1 },
             { id: "prideful_parent", name: "Prideful Parent", type: "creature", subtype: "Cat", cost: "2W", cmc: 3, power: 2, toughness: 2, keywords: ["vigilance"], text: "Quando entra, crie um token 1/1 Cat.", qty: 1 },
-            { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 4, keywords: ["lifelink"], qty: 1 },
+            { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 3, keywords: ["lifelink"], text: "Quando entra, coloque um contador +1/+1 em cada uma de até duas outras criaturas alvo que você controla.", qty: 1 },
             { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
             // Feitiços e Encantamentos (3)
             { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
-            { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
+            { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
             { id: "elspeths_smite", name: "Elspeth's Smite", type: "instant", cost: "W", cmc: 1, text: "Exile criatura atacante ou bloqueadora alvo.", qty: 1 },
             { id: "angelic_edict", name: "Angelic Edict", type: "sorcery", cost: "4W", cmc: 5, text: "Exile criatura ou encantamento alvo.", qty: 1 }
         ]
@@ -47,11 +47,11 @@ const CARD_DATABASE = {
             // Feitiços (5)
             { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
             { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },
-            { id: "volley", name: "Volley", type: "instant", cost: "1R", cmc: 2, text: "Volley causa 3 de dano a criatura alvo com voar.", qty: 1 },
+            { id: "volley_veteran", name: "Volley Veteran", type: "creature", subtype: "Goblin Warrior", cost: "3R", cmc: 4, power: 4, toughness: 2, text: "Quando entra, causa dano a criatura alvo que um oponente controla igual ao número de Goblins que você controla.", qty: 1 },
             { id: "incinerating_blast", name: "Incinerating Blast", type: "sorcery", cost: "4R", cmc: 5, text: "Causa 5 de dano a criatura ou planeswalker alvo.", qty: 1 },
             // Artefato (1)
             { id: "goblin_oriflamme", name: "Goblin Oriflamme", type: "enchantment", cost: "1R", cmc: 2, text: "Criaturas atacantes que você controla têm +1/+0.", qty: 1 },
-            { id: "veteran_goblin_firebomb", name: "Veteran's Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, text: "1, T, Sacrifique: Causa 2 de dano a qualquer alvo.", qty: 1 }
+            { id: "goblin_firebomb", name: "Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, keywords: ["flash"], text: "Lampejo. 7, T, Sacrifique este artefato: Destrua permanente alvo.", qty: 1 }
         ]
     },
 
@@ -71,13 +71,13 @@ const CARD_DATABASE = {
             { id: "highborn_vampire", name: "Highborn Vampire", type: "creature", subtype: "Vampire", cost: "3B", cmc: 4, power: 4, toughness: 3, qty: 1 },
             { id: "vampire_spawn", name: "Vampire Spawn", type: "creature", subtype: "Vampire", cost: "2B", cmc: 3, power: 2, toughness: 3, text: "Quando entra, cada oponente perde 2 vidas e você ganha 2 vidas.", qty: 1 },
             { id: "bloodtithe_collector", name: "Bloodtithe Collector", type: "creature", subtype: "Vampire", cost: "4B", cmc: 5, power: 3, toughness: 4, keywords: ["flying"], text: "Quando entra, se um oponente perdeu vida neste turno, cada oponente descarta uma carta.", qty: 1 },
-            { id: "vengeful_bloodwitch", name: "Vengeful Bloodwitch", type: "creature", subtype: "Vampire Warlock", cost: "3B", cmc: 4, power: 3, toughness: 3, keywords: ["flying", "deathtouch"], text: "Quando um oponente perde vida, você ganha essa quantidade de vida.", qty: 1 },
-            { id: "crossway_troublemakers", name: "Crossway Troublemakers", type: "creature", subtype: "Vampire", cost: "5B", cmc: 6, power: 5, toughness: 4, text: "Vampiros atacantes têm toque mortífero e vínculo com a vida.", qty: 1 },
+            { id: "vengeful_bloodwitch", name: "Vengeful Bloodwitch", type: "creature", subtype: "Vampire Warlock", cost: "1B", cmc: 2, power: 1, toughness: 1, text: "Quando esta criatura ou outra criatura que você controla morre, oponente alvo perde 1 vida e você ganha 1 vida.", qty: 1 },
+            { id: "crossway_troublemakers", name: "Crossway Troublemakers", type: "creature", subtype: "Vampire", cost: "5B", cmc: 6, power: 5, toughness: 5, text: "Vampiros atacantes têm toque mortífero e vínculo com a vida. Quando um Vampiro que você controla morre, você pode pagar 2 vidas. Se fizer isso, compre uma carta.", qty: 1 },
             // Feitiços (4)
             { id: "moment_of_craving", name: "Moment of Craving", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo recebe -2/-2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
             { id: "offer_immortality", name: "Offer Immortality", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo ganha indestrutível até o fim do turno. Se é Vampiro, coloque um contador +1/+1 nela.", qty: 1 },
             { id: "heros_downfall", name: "Hero's Downfall", type: "instant", cost: "1BB", cmc: 3, text: "Destrua criatura ou planeswalker alvo.", qty: 1 },
-            { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
+            { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
         ]
     },
 
@@ -92,10 +92,10 @@ const CARD_DATABASE = {
             { id: "elves_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
             // Criaturas (9)
             { id: "llanowar_elves", name: "Llanowar Elves", type: "creature", subtype: "Elf Druid", cost: "G", cmc: 1, power: 1, toughness: 1, text: "T: Adicione G.", keywords: ["tap_for_mana"], produces: "G", qty: 1 },
-            { id: "elvish_regrower", name: "Elvish Regrower", type: "creature", subtype: "Elf Druid", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, devolva card alvo de terreno do seu cemitério para sua mão.", qty: 1 },
+            { id: "elvish_regrower", name: "Elvish Regrower", type: "creature", subtype: "Elf Druid", cost: "2GG", cmc: 4, power: 4, toughness: 3, text: "Quando entra, devolva card de permanente alvo do seu cemitério para sua mão.", qty: 1 },
             { id: "dwynenss_elite", name: "Dwynen's Elite", type: "creature", subtype: "Elf Warrior", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, se você controla outro Elfo, crie um token 1/1 Elf Warrior.", qty: 1 },
             { id: "beast_kin_ranger", name: "Beast-Kin Ranger", type: "creature", subtype: "Elf Ranger", cost: "2G", cmc: 3, power: 3, toughness: 3, keywords: ["trample"], text: "Atropelar. Quando outra criatura entra em campo sob seu controle, esta criatura ganha +1/+0 até o fim do turno.", qty: 1 },
-            { id: "thornweald_archer", name: "Thornweald Archer", type: "creature", subtype: "Elf Archer", cost: "1G", cmc: 2, power: 1, toughness: 2, keywords: ["reach", "deathtouch"], qty: 1 },
+            { id: "thornweald_archer", name: "Thornweald Archer", type: "creature", subtype: "Elf Archer", cost: "1G", cmc: 2, power: 2, toughness: 1, keywords: ["reach", "deathtouch"], qty: 1 },
             { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
             { id: "tajuru_pathwarden", name: "Tajuru Pathwarden", type: "creature", subtype: "Elf Warrior", cost: "4G", cmc: 5, power: 5, toughness: 4, keywords: ["vigilance", "trample"], qty: 1 },
             { id: "wildheart_invoker", name: "Wildheart Invoker", type: "creature", subtype: "Elf Shaman", cost: "2GG", cmc: 4, power: 4, toughness: 3, text: "8: Criatura alvo ganha +5/+5 e atropelar até o fim do turno.", qty: 1 },
