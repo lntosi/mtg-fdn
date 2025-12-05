@@ -1385,6 +1385,33 @@ body {
     font-size: 0.9em;
 }
 
+.log-panel-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.btn-font-size {
+    background: rgba(30, 15, 40, 0.95);
+    border: 1px solid rgba(180, 100, 180, 0.5);
+    color: #c0a0c0;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.75em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-font-size:hover {
+    background: rgba(180, 100, 180, 0.5);
+    color: #fff;
+}
+
 .btn-toggle-log {
     background: rgba(30, 15, 40, 0.95);
     border: 1px solid rgba(180, 100, 180, 0.5);
@@ -1446,7 +1473,15 @@ body {
     padding: 10px 15px;
     font-size: 0.8em;
     color: #a080a0;
+    transition: font-size 0.2s ease;
 }
+
+/* Tamanhos de fonte do histórico */
+.log-panel-content.font-xs { font-size: 0.65em; }
+.log-panel-content.font-sm { font-size: 0.75em; }
+.log-panel-content.font-md { font-size: 0.85em; }
+.log-panel-content.font-lg { font-size: 0.95em; }
+.log-panel-content.font-xl { font-size: 1.1em; }
 
 .log-panel-content .log-entry {
     padding: 6px 0;
@@ -2413,4 +2448,153 @@ body {
 #starting-life option {
     background: #2d1b3d;
     color: #fff;
+}
+
+/* === Responsividade ao Zoom do Navegador === */
+
+/* Usar unidades relativas para melhor adaptação ao zoom */
+:root {
+    --card-width: clamp(80px, 10vw, 135px);
+    --card-height: calc(var(--card-width) * 1.4);
+    --land-width: clamp(50px, 6vw, 84px);
+    --land-height: calc(var(--land-width) * 1.4);
+    --font-base: clamp(12px, 1.2vw, 16px);
+    --spacing-sm: clamp(4px, 0.5vw, 8px);
+    --spacing-md: clamp(8px, 1vw, 15px);
+}
+
+/* Aplicar font-size base responsivo */
+html {
+    font-size: var(--font-base);
+}
+
+/* Container adapta ao zoom automaticamente */
+@media screen and (min-resolution: 1dppx) {
+    #game-container {
+        padding: var(--spacing-md);
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Zoom alto (150%+) - reduzir elementos */
+@media screen and (max-width: 1000px) and (min-resolution: 1.5dppx),
+       screen and (max-width: 800px) {
+    :root {
+        --card-width: clamp(60px, 8vw, 100px);
+        --land-width: clamp(40px, 5vw, 65px);
+    }
+
+    .card {
+        width: var(--card-width) !important;
+        height: var(--card-height) !important;
+    }
+
+    .lands .card {
+        width: var(--land-width) !important;
+        height: var(--land-height) !important;
+    }
+
+    .log-panel {
+        width: clamp(150px, 20vw, 250px);
+    }
+
+    #game-container {
+        margin-right: clamp(150px, 20vw, 250px);
+    }
+
+    #game-container.log-collapsed {
+        margin-right: 0;
+    }
+
+    .player-info {
+        padding: var(--spacing-sm);
+    }
+
+    .life-display {
+        font-size: clamp(1.2em, 3vw, 1.8em);
+        min-width: clamp(40px, 6vw, 60px);
+    }
+
+    #action-buttons button {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: clamp(0.7em, 1.5vw, 0.9em);
+    }
+}
+
+/* Zoom muito alto (200%+) - layout compacto */
+@media screen and (max-width: 600px) {
+    :root {
+        --card-width: 70px;
+        --land-width: 45px;
+    }
+
+    .log-panel {
+        width: 150px;
+    }
+
+    #game-container {
+        margin-right: 150px;
+        padding: 5px;
+        gap: 4px;
+    }
+
+    .player-info {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .mana-display {
+        font-size: 0.8em;
+    }
+
+    .library-zone {
+        gap: 8px;
+    }
+
+    .library, .graveyard {
+        width: 50px;
+        height: 70px;
+    }
+
+    #player-hand, #opponent-hand {
+        min-height: auto;
+    }
+
+    .card-preview {
+        display: none;
+    }
+}
+
+/* Garantir que elementos flexíveis não quebrem com zoom */
+.player-area, #player-area, #opponent-area {
+    min-width: 0; /* Permite que flex shrink funcione */
+}
+
+.battlefield {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+/* Suavizar transições durante redimensionamento */
+.card, .log-panel, #game-container, .player-info {
+    transition: all 0.2s ease;
+}
+
+/* Evitar overflow com zoom alto */
+#player-hand, #opponent-hand {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 100, 180, 0.5) transparent;
+}
+
+#player-hand::-webkit-scrollbar,
+#opponent-hand::-webkit-scrollbar {
+    height: 6px;
+}
+
+#player-hand::-webkit-scrollbar-thumb,
+#opponent-hand::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.5);
+    border-radius: 3px;
 }

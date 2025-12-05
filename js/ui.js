@@ -163,6 +163,8 @@ class GameUI {
     initLogPanel() {
         const btnToggle = document.getElementById('btn-toggle-log');
         const btnShowLog = document.getElementById('btn-show-log');
+        const btnFontIncrease = document.getElementById('btn-font-increase');
+        const btnFontDecrease = document.getElementById('btn-font-decrease');
 
         if (btnToggle) {
             btnToggle.addEventListener('click', () => this.toggleLogPanel());
@@ -171,6 +173,57 @@ class GameUI {
         if (btnShowLog) {
             btnShowLog.addEventListener('click', () => this.showLogPanel());
         }
+
+        // Controles de tamanho de fonte do histórico
+        if (btnFontIncrease) {
+            btnFontIncrease.addEventListener('click', () => this.changeLogFontSize(1));
+        }
+
+        if (btnFontDecrease) {
+            btnFontDecrease.addEventListener('click', () => this.changeLogFontSize(-1));
+        }
+
+        // Carregar tamanho de fonte salvo
+        this.loadLogFontSize();
+    }
+
+    // Tamanhos de fonte disponíveis
+    logFontSizes = ['font-xs', 'font-sm', 'font-md', 'font-lg', 'font-xl'];
+    currentLogFontIndex = 2; // Começa em 'font-md' (índice 2)
+
+    loadLogFontSize() {
+        const savedIndex = localStorage.getItem('mtg_log_font_size');
+        if (savedIndex !== null) {
+            this.currentLogFontIndex = parseInt(savedIndex, 10);
+            this.applyLogFontSize();
+        }
+    }
+
+    changeLogFontSize(direction) {
+        const newIndex = this.currentLogFontIndex + direction;
+
+        // Verificar limites
+        if (newIndex < 0 || newIndex >= this.logFontSizes.length) {
+            return;
+        }
+
+        this.currentLogFontIndex = newIndex;
+        this.applyLogFontSize();
+
+        // Salvar preferência
+        localStorage.setItem('mtg_log_font_size', this.currentLogFontIndex.toString());
+    }
+
+    applyLogFontSize() {
+        if (!this.logPanelContent) return;
+
+        // Remover todas as classes de tamanho
+        this.logFontSizes.forEach(size => {
+            this.logPanelContent.classList.remove(size);
+        });
+
+        // Aplicar nova classe
+        this.logPanelContent.classList.add(this.logFontSizes[this.currentLogFontIndex]);
     }
 
     toggleLogPanel() {
@@ -480,8 +533,11 @@ class GameUI {
         this.updateButtons();
         this.renderStack();
 
-        // Desenhar linhas de combate se estivermos esperando bloqueadores
-        if (this.waitingForBlockers) {
+        // Desenhar linhas de combate se estivermos esperando bloqueadores OU se IA declarou bloqueadores
+        const hasPlayerBlockers = this.waitingForBlockers;
+        const hasAIBlockers = this.game.blockerAssignments && Object.keys(this.game.blockerAssignments).length > 0;
+
+        if (hasPlayerBlockers || hasAIBlockers) {
             // Pequeno delay para garantir que os elementos foram renderizados
             setTimeout(() => this.drawCombatLines(), 50);
         } else {
@@ -1659,12 +1715,22 @@ class GameUI {
         // Limpar linhas anteriores
         svg.innerHTML = '';
 
-        // Verificar se temos bloqueadores assignados
-        if (!this.blockerAssignments || Object.keys(this.blockerAssignments).length === 0) return;
+        // Verificar bloqueadores do jogador (quando jogador está bloqueando)
+        const playerAssignments = this.blockerAssignments || {};
+
+        // Verificar bloqueadores da IA (quando IA está bloqueando atacantes do jogador)
+        const aiAssignments = this.game.blockerAssignments || {};
+
+        // Combinar ambos (apenas um estará ativo por vez)
+        const allAssignments = Object.keys(playerAssignments).length > 0
+            ? playerAssignments
+            : aiAssignments;
+
+        if (Object.keys(allAssignments).length === 0) return;
 
         // Desenhar linhas para cada par bloqueador-atacante
         // blockerAssignments é {attackerInstanceId: [blocker1, blocker2, ...]}
-        for (const [attackerInstanceId, blockers] of Object.entries(this.blockerAssignments)) {
+        for (const [attackerInstanceId, blockers] of Object.entries(allAssignments)) {
             const attackerEl = document.querySelector(`[data-instance-id="${attackerInstanceId}"]`);
             if (!attackerEl) continue;
 
