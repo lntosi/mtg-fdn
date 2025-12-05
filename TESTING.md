@@ -34,10 +34,10 @@ nvm use 18
 
 ## Setup Inicial (apenas uma vez)
 
-Na pasta do projeto, execute:
+Na pasta raiz do projeto, execute:
 
 ```bash
-cd /home/navinfo/mtg
+cd <pasta-do-projeto>
 npm install
 ```
 
