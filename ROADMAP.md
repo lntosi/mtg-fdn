@@ -98,6 +98,7 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Reposicionar botão Conceder**: Movido para canto superior esquerdo como botão flutuante (menos propenso a cliques acidentais)
 - [x] **Linha de conexão atacante-defensor**: Linhas SVG conectando bloqueador ao atacante durante declaração de bloqueio
 - [x] **Avatares com imagens reais**: Usar art_crop do Scryfall para mostrar imagens dos planeswalkers nos avatares em vez de emojis
+- [ ] **Linhas de bloqueio da IA**: Exibir setas conectando bloqueadores da IA aos atacantes do jogador (igual à visualização quando o jogador bloqueia)
 - [ ] **Responsividade ao zoom do navegador**: Melhorar layout quando usuário altera zoom do navegador (Ctrl+/-)
 - [ ] **Tamanho de fonte do histórico**: Permitir aumentar/diminuir tamanho da fonte no painel de histórico da partida
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
