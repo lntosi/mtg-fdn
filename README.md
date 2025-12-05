@@ -9,11 +9,11 @@ Um jogo de Magic: The Gathering para navegador, focado em aprendizado e prática
 Jogo offline de MTG usando os 4 decks Jumpstart do **Foundations Beginner Box**:
 
 | Deck | Cor | Estratégia | Carta Destaque |
-|------|-----|------------|----------------|
-| **Cats** | ![W](https://svgs.scryfall.io/card-symbols/W.svg) Branco | Criaturas com lifelink e tokens | [![Leonin Skyhunter](https://cards.scryfall.io/art_crop/front/e/9/e9c4d698-3c74-4792-bde2-e31e92218ab8.jpg)](https://scryfall.com/card/fdn/16/leonin-skyhunter) |
-| **Goblins** | ![R](https://svgs.scryfall.io/card-symbols/R.svg) Vermelho | Agressivo com haste e dano direto | [![Raging Redcap](https://cards.scryfall.io/art_crop/front/1/1/1147e06b-1623-416c-bf9e-04dae9404899.jpg)](https://scryfall.com/card/fdn/538/raging-redcap) |
-| **Vampires** | ![B](https://svgs.scryfall.io/card-symbols/B.svg) Preto | Dreno de vida e flying | [![Vampire Interloper](https://cards.scryfall.io/art_crop/front/7/e/7e9e7b06-1642-41c6-8bc0-61fb42c30497.jpg)](https://scryfall.com/card/fdn/545/vampire-interloper) |
-| **Elves** | ![G](https://svgs.scryfall.io/card-symbols/G.svg) Verde | Ramp de mana e criaturas grandes | [![Elvish Archdruid](https://cards.scryfall.io/art_crop/front/4/d/4d3fffa5-50ec-4502-9f03-bd9571f3f7b7.jpg)](https://scryfall.com/card/fdn/549/elvish-archdruid) |
+|------|:---:|------------|----------------|
+| **Cats** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="16" height="16"> | Criaturas com lifelink e tokens | [![Leonin Skyhunter](https://cards.scryfall.io/art_crop/front/1/5/15d6476c-1944-48e8-9af6-6db78edd58e5.jpg?1562899585)](https://scryfall.com/card/ddg/7/leonin-skyhunter) |
+| **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="16" height="16"> | Agressivo com haste e dano direto | [![Raging Redcap](https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg?1730490661)](https://scryfall.com/card/fdn/543/raging-redcap) |
+| **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="16" height="16"> | Dreno de vida e flying | [![Vampire Interloper](https://cards.scryfall.io/art_crop/front/c/3/c3e2ea59-36f1-4e95-bfe8-7008b085194f.jpg?1634350330)](https://scryfall.com/card/mid/125/vampire-interloper) |
+| **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="16" height="16"> | Ramp de mana e criaturas grandes | [![Elvish Archdruid](https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg?1730489413)](https://scryfall.com/card/fdn/219/elvish-archdruid) |
 
 ## Screenshots
 
