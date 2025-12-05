@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Official MTG Rules Reference
+
+The official Magic: The Gathering Comprehensive Rules are available at `docs/MagicCompRules 20251114.txt`. Use this as the authoritative source for any rules questions or implementation decisions.
+
 ## Project Overview
 
 MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using 4 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves).
@@ -75,3 +79,5 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 ## MTG Keywords Implemented
 
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, tap_for_mana, etb_draw
+- to memorize
+- to memorize
