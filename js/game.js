@@ -24,6 +24,8 @@ class GameState {
         this.stack = []; // Pilha de feitiços/habilidades
         this.priorityPlayer = null; // Quem tem prioridade atualmente
         this.waitingForPriority = false;
+        this.bothPlayersPassed = false; // Ambos passaram prioridade
+        this.stackResolving = false; // Stack está resolvendo
 
         // === Floating Mana (mana flutuante) ===
         this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
@@ -166,6 +168,25 @@ class GameState {
         localStorage.removeItem('mtg_game_state');
     }
 
+    // Escolhe um avatar temático para a IA baseado nos decks dela
+    getAIAvatar(deckKeys) {
+        // Mapeamento de decks para avatares temáticos
+        const deckAvatars = {
+            cats: 'ajani',      // Ajani é um Leonin (gato)
+            goblins: 'chandra', // Chandra combina com vermelho/goblins
+            vampires: 'liliana', // Liliana combina com preto/vampiros
+            elves: 'nissa'      // Nissa combina com verde/elfos
+        };
+
+        // Retorna o avatar do primeiro deck
+        for (const deck of deckKeys) {
+            if (deckAvatars[deck]) {
+                return deckAvatars[deck];
+            }
+        }
+        return 'opponent'; // Fallback
+    }
+
     startGame(playerDecks, aiDecks, options = {}) {
         // Salvar escolha de decks
         this.playerDeckKeys = playerDecks;
@@ -176,6 +197,9 @@ class GameState {
         const playerName = options.playerName || 'Você';
         const playerAvatar = options.playerAvatar || 'jace';
 
+        // Escolher avatar da IA baseado nos decks
+        const aiAvatar = this.getAIAvatar(aiDecks);
+
         // Resetar estado de fim de jogo
         this.gameOver = false;
         this.winner = null;
@@ -184,7 +208,7 @@ class GameState {
 
         // Criar jogadores
         this.player = this.createPlayer(playerName, playerDecks, startingLife, playerAvatar);
-        this.opponent = this.createPlayer('Oponente (IA)', aiDecks, startingLife, 'opponent');
+        this.opponent = this.createPlayer('Oponente (IA)', aiDecks, startingLife, aiAvatar);
 
         // Embaralhar decks
         this.player.library = shuffleDeck(this.player.library);
@@ -282,6 +306,163 @@ class GameState {
 
     isPlayerTurn() {
         return this.activePlayer === this.player;
+    }
+
+    // === SISTEMA DE STACK ===
+
+    // Adiciona um feitiço ou habilidade à pilha
+    addToStack(item, controller) {
+        const stackItem = {
+            id: `stack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            item: item,
+            controller: controller,
+            timestamp: Date.now()
+        };
+        this.stack.push(stackItem);
+        this.ui.log(`${item.name || 'Habilidade'} adicionado à pilha`);
+        this.ui.renderStack();
+        return stackItem;
+    }
+
+    // Remove o item do topo da pilha e o resolve
+    async resolveTopOfStack() {
+        if (this.stack.length === 0) return null;
+
+        this.stackResolving = true;
+        const stackItem = this.stack.pop();
+        this.ui.log(`Resolvendo: ${stackItem.item.name || 'Habilidade'}`);
+        this.ui.renderStack();
+
+        // Delay para visualização
+        await this.delay(800);
+
+        // Resolver o item (feitiço ou habilidade)
+        if (stackItem.item.type === 'instant' || stackItem.item.type === 'sorcery') {
+            // Resolver feitiço
+            await this.resolveStackedSpell(stackItem);
+        } else if (stackItem.item.isAbility) {
+            // Resolver habilidade ativada
+            await this.resolveStackedAbility(stackItem);
+        }
+
+        this.stackResolving = false;
+        return stackItem;
+    }
+
+    // Resolve um feitiço da pilha
+    async resolveStackedSpell(stackItem) {
+        const card = stackItem.item;
+        const caster = stackItem.controller;
+
+        // Se tem alvo, verificar se ainda é válido
+        if (stackItem.target) {
+            const targetStillValid = this.isTargetStillValid(stackItem.target);
+            if (!targetStillValid) {
+                this.ui.log(`${card.name} foi anulado (alvo inválido)`);
+                caster.graveyard.push(card);
+                return;
+            }
+            this.resolveSpellWithTarget(card, caster, stackItem.target);
+        } else {
+            this.resolveSpell(card, caster);
+        }
+
+        caster.graveyard.push(card);
+        this.ui.render();
+    }
+
+    // Resolve uma habilidade da pilha
+    async resolveStackedAbility(stackItem) {
+        const ability = stackItem.item;
+        const controller = stackItem.controller;
+
+        // Executar efeito da habilidade
+        if (ability.effect) {
+            await ability.effect(controller, stackItem.target);
+        }
+
+        this.ui.render();
+    }
+
+    // Verifica se um alvo ainda é válido
+    isTargetStillValid(target) {
+        if (!target) return true;
+
+        // Verificar se o alvo ainda está no campo de batalha
+        const inPlayerField = this.player.battlefield.includes(target);
+        const inOpponentField = this.opponent.battlefield.includes(target);
+
+        return inPlayerField || inOpponentField;
+    }
+
+    // Verifica se a pilha está vazia
+    isStackEmpty() {
+        return this.stack.length === 0;
+    }
+
+    // Retorna o item no topo da pilha sem removê-lo
+    peekStack() {
+        if (this.stack.length === 0) return null;
+        return this.stack[this.stack.length - 1];
+    }
+
+    // === SISTEMA DE PRIORIDADE ===
+
+    // Passa a prioridade para o outro jogador
+    passPriority() {
+        if (this.priorityPlayer === this.player) {
+            this.priorityPlayer = this.opponent;
+            this.ui.log('Você passou a prioridade');
+
+            // Se a pilha não está vazia e a IA tem prioridade, ela decide
+            if (!this.isStackEmpty()) {
+                this.aiHandlePriority();
+            } else {
+                // Se pilha vazia e ambos passaram, avançar fase
+                this.bothPlayersPassed = true;
+            }
+        } else {
+            this.priorityPlayer = this.player;
+            this.ui.log('Oponente passou a prioridade');
+
+            if (this.bothPlayersPassed && this.isStackEmpty()) {
+                // Ambos passaram com pilha vazia - avançar fase
+                this.bothPlayersPassed = false;
+            }
+        }
+
+        this.ui.render();
+    }
+
+    // IA decide o que fazer quando tem prioridade
+    async aiHandlePriority() {
+        await this.delay(500);
+
+        // Por enquanto, a IA sempre passa a prioridade
+        // Futuramente pode ser expandido para responder com instants
+        this.ui.log('IA avaliando resposta...');
+        await this.delay(800);
+
+        // Passar prioridade de volta
+        this.bothPlayersPassed = true;
+        this.priorityPlayer = this.player;
+        this.ui.log('Oponente passou a prioridade');
+
+        // Se ambos passaram, resolver o topo da pilha
+        if (this.bothPlayersPassed && !this.isStackEmpty()) {
+            await this.resolveTopOfStack();
+            this.bothPlayersPassed = false;
+
+            // Dar prioridade ao jogador ativo após resolver
+            this.priorityPlayer = this.activePlayer;
+        }
+
+        this.ui.render();
+    }
+
+    // Verifica se o jogador pode responder (tem prioridade e há algo na pilha)
+    canRespond(player) {
+        return this.priorityPlayer === player && !this.isStackEmpty() && !this.stackResolving;
     }
 
     // Jogar uma carta
@@ -739,6 +920,23 @@ class GameState {
                 }
             }
         }
+
+        // Trigger para criaturas que reagem a outras entrando
+        // Beast-Kin Ranger - +1/+0 até o fim do turno quando OUTRA criatura entra
+        if (card.type === 'creature') {
+            this.triggerOtherCreatureEnters(card, controller);
+        }
+    }
+
+    // Trigger quando outra criatura entra no campo
+    triggerOtherCreatureEnters(enteringCreature, controller) {
+        controller.battlefield.forEach(card => {
+            // Beast-Kin Ranger - ganha +1/+0 quando outra criatura entra
+            if (card.id === 'beast_kin_ranger' && card.instanceId !== enteringCreature.instanceId) {
+                card.powerModifier = (card.powerModifier || 0) + 1;
+                this.ui.log(`Beast-Kin Ranger ganha +1/+0 (${enteringCreature.name} entrou em campo)`);
+            }
+        });
     }
 
     checkCreatureDeath(creature, owner) {
@@ -1389,28 +1587,34 @@ class GameState {
     }
 
     async executeAITurn() {
+        // Indicar início do turno da IA
+        this.ui.log('--- Turno do Oponente ---');
+        await this.delay(600);
+
         // Untap
         this.phase = PHASES.UNTAP;
+        this.ui.log('Fase: Desvirar');
         this.rules.untapAll(this.opponent);
         this.opponent.landsPlayedThisTurn = 0;
         this.rules.removeSummoningSickness(this.opponent);
         this.ui.render();
-        await this.delay(300);
+        await this.delay(600);
 
         // Draw
         this.phase = PHASES.DRAW;
+        this.ui.log('Fase: Comprar');
         const drawn = this.rules.drawCard(this.opponent);
         if (drawn) {
             this.ui.log(`Oponente comprou uma carta`);
         }
         this.ui.render();
-        await this.delay(300);
+        await this.delay(800);
 
         // Main Phase 1
         this.phase = PHASES.MAIN1;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
-        await this.delay(300);
+        await this.delay(500);
 
         await this.ai.playMainPhase();
         this.ui.render();
@@ -1419,7 +1623,7 @@ class GameState {
         this.phase = PHASES.DECLARE_ATTACKERS;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
-        await this.delay(300);
+        await this.delay(500);
 
         // A IA decide atacar - se atacar, o jogo aguarda o jogador bloquear
         // O método doCombat vai chamar promptForBlockers se houver atacantes
@@ -1436,10 +1640,13 @@ class GameState {
     async continueAfterBlocking() {
         // Resolver combate
         this.phase = PHASES.COMBAT_DAMAGE;
+        this.ui.log('Resolvendo dano de combate...');
+        await this.delay(800);
         await this.resolveCombat();
         this.ui.render();
 
-        await this.delay(300);
+        // Delay maior para ver resultado do combate
+        await this.delay(1200);
 
         // Limpar atacantes
         this.currentAttackers = [];
@@ -1450,13 +1657,13 @@ class GameState {
     }
 
     async finishAITurn() {
-        await this.delay(300);
+        await this.delay(600);
 
         // Main Phase 2
         this.phase = PHASES.MAIN2;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
-        await this.delay(300);
+        await this.delay(500);
 
         await this.ai.playMainPhase();
         this.ui.render();
@@ -1464,6 +1671,7 @@ class GameState {
         // End step - limpar e passar turno
         this.phase = PHASES.END;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
+        this.ui.render();
 
         // Limpar dano e modificadores temporários
         this.opponent.battlefield.forEach(c => {
@@ -1472,7 +1680,7 @@ class GameState {
             c.toughnessModifier = 0;
         });
 
-        await this.delay(500);
+        await this.delay(800);
 
         // Passar para o jogador
         this.activePlayer = this.player;
@@ -1488,7 +1696,12 @@ class GameState {
     }
 
     pass() {
-        this.nextPhase();
+        // Se há itens na pilha, passar prioridade em vez de avançar fase
+        if (!this.isStackEmpty() && this.priorityPlayer === this.player) {
+            this.passPriority();
+        } else {
+            this.nextPhase();
+        }
     }
 
     checkGameOver() {

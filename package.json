@@ -1,0 +1,38 @@
+{
+  "name": "mtg-jumpstart-foundations",
+  "version": "1.0.0",
+  "description": "MTG Jumpstart Foundations - Browser-based Magic: The Gathering game",
+  "main": "js/main.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
+  },
+  "keywords": [
+    "mtg",
+    "magic",
+    "card-game",
+    "jumpstart"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/*.test.js"
+    ],
+    "verbose": true,
+    "collectCoverageFrom": [
+      "js/**/*.js",
+      "!js/main.js",
+      "!js/sounds.js"
+    ]
+  }
+}

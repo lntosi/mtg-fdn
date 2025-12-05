@@ -22,11 +22,16 @@ class AIPlayer {
     async playMainPhase() {
         const opponent = this.game.opponent;
 
+        // Delay inicial para mostrar que a IA está "pensando"
+        this.game.ui.log('IA está pensando...');
+        await this.delay(800);
+
         // 1. Jogar terreno se possível
         const landInHand = opponent.hand.find(card => card.type === 'land');
         if (landInHand && this.rules.canPlayLand(opponent)) {
             await this.game.playCard(landInHand, opponent);
-            await this.delay(500);
+            this.game.ui.render();
+            await this.delay(1000); // Delay para ver o terreno jogado
         }
 
         // 2. Jogar criaturas/feitiços (do mais caro pro mais barato que conseguir pagar)
@@ -41,8 +46,11 @@ class AIPlayer {
             if (playableCards.length > 0) {
                 const cardToPlay = this.chooseBestCard(playableCards);
                 if (cardToPlay) {
+                    // Delay antes de jogar a carta para dar tempo de ver
+                    await this.delay(600);
                     await this.game.playCard(cardToPlay, opponent);
-                    await this.delay(700);
+                    this.game.ui.render();
+                    await this.delay(1200); // Delay maior para ver a carta jogada
                     playedSomething = true;
                 }
             }
@@ -70,6 +78,10 @@ class AIPlayer {
         const opponent = this.game.opponent;
         const player = this.game.player;
 
+        // Delay para mostrar que a IA está avaliando o combate
+        this.game.ui.log('IA está avaliando opções de combate...');
+        await this.delay(1000);
+
         // Encontrar criaturas que podem atacar
         const possibleAttackers = opponent.battlefield.filter(card =>
             card.type === 'creature' && this.rules.canAttack(card)
@@ -77,6 +89,7 @@ class AIPlayer {
 
         if (possibleAttackers.length === 0) {
             this.game.ui.log('Oponente não tem atacantes');
+            await this.delay(500);
             return;
         }
 
@@ -85,10 +98,14 @@ class AIPlayer {
 
         if (chosenAttackers.length === 0) {
             this.game.ui.log('Oponente escolheu não atacar');
+            await this.delay(500);
             return;
         }
 
-        // Virar atacantes
+        // Virar atacantes com delay visual
+        this.game.ui.log('Oponente declarando atacantes...');
+        await this.delay(600);
+
         chosenAttackers.forEach(attacker => {
             if (!attacker.keywords || !attacker.keywords.includes('vigilance')) {
                 attacker.tapped = true;
@@ -100,7 +117,8 @@ class AIPlayer {
         this.game.currentAttackers = chosenAttackers;
         this.game.ui.render();
 
-        await this.delay(500);
+        // Delay maior para ver as criaturas atacando
+        await this.delay(1200);
 
         // Pedir ao jogador para bloquear
         this.game.phase = window.PHASES.DECLARE_BLOCKERS;

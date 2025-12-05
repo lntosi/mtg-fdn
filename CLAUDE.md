@@ -37,10 +37,40 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 
 **Persistence:** Game auto-saves to localStorage on key actions, restores on page reload.
 
+**Stack System:** Basic stack implementation for spells/abilities with priority passing:
+- `addToStack(item, controller)` - Add spell/ability to stack
+- `resolveTopOfStack()` - Resolve top item
+- `passPriority()` - Pass priority to other player
+- `isStackEmpty()`, `canRespond(player)` - Check stack state
+
+**AI Action Delays:** AI has built-in delays between actions for better visibility:
+- Phase transitions: 500-800ms
+- Playing cards: 600-1200ms
+- Combat decisions: 800-1200ms
+
+## Avatars
+
+Player and AI avatars use Scryfall art_crop images from planeswalker cards (versões originais com artes mais focadas no rosto):
+- jace: Jace Beleren
+- chandra: Chandra Nalaar
+- liliana: Liliana Vess
+- gideon: Gideon Jura
+- nissa: Nissa Revane
+- ajani: Ajani Goldmane
+
+AI avatar is chosen based on deck theme (cats→ajani, goblins→chandra, vampires→liliana, elves→nissa).
+
+## Damage Display System
+
+Creatures display damage taken visually:
+- **Effective Toughness**: Shows `power/effective_toughness` where effective = toughness - damage
+- **Damaged Stats**: Red background on P/T display with pulse animation
+- **Damage Badge**: Purple badge showing `-X` damage marked (positioned above stats)
+- **Border Indicator**: Red pulsing border on damaged creatures
+- Damage clears automatically at end of turn (cleanup step)
+
+Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` badge.
+
 ## MTG Keywords Implemented
 
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, tap_for_mana, etb_draw
-- to memorize
-- to memorize
-- to memorize
-- to memorize

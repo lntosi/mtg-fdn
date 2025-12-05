@@ -280,6 +280,24 @@ body {
 .player-avatar {
     font-size: 1.4em;
     line-height: 1;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(180, 100, 180, 0.5);
+    flex-shrink: 0;
+}
+
+/* Avatar com imagem real do Scryfall */
+.player-avatar.has-avatar-image {
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    border: 2px solid rgba(255, 200, 0, 0.6);
+    box-shadow: 0 0 10px rgba(255, 200, 0, 0.4);
 }
 
 .player-name {
@@ -536,8 +554,72 @@ body {
     border: 1px solid rgba(180, 100, 180, 0.2);
 }
 
+/* === Stack (Pilha de Feitiços/Habilidades) === */
 #stack {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px 12px;
+    background: rgba(100, 50, 100, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(180, 100, 180, 0.4);
+    min-width: 150px;
+    max-width: 200px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#stack.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+}
+
+.stack-empty-text {
+    font-size: 0.75em;
+    color: #a080a0;
+    font-style: italic;
+}
+
+.stack-item {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(180, 100, 180, 0.5);
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-size: 0.75em;
+}
+
+.stack-item.stack-top {
+    border-color: #ffcc00;
+    box-shadow: 0 0 8px rgba(255, 200, 0, 0.4);
+}
+
+.stack-item-name {
+    font-weight: bold;
+    color: #e0c0e0;
+}
+
+.stack-item-controller {
+    font-size: 0.9em;
+    color: #a080a0;
+}
+
+.stack-item-target {
+    font-size: 0.85em;
+    color: #9b59b6;
+    font-style: italic;
+}
+
+.stack-priority {
+    margin-top: 5px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.3), rgba(46, 204, 113, 0.3));
+    border-radius: 4px;
+    font-size: 0.7em;
+    color: #2ecc71;
+    text-align: center;
+    font-weight: bold;
 }
 
 /* === Área do Jogador (Bottom) === */
@@ -621,6 +703,28 @@ body {
 
 .card.blocking {
     box-shadow: 0 0 25px 10px #3498db;
+}
+
+/* Bloqueador selecionado aguardando escolha de atacante */
+.card.selected-blocker {
+    box-shadow: 0 0 30px 12px #9b59b6;
+    animation: pulse-selected-blocker 0.6s infinite;
+}
+
+@keyframes pulse-selected-blocker {
+    0%, 100% { box-shadow: 0 0 25px 10px #9b59b6; }
+    50% { box-shadow: 0 0 35px 15px #8e44ad; }
+}
+
+/* Atacante válido para bloqueio (quando há bloqueador selecionado) */
+.card.valid-block-target {
+    box-shadow: 0 0 25px 10px #e74c3c;
+    animation: pulse-block-target 0.6s infinite;
+}
+
+@keyframes pulse-block-target {
+    0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
+    50% { box-shadow: 0 0 35px 15px #c0392b; }
 }
 
 .card.playable {
@@ -778,9 +882,58 @@ body {
     animation: buff-glow 2s ease-in-out infinite;
 }
 
+/* Stats de criatura danificada - toughness em vermelho */
+.card-stats.damaged {
+    background: linear-gradient(135deg, rgba(192, 57, 43, 0.95), rgba(231, 76, 60, 0.95));
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+    animation: damage-pulse 1.5s ease-in-out infinite;
+}
+
 @keyframes buff-glow {
     0%, 100% { box-shadow: 0 0 8px rgba(46, 204, 113, 0.6); }
     50% { box-shadow: 0 0 12px rgba(46, 204, 113, 0.9); }
+}
+
+@keyframes damage-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(231, 76, 60, 0.6); }
+    50% { box-shadow: 0 0 12px rgba(231, 76, 60, 0.9); }
+}
+
+/* Indicador de dano marcado */
+.card-damage {
+    position: absolute;
+    bottom: 28px;
+    right: 4px;
+    background: linear-gradient(135deg, rgba(142, 68, 173, 0.95), rgba(155, 89, 182, 0.95));
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: bold;
+    z-index: 6;
+    box-shadow: 0 0 6px rgba(155, 89, 182, 0.7);
+    cursor: help;
+}
+
+/* Criatura com dano marcado - visual indicator */
+.card.creature-damaged {
+    position: relative;
+}
+
+.card.creature-damaged::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(231, 76, 60, 0.7);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 14;
+    animation: damage-border-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes damage-border-pulse {
+    0%, 100% { border-color: rgba(231, 76, 60, 0.5); }
+    50% { border-color: rgba(231, 76, 60, 0.9); }
 }
 
 .card-bonus {
@@ -2158,10 +2311,18 @@ body {
     display: none;
 }
 
-.avatar-option input:checked + .avatar-icon {
+/* Avatar emoji selecionado - aplica background gradient e escala */
+.avatar-option input:checked + .avatar-icon:not(.has-avatar-image) {
     background: linear-gradient(135deg, #8e44ad, #9b59b6);
     box-shadow: 0 0 20px rgba(155, 89, 182, 0.6);
     transform: scale(1.1);
+}
+
+/* Avatar com imagem selecionado - manter imagem estática, apenas destacar borda */
+.avatar-option input:checked + .avatar-icon.has-avatar-image {
+    transform: none;
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.7);
 }
 
 .avatar-option input:checked ~ .avatar-name {
@@ -2180,6 +2341,13 @@ body {
     margin-bottom: 8px;
     transition: all 0.2s;
     border: 2px solid rgba(180, 100, 180, 0.3);
+}
+
+/* Avatar com imagem na seleção */
+.avatar-icon.has-avatar-image {
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
 }
 
 .avatar-name {

@@ -97,7 +97,9 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide 🪦
 - [x] **Reposicionar botão Conceder**: Movido para canto superior esquerdo como botão flutuante (menos propenso a cliques acidentais)
 - [x] **Linha de conexão atacante-defensor**: Linhas SVG conectando bloqueador ao atacante durante declaração de bloqueio
-- [ ] **Avatares com imagens reais**: Usar art_crop do Scryfall para mostrar imagens dos planeswalkers nos avatares em vez de emojis
+- [x] **Avatares com imagens reais**: Usar art_crop do Scryfall para mostrar imagens dos planeswalkers nos avatares em vez de emojis
+- [ ] **Responsividade ao zoom do navegador**: Melhorar layout quando usuário altera zoom do navegador (Ctrl+/-)
+- [ ] **Tamanho de fonte do histórico**: Permitir aumentar/diminuir tamanho da fonte no painel de histórico da partida
 - [ ] **Temas visuais**: Diferentes battlemats/temas de cores
 - [ ] **Modo tela cheia**: Otimização para fullscreen
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
@@ -110,8 +112,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 ### 3.1 Prioridade Alta ✅ CONCLUÍDA
 
 - [x] **Sistema de seleção de alvo genérico**: Para feitiços que precisam escolher alvo
-- [ ] **Pilha (Stack)**: Implementar stack para responder a feitiços/habilidades (estrutura básica implementada)
-- [ ] **Prioridade**: Sistema de passar prioridade entre jogadores (estrutura básica implementada)
+- [x] **Pilha (Stack)**: Implementar stack para responder a feitiços/habilidades (estrutura básica implementada)
+- [x] **Prioridade**: Sistema de passar prioridade entre jogadores (estrutura básica implementada)
 - [x] **Mulligan**: Opção de trocar mão inicial
 - [x] **Tela de fim de jogo**: Ao terminar, mostrar opções para "Ver campo de batalha" (permite apenas hover/inspeção) ou "Voltar ao menu de seleção de deck"
 
@@ -121,9 +123,11 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Descarte para tamanho de mão**: Descartar até 7 cartas no fim do turno
 - [x] **Morte por deck vazio**: Perder ao tentar comprar de deck vazio
 - [x] **Contadores**: Sistema visual de contadores +1/+1, -1/-1, etc.
+- [x] **Visualização de dano em criaturas**: Mostrar toughness efetiva (toughness - dano) em vermelho, com indicador de dano marcado e borda pulsante. Dano limpo no fim do turno.
 
 ### 3.3 Prioridade Baixa
 
+- [x] **Seleção manual de bloqueadores**: Jogador escolhe bloqueador e depois clica no atacante que quer bloquear (em vez de atribuição automática)
 - [ ] **Replay de partida**: Salvar e rever partidas
 - [ ] **Desfazer jogada**: Undo para erros do jogador
 - [ ] **Modo de treino**: Dicas e sugestões de jogadas
@@ -134,7 +138,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 4.1 Prioridade Alta
 
-- [ ] **Delay nas jogadas da IA**: Adicionar delays entre ações da IA para que o jogador consiga acompanhar o que está acontecendo. Atualmente as jogadas são instantâneas e difíceis de entender sem consultar o histórico.
+- [x] **Delay nas jogadas da IA**: Adicionar delays entre ações da IA para que o jogador consiga acompanhar o que está acontecendo
+- [x] **Jogar instants durante turno do oponente**: Jogador pode jogar instants (como Elspeth's Smite) durante combate do oponente
 - [ ] **Avaliação de board state**: IA avaliar vantagem de campo
 - [ ] **Uso de remoções**: IA usar feitiços de remoção estrategicamente
 - [ ] **Timing de feitiços**: IA jogar instants no momento certo
@@ -175,11 +180,26 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 - [ ] **Tratamento de erros**: Capturar e logar erros graciosamente
 - [ ] **Validação de estado**: Garantir consistência do game state
+- [x] **Testes unitários**: Testes automatizados para regras e mecânicas (Jest)
+  - ✅ Testes de combate (dano, first strike, deathtouch, trample, double strike, lifelink)
+  - ✅ Testes de keywords e interações (flying/reach, vigilance, haste, menace, cant_block)
+  - ✅ Testes de mana e custos (parsing, disponibilidade)
+  - ✅ Testes de triggers (ETB, fim de turno, "quando outra criatura entra", etc.)
+  - ✅ Testes de efeitos de criaturas específicas (Beast-Kin Ranger, Thornweald Archer, etc.)
+  - ✅ Testes de feitiços com alvo (Elspeth's Smite, Volley, buffs, etc.)
+  - ✅ 97 testes automatizados em 4 arquivos de teste
+  - ✅ Guia completo de execução em TESTING.md
+- [ ] **Modo Debug**: Comandos para acelerar testes manuais
+  - Comprar carta específica por nome
+  - Setar vida de qualquer jogador
+  - Adicionar mana ao pool
+  - Pular para fase específica
+  - Forçar mão inicial
+  - Colocar carta direto no campo de batalha
 
 ### 6.2 Prioridade Média
 
 - [ ] **Cache de imagens offline**: Service Worker para modo offline
-- [ ] **Testes automatizados**: Testes para regras e mecânicas
 - [ ] **Refatoração de código**: Separar melhor responsabilidades
 
 ### 6.3 Prioridade Baixa

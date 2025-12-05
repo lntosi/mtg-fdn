@@ -22,6 +22,7 @@ class GameUI {
         this.selectedCard = null;
         this.selectedAttackers = [];
         this.blockerAssignments = {};
+        this.selectedBlocker = null; // Bloqueador selecionado aguardando escolha de atacante
         this.waitingForBlockers = false;
         this.waitingForTarget = false;
         this.pendingAura = null;
@@ -213,6 +214,30 @@ class GameUI {
                 avatarRadio.checked = true;
             }
         }
+
+        // Carregar imagens reais dos avatares na tela de seleção
+        this.loadAvatarSelectionImages();
+    }
+
+    // Carrega imagens reais dos planeswalkers na tela de seleção de avatar
+    async loadAvatarSelectionImages() {
+        const avatarIcons = document.querySelectorAll('.avatar-icon[data-avatar]');
+
+        for (const icon of avatarIcons) {
+            const avatarId = icon.dataset.avatar;
+            if (avatarId) {
+                try {
+                    const imageUrl = await window.imageManager.getAvatarImageUrl(avatarId);
+                    if (imageUrl) {
+                        icon.style.backgroundImage = `url('${imageUrl}')`;
+                        icon.classList.add('has-avatar-image');
+                        icon.textContent = ''; // Remove emoji
+                    }
+                } catch (e) {
+                    // Manter emoji como fallback
+                }
+            }
+        }
     }
 
     continueToDecks() {
@@ -249,6 +274,23 @@ class GameUI {
             ajani: '🦁'
         };
         return avatars[avatar] || '🧙‍♂️';
+    }
+
+    // Carrega imagem de avatar do Scryfall e aplica ao elemento
+    async loadAvatarImage(avatarId, element) {
+        if (!element || !avatarId) return;
+
+        try {
+            const imageUrl = await window.imageManager.getAvatarImageUrl(avatarId);
+            if (imageUrl) {
+                element.style.backgroundImage = `url('${imageUrl}')`;
+                element.classList.add('has-avatar-image');
+                element.textContent = ''; // Remove emoji fallback
+            }
+        } catch (e) {
+            console.log('Erro ao carregar avatar:', e);
+            // Manter emoji como fallback
+        }
     }
 
     // === Card Preview ===
@@ -414,10 +456,12 @@ class GameUI {
             // Confirmar bloqueio
             this.game.declareBlockers(this.blockerAssignments);
             this.blockerAssignments = {};
+            this.selectedBlocker = null;
             this.waitingForBlockers = false;
         } else {
             // Não bloquear
             this.game.declareBlockers({});
+            this.selectedBlocker = null;
             this.waitingForBlockers = false;
         }
     }
@@ -433,6 +477,7 @@ class GameUI {
         this.renderPlayerInfo();
         this.renderPhase();
         this.updateButtons();
+        this.renderStack();
 
         // Desenhar linhas de combate se estivermos esperando bloqueadores
         if (this.waitingForBlockers) {
@@ -455,15 +500,25 @@ class GameUI {
                 cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
 
                 // Verificar se pode jogar
-                if (this.game.rules.canPlayCard(card, player) && this.game.isPlayerTurn()) {
-                    cardEl.classList.add('playable');
-                    cardEl.classList.add('draggable');
-                    cardEl.addEventListener('click', () => this.onCardClick(card, player));
+                // Instants podem ser jogados fora do turno do jogador (durante combate do oponente, etc)
+                const canPlay = this.game.rules.canPlayCard(card, player);
+                const isInstant = card.type === 'instant';
+                const isPlayerTurn = this.game.isPlayerTurn();
 
-                    // Drag and Drop
-                    cardEl.draggable = true;
-                    cardEl.addEventListener('dragstart', (e) => this.onDragStart(e, card, player));
-                    cardEl.addEventListener('dragend', (e) => this.onDragEnd(e));
+                // Pode jogar se: (é seu turno E pode jogar) OU (é instant E pode jogar)
+                // Instants podem ser jogados a qualquer momento, inclusive durante fase de bloqueio
+                const canPlayNow = canPlay && (isPlayerTurn || isInstant);
+
+                if (canPlayNow) {
+                    cardEl.classList.add('playable');
+                    if (isPlayerTurn) {
+                        cardEl.classList.add('draggable');
+                        // Drag and Drop apenas no seu turno
+                        cardEl.draggable = true;
+                        cardEl.addEventListener('dragstart', (e) => this.onDragStart(e, card, player));
+                        cardEl.addEventListener('dragend', (e) => this.onDragEnd(e));
+                    }
+                    cardEl.addEventListener('click', () => this.onCardClick(card, player));
                 }
             }
 
@@ -541,8 +596,14 @@ class GameUI {
                 cardEl.classList.add('summoning-sick');
             }
 
+            // Indicador visual de criatura danificada
+            if (card.type === 'creature' && (card.damage || 0) > 0) {
+                cardEl.classList.add('creature-damaged');
+            }
+
             // Destacar atacantes (do jogador ou da IA) com animação
-            if (this.selectedAttackers.includes(card) || this.game.currentAttackers.includes(card)) {
+            const isAttacking = this.selectedAttackers.includes(card) || this.game.currentAttackers.includes(card);
+            if (isAttacking) {
                 cardEl.classList.add('attacking');
                 cardEl.classList.add('attacking-animation');
             }
@@ -554,6 +615,11 @@ class GameUI {
                 cardEl.classList.add('blocking-animation');
             }
 
+            // Destacar bloqueador selecionado
+            if (this.selectedBlocker === card) {
+                cardEl.classList.add('selected-blocker');
+            }
+
             // Adicionar eventos de hover para card preview
             cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
             cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
@@ -562,6 +628,12 @@ class GameUI {
             if (this.waitingForTarget && this.validTargets.includes(card)) {
                 cardEl.classList.add('valid-target');
                 cardEl.addEventListener('click', () => this.selectTarget(card));
+                cardEl.style.cursor = 'crosshair';
+            }
+            // Se há bloqueador selecionado e esta é uma criatura atacante do oponente, permitir clicar
+            else if (!isPlayer && this.selectedBlocker && isAttacking && card.type === 'creature') {
+                cardEl.classList.add('valid-block-target');
+                cardEl.addEventListener('click', () => this.selectAttackerToBlock(card));
                 cardEl.style.cursor = 'crosshair';
             }
             // Eventos de clique normais
@@ -713,11 +785,30 @@ class GameUI {
                 bonuses = { power: 0, toughness: 0, sources: [] };
             }
 
+            // Calcular dano marcado na criatura
+            const markedDamage = card.damage || 0;
+            const effectiveToughness = toughness - markedDamage;
+            const isDamaged = markedDamage > 0;
+
             // Verificar se há bônus ativos
             const hasBonus = bonuses.sources.length > 0 || (card.powerModifier || 0) !== 0 || (card.toughnessModifier || 0) !== 0;
-            const statsClass = hasBonus ? 'card-stats buffed' : 'card-stats';
 
-            html += `<div class="${statsClass}">${power}/${toughness}</div>`;
+            // Determinar classe do stats baseado em dano e bônus
+            let statsClass = 'card-stats';
+            if (isDamaged) {
+                statsClass += ' damaged';
+            } else if (hasBonus) {
+                statsClass += ' buffed';
+            }
+
+            // Mostrar toughness efetiva (toughness - dano) quando danificado
+            const displayToughness = isDamaged ? effectiveToughness : toughness;
+            html += `<div class="${statsClass}" title="${isDamaged ? `Dano: ${markedDamage} (${toughness} - ${markedDamage} = ${effectiveToughness})` : ''}">${power}/${displayToughness}</div>`;
+
+            // Mostrar indicador de dano separado se houver dano
+            if (isDamaged) {
+                html += `<div class="card-damage" title="Dano marcado: ${markedDamage}">-${markedDamage}</div>`;
+            }
 
             // Mostrar indicador de bônus se houver
             if (bonuses.sources.length > 0) {
@@ -845,17 +936,27 @@ class GameUI {
             playerNameEl.textContent = this.game.player.name;
         }
         if (playerAvatarEl && this.game.player) {
+            // Primeiro mostrar emoji como fallback
             playerAvatarEl.textContent = this.getAvatarEmoji(this.game.player.avatar);
+            // Depois tentar carregar imagem real
+            this.loadAvatarImage(this.game.player.avatar, playerAvatarEl);
         }
 
-        // Atualizar nome e avatar do oponente
+        // Atualizar nome e avatar do oponente (IA)
         const opponentNameEl = document.getElementById('opponent-name');
         const opponentAvatarEl = document.getElementById('opponent-avatar');
         if (opponentNameEl && this.game.opponent) {
             opponentNameEl.textContent = this.game.opponent.name;
         }
-        if (opponentAvatarEl) {
-            opponentAvatarEl.textContent = '🤖'; // Emoji de robô para IA
+        if (opponentAvatarEl && this.game.opponent) {
+            // IA também tem um avatar (baseado nos decks dela)
+            const aiAvatar = this.game.opponent.avatar || 'opponent';
+            if (aiAvatar === 'opponent') {
+                opponentAvatarEl.textContent = '🤖'; // Emoji de robô para IA
+            } else {
+                opponentAvatarEl.textContent = this.getAvatarEmoji(aiAvatar);
+                this.loadAvatarImage(aiAvatar, opponentAvatarEl);
+            }
         }
     }
 
@@ -1116,13 +1217,24 @@ class GameUI {
 
     updateButtons() {
         const isPlayerTurn = this.game.isPlayerTurn();
+        const hasStack = !this.game.isStackEmpty();
+        const hasPriority = this.game.priorityPlayer === this.game.player;
 
         // Botões só habilitados no turno do jogador e quando não está esperando bloqueio
-        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers;
-        this.btnPass.disabled = !isPlayerTurn || this.waitingForBlockers;
+        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack;
+        this.btnPass.disabled = (!isPlayerTurn && !hasPriority) || this.waitingForBlockers;
+
+        // Atualizar texto do botão Passar baseado no contexto
+        if (hasStack && hasPriority) {
+            this.btnPass.textContent = 'Resolver';
+            this.btnPass.title = 'Passar prioridade e resolver a pilha';
+        } else {
+            this.btnPass.textContent = 'Passar';
+            this.btnPass.title = 'Passar para próxima fase';
+        }
 
         // Botão de ataque
-        const canDeclareAttack = isPlayerTurn && this.game.phase === PHASES.DECLARE_ATTACKERS;
+        const canDeclareAttack = isPlayerTurn && this.game.phase === PHASES.DECLARE_ATTACKERS && !hasStack;
         this.btnAttack.disabled = !canDeclareAttack || this.waitingForBlockers;
         this.btnAttack.textContent = this.selectedAttackers.length > 0
             ? `Atacar (${this.selectedAttackers.length})`
@@ -1157,7 +1269,7 @@ class GameUI {
             return;
         }
 
-        // Verificar se já está bloqueando
+        // Verificar se já está bloqueando - se sim, remover do bloqueio
         const alreadyBlocking = Object.values(this.blockerAssignments).flat().includes(card);
         if (alreadyBlocking) {
             // Remover do bloqueio
@@ -1172,24 +1284,38 @@ class GameUI {
                     break;
                 }
             }
+            this.selectedBlocker = null;
             this.render();
             return;
         }
 
-        // Bloqueia o primeiro atacante não bloqueado que pode ser bloqueado por esta criatura
-        const attackers = this.game.currentAttackers || [];
-        const unblockedAttacker = attackers.find(a =>
-            !this.blockerAssignments[a.instanceId] &&
-            this.game.rules.canBlock(card, a)
-        );
+        // Selecionar este bloqueador e aguardar clique no atacante
+        this.selectedBlocker = card;
+        this.log(`Selecione um atacante para ${card.name} bloquear (ou clique novamente para cancelar)`);
+        this.render();
+    }
 
-        if (unblockedAttacker) {
-            this.blockerAssignments[unblockedAttacker.instanceId] = [card];
-            this.log(`${card.name} bloqueia ${unblockedAttacker.name}`);
-            this.render();
-        } else {
-            this.log(`${card.name} não pode bloquear nenhum atacante.`);
+    // Seleciona um atacante para ser bloqueado pelo bloqueador selecionado
+    selectAttackerToBlock(attacker) {
+        if (!this.selectedBlocker) {
+            return;
         }
+
+        // Verificar se pode bloquear este atacante
+        if (!this.game.rules.canBlock(this.selectedBlocker, attacker)) {
+            this.log(`${this.selectedBlocker.name} não pode bloquear ${attacker.name}.`);
+            return;
+        }
+
+        // Adicionar bloqueador ao atacante (permite múltiplos bloqueadores)
+        if (!this.blockerAssignments[attacker.instanceId]) {
+            this.blockerAssignments[attacker.instanceId] = [];
+        }
+        this.blockerAssignments[attacker.instanceId].push(this.selectedBlocker);
+        this.log(`${this.selectedBlocker.name} bloqueia ${attacker.name}`);
+
+        this.selectedBlocker = null;
+        this.render();
     }
 
     // Mostra prompt para escolher bloqueadores
@@ -1246,6 +1372,57 @@ class GameUI {
             this.logPanelContent.appendChild(logEntry);
             this.logPanelContent.scrollTop = this.logPanelContent.scrollHeight;
         }
+    }
+
+    // === RENDERIZAÇÃO DO STACK ===
+    renderStack() {
+        const stackEl = document.getElementById('stack');
+        if (!stackEl) return;
+
+        stackEl.innerHTML = '';
+
+        if (this.game.stack.length === 0) {
+            stackEl.classList.add('empty');
+            stackEl.innerHTML = '<span class="stack-empty-text">Pilha vazia</span>';
+            return;
+        }
+
+        stackEl.classList.remove('empty');
+
+        // Renderizar itens da pilha (do topo para a base)
+        const stackItems = [...this.game.stack].reverse();
+        stackItems.forEach((stackItem, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'stack-item';
+
+            if (index === 0) {
+                itemEl.classList.add('stack-top');
+            }
+
+            const item = stackItem.item;
+            const controllerName = stackItem.controller === this.game.player ? 'Você' : 'Oponente';
+
+            let itemHtml = `
+                <div class="stack-item-name">${item.name || 'Habilidade'}</div>
+                <div class="stack-item-controller">${controllerName}</div>
+            `;
+
+            if (stackItem.target) {
+                itemHtml += `<div class="stack-item-target">Alvo: ${stackItem.target.name}</div>`;
+            }
+
+            itemEl.innerHTML = itemHtml;
+            stackEl.appendChild(itemEl);
+        });
+
+        // Mostrar indicador de prioridade
+        const priorityEl = document.createElement('div');
+        priorityEl.className = 'stack-priority';
+        const priorityText = this.game.priorityPlayer === this.game.player
+            ? 'Sua prioridade'
+            : 'Prioridade do oponente';
+        priorityEl.textContent = priorityText;
+        stackEl.appendChild(priorityEl);
     }
 
     // === SISTEMA DE MULLIGAN ===
