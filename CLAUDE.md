@@ -19,7 +19,8 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `ai.js` - AI opponent logic for playing cards and combat decisions
 - `ui.js` - DOM manipulation, rendering, event handling (GameUI class)
 - `cards.js` - Card database (CARD_DATABASE) with all 4 decks
-- `sounds.js` - SoundManager (Pixabay audio) and ImageManager (Scryfall API)
+- `sounds.js` - SoundManager (Pixabay audio)
+- `images.js` - ImageManager (Scryfall API for card images and avatars)
 
 **Key Classes:**
 - `GameState` - Central state: players, phase, turn number, combat state. Has persistence via localStorage (saveGame/restoreGame)
@@ -50,11 +51,11 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 
 ## Avatars
 
-Player and AI avatars use Scryfall art_crop images from planeswalker cards (versões originais com artes mais focadas no rosto):
+Player and AI avatars use Scryfall art_crop images from planeswalker cards (versões com artes mais focadas no rosto):
 - jace: Jace Beleren
 - chandra: Chandra Nalaar
-- liliana: Liliana Vess
-- gideon: Gideon Jura
+- liliana: Liliana, Dreadhorde General
+- gideon: Gideon Blackblade
 - nissa: Nissa Revane
 - ajani: Ajani Goldmane
 

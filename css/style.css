@@ -291,10 +291,10 @@ body {
     flex-shrink: 0;
 }
 
-/* Avatar com imagem real do Scryfall */
+/* Avatar com imagem real do Scryfall - zoom no rosto estilo headshot */
 .player-avatar.has-avatar-image {
-    background-size: cover;
-    background-position: center center;
+    background-size: 180%;
+    background-position: center 15%;
     background-repeat: no-repeat;
     border: 2px solid rgba(255, 200, 0, 0.6);
     box-shadow: 0 0 10px rgba(255, 200, 0, 0.4);
@@ -2343,10 +2343,10 @@ body {
     border: 2px solid rgba(180, 100, 180, 0.3);
 }
 
-/* Avatar com imagem na seleção */
+/* Avatar com imagem na seleção - zoom no rosto estilo headshot */
 .avatar-icon.has-avatar-image {
-    background-size: cover;
-    background-position: center center;
+    background-size: 180%;
+    background-position: center 15%;
     background-repeat: no-repeat;
 }
 
