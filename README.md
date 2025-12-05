@@ -10,18 +10,18 @@ Jogo offline de MTG usando os 4 decks Jumpstart do **Foundations Beginner Box**:
 
 | Deck | Cor | Estratégia | Carta Destaque |
 |------|:---:|------------|----------------|
-| **Cats** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="16" height="16"> | Criaturas com lifelink e tokens | <a href="https://scryfall.com/card/ddg/7/leonin-skyhunter"><img src="https://cards.scryfall.io/art_crop/front/1/5/15d6476c-1944-48e8-9af6-6db78edd58e5.jpg?1562899585" width="80"></a> |
-| **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="16" height="16"> | Agressivo com haste e dano direto | <a href="https://scryfall.com/card/fdn/543/raging-redcap"><img src="https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg?1730490661" width="80"></a> |
-| **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="16" height="16"> | Dreno de vida e flying | <a href="https://scryfall.com/card/mid/125/vampire-interloper"><img src="https://cards.scryfall.io/art_crop/front/c/3/c3e2ea59-36f1-4e95-bfe8-7008b085194f.jpg?1634350330" width="80"></a> |
-| **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="16" height="16"> | Ramp de mana e criaturas grandes | <a href="https://scryfall.com/card/fdn/219/elvish-archdruid"><img src="https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg?1730489413" width="80"></a> |
+| **Cats** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="18" height="18"> | Criaturas com lifelink e tokens | <a href="https://scryfall.com/card/ddg/7/leonin-skyhunter"><img src="https://cards.scryfall.io/art_crop/front/1/5/15d6476c-1944-48e8-9af6-6db78edd58e5.jpg?1562899585" width="80"></a> |
+| **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="18" height="18"> | Agressivo com haste e dano direto | <a href="https://scryfall.com/card/fdn/543/raging-redcap"><img src="https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg?1730490661" width="80"></a> |
+| **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="18" height="18"> | Dreno de vida e flying | <a href="https://scryfall.com/card/mid/125/vampire-interloper"><img src="https://cards.scryfall.io/art_crop/front/c/3/c3e2ea59-36f1-4e95-bfe8-7008b085194f.jpg?1634350330" width="80"></a> |
+| **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="18" height="18"> | Ramp de mana e criaturas grandes | <a href="https://scryfall.com/card/fdn/219/elvish-archdruid"><img src="https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg?1730489413" width="80"></a> |
 
 ## Screenshots
 
 ### Seleção de Avatar
-<img src="screenshots/avatar-selection.png" width="200">
+<img src="screenshots/avatar-selection.png" width="300">
 
 ### Tela de Mulligan
-<img src="screenshots/mulligan.png" width="300">
+<img src="screenshots/mulligan.png" width="400">
 
 ### Gameplay
 ![Gameplay](screenshots/gameplay.png)
