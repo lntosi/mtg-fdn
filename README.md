@@ -97,6 +97,8 @@ mtg/
 │   ├── spells.test.js      # Testes de feitiços
 │   ├── keywords.test.js    # Testes de keywords
 │   └── lords.test.js       # Testes de lords
+├── tools/
+│   └── validate-cards.js   # Validação de cartas via Scryfall
 ├── screenshots/            # Screenshots da aplicação
 ├── package.json            # Configuração npm e Jest
 ├── CLAUDE.md               # Guia para Claude Code

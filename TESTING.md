@@ -315,4 +315,167 @@ npx jest tests/combat.test.js
 
 ---
 
+## Validação de Cartas (Scryfall)
+
+O projeto inclui um script para validar cartas contra a API do Scryfall, garantindo que os dados estão corretos.
+
+### Executar validação
+
+```bash
+# Validar todas as cartas
+node tools/validate-cards.js
+
+# Validar um deck específico
+node tools/validate-cards.js cats
+node tools/validate-cards.js goblins
+
+# Mostrar apenas cartas sem testes
+node tools/validate-cards.js --missing
+
+# Modo verbose (mostra oracle text)
+node tools/validate-cards.js --verbose
+```
+
+### O que é validado
+
+| Check | Descrição |
+|-------|-----------|
+| **Existência** | Carta existe no Scryfall |
+| **Mana Cost** | Custo de mana confere |
+| **Power/Toughness** | Força/Resistência corretas |
+| **Keywords** | Keywords implementadas vs oficiais |
+| **Test Coverage** | Carta tem testes automatizados |
+
+### Exemplo de saída
+
+```
+============================================================
+Validating: Cats (white)
+============================================================
+
+✓ Savannah Lions [TESTED]
+✗ Leonin Vanguard [NO TEST]
+  Our text: Quando atacar, se você controla outra criatura, ganha 1 vida.
+  ⚠ Missing keywords: lifelink
+
+============================================================
+SUMMARY
+============================================================
+
+CATS:
+  ✓ Valid: 8
+  ✗ Issues: 2
+  ? Not found: 0
+  📝 Without tests: 3
+```
+
+---
+
+## Processo de Adição de Novas Cartas
+
+Ao adicionar novas cartas ao projeto, siga este checklist:
+
+### 1. Buscar dados no Scryfall
+
+```bash
+# Buscar carta pela API
+curl "https://api.scryfall.com/cards/named?exact=Card+Name" | jq .
+```
+
+Ou acesse: `https://scryfall.com/search?q=card+name`
+
+### 2. Campos obrigatórios
+
+```javascript
+{
+    id: "unique_id",           // Identificador único (snake_case)
+    name: "Card Name",         // Nome exato do Scryfall
+    type: "creature",          // creature, instant, sorcery, enchantment, artifact
+    cost: "2G",                // Custo de mana (sem chaves)
+    cmc: 3,                    // Converted mana cost
+    // Para criaturas:
+    power: 2,
+    toughness: 3,
+    subtype: "Elf Warrior",    // Subtipos separados por espaço
+    // Opcional:
+    keywords: ["trample"],     // Keywords como array
+    text: "Descrição...",      // Texto da habilidade (português)
+    qty: 1                     // Quantidade no deck (default: 1)
+}
+```
+
+### 3. Implementar habilidades
+
+**Keywords automáticas** (já funcionam sem código extra):
+- flying, reach, trample, lifelink, deathtouch
+- first_strike, double_strike, vigilance, haste, menace
+
+**Keywords que precisam de código:**
+- `tap_for_mana` + `produces: "G"` - Para criaturas que geram mana
+- `etb_draw` - Comprar carta ao entrar
+- Triggers customizados - Implementar em `rules.js`
+
+### 4. Adicionar testes
+
+Para cada carta com habilidade especial, adicione testes em `tests/`:
+
+```javascript
+// tests/triggers.test.js
+describe('Nova Criatura', () => {
+    test('trigger description', () => {
+        const criatura = CREATURES.novaCriatura();
+        // Setup e verificação
+        expect(resultado).toBe(esperado);
+    });
+});
+```
+
+### 5. Validar contra Scryfall
+
+```bash
+# Executar validação
+node tools/validate-cards.js
+
+# Verificar se passou
+echo $?  # 0 = sucesso, 1 = erros
+```
+
+### 6. Checklist final
+
+- [ ] Dados conferem com Scryfall (nome, custo, P/T)
+- [ ] Keywords corretas implementadas
+- [ ] Habilidades especiais têm código em `rules.js`
+- [ ] Testes criados para habilidades
+- [ ] Validação passa sem erros
+- [ ] Testado manualmente no jogo
+
+---
+
+## Manutenção de Qualidade
+
+### Antes de cada PR/commit com novas cartas
+
+```bash
+# 1. Rodar testes unitários
+npm test
+
+# 2. Validar cartas contra Scryfall
+node tools/validate-cards.js
+
+# 3. Verificar cartas sem testes
+node tools/validate-cards.js --missing
+```
+
+### Relatório de cobertura
+
+```bash
+# Gerar relatório de cobertura
+npm run test:coverage
+
+# Verificar cartas sem testes
+node tools/validate-cards.js --missing
+```
+
+---
+
 *Última atualização: Dezembro 2025*
