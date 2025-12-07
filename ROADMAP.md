@@ -194,13 +194,14 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
   - ✅ Verifica existência, mana cost, power/toughness, keywords
   - ✅ Identifica cartas sem cobertura de testes
   - ✅ Processo documentado em TESTING.md para adicionar novas cartas
-- [ ] **Modo Debug**: Comandos para acelerar testes manuais
-  - Comprar carta específica por nome
-  - Setar vida de qualquer jogador
-  - Adicionar mana ao pool
-  - Pular para fase específica
-  - Forçar mão inicial
-  - Colocar carta direto no campo de batalha
+- [x] **Modo Debug**: Comandos para acelerar testes manuais via console (`window.debug`)
+  - ✅ Comprar carta específica por nome (`debug.draw()`, `debug.drawAny()`)
+  - ✅ Setar vida de qualquer jogador (`debug.setLife()`)
+  - ✅ Adicionar mana ao pool (`debug.addMana()`, `debug.fullMana()`)
+  - ✅ Pular para fase específica (`debug.setPhase()`, `debug.skipTo()`)
+  - ✅ Forçar mão inicial (`debug.setHand()`, `debug.clearHand()`)
+  - ✅ Colocar carta direto no campo de batalha (`debug.addToBattlefield()`)
+  - ✅ Comandos auxiliares: `debug.state()`, `debug.battlefield()`, `debug.hand()`, `debug.kill()`, `debug.setupCombat()`
 
 ### 6.2 Prioridade Média
 

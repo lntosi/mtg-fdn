@@ -227,6 +227,11 @@ class GameState {
         this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
         this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
 
+        // Inicializar modo debug
+        if (window.debug) {
+            window.debug.init(this);
+        }
+
         // Mostrar opção de mulligan
         this.ui.showMulliganPrompt();
     }
