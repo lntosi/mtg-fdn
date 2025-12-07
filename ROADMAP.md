@@ -269,4 +269,13 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ---
 
+## Para Avaliar Futuramente
+
+Itens que precisam de revisão ou decisão sobre manter/modificar/remover:
+
+### UX/Interface
+- **Hover duplo nas cartas da mão**: Atualmente há zoom CSS local (carta aumenta 2.8x no lugar) E preview lateral direito com detalhes da carta. Ambos funcionam simultaneamente ao passar o mouse - avaliar se manter os dois (o preview lateral mostra texto/efeito mais legível), manter apenas um, ou unificar a experiência.
+
+---
+
 *Última atualização: Dezembro 2025*

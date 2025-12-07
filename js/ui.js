@@ -1802,6 +1802,68 @@ class GameUI {
         });
     }
 
+    // === PROMPT GENÉRICO PARA TRIGGERS COM SELEÇÃO DE ALVO ===
+
+    /**
+     * Mostra um modal para o jogador selecionar um alvo para um trigger/habilidade
+     * @param {Object} options - Opções do prompt
+     * @param {string} options.title - Título do modal (nome da carta)
+     * @param {string} options.description - Descrição do efeito
+     * @param {Array} options.validTargets - Lista de criaturas válidas como alvo
+     * @param {boolean} options.canSkip - Se pode pular (opcional, default false)
+     * @returns {Promise<Object|null>} - A criatura selecionada ou null se pulou
+     */
+    promptTriggerTarget(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('trigger-target-modal');
+            if (!modal) {
+                // Se o modal não existir, escolher automaticamente o primeiro
+                if (options.validTargets.length > 0) {
+                    resolve(options.validTargets[0]);
+                } else {
+                    resolve(null);
+                }
+                return;
+            }
+
+            const title = document.getElementById('trigger-target-title');
+            const description = document.getElementById('trigger-target-description');
+            const creaturesContainer = document.getElementById('trigger-target-creatures');
+            const btnSkip = document.getElementById('btn-trigger-skip');
+
+            // Configurar conteúdo
+            title.textContent = options.title || 'Selecione um Alvo';
+            description.textContent = options.description || 'Escolha uma criatura:';
+
+            // Configurar botão de pular
+            if (options.canSkip) {
+                btnSkip.classList.remove('hidden');
+                btnSkip.onclick = () => {
+                    modal.classList.add('hidden');
+                    resolve(null);
+                };
+            } else {
+                btnSkip.classList.add('hidden');
+            }
+
+            // Renderizar criaturas válidas
+            creaturesContainer.innerHTML = '';
+            options.validTargets.forEach(creature => {
+                const cardEl = this.createCardElement(creature, true);
+                cardEl.classList.add('trigger-valid-target');
+                cardEl.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    resolve(creature);
+                });
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                creaturesContainer.appendChild(cardEl);
+            });
+
+            modal.classList.remove('hidden');
+        });
+    }
+
     // === LINHAS DE CONEXÃO ATACANTE-BLOQUEADOR ===
 
     drawCombatLines() {

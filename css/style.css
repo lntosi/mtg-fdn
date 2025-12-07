@@ -2412,6 +2412,53 @@ body {
     transform: scale(1.05);
 }
 
+/* === Modal Genérico de Trigger com Seleção de Alvo === */
+.trigger-target-content {
+    max-width: 700px;
+}
+
+.trigger-target-content h2 {
+    color: #f1c40f;
+}
+
+.trigger-target-content p {
+    margin-bottom: 15px;
+    color: #e0c0e0;
+}
+
+.trigger-target-creatures {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    min-height: 150px;
+}
+
+.trigger-target-creatures .card {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.trigger-target-creatures .card:hover {
+    transform: scale(1.15);
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
+}
+
+.trigger-target-creatures .card.trigger-valid-target {
+    border: 3px solid #f1c40f;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+.trigger-target-creatures .card.trigger-valid-target:hover {
+    border-color: #f39c12;
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.9);
+}
+
 /* === Personalização do Jogador === */
 .customization-content {
     max-width: 550px;

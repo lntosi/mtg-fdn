@@ -980,48 +980,84 @@ class GameState {
     }
 
     // Trigger Stromkirk Bloodthief - no fim do turno, +1/+1 em vampiro se oponente perdeu vida
-    triggerStromkirkBloodthief(controller) {
+    async triggerStromkirkBloodthief(controller) {
         const opponentLostLife = controller === this.player ? this.opponentLostLifeThisTurn : this.playerLostLifeThisTurn;
         if (!opponentLostLife) return;
 
-        controller.battlefield.forEach(card => {
+        for (const card of controller.battlefield) {
             if (card.id === 'stromkirk_bloodthief') {
-                // Encontrar um vampiro para colocar o contador (pode ser ele mesmo)
+                // Encontrar vampiros para colocar o contador (pode ser ele mesmo)
                 const vampires = controller.battlefield.filter(c =>
                     c.type === 'creature' && c.subtype && c.subtype.includes('Vampire')
                 );
+
                 if (vampires.length > 0) {
-                    // Escolher o vampiro mais forte
-                    const target = vampires.sort((a, b) =>
-                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
-                    )[0];
-                    if (!target.counters) target.counters = {};
-                    target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
-                    this.ui.log(`Stromkirk Bloodthief: +1/+1 counter em ${target.name}`);
+                    let target;
+
+                    // Se é o jogador humano, deixar escolher o alvo
+                    if (controller === this.player) {
+                        target = await this.ui.promptTriggerTarget({
+                            title: 'Stromkirk Bloodthief',
+                            description: 'Escolha um Vampiro para receber um contador +1/+1:',
+                            validTargets: vampires,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe o vampiro mais forte
+                        target = vampires.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (target) {
+                        if (!target.counters) target.counters = {};
+                        target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                        this.ui.log(`Stromkirk Bloodthief: +1/+1 counter em ${target.name}`);
+                        this.ui.render();
+                    }
                 }
             }
-        });
+        }
     }
 
     // Trigger Battle-Rattle Shaman - no início do combate, criatura ganha +2/+0
-    triggerBattleRattleShaman(controller) {
-        controller.battlefield.forEach(card => {
+    async triggerBattleRattleShaman(controller) {
+        for (const card of controller.battlefield) {
             if (card.id === 'battle_rattle_shaman') {
-                // Encontrar uma criatura para dar +2/+0 (não ela mesma, preferencialmente)
-                const creatures = controller.battlefield.filter(c =>
-                    c.type === 'creature' && c.instanceId !== card.instanceId
-                );
-                let target = creatures.length > 0 ? creatures[0] : card;
-                // Preferir a criatura com maior poder
+                // Encontrar criaturas para dar +2/+0 (pode ser ela mesma)
+                const creatures = controller.battlefield.filter(c => c.type === 'creature');
+
                 if (creatures.length > 0) {
-                    target = creatures.sort((a, b) =>
-                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
-                    )[0];
+                    let target;
+
+                    // Se é o jogador humano, deixar escolher o alvo
+                    if (controller === this.player) {
+                        target = await this.ui.promptTriggerTarget({
+                            title: 'Battle-Rattle Shaman',
+                            description: 'Escolha uma criatura para receber +2/+0 até o fim do turno:',
+                            validTargets: creatures,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA prefere outra criatura, mas pode ser ela mesma
+                        const others = creatures.filter(c => c.instanceId !== card.instanceId);
+                        if (others.length > 0) {
+                            target = others.sort((a, b) =>
+                                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                            )[0];
+                        } else {
+                            target = card; // Ela mesma
+                        }
+                    }
+
+                    if (target) {
+                        target.powerModifier = (target.powerModifier || 0) + 2;
+                        this.ui.log(`Battle-Rattle Shaman: ${target.name} ganhou +2/+0`);
+                        this.ui.render();
+                    }
                 }
-                target.powerModifier = (target.powerModifier || 0) + 2;
-                this.ui.log(`Battle-Rattle Shaman: ${target.name} ganhou +2/+0`);
             }
-        });
+        }
     }
 
     // Trigger Leonin Vanguard - ganha 1 vida ao atacar com outra criatura
@@ -1151,18 +1187,34 @@ class GameState {
             case 'goblin_smuggler':
                 // T: criatura alvo com poder ≤2 não pode ser bloqueada neste turno
                 card.tapped = true;
-                const validTargets = player.battlefield.filter(c =>
+                const smugglerTargets = player.battlefield.filter(c =>
                     c.type === 'creature' &&
                     this.rules.getCreaturePower(c) <= 2 &&
                     c.instanceId !== card.instanceId
                 );
-                if (validTargets.length > 0) {
-                    // Escolher a criatura com maior poder
-                    const target = validTargets.sort((a, b) =>
-                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
-                    )[0];
-                    this.unblockableThisTurn.push(target.instanceId);
-                    this.ui.log(`Goblin Smuggler: ${target.name} não pode ser bloqueado neste turno`);
+                if (smugglerTargets.length > 0) {
+                    let smugglerTarget;
+
+                    // Se é o jogador humano, deixar escolher o alvo
+                    if (player === this.player) {
+                        smugglerTarget = await this.ui.promptTriggerTarget({
+                            title: 'Goblin Smuggler',
+                            description: 'Escolha uma criatura com poder ≤2 para não ser bloqueada:',
+                            validTargets: smugglerTargets,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe a criatura com maior poder
+                        smugglerTarget = smugglerTargets.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (smugglerTarget) {
+                        this.unblockableThisTurn.push(smugglerTarget.instanceId);
+                        this.ui.log(`Goblin Smuggler: ${smugglerTarget.name} não pode ser bloqueado neste turno`);
+                        this.ui.render();
+                    }
                 }
                 break;
 
@@ -1181,18 +1233,35 @@ class GameState {
             case 'wildheart_invoker':
                 // 8: criatura alvo ganha +5/+5 e trample até fim do turno
                 this.payGenericMana(8, player);
-                const creatureTargets = player.battlefield.filter(c =>
+                const invokerTargets = player.battlefield.filter(c =>
                     c.type === 'creature' && c.instanceId !== card.instanceId
                 );
-                if (creatureTargets.length > 0) {
-                    const target = creatureTargets.sort((a, b) =>
-                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
-                    )[0];
-                    target.powerModifier = (target.powerModifier || 0) + 5;
-                    target.toughnessModifier = (target.toughnessModifier || 0) + 5;
-                    if (!target.temporaryKeywords) target.temporaryKeywords = [];
-                    target.temporaryKeywords.push('trample');
-                    this.ui.log(`Wildheart Invoker: ${target.name} ganhou +5/+5 e atropelar`);
+                if (invokerTargets.length > 0) {
+                    let invokerTarget;
+
+                    // Se é o jogador humano, deixar escolher o alvo
+                    if (player === this.player) {
+                        invokerTarget = await this.ui.promptTriggerTarget({
+                            title: 'Wildheart Invoker',
+                            description: 'Escolha uma criatura para receber +5/+5 e atropelar:',
+                            validTargets: invokerTargets,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe a criatura mais forte
+                        invokerTarget = invokerTargets.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (invokerTarget) {
+                        invokerTarget.powerModifier = (invokerTarget.powerModifier || 0) + 5;
+                        invokerTarget.toughnessModifier = (invokerTarget.toughnessModifier || 0) + 5;
+                        if (!invokerTarget.temporaryKeywords) invokerTarget.temporaryKeywords = [];
+                        invokerTarget.temporaryKeywords.push('trample');
+                        this.ui.log(`Wildheart Invoker: ${invokerTarget.name} ganhou +5/+5 e atropelar`);
+                        this.ui.render();
+                    }
                 }
                 break;
 
@@ -1360,7 +1429,7 @@ class GameState {
 
             case PHASES.COMBAT_BEGIN:
                 // Trigger Battle-Rattle Shaman no início do combate
-                this.triggerBattleRattleShaman(this.activePlayer);
+                await this.triggerBattleRattleShaman(this.activePlayer);
                 await this.nextPhase();
                 break;
 
@@ -1389,7 +1458,7 @@ class GameState {
 
             case PHASES.END:
                 // Trigger Stromkirk Bloodthief no fim do turno
-                this.triggerStromkirkBloodthief(this.activePlayer);
+                await this.triggerStromkirkBloodthief(this.activePlayer);
                 await this.nextPhase();
                 break;
 

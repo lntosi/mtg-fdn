@@ -81,3 +81,4 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, tap_for_mana, etb_draw
 - to memorize
 - to memorize
+- to memorize
