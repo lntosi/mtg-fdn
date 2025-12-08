@@ -1282,6 +1282,10 @@ body {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
 
+.mana-icon.mana-hidden {
+    display: none;
+}
+
 @keyframes mana-pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }

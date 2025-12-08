@@ -147,6 +147,11 @@ class GameState {
             this.ui.playerCustomization.classList.add('hidden');
             this.ui.deckSelection.classList.add('hidden');
 
+            // Configurar ícones de mana para mostrar apenas as cores dos decks do jogador
+            if (this.playerDeckKeys) {
+                this.ui.setupManaIconsForDecks(this.playerDeckKeys);
+            }
+
             this.ui.log(`Jogo restaurado - Turno ${this.turnNumber}`);
             this.ui.render();
 
@@ -234,6 +239,9 @@ class GameState {
 
         this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
         this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
+
+        // Configurar ícones de mana para mostrar apenas as cores dos decks do jogador
+        this.ui.setupManaIconsForDecks(playerDecks);
 
         // Inicializar modo debug
         if (window.debug) {

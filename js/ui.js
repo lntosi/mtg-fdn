@@ -97,6 +97,49 @@ class GameUI {
             G: this.playerMana.querySelector('.mana-G'),
             C: this.playerMana.querySelector('.mana-C')
         };
+
+        // Mapeamento de cor do deck para símbolo de mana
+        this.deckColorToMana = {
+            white: 'W',
+            blue: 'U',
+            black: 'B',
+            red: 'R',
+            green: 'G'
+        };
+    }
+
+    /**
+     * Configura quais ícones de mana exibir baseado nos decks selecionados
+     */
+    setupManaIconsForDecks(deckKeys) {
+        // Descobrir as cores dos decks selecionados
+        const activeColors = new Set();
+
+        deckKeys.forEach(deckKey => {
+            const deck = window.CARD_DATABASE[deckKey];
+            if (deck && deck.color) {
+                const manaSymbol = this.deckColorToMana[deck.color];
+                if (manaSymbol) {
+                    activeColors.add(manaSymbol);
+                }
+            }
+        });
+
+        // Sempre mostrar mana incolor (para Uncharted Haven e artefatos)
+        activeColors.add('C');
+
+        // Esconder/mostrar ícones de mana
+        const allColors = ['W', 'U', 'B', 'R', 'G', 'C'];
+        allColors.forEach(color => {
+            const icon = this.manaIcons[color];
+            if (icon) {
+                if (activeColors.has(color)) {
+                    icon.classList.remove('mana-hidden');
+                } else {
+                    icon.classList.add('mana-hidden');
+                }
+            }
+        });
     }
 
     bindEvents() {
