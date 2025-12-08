@@ -3517,10 +3517,18 @@ body.theme-broadcast {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.theme-broadcast .player-info,
-.theme-broadcast #phase-indicator,
-.theme-broadcast #message-log {
+.theme-broadcast .player-info {
     background: rgba(255, 255, 255, 0.8);
+    color: #1a1a1a;
+}
+
+.theme-broadcast #phase-indicator {
+    background: transparent;
+    color: #1a1a1a;
+}
+
+.theme-broadcast #message-log {
+    background: rgba(200, 200, 200, 0.5);
     color: #1a1a1a;
 }
 
@@ -3676,9 +3684,23 @@ body.theme-broadcast {
     color: #1a1a1a;
 }
 
-.theme-broadcast #current-phase,
+.theme-broadcast #current-phase {
+    color: #1a1a1a;
+    background: transparent;
+}
+
 .theme-broadcast #turn-indicator {
     color: #1a1a1a;
+}
+
+.theme-broadcast #turn-indicator.player-turn {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: #fff;
+}
+
+.theme-broadcast #turn-indicator.opponent-turn {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: #fff;
 }
 
 .theme-broadcast .mana-pool .mana-icon {
