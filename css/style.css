@@ -809,32 +809,18 @@ body {
     z-index: 1;
 }
 
-/* Indicador visual de que há aura anexada (borda colorida) */
-/* A borda colorida indica presença de aura - detalhes completos no Preview Lateral */
+/* Indicador visual de que há aura anexada */
+/* Usa box-shadow para não cobrir a arte da carta */
+/* Detalhes completos no Preview Lateral */
 
-.card.has-debuff-aura::before,
-.card.has-buff-aura::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border-radius: 6px;
-    z-index: -2;
-    pointer-events: none;
+/* Borda vermelha brilhante para auras negativas (debuffs como Pacifism) */
+.card.has-debuff-aura {
+    box-shadow: 0 0 0 3px #8b0000, 0 0 12px 3px rgba(139, 0, 0, 0.6) !important;
 }
 
-/* Borda vermelha para auras negativas (debuffs como Pacifism) */
-.card.has-debuff-aura::before {
-    background: linear-gradient(135deg, #8b0000, #4a0000);
-    box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
-}
-
-/* Borda verde para auras positivas (buffs como Untamed Hunger) */
-.card.has-buff-aura::before {
-    background: linear-gradient(135deg, #228b22, #0a4a0a);
-    box-shadow: 0 0 10px rgba(34, 139, 34, 0.5);
+/* Borda verde brilhante para auras positivas (buffs como Untamed Hunger) */
+.card.has-buff-aura {
+    box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6) !important;
 }
 
 @keyframes pulse-attack {
