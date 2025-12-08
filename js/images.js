@@ -115,24 +115,24 @@ class ImageManager {
 
         const basicLandUrls = {
             'Plains': {
-                normal: 'https://cards.scryfall.io/normal/front/a/5/a5a645b3-5fc7-4d94-b1bd-5a6b7f167084.jpg?1730489749',
-                art_crop: 'https://cards.scryfall.io/art_crop/front/a/5/a5a645b3-5fc7-4d94-b1bd-5a6b7f167084.jpg?1730489749'
+                normal: 'https://cards.scryfall.io/normal/front/4/e/4ef17ed4-a9b5-4b8e-b4cb-2ecb7e5898c3.jpg?1730489617',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/4/e/4ef17ed4-a9b5-4b8e-b4cb-2ecb7e5898c3.jpg?1730489617'
             },
             'Island': {
-                normal: 'https://cards.scryfall.io/normal/front/7/0/7014b9fc-a906-4ffd-a482-22ba8dbe3552.jpg?1730489765',
-                art_crop: 'https://cards.scryfall.io/art_crop/front/7/0/7014b9fc-a906-4ffd-a482-22ba8dbe3552.jpg?1730489765'
+                normal: 'https://cards.scryfall.io/normal/front/1/7/17e2b637-72b1-4457-aaba-66d51107be4c.jpg?1730489625',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/1/7/17e2b637-72b1-4457-aaba-66d51107be4c.jpg?1730489625'
             },
             'Swamp': {
-                normal: 'https://cards.scryfall.io/normal/front/f/c/fc4b5b95-ced5-4c9e-a43a-fe798b9f25ba.jpg?1730489779',
-                art_crop: 'https://cards.scryfall.io/art_crop/front/f/c/fc4b5b95-ced5-4c9e-a43a-fe798b9f25ba.jpg?1730489779'
+                normal: 'https://cards.scryfall.io/normal/front/3/1/319bc1f0-ee42-44e5-b08b-735613ded2ba.jpg?1730489632',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/3/1/319bc1f0-ee42-44e5-b08b-735613ded2ba.jpg?1730489632'
             },
             'Mountain': {
-                normal: 'https://cards.scryfall.io/normal/front/9/a/9aef5c5b-07da-4477-a84c-7da7e496528f.jpg?1730489792',
-                art_crop: 'https://cards.scryfall.io/art_crop/front/9/a/9aef5c5b-07da-4477-a84c-7da7e496528f.jpg?1730489792'
+                normal: 'https://cards.scryfall.io/normal/front/2/7/279df7e2-2a3b-464a-a7df-e91da28e3a8c.jpg?1730489639',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/2/7/279df7e2-2a3b-464a-a7df-e91da28e3a8c.jpg?1730489639'
             },
             'Forest': {
-                normal: 'https://cards.scryfall.io/normal/front/6/e/6e7dd498-e71a-4a4b-9e1e-03c7f08e8a75.jpg?1730489807',
-                art_crop: 'https://cards.scryfall.io/art_crop/front/6/e/6e7dd498-e71a-4a4b-9e1e-03c7f08e8a75.jpg?1730489807'
+                normal: 'https://cards.scryfall.io/normal/front/d/2/d232fcc2-12f6-401a-b1aa-ddff11cb9378.jpg?1730489646',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/d/2/d232fcc2-12f6-401a-b1aa-ddff11cb9378.jpg?1730489646'
             }
         };
 

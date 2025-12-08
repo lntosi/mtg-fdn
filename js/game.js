@@ -96,6 +96,7 @@ class GameState {
         return {
             name: player.name,
             life: player.life,
+            avatar: player.avatar,
             library: player.library.map(c => this.serializeCard(c)),
             hand: player.hand.map(c => this.serializeCard(c)),
             battlefield: player.battlefield.map(c => this.serializeCard(c)),
@@ -160,6 +161,7 @@ class GameState {
         return {
             name: data.name,
             life: data.life,
+            avatar: data.avatar,
             library: data.library,
             hand: data.hand,
             battlefield: data.battlefield,
