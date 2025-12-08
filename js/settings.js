@@ -203,9 +203,9 @@ class SettingsManager {
         const gameContainer = document.getElementById('game-container');
 
         // Remover classes de tema anteriores
-        body.classList.remove('theme-default', 'theme-broadcast', 'theme-dark');
+        body.classList.remove('theme-default', 'theme-clean', 'theme-dark');
         if (gameContainer) {
-            gameContainer.classList.remove('theme-default', 'theme-broadcast', 'theme-dark');
+            gameContainer.classList.remove('theme-default', 'theme-clean', 'theme-dark');
         }
 
         // Aplicar novo tema
@@ -216,7 +216,7 @@ class SettingsManager {
 
         // Aplicar variáveis CSS por tema
         switch (theme) {
-            case 'broadcast':
+            case 'clean':
                 root.style.setProperty('--bg-primary', '#c8c8c8');
                 root.style.setProperty('--bg-secondary', '#e0e0e0');
                 root.style.setProperty('--bg-battlefield', '#d4d4d4');

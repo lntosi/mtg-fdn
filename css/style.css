@@ -3271,16 +3271,16 @@ html {
     background: #b432a8;
 }
 
-/* Preview do tema Broadcast (Cinza) */
-.theme-preview-broadcast {
+/* Preview do tema Clean (Cinza) */
+.theme-preview-clean {
     background: linear-gradient(180deg, #d4d4d4 0%, #b8b8b8 100%);
 }
 
-.theme-preview-broadcast .theme-preview-battlefield {
+.theme-preview-clean .theme-preview-battlefield {
     background: #cc0000;
 }
 
-.theme-preview-broadcast .theme-preview-watermark {
+.theme-preview-clean .theme-preview-watermark {
     color: #cc0000;
 }
 
@@ -3487,23 +3487,23 @@ html {
 /* === TEMAS VISUAIS === */
 /* ============================================= */
 
-/* === Tema Broadcast (Cinza com Marca d'água) === */
-body.theme-broadcast {
+/* === Tema Clean (Cinza com Marca d'água) === */
+body.theme-clean {
     background: linear-gradient(180deg, #c8c8c8 0%, #a8a8a8 100%);
 }
 
-.theme-broadcast #game-container {
+.theme-clean #game-container {
     background:
         radial-gradient(ellipse at center, rgba(200, 200, 200, 0.3) 0%, transparent 70%);
 }
 
-/* Zona central no tema broadcast */
-.theme-broadcast #middle-zone {
+/* Zona central no tema clean */
+.theme-clean #middle-zone {
     background: rgba(0, 0, 0, 0.05);
 }
 
 /* Marca d'água do Planeswalker */
-.theme-broadcast #game-container::before {
+.theme-clean #game-container::before {
     content: '✦';
     position: fixed;
     top: 50%;
@@ -3515,263 +3515,263 @@ body.theme-broadcast {
     z-index: 0;
 }
 
-.theme-broadcast .battlefield {
+.theme-clean .battlefield {
     background: rgba(212, 212, 212, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.theme-broadcast .player-info {
+.theme-clean .player-info {
     background: rgba(255, 255, 255, 0.8);
     color: #1a1a1a;
 }
 
-.theme-broadcast #phase-indicator {
+.theme-clean #phase-indicator {
     background: transparent;
     color: #1a1a1a;
 }
 
-.theme-broadcast #message-log {
+.theme-clean #message-log {
     background: rgba(200, 200, 200, 0.5);
     color: #1a1a1a;
 }
 
-.theme-broadcast .life-total {
+.theme-clean .life-total {
     background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
     color: #fff;
 }
 
-.theme-broadcast .card {
+.theme-clean .card {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.theme-broadcast #action-buttons button {
+.theme-clean #action-buttons button {
     background: linear-gradient(180deg, #444 0%, #222 100%);
     color: #fff;
 }
 
-.theme-broadcast #action-buttons button:hover:not(:disabled) {
+.theme-clean #action-buttons button:hover:not(:disabled) {
     background: linear-gradient(180deg, #555 0%, #333 100%);
 }
 
-.theme-broadcast .log-panel {
+.theme-clean .log-panel {
     background: rgba(255, 255, 255, 0.95);
     color: #1a1a1a;
 }
 
-.theme-broadcast .modal-content {
+.theme-clean .modal-content {
     background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
     color: #1a1a1a;
 }
 
-/* Broadcast theme - Settings modal */
-.theme-broadcast .settings-content {
+/* Clean theme - Settings modal */
+.theme-clean .settings-content {
     background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
 }
 
-.theme-broadcast .settings-header {
+.theme-clean .settings-header {
     background: rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.theme-broadcast .settings-header h2 {
+.theme-clean .settings-header h2 {
     color: #1a1a1a;
 }
 
-.theme-broadcast .btn-close-settings {
+.theme-clean .btn-close-settings {
     color: #666;
 }
 
-.theme-broadcast .btn-close-settings:hover {
+.theme-clean .btn-close-settings:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #1a1a1a;
 }
 
-.theme-broadcast .settings-section {
+.theme-clean .settings-section {
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.theme-broadcast .settings-section h3 {
+.theme-clean .settings-section h3 {
     color: #333;
 }
 
-.theme-broadcast .theme-name {
+.theme-clean .theme-name {
     color: #333;
 }
 
-.theme-broadcast .theme-option input:checked ~ .theme-name {
+.theme-clean .theme-option input:checked ~ .theme-name {
     color: #cc0000;
 }
 
-.theme-broadcast .sound-toggle span {
+.theme-clean .sound-toggle span {
     color: #1a1a1a;
 }
 
-.theme-broadcast .volume-control label {
+.theme-clean .volume-control label {
     color: #333;
 }
 
-.theme-broadcast #volume-value {
+.theme-clean #volume-value {
     color: #1a1a1a;
 }
 
-.theme-broadcast #volume-slider {
+.theme-clean #volume-slider {
     background: #bbb;
 }
 
-.theme-broadcast #volume-slider::-webkit-slider-thumb {
+.theme-clean #volume-slider::-webkit-slider-thumb {
     background: linear-gradient(135deg, #cc0000, #990000);
 }
 
-.theme-broadcast .btn-setting {
+.theme-clean .btn-setting {
     background: rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(0, 0, 0, 0.2);
     color: #1a1a1a;
 }
 
-.theme-broadcast .btn-setting:hover {
+.theme-clean .btn-setting:hover {
     background: rgba(0, 0, 0, 0.2);
 }
 
-.theme-broadcast .btn-setting.btn-danger {
+.theme-clean .btn-setting.btn-danger {
     background: rgba(204, 0, 0, 0.15);
     border-color: rgba(204, 0, 0, 0.3);
     color: #cc0000;
 }
 
-.theme-broadcast .btn-setting.btn-danger:hover {
+.theme-clean .btn-setting.btn-danger:hover {
     background: rgba(204, 0, 0, 0.25);
 }
 
-.theme-broadcast .match-info {
+.theme-clean .match-info {
     color: #555;
 }
 
-.theme-broadcast .settings-footer {
+.theme-clean .settings-footer {
     background: rgba(0, 0, 0, 0.05);
 }
 
-.theme-broadcast .settings-hint {
+.theme-clean .settings-hint {
     color: #666;
 }
 
-.theme-broadcast .settings-hint kbd {
+.theme-clean .settings-hint kbd {
     background: rgba(0, 0, 0, 0.1);
     border-color: rgba(0, 0, 0, 0.2);
     color: #333;
 }
 
-/* Broadcast theme - All text elements */
-.theme-broadcast .player-name,
-.theme-broadcast #player-name-display,
-.theme-broadcast #opponent-name {
+/* Clean theme - All text elements */
+.theme-clean .player-name,
+.theme-clean #player-name-display,
+.theme-clean #opponent-name {
     color: #1a1a1a;
 }
 
-.theme-broadcast .log-panel {
+.theme-clean .log-panel {
     background: #f8f8f8;
     border: 1px solid #ccc;
 }
 
-.theme-broadcast .log-panel-header {
+.theme-clean .log-panel-header {
     background: #eee;
     color: #1a1a1a;
     border-bottom: 1px solid #ccc;
 }
 
-.theme-broadcast .log-panel-content,
-.theme-broadcast #log-panel-content {
+.theme-clean .log-panel-content,
+.theme-clean #log-panel-content {
     color: #1a1a1a;
 }
 
-.theme-broadcast #message-log {
+.theme-clean #message-log {
     color: #1a1a1a;
 }
 
-/* Broadcast theme - Stack */
-.theme-broadcast #stack {
+/* Clean theme - Stack */
+.theme-clean #stack {
     background: rgba(0, 0, 0, 0.1);
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-.theme-broadcast .stack-empty-text {
+.theme-clean .stack-empty-text {
     color: #555;
 }
 
-.theme-broadcast .stack-item {
+.theme-clean .stack-item {
     background: rgba(255, 255, 255, 0.8);
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-.theme-broadcast .stack-item-name {
+.theme-clean .stack-item-name {
     color: #1a1a1a;
 }
 
-.theme-broadcast .stack-item-controller {
+.theme-clean .stack-item-controller {
     color: #555;
 }
 
-.theme-broadcast .stack-item-target {
+.theme-clean .stack-item-target {
     color: #333;
 }
 
-.theme-broadcast #current-phase {
+.theme-clean #current-phase {
     color: #1a1a1a;
     background: transparent;
 }
 
-.theme-broadcast #turn-indicator {
+.theme-clean #turn-indicator {
     color: #1a1a1a;
 }
 
-.theme-broadcast #turn-indicator.player-turn {
+.theme-clean #turn-indicator.player-turn {
     background: linear-gradient(135deg, #27ae60, #2ecc71);
     color: #fff;
 }
 
-.theme-broadcast #turn-indicator.opponent-turn {
+.theme-clean #turn-indicator.opponent-turn {
     background: linear-gradient(135deg, #c0392b, #e74c3c);
     color: #fff;
 }
 
-.theme-broadcast .mana-pool .mana-icon {
+.theme-clean .mana-pool .mana-icon {
     color: #1a1a1a;
 }
 
-.theme-broadcast .library-count,
-.theme-broadcast .graveyard-count {
+.theme-clean .library-count,
+.theme-clean .graveyard-count {
     color: #1a1a1a;
     background: rgba(255, 255, 255, 0.9);
 }
 
-/* Broadcast theme - Modals */
-.theme-broadcast .modal-content h2 {
+/* Clean theme - Modals */
+.theme-clean .modal-content h2 {
     color: #1a1a1a;
 }
 
-.theme-broadcast .modal-content p {
+.theme-clean .modal-content p {
     color: #333;
 }
 
-.theme-broadcast .modal-content label {
+.theme-clean .modal-content label {
     color: #333;
 }
 
-.theme-broadcast .deck-option .deck-name {
+.theme-clean .deck-option .deck-name {
     color: #1a1a1a;
 }
 
-.theme-broadcast .avatar-name {
+.theme-clean .avatar-name {
     color: #333;
 }
 
-.theme-broadcast .customization-section label {
+.theme-clean .customization-section label {
     color: #333;
 }
 
-/* Broadcast theme - Zone labels */
-.theme-broadcast .lands::before,
-.theme-broadcast .creatures::before,
-.theme-broadcast .other-permanents::before {
+/* Clean theme - Zone labels */
+.theme-clean .lands::before,
+.theme-clean .creatures::before,
+.theme-clean .other-permanents::before {
     color: rgba(100, 100, 100, 0.6);
 }
 
