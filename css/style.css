@@ -2538,6 +2538,111 @@ body {
     box-shadow: 0 0 25px rgba(241, 196, 15, 0.9);
 }
 
+/* === Scry UI === */
+.scry-card-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.scry-card {
+    padding: 20px;
+    background: linear-gradient(135deg, #3b5998 0%, #1e3c72 100%);
+    border-radius: 10px;
+    border: 2px solid #6b8bc3;
+    min-width: 200px;
+    text-align: center;
+}
+
+.scry-card .card-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.scry-card .card-type {
+    font-size: 0.9em;
+    color: #c0d0e0;
+    margin-bottom: 5px;
+}
+
+.scry-card .card-cost {
+    font-size: 1em;
+    color: #f1c40f;
+}
+
+.scry-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.btn-scry-keep,
+.btn-scry-bottom {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-scry-keep {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    color: white;
+}
+
+.btn-scry-keep:hover {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    transform: scale(1.05);
+}
+
+.btn-scry-bottom {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+}
+
+.btn-scry-bottom:hover {
+    background: linear-gradient(135deg, #a569bd 0%, #9b59b6 100%);
+    transform: scale(1.05);
+}
+
+/* Card mini display for counterspell/scry */
+.card-mini {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    border: 1px solid #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.card-mini:hover {
+    background: rgba(0, 0, 0, 0.6);
+    border-color: #f1c40f;
+}
+
+.card-mini .card-name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.card-mini .card-type {
+    font-size: 0.85em;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+.card-mini .card-controller {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 5px;
+    font-style: italic;
+}
+
 /* === Personalização do Jogador === */
 .customization-content {
     max-width: 550px;

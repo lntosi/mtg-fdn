@@ -105,6 +105,36 @@ const CARD_DATABASE = {
             { id: "felling_blow", name: "Felling Blow", type: "sorcery", cost: "2G", cmc: 3, text: "Destrua criatura alvo com voar.", qty: 1 },
             { id: "joraga_invocation", name: "Joraga Invocation", type: "sorcery", cost: "4GG", cmc: 6, text: "Cada criatura que você controla recebe +3/+3 até o fim do turno e deve ser bloqueada neste turno se possível.", qty: 1 }
         ]
+    },
+
+    // ==================== PIRATES (Azul) ====================
+    pirates: {
+        name: "Pirates",
+        color: "blue",
+        cards: [
+            // Terrenos (7)
+            { id: "pirates_island_1", name: "Island", type: "land", subtype: "basic", produces: "U", qty: 7 },
+            // Terreno especial (1)
+            { id: "pirates_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+
+            // Criaturas (7)
+            { id: "spectral_sailor", name: "Spectral Sailor", type: "creature", subtype: "Spirit Pirate", cost: "U", cmc: 1, power: 1, toughness: 1, keywords: ["flying", "flash"], text: "Lampejo. Voar. 3U: Compre uma carta.", qty: 1 },
+            { id: "kitesail_corsair", name: "Kitesail Corsair", type: "creature", subtype: "Human Pirate", cost: "1U", cmc: 2, power: 2, toughness: 1, text: "Esta criatura tem voar enquanto estiver atacando.", keywords: ["flying_when_attacking"], qty: 1 },
+            { id: "brineborn_cutthroat", name: "Brineborn Cutthroat", type: "creature", subtype: "Merfolk Pirate", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flash"], text: "Lampejo. Sempre que você conjurar uma mágica durante o turno de um oponente, coloque um contador +1/+1 nesta criatura.", qty: 1 },
+            { id: "corsair_captain", name: "Corsair Captain", type: "creature", subtype: "Human Pirate", cost: "2U", cmc: 3, power: 2, toughness: 2, text: "Quando entra, crie um token de Tesouro. Outros Piratas que você controla recebem +1/+1.", keywords: ["pirate_lord", "etb_treasure"], qty: 1 },
+            { id: "storm_fleet_spy", name: "Storm Fleet Spy", type: "creature", subtype: "Human Pirate", cost: "2U", cmc: 3, power: 2, toughness: 2, text: "Raid — Quando esta criatura entra, se você atacou neste turno, compre uma carta.", keywords: ["raid_draw"], qty: 1 },
+            { id: "bigfin_bouncer", name: "Bigfin Bouncer", type: "creature", subtype: "Shark Pirate", cost: "3U", cmc: 4, power: 3, toughness: 2, text: "Quando entra, devolva criatura alvo que um oponente controla para a mão de seu dono.", keywords: ["etb_bounce"], qty: 1 },
+            { id: "skyship_buccaneer", name: "Skyship Buccaneer", type: "creature", subtype: "Human Pirate", cost: "3UU", cmc: 5, power: 4, toughness: 3, keywords: ["flying", "raid_draw"], text: "Voar. Raid — Quando esta criatura entra, se você atacou neste turno, compre uma carta.", qty: 1 },
+            { id: "tolarian_terror", name: "Tolarian Terror", type: "creature", subtype: "Serpent", cost: "6U", cmc: 7, power: 5, toughness: 5, keywords: ["ward"], text: "Esta mágica custa 1 a menos para cada card de mágica instantânea e feitiço em seu cemitério. Proteção 2.", qty: 1 },
+
+            // Feitiços e Encantamentos (4)
+            { id: "opt", name: "Opt", type: "instant", cost: "U", cmc: 1, text: "Vidência 1. Compre uma carta.", keywords: ["scry", "draw"], qty: 1 },
+            { id: "cancel", name: "Cancel", type: "instant", cost: "1UU", cmc: 3, text: "Anule a mágica alvo.", keywords: ["counterspell"], qty: 1 },
+            { id: "eaten_by_piranhas", name: "Eaten by Piranhas", type: "enchantment", subtype: "Aura", cost: "1U", cmc: 2, keywords: ["flash", "enchant"], text: "Lampejo. Encantar criatura. Criatura encantada perde todas as habilidades e é uma criatura preta Esqueleto com poder e resistência base 1/1.", qty: 1 },
+
+            // Equipamento (1)
+            { id: "pirates_cutlass", name: "Pirate's Cutlass", type: "artifact", subtype: "Equipment", cost: "3", cmc: 3, text: "Quando este Equipamento entra, anexe-o ao Pirata alvo que você controla. Criatura equipada recebe +2/+1. Equipar 2.", keywords: ["equipment", "etb_equip_pirate"], qty: 1 }
+        ]
     }
 };
 

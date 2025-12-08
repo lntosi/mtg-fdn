@@ -1241,6 +1241,117 @@ class GameUI {
         this.render();
     }
 
+    // === Sistema de Scry ===
+
+    promptScry(card, callback) {
+        // Usar o modal de trigger target para Scry
+        const modal = document.getElementById('trigger-target-modal');
+        if (!modal) {
+            callback(true); // Fallback: mantém no topo
+            return;
+        }
+
+        const title = document.getElementById('trigger-target-title');
+        const description = document.getElementById('trigger-target-description');
+        const creaturesContainer = document.getElementById('trigger-target-creatures');
+        const skipBtn = document.getElementById('btn-trigger-skip');
+
+        title.textContent = 'Vidência (Scry 1)';
+        description.textContent = 'Olhe a carta do topo do seu grimório. O que deseja fazer?';
+        skipBtn.classList.add('hidden');
+
+        creaturesContainer.innerHTML = '';
+
+        // Mostrar a carta
+        const cardElement = document.createElement('div');
+        cardElement.className = 'trigger-target-creature scry-card-preview';
+        cardElement.innerHTML = `
+            <div class="card-mini scry-card">
+                <div class="card-name">${card.name}</div>
+                <div class="card-type">${card.type}${card.subtype ? ' - ' + card.subtype : ''}</div>
+                ${card.cost ? `<div class="card-cost">${card.cost}</div>` : ''}
+            </div>
+        `;
+        creaturesContainer.appendChild(cardElement);
+
+        // Botões de ação
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'scry-buttons';
+
+        const keepBtn = document.createElement('button');
+        keepBtn.className = 'btn-scry-keep';
+        keepBtn.textContent = 'Manter no Topo';
+        keepBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            callback(true);
+        });
+
+        const bottomBtn = document.createElement('button');
+        bottomBtn.className = 'btn-scry-bottom';
+        bottomBtn.textContent = 'Colocar no Fundo';
+        bottomBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            callback(false);
+        });
+
+        buttonsContainer.appendChild(keepBtn);
+        buttonsContainer.appendChild(bottomBtn);
+        creaturesContainer.appendChild(buttonsContainer);
+
+        modal.classList.remove('hidden');
+    }
+
+    // === Sistema de Seleção de Alvo na Stack (Counterspell) ===
+
+    promptForStackTarget(counterSpell, stackTargets, callback) {
+        // Se só tem um alvo, seleciona automaticamente
+        if (stackTargets.length === 1) {
+            callback(stackTargets[0]);
+            return;
+        }
+
+        // Usar o modal de trigger target para selecionar da stack
+        const modal = document.getElementById('trigger-target-modal');
+        if (!modal) {
+            // Fallback: seleciona o primeiro
+            callback(stackTargets[0]);
+            return;
+        }
+
+        const title = document.getElementById('trigger-target-title');
+        const description = document.getElementById('trigger-target-description');
+        const creaturesContainer = document.getElementById('trigger-target-creatures');
+        const skipBtn = document.getElementById('btn-trigger-skip');
+
+        title.textContent = `${counterSpell.name} - Escolha uma Mágica`;
+        description.textContent = 'Selecione qual mágica anular:';
+        skipBtn.classList.add('hidden');
+
+        creaturesContainer.innerHTML = '';
+
+        stackTargets.forEach(stackItem => {
+            const card = stackItem.item;
+            const cardElement = document.createElement('div');
+            cardElement.className = 'trigger-target-creature';
+            cardElement.innerHTML = `
+                <div class="card-mini">
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-type">${card.type}</div>
+                    <div class="card-controller">Controlador: ${stackItem.controller.name}</div>
+                </div>
+            `;
+
+            cardElement.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                callback(stackItem);
+            });
+
+            creaturesContainer.appendChild(cardElement);
+        });
+
+        modal.classList.remove('hidden');
+    }
+
     // === Popup do Cemitério ===
 
     showGraveyardPopup(event, owner) {

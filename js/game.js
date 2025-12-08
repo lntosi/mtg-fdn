@@ -19,6 +19,8 @@ class GameState {
         this.playerLostLifeThisTurn = false;
         // Criaturas que não podem ser bloqueadas neste turno (Frenzied Goblin, Goblin Smuggler)
         this.unblockableThisTurn = [];
+        // Rastrear se atacou neste turno (para Raid - Storm Fleet Spy, Skyship Buccaneer)
+        this.attackedThisTurn = { player: false, opponent: false };
 
         // === Stack e Prioridade ===
         this.stack = []; // Pilha de feitiços/habilidades
@@ -177,7 +179,8 @@ class GameState {
             cats: 'ajani',      // Ajani é um Leonin (gato)
             goblins: 'chandra', // Chandra combina com vermelho/goblins
             vampires: 'liliana', // Liliana combina com preto/vampiros
-            elves: 'nissa'      // Nissa combina com verde/elfos
+            elves: 'nissa',     // Nissa combina com verde/elfos
+            pirates: 'jace'     // Jace combina com azul/piratas
         };
 
         // Retorna o avatar do primeiro deck
@@ -612,6 +615,38 @@ class GameState {
 
             this.ui.log(`${player.name} jogou ${card.name}`);
         } else if (card.type === 'instant' || card.type === 'sorcery') {
+            // Verificar se é um counterspell (caso especial - mira na stack)
+            if (this.isCounterspell(card)) {
+                // Counterspell precisa de uma mágica na stack
+                const spellsOnStack = this.stack.filter(s =>
+                    s.item.type === 'instant' || s.item.type === 'sorcery'
+                );
+
+                if (spellsOnStack.length === 0) {
+                    this.ui.log(`Não há mágicas na pilha para anular`);
+                    player.hand.push(card);
+                    return false;
+                }
+
+                // Pagar mana
+                this.rules.payMana(card, player);
+                window.soundManager.playMagic();
+
+                if (player === this.player) {
+                    // Jogador escolhe qual mágica anular
+                    this.ui.promptForStackTarget(card, spellsOnStack, (stackTarget) => {
+                        this.resolveCounterspell(card, player, stackTarget);
+                    });
+                } else {
+                    // IA anula a mágica mais impactante
+                    const target = spellsOnStack[spellsOnStack.length - 1]; // Anula a mais recente
+                    this.resolveCounterspell(card, player, target);
+                }
+
+                this.triggerBrinebornCutthroat(player);
+                return true;
+            }
+
             // Verificar se precisa de alvo
             const needsTarget = this.spellNeedsTarget(card);
 
@@ -654,6 +689,9 @@ class GameState {
 
                 player.graveyard.push(card);
                 this.ui.log(`${player.name} conjurou ${card.name}`);
+
+                // Brineborn Cutthroat - trigger quando lança mágica no turno do oponente
+                this.triggerBrinebornCutthroat(player);
             }
         } else if (card.type === 'enchantment' && card.subtype === 'Aura') {
             // Auras precisam de um alvo
@@ -755,7 +793,18 @@ class GameState {
             'volley', 'incinerating_blast', 'broken_wings', 'felling_blow',
             'snakeskin_veil', 'offer_immortality'
         ];
+
+        // Counterspells têm alvo especial (na stack)
+        if (card.keywords && card.keywords.includes('counterspell')) {
+            return true;
+        }
+
         return targetedSpells.includes(card.id);
+    }
+
+    // Verifica se feitiço é um counterspell (mira na stack)
+    isCounterspell(card) {
+        return card.keywords && card.keywords.includes('counterspell');
     }
 
     // Retorna alvos válidos para um feitiço
@@ -924,6 +973,24 @@ class GameState {
         }
     }
 
+    // Resolve um counterspell - anula uma mágica na pilha
+    resolveCounterspell(counterCard, caster, stackTarget) {
+        // Remover a mágica alvo da stack
+        const stackIndex = this.stack.indexOf(stackTarget);
+        if (stackIndex > -1) {
+            this.stack.splice(stackIndex, 1);
+            // A mágica anulada vai para o cemitério do seu controlador
+            stackTarget.controller.graveyard.push(stackTarget.item);
+            this.ui.log(`${counterCard.name} anulou ${stackTarget.item.name}!`);
+        }
+
+        // O counterspell vai para o cemitério do caster
+        caster.graveyard.push(counterCard);
+        this.ui.renderStack();
+        this.ui.render();
+        this.saveGame();
+    }
+
     // Resolver feitiços sem alvo
     resolveSpell(card, caster) {
         switch (card.id) {
@@ -952,6 +1019,40 @@ class GameState {
                     }
                 });
                 this.ui.log(`Todas as criaturas ganharam +3/+3!`);
+                break;
+
+            case 'opt':
+                // Scry 1, então compra
+                // Simplificado: olhar o topo e escolher manter ou mandar para baixo
+                if (caster.library.length > 0) {
+                    const topCard = caster.library[0];
+                    if (caster === this.player) {
+                        // Jogador pode ver e escolher
+                        this.ui.promptScry(topCard, (keepOnTop) => {
+                            if (!keepOnTop) {
+                                // Mover para o fundo
+                                caster.library.shift();
+                                caster.library.push(topCard);
+                                this.ui.log(`Você colocou ${topCard.name} no fundo do grimório`);
+                            } else {
+                                this.ui.log(`Você manteve ${topCard.name} no topo do grimório`);
+                            }
+                            // Depois do scry, compra
+                            this.rules.drawCard(caster);
+                            this.ui.render();
+                        });
+                        return; // Aguarda o scry terminar
+                    } else {
+                        // IA decide aleatoriamente (simplificado)
+                        const keepOnTop = Math.random() > 0.5;
+                        if (!keepOnTop) {
+                            caster.library.shift();
+                            caster.library.push(topCard);
+                        }
+                        this.rules.drawCard(caster);
+                        this.ui.log(`${caster.name} olhou o topo e comprou uma carta`);
+                    }
+                }
                 break;
 
             default:
@@ -1048,6 +1149,84 @@ class GameState {
             }
         }
 
+        // === PIRATES TRIGGERS ===
+
+        // Corsair Captain - cria Treasure token ao entrar
+        if (card.keywords && card.keywords.includes('etb_treasure')) {
+            controller.battlefield.push({
+                instanceId: `treasure_token_${Date.now()}`,
+                name: 'Treasure Token',
+                type: 'artifact',
+                subtype: 'Treasure',
+                text: 'T, Sacrifique este artefato: Adicione uma mana de qualquer cor.',
+                keywords: ['sacrifice_for_mana']
+            });
+            this.ui.log(`${card.name} criou um token de Tesouro`);
+        }
+
+        // Bigfin Bouncer - devolve criatura do oponente para a mão
+        if (card.keywords && card.keywords.includes('etb_bounce')) {
+            const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
+            if (validTargets.length > 0) {
+                const bounceCreature = (targetCreature) => {
+                    const index = opponent.battlefield.indexOf(targetCreature);
+                    if (index !== -1) {
+                        opponent.battlefield.splice(index, 1);
+                        opponent.hand.push(targetCreature);
+                        // Limpar estados da criatura
+                        targetCreature.tapped = false;
+                        targetCreature.damage = 0;
+                        targetCreature.powerModifier = 0;
+                        targetCreature.toughnessModifier = 0;
+                        targetCreature.counters = null;
+                        this.ui.log(`${card.name} devolveu ${targetCreature.name} para a mão de ${opponent.name}`);
+                        this.ui.render();
+                    }
+                };
+
+                if (controller === this.player) {
+                    // Jogador escolhe o alvo
+                    this.ui.promptTriggerTarget({
+                        title: `${card.name} - Selecione um Alvo`,
+                        description: 'Devolva uma criatura que um oponente controla para a mão de seu dono:',
+                        validTargets: validTargets,
+                        canSkip: false
+                    }).then(selected => {
+                        if (selected) {
+                            bounceCreature(selected);
+                        }
+                    });
+                } else {
+                    // IA escolhe automaticamente (prioriza criaturas maiores)
+                    const target = validTargets.sort((a, b) => {
+                        const powerA = (a.power || 0) + (a.powerModifier || 0);
+                        const powerB = (b.power || 0) + (b.powerModifier || 0);
+                        return powerB - powerA;
+                    })[0];
+                    bounceCreature(target);
+                }
+            }
+        }
+
+        // Raid - compra carta se atacou neste turno (Storm Fleet Spy, Skyship Buccaneer)
+        if (card.keywords && card.keywords.includes('raid_draw')) {
+            if (this.attackedThisTurn && this.attackedThisTurn[controller === this.player ? 'player' : 'opponent']) {
+                this.rules.drawCard(controller);
+                this.ui.log(`Raid: ${controller.name} comprou uma carta`);
+            }
+        }
+
+        // Pirate's Cutlass - anexa automaticamente a um Pirata
+        if (card.keywords && card.keywords.includes('etb_equip_pirate')) {
+            const pirateTarget = controller.battlefield.find(c =>
+                c.type === 'creature' && c.subtype && c.subtype.includes('Pirate')
+            );
+            if (pirateTarget) {
+                card.attachedTo = pirateTarget.instanceId;
+                this.ui.log(`Pirate's Cutlass foi equipado em ${pirateTarget.name}`);
+            }
+        }
+
         // Trigger para criaturas que reagem a outras entrando
         // Beast-Kin Ranger - +1/+0 até o fim do turno quando OUTRA criatura entra
         if (card.type === 'creature') {
@@ -1062,6 +1241,27 @@ class GameState {
             if (card.id === 'beast_kin_ranger' && card.instanceId !== enteringCreature.instanceId) {
                 card.powerModifier = (card.powerModifier || 0) + 1;
                 this.ui.log(`Beast-Kin Ranger ganha +1/+0 (${enteringCreature.name} entrou em campo)`);
+            }
+        });
+    }
+
+    // Brineborn Cutthroat - ganha +1/+1 counter quando lança mágica no turno do oponente
+    triggerBrinebornCutthroat(caster) {
+        // Verifica se é o turno do oponente do caster
+        const isOpponentsTurn = (caster === this.player && this.currentPlayer === this.opponent) ||
+                                (caster === this.opponent && this.currentPlayer === this.player);
+
+        if (!isOpponentsTurn) return;
+
+        // Procura Brineborn Cutthroat no campo do caster
+        caster.battlefield.forEach(card => {
+            if (card.id === 'brineborn_cutthroat') {
+                // Adiciona contador +1/+1
+                if (!card.counters) card.counters = {};
+                if (!card.counters.plusOnePlusOne) card.counters.plusOnePlusOne = 0;
+                card.counters.plusOnePlusOne++;
+                this.ui.log(`Brineborn Cutthroat ganha um contador +1/+1 (mágica conjurada no turno do oponente)`);
+                this.ui.render();
             }
         });
     }
@@ -1515,11 +1715,13 @@ class GameState {
                 this.rules.untapAll(this.activePlayer);
                 this.activePlayer.landsPlayedThisTurn = 0;
                 this.rules.removeSummoningSickness(this.activePlayer);
-                // Resetar rastreadores de perda de vida e unblockables
+                // Resetar rastreadores de perda de vida, unblockables e raid
                 if (this.activePlayer === this.player) {
                     this.opponentLostLifeThisTurn = false;
+                    this.attackedThisTurn.player = false;
                 } else {
                     this.playerLostLifeThisTurn = false;
+                    this.attackedThisTurn.opponent = false;
                 }
                 this.unblockableThisTurn = [];
                 await this.nextPhase();
@@ -1611,6 +1813,10 @@ class GameState {
         window.soundManager.playAttack();
 
         this.currentAttackers = attackers;
+
+        // Marcar que este jogador atacou neste turno (para Raid)
+        const playerKey = attackingPlayer === this.player ? 'player' : 'opponent';
+        this.attackedThisTurn[playerKey] = true;
 
         // Virar atacantes (exceto vigilance)
         attackers.forEach(attacker => {

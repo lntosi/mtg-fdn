@@ -448,8 +448,28 @@ class RulesEngine {
                 bonuses.sources.push({ name: 'Dropkick Bomber', power: 1, toughness: 1 });
             }
 
+            // Corsair Captain: outros Piratas têm +1/+1
+            if (card.id === 'corsair_captain' && card !== creature &&
+                creature.subtype && creature.subtype.includes('Pirate')) {
+                bonuses.power += 1;
+                bonuses.toughness += 1;
+                bonuses.sources.push({ name: 'Corsair Captain', power: 1, toughness: 1 });
+            }
+
             // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
             // (isso é tratado em getCreatureKeywords)
+        });
+
+        // === EQUIPAMENTOS ANEXADOS ===
+        allBattlefields.forEach(card => {
+            if (card.subtype === 'Equipment' && card.attachedTo === creature.instanceId) {
+                // Pirate's Cutlass: +2/+1
+                if (card.id === 'pirates_cutlass') {
+                    bonuses.power += 2;
+                    bonuses.toughness += 1;
+                    bonuses.sources.push({ name: "Pirate's Cutlass", power: 2, toughness: 1 });
+                }
+            }
         });
 
         // === AURAS ANEXADAS ===
@@ -488,6 +508,11 @@ class RulesEngine {
     }
 
     getCreaturePower(creature, isAttacking = false) {
+        // Verificar se está afetado por Eaten by Piranhas (base 1/1)
+        if (this.isAffectedByEatenByPiranhas(creature)) {
+            return 1;
+        }
+
         let power = creature.power || 0;
         power += creature.powerModifier || 0;
 
@@ -498,6 +523,11 @@ class RulesEngine {
     }
 
     getCreatureToughness(creature, isAttacking = false) {
+        // Verificar se está afetado por Eaten by Piranhas (base 1/1)
+        if (this.isAffectedByEatenByPiranhas(creature)) {
+            return 1;
+        }
+
         let toughness = creature.toughness || 0;
         toughness += creature.toughnessModifier || 0;
 
@@ -505,6 +535,16 @@ class RulesEngine {
         toughness += bonuses.toughness;
 
         return Math.max(0, toughness);
+    }
+
+    // Verifica se uma criatura está afetada por Eaten by Piranhas
+    isAffectedByEatenByPiranhas(creature) {
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.some(card =>
+            card.id === 'eaten_by_piranhas' &&
+            card.subtype === 'Aura' &&
+            card.attachedTo === creature.instanceId
+        );
     }
 
     // Retorna keywords adicionais de uma criatura (de efeitos)
@@ -527,11 +567,26 @@ class RulesEngine {
             });
         }
 
+        // Kitesail Corsair: tem voar enquanto ataca
+        if (isAttacking && creature.keywords && creature.keywords.includes('flying_when_attacking')) {
+            if (!keywords.includes('flying')) keywords.push('flying');
+        }
+
         // Untamed Hunger: menace
         allBattlefields.forEach(card => {
             if (card.subtype === 'Aura' && card.attachedTo === creature.instanceId) {
                 if (card.id === 'untamed_hunger') {
                     if (!keywords.includes('menace')) keywords.push('menace');
+                }
+            }
+        });
+
+        // Eaten by Piranhas: criatura perde todas as habilidades
+        allBattlefields.forEach(card => {
+            if (card.subtype === 'Aura' && card.attachedTo === creature.instanceId) {
+                if (card.id === 'eaten_by_piranhas') {
+                    // Remove todas as keywords
+                    keywords.length = 0;
                 }
             }
         });
