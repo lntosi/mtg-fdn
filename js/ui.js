@@ -367,29 +367,93 @@ class GameUI {
         previewText.textContent = card.text || '';
 
         if (card.type === 'creature') {
-            const power = this.game.rules ? this.game.rules.getCreaturePower(card) : card.power;
-            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card) : card.toughness;
-            previewStats.textContent = `${power}/${toughness}`;
+            const basePower = card.power || 0;
+            const baseToughness = card.toughness || 0;
+            const power = this.game.rules ? this.game.rules.getCreaturePower(card) : basePower;
+            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card) : baseToughness;
+
+            // Mostrar stats base e atual se diferentes
+            if (power !== basePower || toughness !== baseToughness) {
+                previewStats.innerHTML = `<span class="base-stats">${basePower}/${baseToughness}</span> → <span class="current-stats">${power}/${toughness}</span>`;
+            } else {
+                previewStats.textContent = `${power}/${toughness}`;
+            }
         } else {
             previewStats.textContent = '';
         }
 
-        // Keywords
+        // Keywords - incluir keywords base e adicionais
         previewKeywords.innerHTML = '';
-        if (card.keywords && card.keywords.length > 0) {
-            card.keywords.forEach(kw => {
+
+        // Keywords originais da carta
+        const baseKeywords = card.keywords || [];
+        baseKeywords.forEach(kw => {
+            const badge = document.createElement('span');
+            badge.className = 'keyword-badge';
+            badge.textContent = kw.replace('_', ' ');
+            badge.dataset.keyword = kw;
+            previewKeywords.appendChild(badge);
+        });
+
+        // Keywords adicionais de efeitos (Auras, etc.)
+        if (card.type === 'creature' && this.game.rules) {
+            const allKeywords = this.game.rules.getCreatureKeywords(card);
+            const additionalKeywords = allKeywords.filter(kw => !baseKeywords.includes(kw));
+
+            additionalKeywords.forEach(kw => {
                 const badge = document.createElement('span');
-                badge.className = 'keyword-badge';
+                badge.className = 'keyword-badge keyword-added';
                 badge.textContent = kw.replace('_', ' ');
                 badge.dataset.keyword = kw;
+                badge.title = 'Adicionado por efeito';
                 previewKeywords.appendChild(badge);
             });
+        }
+
+        // Auras/Encantamentos anexados
+        if (card.type === 'creature' && this.game) {
+            const attachedAuras = this.getAttachedAuras(card);
+            if (attachedAuras.length > 0) {
+                // Adicionar seção de status
+                const statusSection = document.createElement('div');
+                statusSection.className = 'preview-status-section';
+
+                attachedAuras.forEach(aura => {
+                    const statusBadge = document.createElement('span');
+
+                    // Determinar se é debuff
+                    const creatureController = this.game.player.battlefield.includes(card)
+                        ? this.game.player : this.game.opponent;
+                    const auraController = this.game.player.battlefield.includes(aura)
+                        ? this.game.player : this.game.opponent;
+                    const isDebuff = aura.id === 'pacifism' ||
+                        (auraController !== creatureController && !aura.text?.includes('+'));
+
+                    statusBadge.className = isDebuff ? 'status-badge debuff' : 'status-badge buff';
+                    statusBadge.textContent = aura.name;
+                    statusBadge.title = aura.text || '';
+                    statusSection.appendChild(statusBadge);
+                });
+
+                previewKeywords.appendChild(statusSection);
+            }
         }
 
         // Carregar imagem
         this.loadPreviewImage(card, previewImage);
 
         this.cardPreview.classList.remove('hidden');
+    }
+
+    /**
+     * Retorna as Auras anexadas a uma criatura
+     */
+    getAttachedAuras(creature) {
+        if (!this.game) return [];
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.filter(card =>
+            card.subtype === 'Aura' && card.attachedTo === creature.instanceId
+        );
     }
 
     async loadPreviewImage(card, element) {
@@ -756,20 +820,56 @@ class GameUI {
             const aurasContainer = document.createElement('div');
             aurasContainer.className = 'attached-auras';
 
-            attachedAuras.forEach((aura, index) => {
+            // Determinar se é controlador da criatura
+            const creatureController = this.game.player.battlefield.includes(creature)
+                ? this.game.player
+                : this.game.opponent;
+
+            let hasDebuff = false;
+            let hasBuff = false;
+
+            attachedAuras.forEach((aura) => {
                 const auraEl = document.createElement('div');
                 auraEl.className = 'attached-aura';
-                auraEl.style.transform = `translateY(${-15 - (index * 10)}px)`;
                 auraEl.title = `${aura.name}: ${aura.text || ''}`;
+
+                // Determinar se é buff ou debuff
+                const auraController = this.game.player.battlefield.includes(aura)
+                    ? this.game.player
+                    : this.game.opponent;
+
+                // Auras negativas: Pacifism (impede ataque/bloqueio)
+                const isDebuff = aura.id === 'pacifism' ||
+                    (auraController !== creatureController && !aura.text?.includes('+'));
+
+                if (isDebuff) {
+                    auraEl.classList.add('debuff-aura');
+                    hasDebuff = true;
+                } else {
+                    auraEl.classList.add('buff-aura');
+                    hasBuff = true;
+                }
 
                 // Carregar imagem da aura
                 this.loadAuraImage(aura, auraEl);
+
+                // Permitir hover para mostrar preview
+                auraEl.addEventListener('mouseenter', () => this.showCardPreview(aura));
+                auraEl.addEventListener('mouseleave', () => this.hideCardPreview());
 
                 aurasContainer.appendChild(auraEl);
             });
 
             creatureEl.appendChild(aurasContainer);
             creatureEl.classList.add('has-aura');
+
+            // Adicionar classe de tipo de aura para borda colorida
+            if (hasDebuff) {
+                creatureEl.classList.add('has-debuff-aura');
+            }
+            if (hasBuff && !hasDebuff) {
+                creatureEl.classList.add('has-buff-aura');
+            }
         }
     }
 
@@ -873,21 +973,25 @@ class GameUI {
                 html += `<div class="card-damage" title="Dano marcado: ${markedDamage}">-${markedDamage}</div>`;
             }
 
-            // Mostrar indicador de bônus se houver
+            // Mostrar indicador de bônus se houver (excluindo contadores, que têm badge próprio)
             if (bonuses.sources.length > 0) {
-                const totalPowerBonus = bonuses.power;
-                const totalToughnessBonus = bonuses.toughness;
-                let bonusText = '';
+                // Filtrar fontes que NÃO são contadores (contadores têm badge amarelo próprio)
+                const nonCounterSources = bonuses.sources.filter(s =>
+                    !s.name.includes('+1/+1 counter') && !s.name.includes('-1/-1 counter')
+                );
 
-                if (totalPowerBonus > 0 || totalToughnessBonus > 0) {
-                    const pSign = totalPowerBonus >= 0 ? '+' : '';
-                    const tSign = totalToughnessBonus >= 0 ? '+' : '';
-                    bonusText = `${pSign}${totalPowerBonus}/${tSign}${totalToughnessBonus}`;
-                }
+                if (nonCounterSources.length > 0) {
+                    // Calcular bônus apenas das fontes não-contadores
+                    const nonCounterPower = nonCounterSources.reduce((sum, s) => sum + (s.power || 0), 0);
+                    const nonCounterToughness = nonCounterSources.reduce((sum, s) => sum + (s.toughness || 0), 0);
 
-                if (bonusText) {
-                    const sourcesTitle = bonuses.sources.map(s => s.name).join(', ');
-                    html += `<div class="card-bonus" title="${sourcesTitle}">${bonusText}</div>`;
+                    if (nonCounterPower !== 0 || nonCounterToughness !== 0) {
+                        const pSign = nonCounterPower >= 0 ? '+' : '';
+                        const tSign = nonCounterToughness >= 0 ? '+' : '';
+                        const bonusText = `${pSign}${nonCounterPower}/${tSign}${nonCounterToughness}`;
+                        const sourcesTitle = nonCounterSources.map(s => s.name).join(', ');
+                        html += `<div class="card-bonus" title="${sourcesTitle}">${bonusText}</div>`;
+                    }
                 }
             }
         }
@@ -1967,12 +2071,13 @@ class GameUI {
         const countersContainer = document.createElement('div');
         countersContainer.className = 'card-counters';
 
-        // +1/+1 counters
+        // +1/+1 counters - mostrar no formato +X/+X
         if (card.counters.plusOnePlusOne && card.counters.plusOnePlusOne > 0) {
             const counter = document.createElement('div');
             counter.className = 'counter plus-counter';
-            counter.textContent = `+${card.counters.plusOnePlusOne}`;
-            counter.title = `+${card.counters.plusOnePlusOne}/+${card.counters.plusOnePlusOne} counters`;
+            const n = card.counters.plusOnePlusOne;
+            counter.textContent = `+${n}/+${n}`;
+            counter.title = `${n} contador(es) +1/+1`;
             countersContainer.appendChild(counter);
         }
 

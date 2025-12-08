@@ -769,36 +769,66 @@ body {
     z-index: 10;
 }
 
-/* Auras anexadas */
+/* Auras anexadas - exibidas levemente atrás e acima da carta */
 .card.has-aura {
     position: relative;
+    z-index: 1;
 }
 
 .attached-auras {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    pointer-events: none;
-    z-index: 5;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    pointer-events: auto;
+    z-index: -1;
 }
 
 .attached-aura {
-    position: absolute;
-    width: 100%;
-    height: 30px;
-    background-size: 100% auto;
+    width: 50px;
+    height: 70px;
+    background-size: cover;
     background-position: top center;
     background-repeat: no-repeat;
-    border-radius: 4px 4px 0 0;
-    opacity: 0.95;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.5em;
-    color: white;
-    text-shadow: 0 0 3px black;
+    border-radius: 4px;
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.attached-aura:hover {
+    transform: scale(1.3) translateY(-10px);
+    opacity: 1;
+    z-index: 100;
+}
+
+/* Indicador visual de que há aura na carta */
+.card.has-aura::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 6px;
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* Borda para auras negativas (debuffs como Pacifism) */
+.card.has-debuff-aura::before {
+    background: linear-gradient(135deg, #8b0000, #4a0000);
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+}
+
+/* Borda para auras positivas (buffs como Untamed Hunger) */
+.card.has-buff-aura::before {
+    background: linear-gradient(135deg, #228b22, #0a4a0a);
+    box-shadow: 0 0 10px rgba(34, 139, 34, 0.5);
 }
 
 @keyframes pulse-attack {
@@ -1405,6 +1435,55 @@ body {
     border-radius: 10px;
     font-size: 0.75em;
     cursor: help;
+}
+
+/* Keyword adicionada por efeito (Aura, etc) */
+.card-preview-keywords .keyword-badge.keyword-added {
+    background: rgba(50, 150, 100, 0.7);
+    border: 1px dashed rgba(100, 255, 150, 0.5);
+}
+
+/* Seção de status (Auras anexadas) no preview */
+.preview-status-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(180, 100, 180, 0.3);
+    width: 100%;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    cursor: help;
+}
+
+.status-badge.buff {
+    background: linear-gradient(135deg, rgba(34, 139, 34, 0.8), rgba(0, 100, 0, 0.8));
+    color: #90EE90;
+    border: 1px solid rgba(50, 205, 50, 0.5);
+}
+
+.status-badge.debuff {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.8), rgba(100, 0, 0, 0.8));
+    color: #FFA07A;
+    border: 1px solid rgba(255, 99, 71, 0.5);
+}
+
+/* Stats base vs atual no preview */
+.card-preview-stats .base-stats {
+    color: #888;
+    text-decoration: line-through;
+    font-size: 0.85em;
+}
+
+.card-preview-stats .current-stats {
+    color: #90EE90;
+    font-weight: bold;
 }
 
 /* === Painel de Log Expandido === */
