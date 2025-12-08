@@ -110,6 +110,9 @@ class ImageManager {
 
     // URLs fixas para basic lands do Foundations (evita puxar de outros sets como Avatar TLA)
     getBasicLandUrl(cardName, size = 'normal') {
+        // Normalizar nome (remover sufixos como _1, _2)
+        const normalizedName = cardName.replace(/_\d+$/, '').trim();
+
         const basicLandUrls = {
             'Plains': {
                 normal: 'https://cards.scryfall.io/normal/front/a/5/a5a645b3-5fc7-4d94-b1bd-5a6b7f167084.jpg?1730489749',
@@ -133,8 +136,8 @@ class ImageManager {
             }
         };
 
-        if (basicLandUrls[cardName]) {
-            return basicLandUrls[cardName][size] || basicLandUrls[cardName].normal;
+        if (basicLandUrls[normalizedName]) {
+            return basicLandUrls[normalizedName][size] || basicLandUrls[normalizedName].normal;
         }
         return null;
     }
