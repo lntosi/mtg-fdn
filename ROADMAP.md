@@ -176,17 +176,136 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ---
 
-## 5. Novos Conteúdos
+## 5. Beginner Box Completo - Decks Jumpstart
 
-### 5.1 Prioridade Média
+**Objetivo**: Implementar todos os 10 decks do Foundations Beginner Box.
 
-- [x] **Mais decks Jumpstart**: Adicionar outros decks do Foundations
-  - ✅ Pirates (Azul) - Flash, Raid, Counterspell, Bounce, Scry
+### 5.0 Status Geral
+
+| Deck | Cor | Tema | Status | Progresso |
+|------|:---:|------|:------:|:---------:|
+| Cats | W | Lifegain, Tokens | ✅ Completo | 100% |
+| Goblins | R | Aggro, Lords | ✅ Completo | 100% |
+| Vampires | B | Drain, Flying | ✅ Completo | 100% |
+| Elves | G | Ramp, Lords | ✅ Completo | 100% |
+| Pirates | U | Flash, Control | ✅ Completo | 100% |
+| Healing | W | Lifegain triggers | ⬚ Pendente | 0% |
+| Wizards | U | Draw, Bounce | ⬚ Pendente | 0% |
+| Undead | B | Recursion, Sacrifice | ⬚ Pendente | 0% |
+| Inferno | R | Dragons, Treasure | ⬚ Pendente | 0% |
+| Primal | G | +1/+1 counters, Fight | ⬚ Pendente | 0% |
+
+**Progresso Total: 5/10 decks (50%)**
+
+### 5.1 Deck Healing (Branco) - Prioridade Alta
+
+| Carta | Tipo | Mecânica Principal | Complexidade | Status |
+|-------|------|-------------------|:------------:|:------:|
+| Ancestor Dragon | Criatura | Lifegain em ataque | Média | ⬚ |
+| Ajani's Pridemate | Criatura | +1/+1 quando ganha vida | Alta | ⬚ |
+| Dazzling Angel | Criatura | Flying, Lifegain | Baixa | ⬚ |
+| Bishop's Soldier | Criatura | Lifelink | Baixa | ⬚ |
+| Herald of Faith | Criatura | Flying, Lifegain em ataque | Média | ⬚ |
+| Inspiring Overseer | Criatura | Flying, ETB draw + life | Média | ⬚ |
+| Twinblade Paladin | Criatura | Double strike condicional | Alta | ⬚ |
+| Hinterland Sanctifier | Criatura | Proteção | Média | ⬚ |
+| Quick-Draw Katana | Equipamento | First strike, equip ETB | Média | ⬚ |
+| Adamant Will | Instant | Indestructible, +1/+0 | Baixa | ⬚ |
+| Deadly Riposte | Instant | Dano + Lifegain | Baixa | ⬚ |
+| Prayer of Binding | Enchantment | Exílio temporário | Alta | ⬚ |
+
+**Mecânicas novas necessárias**: Lifegain triggers, Double strike condicional
+
+### 5.2 Deck Primal (Verde) - Prioridade Alta
+
+| Carta | Tipo | Mecânica Principal | Complexidade | Status |
+|-------|------|-------------------|:------------:|:------:|
+| Aggressive Mammoth | Criatura | Dá trample a todos | Média | ⬚ |
+| Wildwood Scourge | Criatura | +1/+1 quando outro ganha counter | Alta | ⬚ |
+| Bear Cub | Criatura | Vanilla 2/2 | Baixa | ⬚ |
+| Druid of the Cowl | Criatura | Tap for mana | Baixa | ⬚ |
+| Magnigoth Sentry | Criatura | Reach | Baixa | ⬚ |
+| Mild-Mannered Librarian | Criatura | Trample condicional | Média | ⬚ |
+| Thrashing Brontodon | Criatura | Sacrifica: destrói artefato/encantamento | Média | ⬚ |
+| Bite Down | Instant | Fight | Alta | ⬚ |
+| Giant Growth | Instant | +3/+3 | Baixa | ⬚ |
+| Biogenic Upgrade | Sorcery | Distribui +1/+1 counters | Média | ⬚ |
+| New Horizons | Enchantment | Aura em land + counter | Média | ⬚ |
+
+**Mecânicas novas necessárias**: Fight, Counter distribution
+
+### 5.3 Deck Inferno (Vermelho) - Prioridade Média
+
+| Carta | Tipo | Mecânica Principal | Complexidade | Status |
+|-------|------|-------------------|:------------:|:------:|
+| Terror of Mount Velus | Criatura | Dragon, double strike a todos | Alta | ⬚ |
+| Firespitter Whelp | Criatura | Dragon, damage trigger | Média | ⬚ |
+| Rapacious Dragon | Criatura | Dragon, ETB treasure | Média | ⬚ |
+| Dragonlord's Servant | Criatura | Reduz custo de Dragons | Alta | ⬚ |
+| Fire Elemental | Criatura | Vanilla 5/4 | Baixa | ⬚ |
+| Kargan Dragonrider | Criatura | Flying condicional (dragons) | Média | ⬚ |
+| Skyraker Giant | Criatura | Reach | Baixa | ⬚ |
+| Carnelian Orb of Dragonkind | Artifact | Mana + haste para Dragons | Alta | ⬚ |
+| Fiery Annihilation | Sorcery | 5 dano | Baixa | ⬚ |
+| Scorching Dragonfire | Instant | 3 dano + exile | Média | ⬚ |
+| Seize the Spoils | Sorcery | Discard, draw, treasure | Média | ⬚ |
+
+**Mecânicas novas necessárias**: Cost reduction, Dragon synergy, Exile on damage
+
+### 5.4 Deck Wizards (Azul) - Prioridade Média
+
+| Carta | Tipo | Mecânica Principal | Complexidade | Status |
+|-------|------|-------------------|:------------:|:------:|
+| Mystic Archaeologist | Criatura | Draw ativado | Média | ⬚ |
+| Clinquant Skymage | Criatura | Flying, prowess-like | Média | ⬚ |
+| Erudite Wizard | Criatura | ETB scry | Baixa | ⬚ |
+| Icewind Elemental | Criatura | ETB tap | Média | ⬚ |
+| Mischievous Mystic | Criatura | ETB bounce own | Média | ⬚ |
+| Burrog Befuddler | Criatura | Flash, ETB -1/-0 | Média | ⬚ |
+| Exclusion Mage | Criatura | ETB bounce opponent | Média | ⬚ |
+| Arcane Epiphany | Instant | Draw 3 | Baixa | ⬚ |
+| Fleeting Distraction | Instant | -1/-0, draw | Baixa | ⬚ |
+| Into the Roil | Instant | Bounce, kicker draw | Média | ⬚ |
+| Quick Study | Instant | Draw 2 | Baixa | ⬚ |
+| Starlight Snare | Enchantment | Tap down | Média | ⬚ |
+
+**Mecânicas novas necessárias**: Kicker, Prowess-like triggers
+
+### 5.5 Deck Undead (Preto) - Prioridade Baixa (mais complexo)
+
+| Carta | Tipo | Mecânica Principal | Complexidade | Status |
+|-------|------|-------------------|:------------:|:------:|
+| Death Baron | Criatura | Lord Skeletons/Zombies + deathtouch | Alta | ⬚ |
+| Reassembling Skeleton | Criatura | Recursão do cemitério | Alta | ⬚ |
+| Diregraf Ghoul | Criatura | Entra virado | Baixa | ⬚ |
+| Hungry Ghoul | Criatura | Death trigger +1/+1 | Média | ⬚ |
+| Crow of Dark Tidings | Criatura | Mill on ETB/death | Média | ⬚ |
+| Maalfeld Twins | Criatura | Death: cria tokens | Alta | ⬚ |
+| Skeleton Archer | Criatura | ETB damage | Média | ⬚ |
+| Suspicious Shambler | Criatura | Can't block, death trigger | Média | ⬚ |
+| Cemetery Recruitment | Sorcery | Recursão + draw | Média | ⬚ |
+| Deadly Plot | Instant | Destroy + surveil | Média | ⬚ |
+| Eaten Alive | Sorcery | Sacrifice + exile | Alta | ⬚ |
+| Undying Malice | Instant | Return on death | Alta | ⬚ |
+
+**Mecânicas novas necessárias**: Graveyard recursion, Sacrifice costs, Mill, Surveil
+
+### 5.6 Estimativa de Esforço
+
+| Deck | Esforço Estimado | Mecânicas Reutilizáveis |
+|------|:----------------:|------------------------|
+| Healing | ~3 horas | Lifelink, ETB, Counters |
+| Primal | ~3 horas | Counters, Trample, Tap for mana |
+| Inferno | ~4 horas | Treasure (de Pirates), ETB |
+| Wizards | ~3 horas | Flash, Bounce, Scry (de Pirates) |
+| Undead | ~5 horas | Death triggers (parcial de Vampires) |
+
+**Total estimado: 15-20 horas de desenvolvimento**
+
+### 5.7 Outras Funcionalidades
+
 - [ ] **Deck builder básico**: Montar decks customizados com cartas disponíveis
 - [ ] **Estatísticas**: Win rate, cartas mais jogadas, etc.
-
-### 5.2 Prioridade Baixa
-
 - [ ] **Modo draft**: Simular draft entre os decks disponíveis
 - [ ] **Conquistas**: Achievements por realizar certas ações
 - [ ] **Torneio vs IA**: Melhor de 3, melhor de 5
@@ -281,10 +400,39 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 2. Níveis de dificuldade
 3. Configurações de som
 
-### Fase 5 - Expansão ✅ EM PROGRESSO
+### Fase 5 - Primeiro Deck Adicional ✅ CONCLUÍDA
 1. ✅ Deck Pirates (Azul) com mecânicas: Flash, Raid, Counterspell, Bounce, Scry, Equipment
-2. Estatísticas
-3. PWA / Offline
+
+### Fase 6 - Beginner Box Completo (5 decks restantes)
+
+**Ordem sugerida** (do mais simples ao mais complexo):
+
+1. **Healing (W)** - Reutiliza muita coisa de Cats
+   - Lifegain triggers (Ajani's Pridemate)
+   - Equipment (Quick-Draw Katana)
+
+2. **Primal (G)** - Similar a Elves
+   - Fight mechanic (Bite Down)
+   - Counter distribution
+
+3. **Inferno (R)** - Similar a Goblins
+   - Dragon synergies
+   - Cost reduction
+   - Treasure tokens (já implementado)
+
+4. **Wizards (U)** - Similar a Pirates
+   - Kicker mechanic
+   - Mais bounce/draw
+
+5. **Undead (B)** - Mais complexo, deixar por último
+   - Graveyard recursion
+   - Sacrifice costs
+   - Mill/Surveil
+
+### Fase 7 - Polish Final
+1. Estatísticas de partidas
+2. PWA / Offline
+3. Temas visuais
 
 ---
 
