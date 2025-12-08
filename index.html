@@ -346,10 +346,103 @@
         </div>
     </div>
 
+    <!-- Modal de Configurações (M key) -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content settings-content">
+            <div class="settings-header">
+                <h2>⚙️ Configurações</h2>
+                <button id="btn-close-settings" class="btn-close-settings">✕</button>
+            </div>
+
+            <!-- Temas Visuais -->
+            <div class="settings-section">
+                <h3>🎨 Tema Visual</h3>
+                <div class="theme-options">
+                    <label class="theme-option" data-theme="default">
+                        <input type="radio" name="theme" value="default" checked>
+                        <div class="theme-preview theme-preview-default">
+                            <div class="theme-preview-battlefield"></div>
+                        </div>
+                        <span class="theme-name">Roxo Místico</span>
+                    </label>
+                    <label class="theme-option" data-theme="broadcast">
+                        <input type="radio" name="theme" value="broadcast">
+                        <div class="theme-preview theme-preview-broadcast">
+                            <div class="theme-preview-battlefield"></div>
+                            <div class="theme-preview-watermark">✦</div>
+                        </div>
+                        <span class="theme-name">Broadcast</span>
+                    </label>
+                    <label class="theme-option" data-theme="dark">
+                        <input type="radio" name="theme" value="dark">
+                        <div class="theme-preview theme-preview-dark">
+                            <div class="theme-preview-battlefield"></div>
+                        </div>
+                        <span class="theme-name">Alto Contraste</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Configurações de Som -->
+            <div class="settings-section">
+                <h3>🔊 Som</h3>
+                <div class="sound-settings">
+                    <div class="sound-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sound-enabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Efeitos Sonoros</span>
+                    </div>
+                    <div class="volume-control">
+                        <label for="volume-slider">Volume:</label>
+                        <input type="range" id="volume-slider" min="0" max="100" value="50">
+                        <span id="volume-value">50%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela Cheia -->
+            <div class="settings-section">
+                <h3>🖥️ Exibição</h3>
+                <div class="display-settings">
+                    <button id="btn-fullscreen" class="btn-setting">
+                        <span class="btn-icon">⛶</span>
+                        <span>Tela Cheia</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ações de Jogo -->
+            <div class="settings-section">
+                <h3>🎮 Jogo</h3>
+                <div class="game-settings">
+                    <button id="btn-settings-concede" class="btn-setting btn-danger">
+                        <span class="btn-icon">🏳️</span>
+                        <span>Conceder Partida</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info da Partida -->
+            <div class="settings-section settings-info">
+                <div class="match-info">
+                    <span id="settings-turn-info">Turno: -</span>
+                    <span id="settings-phase-info">Fase: -</span>
+                </div>
+            </div>
+
+            <div class="settings-footer">
+                <span class="settings-hint">Pressione <kbd>M</kbd> para fechar</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/cards.js"></script>
     <script src="js/sounds.js"></script>
     <script src="js/images.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/rules.js"></script>
     <script src="js/ai.js"></script>
     <script src="js/ui.js"></script>
