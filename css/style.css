@@ -1359,11 +1359,11 @@ body {
     left: 20px;
     top: 50%;
     transform: translateY(-50%);
-    width: 280px;
+    width: 365px;
     background: rgba(20, 10, 25, 0.98);
     border: 2px solid rgba(180, 100, 180, 0.6);
     border-radius: 12px;
-    padding: 15px;
+    padding: 18px;
     z-index: 5000;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     transition: opacity 0.3s ease;
@@ -1376,13 +1376,13 @@ body {
 
 .card-preview-image {
     width: 100%;
-    height: 320px;
+    height: 415px;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     background-color: #000;
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .card-preview-info {
@@ -1390,30 +1390,30 @@ body {
 }
 
 .card-preview-name {
-    font-size: 1.1em;
+    font-size: 1.3em;
     font-weight: bold;
     color: #ffcc00;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
 .card-preview-type {
-    font-size: 0.85em;
+    font-size: 1em;
     color: #a080a0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-style: italic;
 }
 
 .card-preview-text {
-    font-size: 0.85em;
-    line-height: 1.4;
-    margin-bottom: 8px;
-    padding: 8px;
+    font-size: 1em;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 4px;
 }
 
 .card-preview-stats {
-    font-size: 1em;
+    font-size: 1.2em;
     font-weight: bold;
     text-align: right;
 }
@@ -1421,15 +1421,15 @@ body {
 .card-preview-keywords {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    margin-top: 8px;
+    gap: 6px;
+    margin-top: 10px;
 }
 
 .card-preview-keywords .keyword-badge {
     background: rgba(100, 50, 150, 0.6);
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 10px;
-    font-size: 0.75em;
+    font-size: 0.9em;
     cursor: help;
 }
 
