@@ -26,7 +26,7 @@ Note: Forge is written in Java, so implementations need to be adapted to JavaScr
 
 ## Project Overview
 
-MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using 4 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves).
+MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using 5 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves, Pirates).
 
 ## Running the Game
 
@@ -40,7 +40,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `rules.js` - MTG rules engine: phases, mana payment, combat damage, keywords
 - `ai.js` - AI opponent logic for playing cards and combat decisions
 - `ui.js` - DOM manipulation, rendering, event handling (GameUI class)
-- `cards.js` - Card database (CARD_DATABASE) with all 4 decks
+- `cards.js` - Card database (CARD_DATABASE) with all 5 decks
 - `sounds.js` - SoundManager (Pixabay audio)
 - `images.js` - ImageManager (Scryfall API for card images and avatars)
 
@@ -81,7 +81,7 @@ Player and AI avatars use Scryfall art_crop images from planeswalker cards (vers
 - nissa: Nissa Revane
 - ajani: Ajani Goldmane
 
-AI avatar is chosen based on deck theme (cats→ajani, goblins→chandra, vampires→liliana, elves→nissa).
+AI avatar is chosen based on deck theme (cats→ajani, goblins→chandra, vampires→liliana, elves→nissa, pirates→jace).
 
 ## Damage Display System
 
@@ -96,7 +96,14 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 
 ## MTG Keywords Implemented
 
-flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, tap_for_mana, etb_draw
-- to memorize
-- to memorize
-- to memorize
+flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, flash, ward, tap_for_mana, etb_draw, counterspell, raid, scry
+
+### Pirates-specific Keywords
+- **flash**: Can be cast at instant speed
+- **raid_draw**: Draw a card if attacked this turn
+- **etb_bounce**: Return target creature to owner's hand
+- **etb_treasure**: Create a Treasure token
+- **pirate_lord**: Other Pirates get +1/+1
+- **flying_when_attacking**: Has flying only while attacking
+- **counterspell**: Counter target spell on the stack
+- **equipment**: Artifact that attaches to creatures

@@ -69,6 +69,23 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 | Offer Immortality | Vampires | Indestrutível, +1/+1 se vampiro | Alta | ✅ |
 | Joraga Invocation | Elves | Todas criaturas +3/+3 e devem ser bloqueadas | Alta | ✅ |
 
+### 1.8 Deck Pirates (Azul) ✅ IMPLEMENTADO
+
+| Carta | Tipo | Efeito | Complexidade | Status |
+|-------|------|--------|--------------|--------|
+| Spectral Sailor | Criatura | Flash, Flying | Baixa | ✅ |
+| Kitesail Corsair | Criatura | Flying enquanto ataca | Média | ✅ |
+| Brineborn Cutthroat | Criatura | Flash, +1/+1 ao conjurar no turno do oponente | Alta | ✅ |
+| Corsair Captain | Criatura | Lord (+1/+1 Piratas), ETB cria Treasure | Média | ✅ |
+| Storm Fleet Spy | Criatura | Raid: compra carta | Média | ✅ |
+| Bigfin Bouncer | Criatura | ETB bounce criatura do oponente | Média | ✅ |
+| Skyship Buccaneer | Criatura | Flying, Raid: compra carta | Média | ✅ |
+| Tolarian Terror | Criatura | Ward | Baixa | ✅ |
+| Opt | Instant | Scry 1, compra carta | Média | ✅ |
+| Cancel | Instant | Counterspell | Alta | ✅ |
+| Eaten by Piranhas | Aura | Flash, remove habilidades, P/T vira 1/1 | Alta | ✅ |
+| Pirate's Cutlass | Equipamento | +2/+1, auto-equipa em Pirata ao entrar | Média | ✅ |
+
 ---
 
 ## 2. Melhorias de Interface (UI/UX)
@@ -163,7 +180,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 ### 5.1 Prioridade Média
 
-- [ ] **Mais decks Jumpstart**: Adicionar outros decks do Foundations
+- [x] **Mais decks Jumpstart**: Adicionar outros decks do Foundations
+  - ✅ Pirates (Azul) - Flash, Raid, Counterspell, Bounce, Scry
 - [ ] **Deck builder básico**: Montar decks customizados com cartas disponíveis
 - [ ] **Estatísticas**: Win rate, cartas mais jogadas, etc.
 
@@ -263,8 +281,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 2. Níveis de dificuldade
 3. Configurações de som
 
-### Fase 5 - Expansão
-1. Mais decks
+### Fase 5 - Expansão ✅ EM PROGRESSO
+1. ✅ Deck Pirates (Azul) com mecânicas: Flash, Raid, Counterspell, Bounce, Scry, Equipment
 2. Estatísticas
 3. PWA / Offline
 
