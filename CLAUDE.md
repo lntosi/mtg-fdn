@@ -6,6 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The official Magic: The Gathering Comprehensive Rules are available at `docs/MagicCompRules 20251114.txt`. Use this as the authoritative source for any rules questions or implementation decisions.
 
+## Forge as Implementation Reference
+
+When implementing new features, fixing bugs, or solving complex MTG mechanics, use **Forge** (https://github.com/Card-Forge/forge) as a reference implementation. Forge is a mature, open-source MTG game engine with robust solutions for:
+
+- Priority system and stack resolution
+- Combat phases and damage assignment
+- Keyword abilities and triggered effects
+- State-based actions
+- Complex card interactions
+
+**How to use Forge as reference:**
+1. Search the Forge repository for relevant code patterns
+2. Adapt solutions to our vanilla JavaScript architecture
+3. Simplify where appropriate for our learning-focused scope
+4. Maintain consistency with our existing codebase style
+
+Note: Forge is written in Java, so implementations need to be adapted to JavaScript. Focus on the logic and algorithms rather than direct code translation.
+
 ## Project Overview
 
 MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using 4 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves).
