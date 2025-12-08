@@ -22,6 +22,12 @@ class ImageManager {
 
     // Busca a URL da imagem de uma carta pelo nome
     async getCardImageUrl(cardName, size = 'normal') {
+        // Verificar se é uma basic land (usar URLs fixas do Foundations)
+        const basicLandUrl = this.getBasicLandUrl(cardName, size);
+        if (basicLandUrl) {
+            return basicLandUrl;
+        }
+
         // Verificar cache
         const cacheKey = `${cardName}_${size}`;
         if (this.cache.has(cacheKey)) {
@@ -100,6 +106,37 @@ class ImageManager {
         };
 
         return cardNameMapping[normalized] || normalized;
+    }
+
+    // URLs fixas para basic lands do Foundations (evita puxar de outros sets como Avatar TLA)
+    getBasicLandUrl(cardName, size = 'normal') {
+        const basicLandUrls = {
+            'Plains': {
+                normal: 'https://cards.scryfall.io/normal/front/a/5/a5a645b3-5fc7-4d94-b1bd-5a6b7f167084.jpg?1730489749',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/a/5/a5a645b3-5fc7-4d94-b1bd-5a6b7f167084.jpg?1730489749'
+            },
+            'Island': {
+                normal: 'https://cards.scryfall.io/normal/front/7/0/7014b9fc-a906-4ffd-a482-22ba8dbe3552.jpg?1730489765',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/7/0/7014b9fc-a906-4ffd-a482-22ba8dbe3552.jpg?1730489765'
+            },
+            'Swamp': {
+                normal: 'https://cards.scryfall.io/normal/front/f/c/fc4b5b95-ced5-4c9e-a43a-fe798b9f25ba.jpg?1730489779',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/f/c/fc4b5b95-ced5-4c9e-a43a-fe798b9f25ba.jpg?1730489779'
+            },
+            'Mountain': {
+                normal: 'https://cards.scryfall.io/normal/front/9/a/9aef5c5b-07da-4477-a84c-7da7e496528f.jpg?1730489792',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/9/a/9aef5c5b-07da-4477-a84c-7da7e496528f.jpg?1730489792'
+            },
+            'Forest': {
+                normal: 'https://cards.scryfall.io/normal/front/6/e/6e7dd498-e71a-4a4b-9e1e-03c7f08e8a75.jpg?1730489807',
+                art_crop: 'https://cards.scryfall.io/art_crop/front/6/e/6e7dd498-e71a-4a4b-9e1e-03c7f08e8a75.jpg?1730489807'
+            }
+        };
+
+        if (basicLandUrls[cardName]) {
+            return basicLandUrls[cardName][size] || basicLandUrls[cardName].normal;
+        }
+        return null;
     }
 
     // Verifica se o nome é de um token
