@@ -138,6 +138,13 @@ Creatures display damage taken visually:
 
 Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` badge.
 
+## UI/Layout Notes
+
+- **Optimized for 70-80% browser zoom**: The layout works best at reduced zoom levels. Full 100% zoom support would require deeper layout refactoring (Arena-style fan hand, stacked lands, etc.) - deferred to future development.
+- **Preview panel**: Right side panel shows enlarged card on hover (420px width, 480px image)
+- **Hand card hover**: Reduced zoom (1.4x) to avoid visual clutter alongside preview panel
+- **Contextual main button**: Changes text/color based on game state (Passar Turno, Ir para Combate, etc.)
+
 ## MTG Keywords Implemented
 
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, flash, ward, tap_for_mana, etb_draw, counterspell, raid, scry
