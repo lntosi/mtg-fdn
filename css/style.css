@@ -2227,33 +2227,6 @@ body {
     transform: translateX(-50%) scale(1.05);
 }
 
-/* === Botão de Conceder Flutuante === */
-.btn-concede-floating {
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    padding: 8px 16px;
-    font-size: 0.85em;
-    font-weight: bold;
-    background: rgba(50, 50, 50, 0.8);
-    color: rgba(200, 200, 200, 0.8);
-    border: 1px solid rgba(100, 100, 100, 0.5);
-    border-radius: 6px;
-    cursor: pointer;
-    z-index: 3000;
-    transition: all 0.3s;
-    opacity: 0.6;
-}
-
-.btn-concede-floating:hover {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    color: white;
-    border-color: #e74c3c;
-    opacity: 1;
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
-}
-
 /* === SVG Overlay para linhas de combate === */
 .combat-lines-overlay {
     position: fixed;
@@ -3521,22 +3494,9 @@ body.theme-broadcast {
         radial-gradient(ellipse at center, rgba(200, 200, 200, 0.3) 0%, transparent 70%);
 }
 
-/* Linha divisória vermelha no tema broadcast */
+/* Zona central no tema broadcast */
 .theme-broadcast #middle-zone {
-    position: relative;
     background: rgba(0, 0, 0, 0.05);
-}
-
-.theme-broadcast #middle-zone::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, #cc0000 10%, #cc0000 90%, transparent);
-    transform: translateY(-50%);
-    z-index: 0;
 }
 
 /* Marca d'água do Planeswalker */
@@ -3600,6 +3560,38 @@ body.theme-broadcast {
     color: #666;
 }
 
+/* Cores de texto no tema Broadcast */
+.theme-broadcast .player-name,
+.theme-broadcast #player-name-display,
+.theme-broadcast #opponent-name {
+    color: #1a1a1a;
+}
+
+.theme-broadcast .log-panel-content,
+.theme-broadcast #log-panel-content,
+.theme-broadcast .log-panel-header {
+    color: #1a1a1a;
+}
+
+.theme-broadcast #message-log {
+    color: #1a1a1a;
+}
+
+.theme-broadcast #current-phase,
+.theme-broadcast #turn-indicator {
+    color: #1a1a1a;
+}
+
+.theme-broadcast .mana-pool .mana-icon {
+    color: #1a1a1a;
+}
+
+.theme-broadcast .library-count,
+.theme-broadcast .graveyard-count {
+    color: #1a1a1a;
+    background: rgba(255, 255, 255, 0.9);
+}
+
 /* === Tema Dark (Alto Contraste) === */
 body.theme-dark {
     background: #000;
@@ -3607,17 +3599,6 @@ body.theme-dark {
 
 .theme-dark #game-container {
     background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
-}
-
-.theme-dark #middle-zone::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #ffcc00 10%, #ffcc00 90%, transparent);
-    transform: translateY(-50%);
 }
 
 .theme-dark .battlefield {
