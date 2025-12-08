@@ -32,7 +32,7 @@ Jogo offline de MTG usando os 5 decks Jumpstart do **Foundations Beginner Box**:
 1. Abra `index.html` no navegador
 2. Personalize seu jogador (nome e avatar)
 3. Selecione 2 decks para formar seu baralho de 40 cartas
-4. A IA jogará com os 2 decks restantes
+4. A IA selecionará 2 decks dentre os que sobraram
 5. Vença reduzindo a vida do oponente a 0!
 
 ## Funcionalidades
