@@ -3064,7 +3064,10 @@ html {
     right: 20px;
     transform: translateY(-50%);
     z-index: 1000;
-    animation: prioritySlideIn 0.3s ease-out;
+}
+
+.priority-indicator.hidden {
+    display: none;
 }
 
 @keyframes prioritySlideIn {
