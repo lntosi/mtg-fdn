@@ -112,16 +112,20 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 - [x] **Personalização do jogador**: No início da partida, permitir ao jogador inserir seu nome e selecionar um avatar entre 6 planeswalkers tradicionais (incluindo 2 femininos). Nome salvo no localStorage para próxima sessão.
 - [x] **Vida inicial configurável**: Opção para definir vida inicial (10, 20, 30 ou 40) na seleção de decks. Padrão: 20
 - [x] **Ícone do cemitério**: Substituir sigla "GY" por ícone de tumba/lápide 🪦
-- [x] **Reposicionar botão Conceder**: Movido para canto superior esquerdo como botão flutuante (menos propenso a cliques acidentais)
+- [x] **Reposicionar botão Conceder**: Movido para menu de configurações (tecla M)
 - [x] **Linha de conexão atacante-defensor**: Linhas SVG conectando bloqueador ao atacante durante declaração de bloqueio
 - [x] **Avatares com imagens reais**: Usar art_crop do Scryfall para mostrar imagens dos planeswalkers nos avatares em vez de emojis
 - [x] **Linhas de bloqueio da IA**: Exibir setas conectando bloqueadores da IA aos atacantes do jogador (igual à visualização quando o jogador bloqueia)
 - [x] **Responsividade ao zoom do navegador**: Melhorar layout quando usuário altera zoom do navegador (Ctrl+/-)
 - [x] **Tamanho de fonte do histórico**: Permitir aumentar/diminuir tamanho da fonte no painel de histórico da partida
-- [ ] **Temas visuais**: Diferentes battlemats/temas de cores
-- [ ] **Modo tela cheia**: Otimização para fullscreen
+- [x] **Temas visuais**: 3 temas disponíveis (Roxo Místico, Clean, Alto Contraste) acessíveis via menu M
+- [x] **Modo tela cheia**: Botão no menu de configurações (tecla M)
+- [x] **Configurações de som**: Controle de volume e mute no menu de configurações
+- [x] **Menu de configurações**: Tecla M abre menu com temas, som, tela cheia e opção de conceder
+- [x] **Botão principal contextual**: Botão que muda texto e cor baseado no contexto (→ Combate, Resolver, Passar Prioridade, etc.)
+- [x] **Filtro de mana por deck**: Pool de mana mostra apenas cores relevantes aos decks selecionados
+- [x] **Opções de início de jogo**: Escolher quem começa (aleatório/jogador/IA) e modo de seleção de decks da IA
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
-- [ ] **Configurações de som**: Controle de volume, mute individual
 
 ---
 
@@ -158,6 +162,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 
 - [x] **Delay nas jogadas da IA**: Adicionar delays entre ações da IA para que o jogador consiga acompanhar o que está acontecendo
 - [x] **Jogar instants durante turno do oponente**: Jogador pode jogar instants (como Elspeth's Smite) durante combate do oponente
+- [x] **Janela de prioridade após bloqueadores**: Jogador pode responder após IA declarar bloqueadores (antes do dano de combate)
+- [x] **Validação de alvos para instants**: Instants só aparecem na janela de prioridade se tiverem alvos válidos (ex: Elspeth's Smite só aparece se há atacantes/bloqueadores)
 - [ ] **Avaliação de board state**: IA avaliar vantagem de campo
 - [ ] **Uso de remoções**: IA usar feitiços de remoção estrategicamente
 - [ ] **Timing de feitiços**: IA jogar instants no momento certo

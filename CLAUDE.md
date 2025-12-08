@@ -71,6 +71,50 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - Playing cards: 600-1200ms
 - Combat decisions: 800-1200ms
 
+**Priority Windows:** Player receives priority windows to respond with instants:
+- After AI declares blockers (before combat damage)
+- When AI casts spells
+- At end of opponent's turn
+- Auto-pass if no valid responses available
+
+## Settings Menu (M key)
+
+Press M to open settings menu with:
+- **Themes**: Roxo Místico (default), Clean, Alto Contraste
+- **Sound**: Toggle on/off, volume slider
+- **Fullscreen**: Toggle fullscreen mode
+- **Concede**: Forfeit current game
+
+Settings persist in localStorage.
+
+## Debug Mode
+
+Debug commands available via browser console (`window.debug.*`):
+
+```javascript
+// Card manipulation
+debug.addToHand("Card Name")           // Add card to hand
+debug.addToBattlefield("Card Name")    // Add card to battlefield
+debug.addToBattlefield("Card", "opponent") // Add to opponent's field
+
+// Game state
+debug.setLife(10)                      // Set player life
+debug.setLife(5, "opponent")           // Set opponent life
+debug.addMana("W", 3)                  // Add mana to pool
+debug.fullMana()                       // Add 10 of each mana
+
+// Turn control
+debug.setPhase("DECLARE_ATTACKERS")    // Jump to phase
+debug.nextTurn()                       // Advance turn
+debug.setupCombat()                    // Quick combat scenario
+
+// Info
+debug.state()                          // Show game state
+debug.battlefield()                    // List creatures
+debug.hand()                           // Show hand
+debug.help()                           // Show all commands
+```
+
 ## Avatars
 
 Player and AI avatars use Scryfall art_crop images from planeswalker cards (versões com artes mais focadas no rosto):
