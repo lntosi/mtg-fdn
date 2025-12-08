@@ -1877,8 +1877,18 @@ class GameState {
 
             if (Object.keys(this.blockerAssignments).length > 0) {
                 this.ui.log('Oponente declarou bloqueadores');
+                // Renderizar para mostrar as linhas de bloqueio
+                this.ui.render();
             } else {
                 this.ui.log('Oponente não bloqueou');
+            }
+
+            // IMPORTANTE: Dar janela de prioridade ao jogador após bloqueadores serem declarados
+            // Isso permite usar instants como Elspeth's Smite para remover bloqueadores
+            const priorityResponse = await this.offerPriorityWindow('Bloqueadores declarados - você pode responder');
+
+            if (priorityResponse === 'respond') {
+                await this.handlePlayerPriorityResponse();
             }
 
             this.phase = PHASES.COMBAT_DAMAGE;
