@@ -14,7 +14,7 @@ Jogo offline de MTG usando os 5 decks Jumpstart do **Foundations Beginner Box**:
 | **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="18" height="18"> | Agressivo com haste e dano direto | <a href="https://scryfall.com/card/fdn/543/raging-redcap"><img src="https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg?1730490661" width="80"></a> |
 | **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="18" height="18"> | Dreno de vida e flying | <a href="https://scryfall.com/card/mid/125/vampire-interloper"><img src="https://cards.scryfall.io/art_crop/front/c/3/c3e2ea59-36f1-4e95-bfe8-7008b085194f.jpg?1634350330" width="80"></a> |
 | **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="18" height="18"> | Ramp de mana e criaturas grandes | <a href="https://scryfall.com/card/fdn/219/elvish-archdruid"><img src="https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg?1730489413" width="80"></a> |
-| **Pirates** | <img src="https://svgs.scryfall.io/card-symbols/U.svg" width="18" height="18"> | Controle com flash, counterspell e bounce | <a href="https://scryfall.com/card/m20/76/spectral-sailor"><img src="https://cards.scryfall.io/art_crop/front/6/7/6789dc46-0e94-4701-88ef-dd31e1a95f9b.jpg?1645328857" width="80"></a> |
+| **Pirates** | <img src="https://svgs.scryfall.io/card-symbols/U.svg" width="18" height="18"> | Controle com flash, counterspell e bounce | <a href="https://scryfall.com/card/fdn/80/spectral-sailor"><img src="https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg?1730489213" width="80"></a> |
 
 ## Screenshots
 
