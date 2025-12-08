@@ -26,6 +26,8 @@ class GameState {
         this.waitingForPriority = false;
         this.bothPlayersPassed = false; // Ambos passaram prioridade
         this.stackResolving = false; // Stack está resolvendo
+        this.waitingForPriorityResponse = false; // Aguardando resposta do jogador na janela de prioridade
+        this.priorityWindowReason = null; // Razão da janela de prioridade atual
 
         // === Floating Mana (mana flutuante) ===
         this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
@@ -483,6 +485,102 @@ class GameState {
         return this.priorityPlayer === player && !this.isStackEmpty() && !this.stackResolving;
     }
 
+    // === SISTEMA DE JANELA DE PRIORIDADE ===
+
+    /**
+     * Verifica se o jogador tem instants jogáveis na mão com mana suficiente
+     * @returns {Array} Lista de instants jogáveis
+     */
+    getPlayableInstants() {
+        const instants = this.player.hand.filter(card => card.type === 'instant');
+        return instants.filter(card => this.rules.canCastInstant(card, this.player));
+    }
+
+    /**
+     * Verifica se o jogador tem alguma resposta disponível (instant ou habilidade ativada)
+     * @returns {boolean}
+     */
+    playerHasResponses() {
+        // Verificar instants jogáveis
+        const playableInstants = this.getPlayableInstants();
+        if (playableInstants.length > 0) return true;
+
+        // Verificar habilidades ativadas disponíveis
+        const hasAbilities = this.player.battlefield.some(card =>
+            this.canActivateAbility && this.canActivateAbility(card, this.player)
+        );
+        if (hasAbilities) return true;
+
+        return false;
+    }
+
+    /**
+     * Oferece uma janela de prioridade ao jogador para responder
+     * Auto-pass inteligente: só mostra se o jogador tiver instants jogáveis
+     * @param {string} reason - Razão da janela (ex: "IA lançou Lightning Bolt")
+     * @param {Object} options - Opções adicionais
+     * @returns {Promise<string>} - 'pass' ou 'respond'
+     */
+    async offerPriorityWindow(reason, options = {}) {
+        // Auto-pass se o jogador não tiver respostas disponíveis
+        if (!this.playerHasResponses()) {
+            return 'pass';
+        }
+
+        // Mostrar janela de prioridade
+        this.waitingForPriorityResponse = true;
+        this.priorityWindowReason = reason;
+        this.priorityPlayer = this.player;
+
+        // Mostrar UI de resposta
+        const response = await this.ui.showPriorityWindow(reason, this.getPlayableInstants());
+
+        this.waitingForPriorityResponse = false;
+        this.priorityWindowReason = null;
+
+        return response;
+    }
+
+    /**
+     * Jogador escolheu responder na janela de prioridade
+     * Aguarda o jogador jogar um instant ou ativar uma habilidade
+     * @returns {Promise<void>}
+     */
+    async handlePlayerPriorityResponse() {
+        // Dar prioridade ao jogador e aguardar ação
+        this.priorityPlayer = this.player;
+        this.waitingForPriorityResponse = true;
+        this.ui.log('Sua vez de responder... (clique em um instant para jogar ou use o botão Passar)');
+        this.ui.highlightPlayableInstants(true);
+        this.ui.render();
+
+        // Aguardar até o jogador jogar algo ou passar
+        return new Promise((resolve) => {
+            this.priorityResponseCallback = resolve;
+        });
+    }
+
+    /**
+     * Chamado quando o jogador completa sua resposta (jogou instant ou passou)
+     */
+    completePriorityResponse() {
+        this.waitingForPriorityResponse = false;
+        this.ui.highlightPlayableInstants(false);
+
+        if (this.priorityResponseCallback) {
+            this.priorityResponseCallback();
+            this.priorityResponseCallback = null;
+        }
+    }
+
+    /**
+     * Verifica se estamos aguardando resposta de prioridade do jogador
+     * @returns {boolean}
+     */
+    isWaitingForPriorityResponse() {
+        return this.waitingForPriorityResponse === true;
+    }
+
     // Jogar uma carta
     async playCard(card, player) {
         if (!this.rules.canPlayCard(card, player)) {
@@ -495,6 +593,9 @@ class GameState {
         if (handIndex > -1) {
             player.hand.splice(handIndex, 1);
         }
+
+        // Se jogador jogou um instant durante janela de prioridade, completar a resposta
+        const wasWaitingForResponse = this.isWaitingForPriorityResponse() && player === this.player && card.type === 'instant';
 
         // Som de jogar carta
         window.soundManager.playCardPlay();
@@ -573,6 +674,14 @@ class GameState {
 
         this.ui.render();
         this.saveGame(); // Auto-save após jogar carta
+
+        // Se jogador jogou instant durante janela de prioridade, completar a resposta
+        if (wasWaitingForResponse) {
+            // Pequeno delay para ver o efeito do instant
+            await this.delay(500);
+            this.completePriorityResponse();
+        }
+
         return true;
     }
 
@@ -1703,10 +1812,20 @@ class GameState {
         this.ui.render();
         await this.delay(500);
 
-        await this.ai.playMainPhase();
+        // IA joga cartas na main phase - com janelas de prioridade
+        await this.executeAIMainPhaseWithPriority();
+
+        // Início do combate - janela de prioridade
+        this.phase = PHASES.COMBAT_BEGIN;
+        this.ui.log('Fase: Início do Combate');
         this.ui.render();
 
-        // Combat
+        const beginCombatResponse = await this.offerPriorityWindow('Início do combate do oponente');
+        if (beginCombatResponse === 'respond') {
+            await this.handlePlayerPriorityResponse();
+        }
+
+        // Combat - Declarar atacantes
         this.phase = PHASES.DECLARE_ATTACKERS;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
@@ -1722,6 +1841,62 @@ class GameState {
             await this.finishAITurn();
         }
         // Se há atacantes, aguardar o jogador clicar em "Bloquear"
+    }
+
+    /**
+     * IA executa main phase com janelas de prioridade após cada mágica
+     */
+    async executeAIMainPhaseWithPriority() {
+        const opponent = this.opponent;
+
+        // Log inicial
+        this.ui.log('IA está pensando...');
+        await this.delay(800);
+
+        // 1. Jogar terreno se possível
+        const landInHand = opponent.hand.find(card => card.type === 'land');
+        if (landInHand && this.rules.canPlayLand(opponent)) {
+            await this.playCard(landInHand, opponent);
+            this.ui.render();
+            await this.delay(1000);
+        }
+
+        // 2. Jogar cartas jogáveis uma por vez, com janelas de prioridade
+        let playedSomething = true;
+        while (playedSomething) {
+            playedSomething = false;
+
+            const playableCards = opponent.hand
+                .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
+                .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+            if (playableCards.length > 0) {
+                const cardToPlay = this.ai.chooseBestCard(playableCards);
+                if (cardToPlay) {
+                    await this.delay(600);
+                    const played = await this.playCard(cardToPlay, opponent);
+
+                    if (played) {
+                        this.ui.render();
+                        playedSomething = true;
+
+                        // Se foi uma mágica (não terreno), oferecer janela de prioridade
+                        if (cardToPlay.type !== 'land') {
+                            await this.delay(600);
+
+                            const response = await this.offerPriorityWindow(`Oponente lançou ${cardToPlay.name}`);
+
+                            if (response === 'respond') {
+                                await this.handlePlayerPriorityResponse();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Verificar game over entre cartas
+            if (this.gameOver) return;
+        }
     }
 
     async continueAfterBlocking() {
@@ -1752,13 +1927,19 @@ class GameState {
         this.ui.render();
         await this.delay(500);
 
-        await this.ai.playMainPhase();
-        this.ui.render();
+        // IA joga cartas na main phase 2 - com janelas de prioridade
+        await this.executeAIMainPhaseWithPriority();
 
-        // End step - limpar e passar turno
+        // End step - janela de prioridade importante para instants
         this.phase = PHASES.END;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
+
+        // Janela de prioridade no end step (momento clássico para jogar instants)
+        const endStepResponse = await this.offerPriorityWindow('Fim do turno do oponente');
+        if (endStepResponse === 'respond') {
+            await this.handlePlayerPriorityResponse();
+        }
 
         // Limpar dano e modificadores temporários
         this.opponent.battlefield.forEach(c => {
@@ -1783,6 +1964,13 @@ class GameState {
     }
 
     pass() {
+        // Se estamos aguardando resposta de prioridade, completar a resposta
+        if (this.isWaitingForPriorityResponse()) {
+            this.ui.log('Você passou a prioridade');
+            this.completePriorityResponse();
+            return;
+        }
+
         // Se há itens na pilha, passar prioridade em vez de avançar fase
         if (!this.isStackEmpty() && this.priorityPlayer === this.player) {
             this.passPriority();

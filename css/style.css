@@ -2776,3 +2776,202 @@ html {
     background: rgba(180, 100, 180, 0.5);
     border-radius: 3px;
 }
+
+/* === SISTEMA DE JANELA DE PRIORIDADE === */
+
+/* Modal de Prioridade */
+.priority-window-content {
+    max-width: 500px;
+    text-align: center;
+    background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4d 50%, #1a0a2e 100%);
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.priority-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.priority-icon {
+    font-size: 2em;
+    animation: priorityPulse 1s ease-in-out infinite;
+}
+
+@keyframes priorityPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.priority-window-content h2 {
+    color: #ffd700;
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.priority-reason {
+    font-size: 1.1em;
+    color: #e0d0ff;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #ffd700;
+}
+
+.priority-instants-section {
+    margin-bottom: 20px;
+}
+
+.priority-instants-label {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 10px;
+}
+
+.priority-instants {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 100px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+}
+
+.priority-instant-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.priority-instant-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+.no-instants {
+    color: #888;
+    font-style: italic;
+    align-self: center;
+}
+
+.priority-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.btn-priority-respond {
+    padding: 12px 30px;
+    font-size: 1.1em;
+    background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+    color: #1a0a1f;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.btn-priority-respond:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+}
+
+.btn-priority-pass {
+    padding: 12px 30px;
+    font-size: 1.1em;
+    background: linear-gradient(180deg, #444 0%, #333 100%);
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-priority-pass:hover {
+    background: linear-gradient(180deg, #555 0%, #444 100%);
+    color: #fff;
+}
+
+/* Indicador de Prioridade Flutuante */
+.priority-indicator {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    z-index: 1000;
+    animation: prioritySlideIn 0.3s ease-out;
+}
+
+@keyframes prioritySlideIn {
+    from { transform: translateY(-50%) translateX(100px); opacity: 0; }
+    to { transform: translateY(-50%) translateX(0); opacity: 1; }
+}
+
+.priority-indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+    color: #1a0a1f;
+    border-radius: 30px;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+    animation: priorityBounce 1s ease-in-out infinite;
+}
+
+@keyframes priorityBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.priority-indicator-icon {
+    font-size: 1.5em;
+}
+
+.priority-indicator-text {
+    font-size: 1em;
+}
+
+/* Destaque de Instants na Mão */
+.instant-highlight {
+    animation: instantGlow 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4) !important;
+}
+
+@keyframes instantGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6); }
+}
+
+/* Indicador de espera de resposta durante turno da IA */
+.waiting-for-response {
+    border: 2px solid #ffd700 !important;
+    animation: waitingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes waitingPulse {
+    0%, 100% { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    50% { border-color: #fff; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+}
+
+/* Botão Passar quando prioridade está ativa */
+#btn-pass.priority-active {
+    background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
+    color: #1a0a1f !important;
+    border: none !important;
+    animation: priorityButtonPulse 1s ease-in-out infinite;
+}
+
+@keyframes priorityButtonPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+}

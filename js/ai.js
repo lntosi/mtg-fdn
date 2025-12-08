@@ -73,6 +73,46 @@ class AIPlayer {
         return playableCards[0];
     }
 
+    /**
+     * Retorna lista de cartas que a IA pretende jogar nesta main phase
+     * Usado para o sistema de janelas de prioridade
+     * @returns {Array} Lista ordenada de cartas a jogar
+     */
+    getCardsToPlay() {
+        const opponent = this.game.opponent;
+        const cardsToPlay = [];
+
+        // 1. Terreno (se possível)
+        const landInHand = opponent.hand.find(card => card.type === 'land');
+        if (landInHand && this.rules.canPlayLand(opponent)) {
+            cardsToPlay.push(landInHand);
+        }
+
+        // 2. Simular mana disponível após jogar terreno
+        let simulatedMana = { ...this.rules.calculateAvailableMana(opponent) };
+        if (landInHand && this.rules.canPlayLand(opponent)) {
+            // Adicionar mana do terreno a jogar
+            if (landInHand.produces) {
+                simulatedMana[landInHand.produces] = (simulatedMana[landInHand.produces] || 0) + 1;
+            }
+        }
+
+        // 3. Cartas jogáveis (do mais caro pro mais barato)
+        const playableNonLands = opponent.hand
+            .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
+            .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+        // Adicionar cartas na ordem de prioridade
+        for (const card of playableNonLands) {
+            const bestCard = this.chooseBestCard([card]);
+            if (bestCard) {
+                cardsToPlay.push(bestCard);
+            }
+        }
+
+        return cardsToPlay;
+    }
+
     // Fase de combate
     async doCombat() {
         const opponent = this.game.opponent;

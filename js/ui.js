@@ -1292,18 +1292,28 @@ class GameUI {
         const isPlayerTurn = this.game.isPlayerTurn();
         const hasStack = !this.game.isStackEmpty();
         const hasPriority = this.game.priorityPlayer === this.game.player;
+        const waitingForPriority = this.game.isWaitingForPriorityResponse && this.game.isWaitingForPriorityResponse();
 
         // Botões só habilitados no turno do jogador e quando não está esperando bloqueio
-        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack;
-        this.btnPass.disabled = (!isPlayerTurn && !hasPriority) || this.waitingForBlockers;
+        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority;
+
+        // Botão passar habilitado se:
+        // - É turno do jogador OU tem prioridade OU está aguardando resposta
+        this.btnPass.disabled = (!isPlayerTurn && !hasPriority && !waitingForPriority) || this.waitingForBlockers;
 
         // Atualizar texto do botão Passar baseado no contexto
-        if (hasStack && hasPriority) {
+        if (waitingForPriority) {
+            this.btnPass.textContent = 'Passar Prioridade';
+            this.btnPass.title = 'Passar a prioridade sem responder';
+            this.btnPass.classList.add('priority-active');
+        } else if (hasStack && hasPriority) {
             this.btnPass.textContent = 'Resolver';
             this.btnPass.title = 'Passar prioridade e resolver a pilha';
+            this.btnPass.classList.remove('priority-active');
         } else {
             this.btnPass.textContent = 'Passar';
             this.btnPass.title = 'Passar para próxima fase';
+            this.btnPass.classList.remove('priority-active');
         }
 
         // Botão de ataque
@@ -1983,6 +1993,138 @@ class GameUI {
     // Mostra tela de fim de jogo (mantido para compatibilidade)
     showGameOver(winner, reason) {
         this.showGameOverScreen(winner, reason);
+    }
+
+    // === SISTEMA DE JANELA DE PRIORIDADE ===
+
+    /**
+     * Mostra a janela de prioridade para o jogador responder com instants
+     * @param {string} reason - Razão da janela (ex: "IA lançou Lightning Bolt")
+     * @param {Array} playableInstants - Lista de instants jogáveis
+     * @returns {Promise<string>} - 'pass' ou 'respond'
+     */
+    showPriorityWindow(reason, playableInstants) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('priority-window-modal');
+            if (!modal) {
+                resolve('pass');
+                return;
+            }
+
+            const reasonEl = document.getElementById('priority-window-reason');
+            const instantsContainer = document.getElementById('priority-instants');
+            const btnRespond = document.getElementById('btn-priority-respond');
+            const btnPass = document.getElementById('btn-priority-pass');
+
+            // Configurar conteúdo
+            reasonEl.textContent = reason;
+
+            // Renderizar instants disponíveis
+            instantsContainer.innerHTML = '';
+            if (playableInstants && playableInstants.length > 0) {
+                playableInstants.forEach(card => {
+                    const cardEl = this.createCardElement(card, true);
+                    cardEl.classList.add('priority-instant-card');
+                    cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                    cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                    instantsContainer.appendChild(cardEl);
+                });
+            } else {
+                instantsContainer.innerHTML = '<p class="no-instants">Nenhum instant disponível</p>';
+            }
+
+            // Som de alerta
+            if (window.soundManager && window.soundManager.playNotification) {
+                window.soundManager.playNotification();
+            }
+
+            // Handlers dos botões
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                btnRespond.onclick = null;
+                btnPass.onclick = null;
+            };
+
+            btnRespond.onclick = () => {
+                cleanup();
+                this.log('Você escolheu responder');
+                resolve('respond');
+            };
+
+            btnPass.onclick = () => {
+                cleanup();
+                this.log('Você passou a prioridade');
+                resolve('pass');
+            };
+
+            // Destacar cartas na mão que podem ser jogadas
+            this.highlightPlayableInstants(true);
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * Esconde a janela de prioridade
+     */
+    hidePriorityWindow() {
+        const modal = document.getElementById('priority-window-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        this.highlightPlayableInstants(false);
+    }
+
+    /**
+     * Destaca instants jogáveis na mão do jogador
+     * @param {boolean} highlight - true para destacar, false para remover destaque
+     */
+    highlightPlayableInstants(highlight) {
+        const handCards = this.playerHand.querySelectorAll('.card');
+        handCards.forEach(cardEl => {
+            if (highlight) {
+                // Verificar se é um instant jogável
+                const card = this.findCardByElement(cardEl);
+                if (card && card.type === 'instant' && this.game.rules.canCastInstant(card, this.game.player)) {
+                    cardEl.classList.add('instant-highlight');
+                }
+            } else {
+                cardEl.classList.remove('instant-highlight');
+            }
+        });
+    }
+
+    /**
+     * Encontra a carta correspondente a um elemento DOM
+     * @param {HTMLElement} cardEl - Elemento da carta
+     * @returns {Object|null} - Carta ou null
+     */
+    findCardByElement(cardEl) {
+        const instanceId = cardEl.dataset.instanceId;
+        if (instanceId) {
+            return this.game.player.hand.find(c => c.instanceId === instanceId);
+        }
+        return null;
+    }
+
+    /**
+     * Mostra indicador flutuante de que o jogador pode responder
+     */
+    showPriorityIndicator() {
+        const indicator = document.getElementById('priority-indicator');
+        if (indicator) {
+            indicator.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Esconde indicador de prioridade
+     */
+    hidePriorityIndicator() {
+        const indicator = document.getElementById('priority-indicator');
+        if (indicator) {
+            indicator.classList.add('hidden');
+        }
     }
 }
 

@@ -315,6 +315,33 @@
         </div>
     </div>
 
+    <!-- Modal de Janela de Prioridade (Responder com Instant) -->
+    <div id="priority-window-modal" class="modal hidden">
+        <div class="modal-content priority-window-content">
+            <div class="priority-header">
+                <span class="priority-icon">⚡</span>
+                <h2 id="priority-window-title">Responder?</h2>
+            </div>
+            <p id="priority-window-reason" class="priority-reason">Oponente lançou uma mágica</p>
+            <div class="priority-instants-section">
+                <p class="priority-instants-label">Seus Instants disponíveis:</p>
+                <div id="priority-instants" class="priority-instants"></div>
+            </div>
+            <div class="priority-buttons">
+                <button id="btn-priority-respond" class="btn-priority-respond">Responder</button>
+                <button id="btn-priority-pass" class="btn-priority-pass">Passar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicador de Prioridade Flutuante (aparece quando jogador pode responder) -->
+    <div id="priority-indicator" class="priority-indicator hidden">
+        <div class="priority-indicator-content">
+            <span class="priority-indicator-icon">⚡</span>
+            <span class="priority-indicator-text">Você pode responder!</span>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/cards.js"></script>
     <script src="js/sounds.js"></script>
