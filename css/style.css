@@ -3684,6 +3684,33 @@ body.theme-broadcast {
     color: #1a1a1a;
 }
 
+/* Broadcast theme - Stack */
+.theme-broadcast #stack {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.theme-broadcast .stack-empty-text {
+    color: #555;
+}
+
+.theme-broadcast .stack-item {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.theme-broadcast .stack-item-name {
+    color: #1a1a1a;
+}
+
+.theme-broadcast .stack-item-controller {
+    color: #555;
+}
+
+.theme-broadcast .stack-item-target {
+    color: #333;
+}
+
 .theme-broadcast #current-phase {
     color: #1a1a1a;
     background: transparent;
