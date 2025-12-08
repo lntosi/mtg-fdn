@@ -143,7 +143,8 @@ class GameState {
                 this.phase = PHASES.MAIN1;
             }
 
-            // Esconder modal de seleção
+            // Esconder modais de seleção
+            this.ui.playerCustomization.classList.add('hidden');
             this.ui.deckSelection.classList.add('hidden');
 
             this.ui.log(`Jogo restaurado - Turno ${this.turnNumber}`);
