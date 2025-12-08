@@ -210,6 +210,9 @@ class GameState {
         const playerName = options.playerName || 'Você';
         const playerAvatar = options.playerAvatar || 'jace';
 
+        // Quem começa (default: jogador primeiro)
+        this.playerFirst = options.playerFirst !== undefined ? options.playerFirst : true;
+
         // Escolher avatar da IA baseado nos decks
         const aiAvatar = this.getAIAvatar(aiDecks);
 
@@ -314,13 +317,28 @@ class GameState {
 
         // Iniciar jogo
         this.turnNumber = 1;
-        this.activePlayer = this.player;
-        this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
-        this.priorityPlayer = this.player;
 
-        this.ui.logTurnStart(1, 'Você');
+        // Determinar quem começa baseado na opção selecionada
+        if (this.playerFirst) {
+            this.activePlayer = this.player;
+            this.priorityPlayer = this.player;
+            this.ui.logTurnStart(1, 'Você');
+        } else {
+            this.activePlayer = this.opponent;
+            this.priorityPlayer = this.opponent;
+            this.ui.logTurnStart(1, 'Oponente (IA)');
+            this.ui.log('A IA começa primeiro!');
+        }
+
+        this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
+
         this.ui.render();
         this.saveGame();
+
+        // Se IA começa, executar turno da IA
+        if (!this.playerFirst) {
+            setTimeout(() => this.executeAITurn(), 800);
+        }
     }
 
     createPlayer(name, deckKeys, startingLife = 20, avatar = null) {

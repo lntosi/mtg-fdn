@@ -41,10 +41,10 @@
                 <span id="turn-indicator">Turno: 0</span>
             </div>
             <div id="action-buttons">
-                <button id="btn-next-phase" disabled>Próxima Fase</button>
+                <button id="btn-main-action" class="btn-main-action" disabled>OK</button>
                 <button id="btn-attack" disabled>Atacar</button>
                 <button id="btn-block" disabled>Não Bloquear</button>
-                <button id="btn-pass" disabled>Passar</button>
+                <button id="btn-next-phase" class="btn-secondary" disabled>Pular Fase</button>
             </div>
             <div id="message-log"></div>
             <div id="stack"></div>
@@ -136,18 +136,10 @@
 
     <!-- Tela de Seleção de Decks -->
     <div id="deck-selection" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content deck-selection-content">
             <h2>Escolha seus Decks</h2>
             <p>Selecione 2 decks para formar seu baralho de 40 cartas:</p>
-            <div class="starting-life-section">
-                <label for="starting-life">Vida Inicial:</label>
-                <select id="starting-life">
-                    <option value="10">10</option>
-                    <option value="20" selected>20 (Padrão)</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                </select>
-            </div>
+
             <div id="deck-options">
                 <label class="deck-option">
                     <input type="checkbox" name="deck" value="cats">
@@ -170,6 +162,67 @@
                     <span class="deck-name">Pirates (Azul)</span>
                 </label>
             </div>
+
+            <div class="game-options">
+                <!-- Decks da IA -->
+                <div class="option-section">
+                    <label for="ai-deck-mode">Decks da IA:</label>
+                    <select id="ai-deck-mode">
+                        <option value="random-different">Aleatório (cores diferentes)</option>
+                        <option value="random-any">Aleatório (qualquer cor)</option>
+                        <option value="manual">Escolher manualmente</option>
+                    </select>
+                </div>
+
+                <!-- Seleção manual de decks da IA (escondido por padrão) -->
+                <div id="ai-deck-options" class="ai-deck-options hidden">
+                    <p class="ai-deck-label">Selecione 2 decks para a IA:</p>
+                    <div class="ai-deck-checkboxes">
+                        <label class="deck-option-small">
+                            <input type="checkbox" name="ai-deck" value="cats">
+                            <span>Cats</span>
+                        </label>
+                        <label class="deck-option-small">
+                            <input type="checkbox" name="ai-deck" value="goblins">
+                            <span>Goblins</span>
+                        </label>
+                        <label class="deck-option-small">
+                            <input type="checkbox" name="ai-deck" value="vampires">
+                            <span>Vampires</span>
+                        </label>
+                        <label class="deck-option-small">
+                            <input type="checkbox" name="ai-deck" value="elves">
+                            <span>Elves</span>
+                        </label>
+                        <label class="deck-option-small">
+                            <input type="checkbox" name="ai-deck" value="pirates">
+                            <span>Pirates</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Quem começa -->
+                <div class="option-section">
+                    <label for="starting-player">Quem começa:</label>
+                    <select id="starting-player">
+                        <option value="random">Aleatório (coin flip)</option>
+                        <option value="player">Jogador primeiro</option>
+                        <option value="ai">IA primeiro</option>
+                    </select>
+                </div>
+
+                <!-- Vida Inicial -->
+                <div class="option-section">
+                    <label for="starting-life">Vida Inicial:</label>
+                    <select id="starting-life">
+                        <option value="10">10</option>
+                        <option value="20" selected>20 (Padrão)</option>
+                        <option value="30">30</option>
+                        <option value="40">40</option>
+                    </select>
+                </div>
+            </div>
+
             <button id="btn-start-game" disabled>Iniciar Jogo</button>
         </div>
     </div>

@@ -65,10 +65,10 @@ class GameUI {
         this.messageLog = document.getElementById('message-log');
 
         // Botões
+        this.btnMainAction = document.getElementById('btn-main-action');
         this.btnNextPhase = document.getElementById('btn-next-phase');
         this.btnAttack = document.getElementById('btn-attack');
         this.btnBlock = document.getElementById('btn-block');
-        this.btnPass = document.getElementById('btn-pass');
 
         // Modals
         this.playerCustomization = document.getElementById('player-customization');
@@ -151,19 +151,31 @@ class GameUI {
             this.btnContinueToDecks.addEventListener('click', () => this.continueToDecks());
         }
 
-        // Seleção de decks
+        // Seleção de decks do jogador
         const checkboxes = document.querySelectorAll('input[name="deck"]');
         checkboxes.forEach(cb => {
             cb.addEventListener('change', () => this.onDeckSelectionChange());
         });
 
+        // Modo de seleção de decks da IA
+        const aiDeckMode = document.getElementById('ai-deck-mode');
+        if (aiDeckMode) {
+            aiDeckMode.addEventListener('change', () => this.onAIDeckModeChange());
+        }
+
+        // Seleção manual de decks da IA
+        const aiDeckCheckboxes = document.querySelectorAll('input[name="ai-deck"]');
+        aiDeckCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => this.onAIDeckSelectionChange());
+        });
+
         this.btnStartGame.addEventListener('click', () => this.onStartGame());
 
         // Botões de ação
+        this.btnMainAction.addEventListener('click', () => this.onMainActionClick());
         this.btnNextPhase.addEventListener('click', () => this.game.nextPhase());
         this.btnAttack.addEventListener('click', () => this.onAttackClick());
         this.btnBlock.addEventListener('click', () => this.onBlockClick());
-        this.btnPass.addEventListener('click', () => this.game.pass());
 
         // Clique no cemitério para abrir modal
         this.playerGraveyard.addEventListener('click', () => this.showGraveyardModal('player'));
@@ -587,27 +599,104 @@ class GameUI {
             });
         }
 
-        this.btnStartGame.disabled = checked.length !== 2;
+        this.updateStartButtonState();
+    }
+
+    onAIDeckModeChange() {
+        const aiDeckMode = document.getElementById('ai-deck-mode');
+        const aiDeckOptions = document.getElementById('ai-deck-options');
+
+        if (aiDeckMode && aiDeckOptions) {
+            if (aiDeckMode.value === 'manual') {
+                aiDeckOptions.classList.remove('hidden');
+            } else {
+                aiDeckOptions.classList.add('hidden');
+            }
+        }
+
+        this.updateStartButtonState();
+    }
+
+    onAIDeckSelectionChange() {
+        const checked = document.querySelectorAll('input[name="ai-deck"]:checked');
+
+        // Limitar a 2 seleções
+        if (checked.length >= 2) {
+            document.querySelectorAll('input[name="ai-deck"]:not(:checked)').forEach(cb => {
+                cb.disabled = true;
+            });
+        } else {
+            document.querySelectorAll('input[name="ai-deck"]').forEach(cb => {
+                cb.disabled = false;
+            });
+        }
+
+        this.updateStartButtonState();
+    }
+
+    updateStartButtonState() {
+        const playerChecked = document.querySelectorAll('input[name="deck"]:checked');
+        const playerHas2 = playerChecked.length === 2;
+
+        const aiDeckMode = document.getElementById('ai-deck-mode')?.value || 'random-different';
+
+        let aiReady = true;
+        if (aiDeckMode === 'manual') {
+            const aiChecked = document.querySelectorAll('input[name="ai-deck"]:checked');
+            aiReady = aiChecked.length === 2;
+        }
+
+        this.btnStartGame.disabled = !(playerHas2 && aiReady);
     }
 
     onStartGame() {
         const checked = document.querySelectorAll('input[name="deck"]:checked');
         const selectedDecks = Array.from(checked).map(cb => cb.value);
 
-        // Determinar decks da IA (os não selecionados)
-        const allDecks = ['cats', 'goblins', 'vampires', 'elves'];
-        const aiDecks = allDecks.filter(d => !selectedDecks.includes(d));
+        // Determinar decks da IA baseado no modo selecionado
+        const allDecks = ['cats', 'goblins', 'vampires', 'elves', 'pirates'];
+        const aiDeckMode = document.getElementById('ai-deck-mode')?.value || 'random-different';
+        let aiDecks;
+
+        if (aiDeckMode === 'manual') {
+            // Seleção manual
+            const aiChecked = document.querySelectorAll('input[name="ai-deck"]:checked');
+            aiDecks = Array.from(aiChecked).map(cb => cb.value);
+        } else if (aiDeckMode === 'random-any') {
+            // Aleatório de qualquer deck (pode repetir cores do jogador)
+            const shuffled = [...allDecks].sort(() => Math.random() - 0.5);
+            aiDecks = shuffled.slice(0, 2);
+        } else {
+            // random-different: Aleatório dos decks não selecionados pelo jogador
+            const availableDecks = allDecks.filter(d => !selectedDecks.includes(d));
+            const shuffled = availableDecks.sort(() => Math.random() - 0.5);
+            aiDecks = shuffled.slice(0, 2);
+        }
 
         // Obter vida inicial selecionada
         const startingLifeSelect = document.getElementById('starting-life');
         const startingLife = startingLifeSelect ? parseInt(startingLifeSelect.value) : 20;
+
+        // Obter quem começa
+        const startingPlayerSelect = document.getElementById('starting-player');
+        const startingPlayerOption = startingPlayerSelect?.value || 'random';
+        let playerFirst;
+
+        if (startingPlayerOption === 'random') {
+            // Coin flip
+            playerFirst = Math.random() < 0.5;
+        } else if (startingPlayerOption === 'player') {
+            playerFirst = true;
+        } else {
+            playerFirst = false;
+        }
 
         // Obter nome e avatar do jogador (do localStorage ou valores padrão)
         const playerName = localStorage.getItem('mtg_player_name') || 'Você';
         const playerAvatar = localStorage.getItem('mtg_player_avatar') || 'jace';
 
         this.deckSelection.classList.add('hidden');
-        this.game.startGame(selectedDecks, aiDecks, { startingLife, playerName, playerAvatar });
+        this.game.startGame(selectedDecks, aiDecks, { startingLife, playerName, playerAvatar, playerFirst });
     }
 
     onAttackClick() {
@@ -836,10 +925,8 @@ class GameUI {
                 this.renderAttachedAuras(card, cardEl);
             }
 
-            // Renderizar contadores (+1/+1, etc)
-            if (card.counters) {
-                this.renderCounters(card, cardEl);
-            }
+            // Contadores (+1/+1, etc) são exibidos apenas no Preview Lateral
+            // Removido do campo de batalha para evitar redundância visual
 
             // Adicionar ao container apropriado
             if (card.type === 'land') {
@@ -860,9 +947,6 @@ class GameUI {
         );
 
         if (attachedAuras.length > 0) {
-            const aurasContainer = document.createElement('div');
-            aurasContainer.className = 'attached-auras';
-
             // Determinar se é controlador da criatura
             const creatureController = this.game.player.battlefield.includes(creature)
                 ? this.game.player
@@ -872,10 +956,6 @@ class GameUI {
             let hasBuff = false;
 
             attachedAuras.forEach((aura) => {
-                const auraEl = document.createElement('div');
-                auraEl.className = 'attached-aura';
-                auraEl.title = `${aura.name}: ${aura.text || ''}`;
-
                 // Determinar se é buff ou debuff
                 const auraController = this.game.player.battlefield.includes(aura)
                     ? this.game.player
@@ -886,44 +966,24 @@ class GameUI {
                     (auraController !== creatureController && !aura.text?.includes('+'));
 
                 if (isDebuff) {
-                    auraEl.classList.add('debuff-aura');
                     hasDebuff = true;
                 } else {
-                    auraEl.classList.add('buff-aura');
                     hasBuff = true;
                 }
-
-                // Carregar imagem da aura
-                this.loadAuraImage(aura, auraEl);
-
-                // Permitir hover para mostrar preview
-                auraEl.addEventListener('mouseenter', () => this.showCardPreview(aura));
-                auraEl.addEventListener('mouseleave', () => this.hideCardPreview());
-
-                aurasContainer.appendChild(auraEl);
             });
 
-            creatureEl.appendChild(aurasContainer);
+            // Adicionar classe para borda colorida indicando presença de aura
             creatureEl.classList.add('has-aura');
 
-            // Adicionar classe de tipo de aura para borda colorida
             if (hasDebuff) {
                 creatureEl.classList.add('has-debuff-aura');
             }
             if (hasBuff && !hasDebuff) {
                 creatureEl.classList.add('has-buff-aura');
             }
-        }
-    }
 
-    async loadAuraImage(aura, auraEl) {
-        try {
-            const imageUrl = await window.imageManager.getCardImageUrl(aura.name, 'small');
-            if (imageUrl) {
-                auraEl.style.backgroundImage = `url('${imageUrl}')`;
-            }
-        } catch (e) {
-            auraEl.textContent = aura.name.substring(0, 3);
+            // Informações detalhadas das auras são exibidas no Preview Lateral
+            // A borda colorida da criatura indica visualmente a presença de aura(s)
         }
     }
 
@@ -1016,27 +1076,8 @@ class GameUI {
                 html += `<div class="card-damage" title="Dano marcado: ${markedDamage}">-${markedDamage}</div>`;
             }
 
-            // Mostrar indicador de bônus se houver (excluindo contadores, que têm badge próprio)
-            if (bonuses.sources.length > 0) {
-                // Filtrar fontes que NÃO são contadores (contadores têm badge amarelo próprio)
-                const nonCounterSources = bonuses.sources.filter(s =>
-                    !s.name.includes('+1/+1 counter') && !s.name.includes('-1/-1 counter')
-                );
-
-                if (nonCounterSources.length > 0) {
-                    // Calcular bônus apenas das fontes não-contadores
-                    const nonCounterPower = nonCounterSources.reduce((sum, s) => sum + (s.power || 0), 0);
-                    const nonCounterToughness = nonCounterSources.reduce((sum, s) => sum + (s.toughness || 0), 0);
-
-                    if (nonCounterPower !== 0 || nonCounterToughness !== 0) {
-                        const pSign = nonCounterPower >= 0 ? '+' : '';
-                        const tSign = nonCounterToughness >= 0 ? '+' : '';
-                        const bonusText = `${pSign}${nonCounterPower}/${tSign}${nonCounterToughness}`;
-                        const sourcesTitle = nonCounterSources.map(s => s.name).join(', ');
-                        html += `<div class="card-bonus" title="${sourcesTitle}">${bonusText}</div>`;
-                    }
-                }
-            }
+            // Bônus e modificadores são exibidos apenas no Preview Lateral
+            // Removido do campo de batalha para evitar redundância visual
         }
 
         cardEl.innerHTML = html;
@@ -1552,41 +1593,117 @@ class GameUI {
         const hasPriority = this.game.priorityPlayer === this.game.player;
         const waitingForPriority = this.game.isWaitingForPriorityResponse && this.game.isWaitingForPriorityResponse();
 
-        // Botões só habilitados no turno do jogador e quando não está esperando bloqueio
-        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority;
+        // Remover todas as classes de estado do botão principal
+        this.btnMainAction.classList.remove('state-advance', 'state-resolve', 'state-priority', 'state-combat', 'state-block');
 
-        // Botão passar habilitado se:
-        // - É turno do jogador OU tem prioridade OU está aguardando resposta
-        this.btnPass.disabled = (!isPlayerTurn && !hasPriority && !waitingForPriority) || this.waitingForBlockers;
+        // Determinar estado e texto do botão principal contextual
+        let mainButtonEnabled = false;
+        let mainButtonText = 'Aguarde...';
+        let mainButtonTitle = 'Turno do oponente';
+        let mainButtonState = 'state-advance';
 
-        // Atualizar texto do botão Passar baseado no contexto
-        if (waitingForPriority) {
-            this.btnPass.textContent = 'Passar Prioridade';
-            this.btnPass.title = 'Passar a prioridade sem responder';
-            this.btnPass.classList.add('priority-active');
+        if (this.waitingForBlockers) {
+            // Esperando jogador declarar bloqueadores
+            mainButtonEnabled = true;
+            const blockCount = Object.values(this.blockerAssignments).flat().length;
+            mainButtonText = blockCount > 0 ? `Bloquear (${blockCount})` : 'Não Bloquear';
+            mainButtonTitle = 'Confirmar bloqueadores';
+            mainButtonState = 'state-block';
+        } else if (waitingForPriority) {
+            // Janela de prioridade - pode responder
+            mainButtonEnabled = true;
+            mainButtonText = 'Passar Prioridade';
+            mainButtonTitle = 'Passar sem responder';
+            mainButtonState = 'state-priority';
         } else if (hasStack && hasPriority) {
-            this.btnPass.textContent = 'Resolver';
-            this.btnPass.title = 'Passar prioridade e resolver a pilha';
-            this.btnPass.classList.remove('priority-active');
-        } else {
-            this.btnPass.textContent = 'Passar';
-            this.btnPass.title = 'Passar para próxima fase';
-            this.btnPass.classList.remove('priority-active');
+            // Tem itens na pilha para resolver
+            mainButtonEnabled = true;
+            mainButtonText = 'Resolver';
+            mainButtonTitle = 'Resolver a pilha';
+            mainButtonState = 'state-resolve';
+        } else if (isPlayerTurn) {
+            // Turno do jogador - mostrar próxima fase
+            mainButtonEnabled = true;
+            const nextPhaseName = this.getNextPhaseName();
+
+            // Contexto especial para combate
+            if (this.game.phase === PHASES.DECLARE_ATTACKERS && this.selectedAttackers.length > 0) {
+                mainButtonText = `Atacar (${this.selectedAttackers.length})`;
+                mainButtonTitle = 'Confirmar atacantes';
+                mainButtonState = 'state-combat';
+            } else if (this.game.phase === PHASES.DECLARE_ATTACKERS) {
+                mainButtonText = 'Ir ao Combate';
+                mainButtonTitle = 'Prosseguir sem atacar';
+                mainButtonState = 'state-advance';
+            } else {
+                mainButtonText = `→ ${nextPhaseName}`;
+                mainButtonTitle = `Avançar para ${nextPhaseName}`;
+                mainButtonState = 'state-advance';
+            }
         }
 
-        // Botão de ataque
+        this.btnMainAction.disabled = !mainButtonEnabled;
+        this.btnMainAction.textContent = mainButtonText;
+        this.btnMainAction.title = mainButtonTitle;
+        this.btnMainAction.classList.add(mainButtonState);
+
+        // Botão secundário "Pular Fase" - só habilitado em situações específicas
+        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority;
+
+        // Botão de ataque (mostrar apenas na fase de atacantes)
         const canDeclareAttack = isPlayerTurn && this.game.phase === PHASES.DECLARE_ATTACKERS && !hasStack;
         this.btnAttack.disabled = !canDeclareAttack || this.waitingForBlockers;
         this.btnAttack.textContent = this.selectedAttackers.length > 0
             ? `Atacar (${this.selectedAttackers.length})`
             : 'Atacar';
 
-        // Botão de bloqueio - habilitado quando esperando bloqueadores
+        // Botão de bloqueio - escondido quando não esperando bloqueadores
         this.btnBlock.disabled = !this.waitingForBlockers;
         const blockCount = Object.values(this.blockerAssignments).flat().length;
         this.btnBlock.textContent = blockCount > 0
             ? `Bloquear (${blockCount})`
             : 'Não Bloquear';
+    }
+
+    getNextPhaseName() {
+        const phase = this.game.phase;
+        const shortNames = {
+            [PHASES.UNTAP]: 'Manutenção',
+            [PHASES.UPKEEP]: 'Compra',
+            [PHASES.DRAW]: 'Main 1',
+            [PHASES.MAIN1]: 'Combate',
+            [PHASES.COMBAT_BEGIN]: 'Atacantes',
+            [PHASES.DECLARE_ATTACKERS]: 'Bloqueadores',
+            [PHASES.DECLARE_BLOCKERS]: 'Dano',
+            [PHASES.COMBAT_DAMAGE]: 'Fim Combate',
+            [PHASES.COMBAT_END]: 'Main 2',
+            [PHASES.MAIN2]: 'Fim do Turno',
+            [PHASES.END]: 'Limpeza',
+            [PHASES.CLEANUP]: 'Próx. Turno'
+        };
+        return shortNames[phase] || 'Próxima';
+    }
+
+    onMainActionClick() {
+        // Ação contextual baseada no estado do jogo
+        if (this.waitingForBlockers) {
+            // Confirmar bloqueadores
+            this.onBlockClick();
+        } else if (this.game.isWaitingForPriorityResponse && this.game.isWaitingForPriorityResponse()) {
+            // Passar prioridade
+            this.game.pass();
+        } else if (!this.game.isStackEmpty() && this.game.priorityPlayer === this.game.player) {
+            // Resolver pilha
+            this.game.pass();
+        } else if (this.game.isPlayerTurn()) {
+            // Fase de atacantes com atacantes selecionados
+            if (this.game.phase === PHASES.DECLARE_ATTACKERS && this.selectedAttackers.length > 0) {
+                this.onAttackClick();
+            } else {
+                // Avançar fase
+                this.game.nextPhase();
+            }
+        }
     }
 
     onCardClick(card, player) {
