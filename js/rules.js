@@ -88,9 +88,34 @@ class RulesEngine {
     }
 
     canCastInstant(card, player) {
-        // Simplificado: pode jogar instant na sua vez durante várias fases
         const hasEnoughMana = this.hasEnoughMana(card, player);
-        return hasEnoughMana;
+        if (!hasEnoughMana) return false;
+
+        // Verificar se há alvos válidos para instants com restrições
+        if (!this.hasValidTargets(card, player)) return false;
+
+        return true;
+    }
+
+    /**
+     * Verifica se um instant tem alvos válidos no momento atual
+     */
+    hasValidTargets(card, player) {
+        const opponent = player === this.game.player ? this.game.opponent : this.game.player;
+        const attackers = this.game.currentAttackers || [];
+        const blockerAssignments = this.game.blockerAssignments || {};
+        const blockers = Object.values(blockerAssignments).flat();
+
+        // Elspeth's Smite - só pode mirar criaturas atacantes ou bloqueadoras
+        if (card.id === 'elspeths_smite') {
+            // Precisa haver atacantes ou bloqueadores
+            const hasAttackers = attackers.length > 0;
+            const hasBlockers = blockers.length > 0;
+            return hasAttackers || hasBlockers;
+        }
+
+        // Para outros instants, assumir que sempre há alvos válidos por enquanto
+        return true;
     }
 
     hasEnoughMana(card, player) {
