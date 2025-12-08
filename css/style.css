@@ -436,8 +436,6 @@ body {
     color: rgba(200, 150, 200, 0.4);
     text-transform: uppercase;
     letter-spacing: 2px;
-    background: rgba(0,0,0,0.5);
-    padding: 0 8px;
 }
 
 .other-permanents .card {
@@ -454,8 +452,6 @@ body {
     color: rgba(200, 150, 200, 0.5);
     text-transform: uppercase;
     letter-spacing: 3px;
-    background: rgba(0,0,0,0.5);
-    padding: 0 8px;
 }
 
 #opponent-battlefield .lands {
@@ -3770,6 +3766,13 @@ body.theme-broadcast {
 
 .theme-broadcast .customization-section label {
     color: #333;
+}
+
+/* Broadcast theme - Zone labels */
+.theme-broadcast .lands::before,
+.theme-broadcast .creatures::before,
+.theme-broadcast .other-permanents::before {
+    color: rgba(100, 100, 100, 0.6);
 }
 
 /* === Tema Dark (Alto Contraste) === */
