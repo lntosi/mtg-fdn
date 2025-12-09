@@ -2600,7 +2600,73 @@ class GameUI {
             // Destacar cartas na mão que podem ser jogadas
             this.highlightPlayableInstants(true);
 
+            // Inicializar drag se ainda não foi feito
+            this.initPriorityWindowDrag();
+
             modal.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * Inicializa funcionalidade de arrastar a janela de prioridade
+     */
+    initPriorityWindowDrag() {
+        const modal = document.getElementById('priority-window-modal');
+        const content = modal?.querySelector('.priority-window-content');
+        const handle = modal?.querySelector('.priority-drag-handle');
+
+        if (!handle || !content || content._dragInitialized) return;
+
+        content._dragInitialized = true;
+
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        handle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            content.classList.add('dragging');
+
+            // Pegar posição atual (se já foi movido) ou calcular inicial
+            const rect = content.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // Mudar para position fixed para arrastar livremente
+            content.style.position = 'fixed';
+            content.style.left = initialX + 'px';
+            content.style.top = initialY + 'px';
+            content.style.margin = '0';
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newX = initialX + dx;
+            let newY = initialY + dy;
+
+            // Limitar aos bounds da janela
+            const maxX = window.innerWidth - content.offsetWidth - 10;
+            const maxY = window.innerHeight - content.offsetHeight - 10;
+
+            newX = Math.max(10, Math.min(newX, maxX));
+            newY = Math.max(10, Math.min(newY, maxY));
+
+            content.style.left = newX + 'px';
+            content.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                content.classList.remove('dragging');
+            }
         });
     }
 

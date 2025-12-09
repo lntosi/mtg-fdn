@@ -1167,7 +1167,10 @@ class GameState {
 
         // Bloodtithe Collector - oponente descarta se perdeu vida neste turno
         if (card.id === 'bloodtithe_collector') {
-            if (this.opponentLostLifeThisTurn) {
+            const opponentLostLife = controller === this.player
+                ? this.opponentLostLifeThisTurn
+                : this.playerLostLifeThisTurn;
+            if (opponentLostLife) {
                 // Oponente descarta uma carta aleatória
                 if (opponent.hand.length > 0) {
                     const randomIndex = Math.floor(Math.random() * opponent.hand.length);
