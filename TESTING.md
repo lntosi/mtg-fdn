@@ -99,9 +99,11 @@ mtg/
 │   │   ├── gameFactory.js    # Funções para criar objetos de teste
 │   │   └── rulesEngine.js    # Motor de regras simplificado para testes
 │   ├── combat.test.js        # Testes de combate (dano, first strike, etc.)
-│   ├── triggers.test.js      # Testes de triggers (ETB, fim de turno, etc.)
+│   ├── keywords.test.js      # Testes de keywords (flying, deathtouch, etc.)
+│   ├── lords.test.js         # Testes de lords (Dropkick Bomber, Elvish Archdruid)
+│   ├── newFeatures.test.js   # Testes de features recentes (temporaryKeywords, etc.)
 │   ├── spells.test.js        # Testes de feitiços e targeting
-│   └── keywords.test.js      # Testes de keywords (flying, deathtouch, etc.)
+│   └── triggers.test.js      # Testes de triggers (ETB, fim de turno, etc.)
 └── package.json              # Configuração do projeto e Jest
 ```
 
@@ -156,6 +158,43 @@ Testa cada keyword individualmente:
 - Can't Block
 - Tap for Mana
 
+### 5. Lords (`lords.test.js`)
+
+Testa efeitos de "lord" (criaturas que buffam outras do mesmo tipo):
+- Dropkick Bomber (+1/+1 para outros Goblins)
+- Elvish Archdruid (+1/+1 para outros Elfos)
+- Múltiplos lords stackando bônus
+- Lords não buffam a si mesmos
+- Lords não buffam criaturas do oponente
+
+### 6. New Features (`newFeatures.test.js`)
+
+Testa funcionalidades implementadas recentemente:
+
+**temporaryKeywords:**
+- Keywords temporárias (até fim do turno)
+- Cleanup no fim do turno
+- Kindled Fury (+1/+0 e first_strike)
+- Wildheart Invoker (+5/+5 e trample)
+- Dropkick Bomber (flying + sacrifice on combat damage)
+
+**Felidar Savior (etb_counter_two):**
+- Coloca +1/+1 em até duas outras criaturas
+- Não pode alvejar a si mesmo
+
+**hasValidTargets (validação de alvos para instants):**
+- Buffs requerem próprias criaturas
+- Remoção requer criaturas do oponente
+- Volley requer criatura com flying
+- Counterspells requerem algo na stack
+
+**Priority Window:**
+- Janela de prioridade após declarar bloqueadores
+- Combat tricks funcionam após bloqueio
+
+**Combat Log:**
+- Detalhes de dano específico por criatura
+
 ---
 
 ## Exemplo de Saída
@@ -178,14 +217,16 @@ $ npm test
       ✓ 2/2 first strike vs 2/2 - only blocker dies
       ...
 
- PASS  tests/triggers.test.js
- PASS  tests/spells.test.js
  PASS  tests/keywords.test.js
+ PASS  tests/lords.test.js
+ PASS  tests/newFeatures.test.js
+ PASS  tests/spells.test.js
+ PASS  tests/triggers.test.js
 
-Test Suites: 4 passed, 4 total
-Tests:       67 passed, 67 total
+Test Suites: 6 passed, 6 total
+Tests:       134 passed, 134 total
 Snapshots:   0 total
-Time:        1.234 s
+Time:        0.576 s
 ```
 
 ---
@@ -413,7 +454,14 @@ Ou acesse: `https://scryfall.com/search?q=card+name`
 **Keywords que precisam de código:**
 - `tap_for_mana` + `produces: "G"` - Para criaturas que geram mana
 - `etb_draw` - Comprar carta ao entrar
-- Triggers customizados - Implementar em `rules.js`
+- `etb_counter_two` - Colocar +1/+1 em até duas criaturas (Felidar Savior)
+- `etb_bounce` - Devolver criatura para a mão
+- Triggers customizados - Implementar em `game.js` → `resolveETB()`
+
+**Keywords temporárias (combat tricks):**
+- Use `card.temporaryKeywords = []` para keywords até fim do turno
+- Exemplo: Kindled Fury adiciona `first_strike` temporário
+- Limpas automaticamente no cleanup step
 
 ### 4. Adicionar testes
 
@@ -474,6 +522,40 @@ npm run test:coverage
 
 # Verificar cartas sem testes
 node tools/validate-cards.js --missing
+```
+
+---
+
+## Convenções de Código nos Testes
+
+### Formato de Contadores
+
+O código real usa `counters.plusOnePlusOne`, mas os testes suportam ambos os formatos:
+- `creature.counters.plusOnePlusOne` (formato do código real)
+- `creature.counters['+1/+1']` (formato legível para testes)
+
+### Estrutura de temporaryKeywords
+
+```javascript
+// Adicionar keyword temporária
+creature.temporaryKeywords = creature.temporaryKeywords || [];
+creature.temporaryKeywords.push('flying');
+
+// Limpar no fim do turno
+creature.temporaryKeywords = [];
+```
+
+### Estrutura de combatDetails (log de combate)
+
+```javascript
+// Dano direto ao jogador
+{ type: 'direct', attacker: 'Goblin', damage: 2 }
+
+// Combate bloqueado
+{ type: 'blocked', attacker: 'Elf', blocker: 'Cat', damageToBlocker: 3, damageToAttacker: 2 }
+
+// Dano de trample
+{ type: 'trample', attacker: 'Beast', damage: 2 }
 ```
 
 ---

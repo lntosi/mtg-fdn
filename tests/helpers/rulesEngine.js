@@ -50,9 +50,13 @@ class TestRulesEngine {
         const bonuses = this.getCreatureBonuses(creature);
         power += bonuses.power;
 
-        // Contadores +1/+1
-        if (creature.counters && creature.counters['+1/+1']) {
-            power += creature.counters['+1/+1'];
+        // Contadores +1/+1 (suporta ambos os formatos para compatibilidade)
+        if (creature.counters) {
+            if (creature.counters.plusOnePlusOne) {
+                power += creature.counters.plusOnePlusOne;
+            } else if (creature.counters['+1/+1']) {
+                power += creature.counters['+1/+1'];
+            }
         }
 
         // Contadores -1/-1
@@ -72,9 +76,13 @@ class TestRulesEngine {
         const bonuses = this.getCreatureBonuses(creature);
         toughness += bonuses.toughness;
 
-        // Contadores +1/+1
-        if (creature.counters && creature.counters['+1/+1']) {
-            toughness += creature.counters['+1/+1'];
+        // Contadores +1/+1 (suporta ambos os formatos para compatibilidade)
+        if (creature.counters) {
+            if (creature.counters.plusOnePlusOne) {
+                toughness += creature.counters.plusOnePlusOne;
+            } else if (creature.counters['+1/+1']) {
+                toughness += creature.counters['+1/+1'];
+            }
         }
 
         // Contadores -1/-1
