@@ -375,8 +375,15 @@ class RulesEngine {
         return true;
     }
 
-    // Calcula dano de combate
-    resolveCombatDamage(attackers, blockerAssignments, defendingPlayer, attackingPlayer) {
+    /**
+     * Calcula dano de combate
+     * @param {Array} attackers - Criaturas atacantes
+     * @param {Object} blockerAssignments - Mapa de attackerInstanceId -> Array de bloqueadores
+     * @param {Object} defendingPlayer - Jogador que está defendendo
+     * @param {Object} attackingPlayer - Jogador que está atacando
+     * @param {Object} damageAssignments - Mapa de attackerInstanceId -> { blockerInstanceId: dano }
+     */
+    resolveCombatDamage(attackers, blockerAssignments, defendingPlayer, attackingPlayer, damageAssignments = {}) {
         const results = {
             creaturesDied: [],
             damageToPlayers: { attacker: 0, defender: 0 },
@@ -423,10 +430,32 @@ class RulesEngine {
                 const hasFirstStrike = attacker.keywords &&
                     (attacker.keywords.includes('first_strike') || attacker.keywords.includes('double_strike'));
                 const hasDoubleStrike = attacker.keywords && attacker.keywords.includes('double_strike');
+                const attackerHasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
 
                 // Double Strike: dano total é dobrado (first strike + normal)
-                let attackerDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                const totalAttackerDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+
+                // Obter atribuição de dano para este atacante (ou criar padrão)
+                let damageMap = damageAssignments[attacker.instanceId];
+                if (!damageMap && blockers.length > 0) {
+                    // Sem atribuição específica: dividir dano igualmente (comportamento legado)
+                    // ou todo dano para o único bloqueador
+                    damageMap = {};
+                    if (blockers.length === 1) {
+                        damageMap[blockers[0].instanceId] = totalAttackerDamage;
+                    } else {
+                        // Dividir igualmente como fallback
+                        const damagePerBlocker = Math.floor(totalAttackerDamage / blockers.length);
+                        let remainder = totalAttackerDamage % blockers.length;
+                        blockers.forEach(b => {
+                            damageMap[b.instanceId] = damagePerBlocker + (remainder > 0 ? 1 : 0);
+                            if (remainder > 0) remainder--;
+                        });
+                    }
+                }
+
                 let trampleDamage = 0;
+                let totalDamageDealt = 0;
 
                 blockers.forEach(blocker => {
                     const blockerPower = this.getCreaturePower(blocker);
@@ -436,13 +465,14 @@ class RulesEngine {
                     const blockerHasFirstStrike = blocker.keywords &&
                         (blocker.keywords.includes('first_strike') || blocker.keywords.includes('double_strike'));
 
-                    // Regra 510.1a: criatura causa dano igual ao seu poder (não limitado pela resistência)
-                    // Double strike causa dano duas vezes (first strike + normal damage)
-                    let damageToBlocker = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                    // Obter dano atribuído a este bloqueador
+                    const damageToBlocker = damageMap[blocker.instanceId] || 0;
+                    totalDamageDealt += damageToBlocker;
+
                     let damageFromBlocker = 0;
 
                     // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
-                    if (hasFirstStrike && !blockerHasFirstStrike && attackerPower >= blockerToughness) {
+                    if (hasFirstStrike && !blockerHasFirstStrike && damageToBlocker >= blockerToughness) {
                         // Bloqueador morre na fase de first strike, não causa dano
                         damageFromBlocker = 0;
                     } else {
@@ -459,12 +489,10 @@ class RulesEngine {
                         damageToAttacker: damageFromBlocker
                     });
 
-                    // Deathtouch do atacante
-                    const attackerHasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
-
-                    if (attackerHasDeathtouch && attackerPower > 0) {
+                    // Verificar se bloqueador morre
+                    if (attackerHasDeathtouch && damageToBlocker > 0) {
                         results.creaturesDied.push(blocker);
-                    } else if (attackerDamage >= blockerToughness) {
+                    } else if (damageToBlocker >= blockerToughness) {
                         results.creaturesDied.push(blocker);
                     }
 
@@ -473,22 +501,27 @@ class RulesEngine {
 
                     if (blockerHasDeathtouch && blockerPower > 0) {
                         // Só causa dano se não morreu na fase de first strike
-                        if (!hasFirstStrike || blockerHasFirstStrike || attackerPower < blockerToughness) {
+                        if (!hasFirstStrike || blockerHasFirstStrike || damageToBlocker < blockerToughness) {
                             results.creaturesDied.push(attacker);
                         }
                     }
-
-                    // Trample: dano excedente vai pro jogador
-                    if (attacker.keywords && attacker.keywords.includes('trample')) {
-                        const excessDamage = attackerDamage - blockerToughness;
-                        if (excessDamage > 0) {
-                            trampleDamage += excessDamage;
-                            results.damageToPlayers.defender += excessDamage;
-                        }
-                    }
-
-                    attackerDamage = Math.max(0, attackerDamage - blockerToughness);
                 });
+
+                // Trample: dano que não foi atribuído aos bloqueadores vai pro jogador
+                if (attacker.keywords && attacker.keywords.includes('trample')) {
+                    // Calcular dano mínimo necessário (dano letal para cada bloqueador)
+                    const minDamageNeeded = blockers.reduce((sum, b) => {
+                        if (attackerHasDeathtouch) return sum + 1;
+                        return sum + this.getCreatureToughness(b);
+                    }, 0);
+
+                    // Dano excedente ao dano letal vai para o defensor
+                    const excessDamage = totalAttackerDamage - minDamageNeeded;
+                    if (excessDamage > 0) {
+                        trampleDamage = excessDamage;
+                        results.damageToPlayers.defender += excessDamage;
+                    }
+                }
 
                 // Registrar dano de trample se houver
                 if (trampleDamage > 0) {
@@ -507,8 +540,7 @@ class RulesEngine {
 
                 // Lifelink do atacante (considera dano total causado incluindo double strike)
                 if (attacker.keywords && attacker.keywords.includes('lifelink')) {
-                    let lifelinkDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
-                    results.lifeGained.attacker += lifelinkDamage;
+                    results.lifeGained.attacker += totalDamageDealt + trampleDamage;
                 }
             }
         });

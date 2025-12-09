@@ -1671,11 +1671,46 @@ class GameState {
             return;
         }
 
+        // === ATRIBUIÇÃO DE DANO (Regra 510.1c) ===
+        // O controlador do atacante divide o dano entre múltiplos bloqueadores
+        const damageAssignments = {};
+
+        for (const attacker of activeAttackers) {
+            // Filtrar bloqueadores ainda no campo
+            const declaredBlockers = this.blockerAssignments[attacker.instanceId] || [];
+            const blockers = declaredBlockers.filter(b => defendingPlayer.battlefield.includes(b));
+
+            if (blockers.length > 1) {
+                // Múltiplos bloqueadores - precisa dividir dano
+                const hasDoubleStrike = attacker.keywords && attacker.keywords.includes('double_strike');
+                const attackerPower = this.rules.getCreaturePower(attacker, true);
+                const totalDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+
+                if (attackingPlayer === this.player) {
+                    // Jogador divide o dano - mostrar UI
+                    this.ui.log(`Divida o dano de ${attacker.name} entre os bloqueadores`);
+                    damageAssignments[attacker.instanceId] = await this.ui.promptDamageAssignment({
+                        attacker,
+                        blockers,
+                        totalDamage
+                    });
+                } else {
+                    // IA divide o dano estrategicamente
+                    damageAssignments[attacker.instanceId] = this.ai.assignDamageToBlockers(
+                        attacker,
+                        blockers,
+                        totalDamage
+                    );
+                }
+            }
+        }
+
         const results = this.rules.resolveCombatDamage(
             activeAttackers,
             this.blockerAssignments,
             defendingPlayer,
-            attackingPlayer
+            attackingPlayer,
+            damageAssignments
         );
 
         // Logar detalhes de combate

@@ -357,6 +357,79 @@ class AIPlayer {
         return validTargets[0];
     }
 
+    /**
+     * Divide dano de uma criatura atacante entre múltiplos bloqueadores
+     * Estratégia: matar o máximo de criaturas possível, priorizando as mais fortes
+     * @param {Object} attacker - Criatura atacante
+     * @param {Array} blockers - Array de bloqueadores
+     * @param {number} totalDamage - Dano total a distribuir
+     * @returns {Object} Mapa de instanceId -> dano atribuído
+     */
+    assignDamageToBlockers(attacker, blockers, totalDamage) {
+        const assignment = {};
+        blockers.forEach(b => assignment[b.instanceId] = 0);
+
+        let remainingDamage = totalDamage;
+        const hasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
+
+        // Ordenar bloqueadores por prioridade de eliminação
+        // - Primeiro: criaturas que podemos matar com dano disponível
+        // - Depois: por poder (mais perigosas primeiro)
+        const sortedBlockers = [...blockers].sort((a, b) => {
+            const aToughness = this.rules.getCreatureToughness(a);
+            const bToughness = this.rules.getCreatureToughness(b);
+            const aPower = this.rules.getCreaturePower(a);
+            const bPower = this.rules.getCreaturePower(b);
+
+            // Com deathtouch, todas morrem com 1 de dano
+            if (hasDeathtouch) {
+                // Priorizar criaturas mais fortes
+                return bPower - aPower;
+            }
+
+            // Verificar se podemos matar cada uma
+            const canKillA = aToughness <= remainingDamage;
+            const canKillB = bToughness <= remainingDamage;
+
+            // Priorizar criaturas que podemos matar
+            if (canKillA && !canKillB) return -1;
+            if (!canKillA && canKillB) return 1;
+
+            // Se ambas podem morrer, matar a mais forte primeiro
+            if (canKillA && canKillB) {
+                return bPower - aPower;
+            }
+
+            // Se nenhuma pode morrer, concentrar dano na mais fraca (para tentar matar)
+            return aToughness - bToughness;
+        });
+
+        // Distribuir dano
+        for (const blocker of sortedBlockers) {
+            if (remainingDamage <= 0) break;
+
+            const toughness = this.rules.getCreatureToughness(blocker);
+
+            if (hasDeathtouch) {
+                // Com deathtouch, 1 de dano é suficiente para matar
+                assignment[blocker.instanceId] = 1;
+                remainingDamage -= 1;
+            } else {
+                // Atribuir dano letal se possível
+                const damageNeeded = Math.min(toughness, remainingDamage);
+                assignment[blocker.instanceId] = damageNeeded;
+                remainingDamage -= damageNeeded;
+            }
+        }
+
+        // Se sobrou dano (trample ou excesso), atribuir ao primeiro bloqueador
+        if (remainingDamage > 0 && sortedBlockers.length > 0) {
+            assignment[sortedBlockers[0].instanceId] += remainingDamage;
+        }
+
+        return assignment;
+    }
+
     // Delay para visualização
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));

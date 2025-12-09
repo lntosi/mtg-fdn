@@ -3372,6 +3372,181 @@ html {
 }
 
 /* ============================================= */
+/* === MODAL DE ATRIBUIÇÃO DE DANO === */
+/* ============================================= */
+
+#damage-assignment-modal {
+    z-index: 1100;
+}
+
+.damage-assignment-content {
+    max-width: 700px;
+    background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4d 50%, #1a0a2e 100%);
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.4);
+    padding: 20px 25px;
+    text-align: center;
+}
+
+.damage-assignment-content h2 {
+    color: #ff6b6b;
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+}
+
+.damage-assignment-content p {
+    color: #e0d0ff;
+    margin-bottom: 15px;
+    font-size: 0.95em;
+}
+
+.damage-attacker-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.damage-attacker-section .card {
+    transform: scale(0.8);
+    border: 3px solid #ff6b6b;
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+}
+
+.damage-remaining {
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 10px;
+    margin: 10px 0;
+    background: rgba(255, 107, 107, 0.2);
+    border-radius: 8px;
+    color: #ff6b6b;
+}
+
+.damage-remaining.damage-complete {
+    background: rgba(100, 255, 100, 0.2);
+    color: #64ff64;
+}
+
+.damage-blockers-section {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 15px 0;
+}
+
+.damage-blocker-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.damage-blocker-wrapper .card {
+    transform: scale(0.75);
+    margin-bottom: 5px;
+}
+
+.damage-assigned-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ff6b6b;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    z-index: 10;
+}
+
+.damage-assigned-badge.lethal {
+    background: #64ff64;
+    color: #1a0a2e;
+    box-shadow: 0 0 15px rgba(100, 255, 100, 0.7);
+}
+
+.blocker-toughness-info {
+    font-size: 0.85em;
+    color: #aaa;
+    margin-bottom: 8px;
+}
+
+.damage-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.btn-damage-control {
+    width: 35px;
+    height: 35px;
+    font-size: 1.3em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-minus {
+    background: linear-gradient(180deg, #666 0%, #444 100%);
+    color: white;
+}
+
+.btn-minus:hover {
+    background: linear-gradient(180deg, #888 0%, #666 100%);
+}
+
+.btn-plus {
+    background: linear-gradient(180deg, #ff6b6b 0%, #cc4444 100%);
+    color: white;
+}
+
+.btn-plus:hover {
+    background: linear-gradient(180deg, #ff8888 0%, #ff6b6b 100%);
+}
+
+.btn-damage-lethal {
+    padding: 8px 12px;
+    font-size: 0.85em;
+    background: linear-gradient(180deg, #64ff64 0%, #44cc44 100%);
+    color: #1a0a2e;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-damage-lethal:hover {
+    background: linear-gradient(180deg, #88ff88 0%, #64ff64 100%);
+    transform: scale(1.05);
+}
+
+.damage-assignment-buttons {
+    margin-top: 15px;
+}
+
+.damage-assignment-buttons .btn-primary {
+    padding: 12px 40px;
+    font-size: 1.1em;
+}
+
+.damage-assignment-buttons .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================= */
 /* === SISTEMA DE CONFIGURAÇÕES E TEMAS === */
 /* ============================================= */
 

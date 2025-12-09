@@ -2732,6 +2732,175 @@ class GameUI {
             indicator.classList.add('hidden');
         }
     }
+
+    /**
+     * Mostra modal para jogador dividir dano entre múltiplos bloqueadores
+     * Regra MTG 510.1c: o atacante divide seu dano como quiser entre bloqueadores
+     * @param {Object} options - Opções do prompt
+     * @param {Object} options.attacker - Criatura atacante
+     * @param {Array} options.blockers - Lista de criaturas bloqueadoras
+     * @param {number} options.totalDamage - Dano total a distribuir (poder do atacante)
+     * @returns {Promise<Object>} - Mapa de instanceId -> dano atribuído
+     */
+    promptDamageAssignment(options) {
+        return new Promise((resolve) => {
+            const { attacker, blockers, totalDamage } = options;
+
+            // Se só tem 1 bloqueador, todo dano vai pra ele
+            if (blockers.length === 1) {
+                resolve({ [blockers[0].instanceId]: totalDamage });
+                return;
+            }
+
+            // Criar modal dinamicamente se não existir
+            let modal = document.getElementById('damage-assignment-modal');
+            if (!modal) {
+                modal = this._createDamageAssignmentModal();
+            }
+
+            const title = document.getElementById('damage-assignment-title');
+            const description = document.getElementById('damage-assignment-description');
+            const attackerContainer = document.getElementById('damage-assignment-attacker');
+            const blockersContainer = document.getElementById('damage-assignment-blockers');
+            const remainingDisplay = document.getElementById('damage-assignment-remaining');
+            const btnConfirm = document.getElementById('btn-damage-confirm');
+
+            // Estado de atribuição
+            const damageAssignment = {};
+            blockers.forEach(b => damageAssignment[b.instanceId] = 0);
+            let remainingDamage = totalDamage;
+
+            // Configurar título
+            title.textContent = 'Atribuir Dano de Combate';
+            description.textContent = `${attacker.name} (${totalDamage} de dano) está sendo bloqueado por ${blockers.length} criaturas. Distribua o dano:`;
+
+            // Mostrar atacante
+            attackerContainer.innerHTML = '';
+            const attackerCard = this.createCardElement(attacker, true);
+            attackerCard.classList.add('damage-source');
+            attackerContainer.appendChild(attackerCard);
+
+            // Função para atualizar display
+            const updateDisplay = () => {
+                remainingDamage = totalDamage - Object.values(damageAssignment).reduce((a, b) => a + b, 0);
+                remainingDisplay.textContent = `Dano restante: ${remainingDamage}`;
+                remainingDisplay.classList.toggle('damage-complete', remainingDamage === 0);
+                btnConfirm.disabled = remainingDamage !== 0;
+
+                // Atualizar badges de dano nos bloqueadores
+                blockers.forEach(blocker => {
+                    const badge = document.getElementById(`damage-badge-${blocker.instanceId}`);
+                    if (badge) {
+                        badge.textContent = damageAssignment[blocker.instanceId];
+                        const toughness = this.game.rules.getCreatureToughness(blocker);
+                        badge.classList.toggle('lethal', damageAssignment[blocker.instanceId] >= toughness);
+                    }
+                });
+            };
+
+            // Renderizar bloqueadores com controles
+            blockersContainer.innerHTML = '';
+            blockers.forEach(blocker => {
+                const blockerToughness = this.game.rules.getCreatureToughness(blocker);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'damage-blocker-wrapper';
+
+                const cardEl = this.createCardElement(blocker, true);
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(blocker));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+
+                // Badge de dano atribuído
+                const damageBadge = document.createElement('div');
+                damageBadge.className = 'damage-assigned-badge';
+                damageBadge.id = `damage-badge-${blocker.instanceId}`;
+                damageBadge.textContent = '0';
+
+                // Info de resistência
+                const toughnessInfo = document.createElement('div');
+                toughnessInfo.className = 'blocker-toughness-info';
+                toughnessInfo.textContent = `Resistência: ${blockerToughness}`;
+
+                // Controles de +/-
+                const controls = document.createElement('div');
+                controls.className = 'damage-controls';
+
+                const btnMinus = document.createElement('button');
+                btnMinus.className = 'btn-damage-control btn-minus';
+                btnMinus.textContent = '-';
+                btnMinus.onclick = () => {
+                    if (damageAssignment[blocker.instanceId] > 0) {
+                        damageAssignment[blocker.instanceId]--;
+                        updateDisplay();
+                    }
+                };
+
+                const btnPlus = document.createElement('button');
+                btnPlus.className = 'btn-damage-control btn-plus';
+                btnPlus.textContent = '+';
+                btnPlus.onclick = () => {
+                    if (remainingDamage > 0) {
+                        damageAssignment[blocker.instanceId]++;
+                        updateDisplay();
+                    }
+                };
+
+                // Botão de dano letal rápido
+                const btnLethal = document.createElement('button');
+                btnLethal.className = 'btn-damage-lethal';
+                btnLethal.textContent = `Letal (${blockerToughness})`;
+                btnLethal.onclick = () => {
+                    const needed = blockerToughness - damageAssignment[blocker.instanceId];
+                    if (needed > 0 && remainingDamage >= needed) {
+                        damageAssignment[blocker.instanceId] = blockerToughness;
+                        updateDisplay();
+                    }
+                };
+
+                controls.appendChild(btnMinus);
+                controls.appendChild(btnPlus);
+                controls.appendChild(btnLethal);
+
+                wrapper.appendChild(cardEl);
+                wrapper.appendChild(damageBadge);
+                wrapper.appendChild(toughnessInfo);
+                wrapper.appendChild(controls);
+                blockersContainer.appendChild(wrapper);
+            });
+
+            // Botão confirmar
+            btnConfirm.onclick = () => {
+                modal.classList.add('hidden');
+                resolve(damageAssignment);
+            };
+
+            updateDisplay();
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * Cria o modal de atribuição de dano se não existir
+     */
+    _createDamageAssignmentModal() {
+        const modal = document.createElement('div');
+        modal.id = 'damage-assignment-modal';
+        modal.className = 'modal hidden';
+        modal.innerHTML = `
+            <div class="modal-content damage-assignment-content">
+                <h2 id="damage-assignment-title">Atribuir Dano de Combate</h2>
+                <p id="damage-assignment-description"></p>
+                <div id="damage-assignment-attacker" class="damage-attacker-section"></div>
+                <div id="damage-assignment-remaining" class="damage-remaining">Dano restante: 0</div>
+                <div id="damage-assignment-blockers" class="damage-blockers-section"></div>
+                <div class="damage-assignment-buttons">
+                    <button id="btn-damage-confirm" class="btn btn-primary" disabled>Confirmar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        return modal;
+    }
 }
 
 // Exportar
