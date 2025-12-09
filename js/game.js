@@ -1660,8 +1660,19 @@ class GameState {
         const attackingPlayer = this.opponent.battlefield.includes(firstAttacker) ? this.opponent : this.player;
         const defendingPlayer = attackingPlayer === this.player ? this.opponent : this.player;
 
+        // Filtrar atacantes que ainda estão no campo de batalha
+        // (podem ter sido removidos por instants durante a janela de prioridade)
+        const activeAttackers = this.currentAttackers.filter(attacker =>
+            attackingPlayer.battlefield.includes(attacker)
+        );
+
+        if (activeAttackers.length === 0) {
+            this.ui.log('Nenhum atacante restante - combate cancelado');
+            return;
+        }
+
         const results = this.rules.resolveCombatDamage(
-            this.currentAttackers,
+            activeAttackers,
             this.blockerAssignments,
             defendingPlayer,
             attackingPlayer

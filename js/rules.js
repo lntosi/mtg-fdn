@@ -385,7 +385,12 @@ class RulesEngine {
         };
 
         attackers.forEach(attacker => {
-            const blockers = blockerAssignments[attacker.instanceId] || [];
+            // Filtrar apenas bloqueadores que ainda estão no campo de batalha
+            // (podem ter sido removidos por instants como Elspeth's Smite)
+            const declaredBlockers = blockerAssignments[attacker.instanceId] || [];
+            const blockers = declaredBlockers.filter(blocker =>
+                defendingPlayer.battlefield.includes(blocker)
+            );
             const attackerPower = this.getCreaturePower(attacker, true);
 
             if (blockers.length === 0) {
