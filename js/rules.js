@@ -108,13 +108,57 @@ class RulesEngine {
 
         // Elspeth's Smite - só pode mirar criaturas atacantes ou bloqueadoras
         if (card.id === 'elspeths_smite') {
-            // Precisa haver atacantes ou bloqueadores
             const hasAttackers = attackers.length > 0;
             const hasBlockers = blockers.length > 0;
             return hasAttackers || hasBlockers;
         }
 
-        // Para outros instants, assumir que sempre há alvos válidos por enquanto
+        // Buffs que miram suas próprias criaturas
+        const selfTargetBuffs = ['moment_of_triumph', 'kindled_fury', 'snakeskin_veil', 'offer_immortality'];
+        if (selfTargetBuffs.includes(card.id)) {
+            const hasOwnCreatures = player.battlefield.some(c => c.type === 'creature');
+            return hasOwnCreatures;
+        }
+
+        // Remoção que mira criaturas do oponente
+        const opponentTargetRemoval = ['moment_of_craving', 'heros_downfall', 'incinerating_blast'];
+        if (opponentTargetRemoval.includes(card.id)) {
+            const hasOpponentCreatures = opponent.battlefield.some(c => c.type === 'creature');
+            return hasOpponentCreatures;
+        }
+
+        // Volley - só criaturas com flying do oponente
+        if (card.id === 'volley') {
+            const hasFlyingCreatures = opponent.battlefield.some(c =>
+                c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+            );
+            return hasFlyingCreatures;
+        }
+
+        // Broken Wings - artefatos, encantamentos ou criaturas com flying do oponente
+        if (card.id === 'broken_wings') {
+            const hasValidTargets = opponent.battlefield.some(c =>
+                c.type === 'artifact' || c.type === 'enchantment' ||
+                (c.type === 'creature' && c.keywords && c.keywords.includes('flying'))
+            );
+            return hasValidTargets;
+        }
+
+        // Felling Blow - criaturas com flying ou reach do oponente
+        if (card.id === 'felling_blow') {
+            const hasValidTargets = opponent.battlefield.some(c =>
+                c.type === 'creature' && c.keywords &&
+                (c.keywords.includes('flying') || c.keywords.includes('reach'))
+            );
+            return hasValidTargets;
+        }
+
+        // Counterspells - precisam de algo na stack
+        if (card.keywords && card.keywords.includes('counterspell')) {
+            return !this.game.isStackEmpty();
+        }
+
+        // Para outros instants, assumir que sempre há alvos válidos
         return true;
     }
 
@@ -336,15 +380,17 @@ class RulesEngine {
         const results = {
             creaturesDied: [],
             damageToPlayers: { attacker: 0, defender: 0 },
-            lifeGained: { attacker: 0, defender: 0 }
+            lifeGained: { attacker: 0, defender: 0 },
+            combatDetails: [] // Detalhes de cada combate para log
         };
 
         attackers.forEach(attacker => {
             const blockers = blockerAssignments[attacker.instanceId] || [];
+            const attackerPower = this.getCreaturePower(attacker, true);
 
             if (blockers.length === 0) {
                 // Dano direto ao jogador
-                let damage = this.getCreaturePower(attacker, true);
+                let damage = attackerPower;
 
                 // Double Strike: dobra o dano ao jogador (first strike + normal damage)
                 if (attacker.keywords && attacker.keywords.includes('double_strike')) {
@@ -353,13 +399,19 @@ class RulesEngine {
 
                 results.damageToPlayers.defender += damage;
 
+                // Registrar dano direto
+                results.combatDetails.push({
+                    type: 'direct',
+                    attacker: attacker.name,
+                    damage: damage
+                });
+
                 // Lifelink
                 if (attacker.keywords && attacker.keywords.includes('lifelink')) {
                     results.lifeGained.attacker += damage;
                 }
             } else {
                 // Combate com bloqueadores
-                let attackerPower = this.getCreaturePower(attacker, true);
                 let damageToAttacker = 0;
 
                 // Verificar keywords de combate
@@ -369,10 +421,13 @@ class RulesEngine {
 
                 // Double Strike: dano total é dobrado (first strike + normal)
                 let attackerDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                let trampleDamage = 0;
 
                 blockers.forEach(blocker => {
                     const blockerPower = this.getCreaturePower(blocker);
                     const blockerToughness = this.getCreatureToughness(blocker);
+                    let damageToBlocker = Math.min(attackerDamage, blockerToughness);
+                    let damageFromBlocker = 0;
 
                     // Se atacante tem first strike/double strike e bloqueador não, atacante pode matar antes de receber dano
                     const blockerHasFirstStrike = blocker.keywords &&
@@ -381,9 +436,20 @@ class RulesEngine {
                     // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
                     if (hasFirstStrike && !blockerHasFirstStrike && attackerPower >= blockerToughness) {
                         // Bloqueador morre na fase de first strike, não causa dano
+                        damageFromBlocker = 0;
                     } else {
+                        damageFromBlocker = blockerPower;
                         damageToAttacker += blockerPower;
                     }
+
+                    // Registrar combate entre criaturas
+                    results.combatDetails.push({
+                        type: 'blocked',
+                        attacker: attacker.name,
+                        blocker: blocker.name,
+                        damageToBlocker: damageToBlocker,
+                        damageToAttacker: damageFromBlocker
+                    });
 
                     // Deathtouch do atacante
                     const attackerHasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
@@ -408,12 +474,22 @@ class RulesEngine {
                     if (attacker.keywords && attacker.keywords.includes('trample')) {
                         const excessDamage = attackerDamage - blockerToughness;
                         if (excessDamage > 0) {
+                            trampleDamage += excessDamage;
                             results.damageToPlayers.defender += excessDamage;
                         }
                     }
 
                     attackerDamage = Math.max(0, attackerDamage - blockerToughness);
                 });
+
+                // Registrar dano de trample se houver
+                if (trampleDamage > 0) {
+                    results.combatDetails.push({
+                        type: 'trample',
+                        attacker: attacker.name,
+                        damage: trampleDamage
+                    });
+                }
 
                 // Verificar se atacante morre
                 const attackerToughness = this.getCreatureToughness(attacker);
@@ -615,6 +691,15 @@ class RulesEngine {
                 }
             }
         });
+
+        // Incluir keywords temporárias (Kindled Fury, Wildheart Invoker, Dropkick Bomber, etc.)
+        if (creature.temporaryKeywords && creature.temporaryKeywords.length > 0) {
+            creature.temporaryKeywords.forEach(kw => {
+                if (!keywords.includes(kw)) {
+                    keywords.push(kw);
+                }
+            });
+        }
 
         return keywords;
     }

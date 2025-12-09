@@ -18,7 +18,7 @@ const CARD_DATABASE = {
             { id: "leonin_skyhunter", name: "Leonin Skyhunter", type: "creature", subtype: "Cat Knight", cost: "WW", cmc: 2, power: 2, toughness: 2, keywords: ["flying"], qty: 1 },
             { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "4W", cmc: 5, power: 4, toughness: 4, text: "3W: Coloque um contador +1/+1 em outra criatura atacante alvo. Se ela é Cat, ganha iniciativa até o fim do turno.", qty: 1 },
             { id: "prideful_parent", name: "Prideful Parent", type: "creature", subtype: "Cat", cost: "2W", cmc: 3, power: 2, toughness: 2, keywords: ["vigilance"], text: "Quando entra, crie um token 1/1 Cat.", qty: 1 },
-            { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 3, keywords: ["lifelink"], text: "Quando entra, coloque um contador +1/+1 em cada uma de até duas outras criaturas alvo que você controla.", qty: 1 },
+            { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 3, keywords: ["lifelink", "etb_counter_two"], text: "Quando entra, coloque um contador +1/+1 em cada uma de até duas outras criaturas alvo que você controla.", qty: 1 },
             { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
             // Feitiços e Encantamentos (3)
             { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
@@ -43,7 +43,7 @@ const CARD_DATABASE = {
             { id: "raging_redcap", name: "Raging Redcap", type: "creature", subtype: "Goblin Knight", cost: "2R", cmc: 3, power: 1, toughness: 2, keywords: ["double_strike"], qty: 1 },
             { id: "goblin_smuggler", name: "Goblin Smuggler", type: "creature", subtype: "Goblin Rogue", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["haste"], text: "T: Criatura alvo com poder 2 ou menos não pode ser bloqueada neste turno.", qty: 1 },
             { id: "battle_rattle_shaman", name: "Battle-Rattle Shaman", type: "creature", subtype: "Goblin Shaman", cost: "3R", cmc: 4, power: 2, toughness: 2, text: "No início do combate, criatura alvo ganha +2/+0 até o fim do turno.", qty: 1 },
-            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin Warrior", cost: "2R", cmc: 3, power: 2, toughness: 3, keywords: ["goblin_lord"], text: "Outros Goblins que você controla recebem +1/+1.", qty: 1 },
+            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin Warrior", cost: "2R", cmc: 3, power: 2, toughness: 3, keywords: ["goblin_lord"], text: "Outros Goblins que você controla recebem +1/+1. R: Até o fim do turno, outro Goblin alvo ganha voar e 'Quando esta criatura causar dano de combate, sacrifique-a.'", qty: 1 },
             // Feitiços (5)
             { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
             { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },

@@ -1123,16 +1123,6 @@ class GameState {
             this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
         }
 
-        // Dropkick Bomber - 2 dano a criatura ou planeswalker
-        if (card.id === 'dropkick_bomber') {
-            const target = opponent.battlefield.find(c => c.type === 'creature');
-            if (target) {
-                target.damage = (target.damage || 0) + 2;
-                this.checkCreatureDeath(target, opponent);
-                this.ui.log(`Dropkick Bomber causou 2 de dano a ${target.name}`);
-            }
-        }
-
         // Dwynen's Elite - cria token 1/1 Elf se controla outro Elfo
         if (card.id === 'dwynenss_elite') {
             const hasOtherElf = controller.battlefield.some(c =>
@@ -1233,6 +1223,49 @@ class GameState {
                         return powerB - powerA;
                     })[0];
                     bounceCreature(target);
+                }
+            }
+        }
+
+        // Felidar Savior - coloca +1/+1 em até duas outras criaturas
+        if (card.keywords && card.keywords.includes('etb_counter_two')) {
+            const validTargets = controller.battlefield.filter(c =>
+                c.type === 'creature' && c.instanceId !== card.instanceId
+            );
+            if (validTargets.length > 0) {
+                const applyCounters = (targets) => {
+                    targets.forEach(target => {
+                        if (!target.counters) target.counters = {};
+                        target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                        this.ui.log(`${card.name} colocou um contador +1/+1 em ${target.name}`);
+                    });
+                    this.ui.render();
+                };
+
+                if (controller === this.player) {
+                    // Jogador escolhe até 2 alvos
+                    this.ui.promptMultiTarget({
+                        title: `${card.name} - Selecione Alvos`,
+                        description: 'Coloque um contador +1/+1 em até duas outras criaturas que você controla:',
+                        validTargets: validTargets,
+                        maxTargets: 2,
+                        minTargets: 0,
+                        canSkip: true
+                    }).then(selected => {
+                        if (selected && selected.length > 0) {
+                            applyCounters(selected);
+                        }
+                    });
+                } else {
+                    // IA escolhe automaticamente (prioriza criaturas menores para bufar)
+                    const targets = validTargets
+                        .sort((a, b) => {
+                            const powerA = (a.power || 0) + (a.powerModifier || 0) + (a.counters?.plusOnePlusOne || 0);
+                            const powerB = (b.power || 0) + (b.powerModifier || 0) + (b.counters?.plusOnePlusOne || 0);
+                            return powerA - powerB;
+                        })
+                        .slice(0, 2);
+                    applyCounters(targets);
                 }
             }
         }
@@ -1496,6 +1529,16 @@ class GameState {
                 // 1, T, Sacrifice: 2 dano a qualquer alvo
                 return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 1;
 
+            case 'dropkick_bomber':
+                // R: outro Goblin ganha voar e "quando causa dano de combate, sacrifique-o"
+                const dropkickMana = this.rules.calculateAvailableMana(player);
+                const hasOtherGoblin = player.battlefield.some(c =>
+                    c.type === 'creature' &&
+                    c.subtype && c.subtype.includes('Goblin') &&
+                    c.instanceId !== card.instanceId
+                );
+                return dropkickMana.R >= 1 && hasOtherGoblin;
+
             default:
                 return false;
         }
@@ -1639,6 +1682,44 @@ class GameState {
                         this.opponentLostLifeThisTurn = true;
                     }
                     this.ui.log(`Veteran's Goblin Firebomb causou 2 de dano a ${opponent.name}`);
+                }
+                break;
+
+            case 'dropkick_bomber':
+                // R: outro Goblin ganha voar e "quando causa dano de combate, sacrifique-o"
+                this.payColoredMana({ R: 1 }, player);
+                const goblinTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' &&
+                    c.subtype && c.subtype.includes('Goblin') &&
+                    c.instanceId !== card.instanceId
+                );
+                if (goblinTargets.length > 0) {
+                    let dropkickTarget;
+
+                    // Se é o jogador humano, deixar escolher o alvo
+                    if (player === this.player) {
+                        dropkickTarget = await this.ui.promptTriggerTarget({
+                            title: 'Dropkick Bomber',
+                            description: 'Escolha um Goblin para ganhar voar (será sacrificado se causar dano de combate):',
+                            validTargets: goblinTargets,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe o Goblin com maior poder
+                        dropkickTarget = goblinTargets.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (dropkickTarget) {
+                        // Dar voar temporário
+                        if (!dropkickTarget.temporaryKeywords) dropkickTarget.temporaryKeywords = [];
+                        dropkickTarget.temporaryKeywords.push('flying');
+                        // Marcar para sacrifício ao causar dano de combate
+                        dropkickTarget.sacrificeOnCombatDamage = true;
+                        this.ui.log(`Dropkick Bomber: ${dropkickTarget.name} ganhou voar (será sacrificado se causar dano de combate)`);
+                        this.ui.render();
+                    }
                 }
                 break;
         }
@@ -1934,12 +2015,25 @@ class GameState {
             attackingPlayer
         );
 
+        // Logar detalhes de combate
+        results.combatDetails.forEach(detail => {
+            if (detail.type === 'direct') {
+                this.ui.log(`${detail.attacker} causou ${detail.damage} de dano a ${defendingPlayer.name}`);
+            } else if (detail.type === 'blocked') {
+                this.ui.log(`${detail.attacker} causou ${detail.damageToBlocker} de dano a ${detail.blocker}`);
+                if (detail.damageToAttacker > 0) {
+                    this.ui.log(`${detail.blocker} causou ${detail.damageToAttacker} de dano a ${detail.attacker}`);
+                }
+            } else if (detail.type === 'trample') {
+                this.ui.log(`${detail.attacker} causou ${detail.damage} de dano (atropelar) a ${defendingPlayer.name}`);
+            }
+        });
+
         // Aplicar dano aos jogadores
         defendingPlayer.life -= results.damageToPlayers.defender;
         if (results.damageToPlayers.defender > 0) {
             // Som de dano
             window.soundManager.playDamage();
-            this.ui.log(`${defendingPlayer.name} recebeu ${results.damageToPlayers.defender} de dano`);
             // Rastrear perda de vida
             if (defendingPlayer === this.player) {
                 this.playerLostLifeThisTurn = true;
@@ -1953,7 +2047,7 @@ class GameState {
         // Aplicar vida ganha
         attackingPlayer.life += results.lifeGained.attacker;
         if (results.lifeGained.attacker > 0) {
-            this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas`);
+            this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas (lifelink)`);
         }
 
         // Remover criaturas mortas
@@ -1961,6 +2055,15 @@ class GameState {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
             this.destroyPermanent(creature, owner);
             this.ui.log(`${creature.name} morreu em combate`);
+        });
+
+        // Sacrificar criaturas marcadas com sacrificeOnCombatDamage (Dropkick Bomber ability)
+        this.currentAttackers.forEach(attacker => {
+            if (attacker.sacrificeOnCombatDamage && !results.creaturesDied.includes(attacker)) {
+                const owner = this.player.battlefield.includes(attacker) ? this.player : this.opponent;
+                this.destroyPermanent(attacker, owner);
+                this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
+            }
         });
 
         this.ui.render();
@@ -2145,6 +2248,14 @@ class GameState {
     }
 
     async continueAfterBlocking() {
+        // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
+        // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
+        const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
+
+        if (priorityResponse === 'respond') {
+            await this.handlePlayerPriorityResponse();
+        }
+
         // Resolver combate
         this.phase = PHASES.COMBAT_DAMAGE;
         this.ui.log('Resolvendo dano de combate...');

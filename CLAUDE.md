@@ -147,14 +147,59 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 
 ## MTG Keywords Implemented
 
-flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, flash, ward, tap_for_mana, etb_draw, counterspell, raid, scry
+### Combat Keywords (shown in preview panel)
+flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, flash, ward, hexproof, indestructible
 
-### Pirates-specific Keywords
-- **flash**: Can be cast at instant speed
-- **raid_draw**: Draw a card if attacked this turn
+### Internal Keywords (not shown in preview, used for game logic)
+- **tap_for_mana**: Creature can tap for mana (e.g., Llanowar Elves)
+- **etb_draw**: Draw a card when enters battlefield
 - **etb_bounce**: Return target creature to owner's hand
+- **etb_counter_two**: Put +1/+1 counter on up to two other creatures (Felidar Savior)
 - **etb_treasure**: Create a Treasure token
-- **pirate_lord**: Other Pirates get +1/+1
+- **goblin_lord**, **elf_lord**, **pirate_lord**: Other creatures of that type get +1/+1
 - **flying_when_attacking**: Has flying only while attacking
 - **counterspell**: Counter target spell on the stack
 - **equipment**: Artifact that attaches to creatures
+- **enchant**: Aura that attaches to creatures
+- **raid**, **raid_draw**: Effects that trigger if attacked this turn
+- **scry**: Look at top card(s) and choose to keep or bottom
+
+### Keyword Display System (Preview Panel)
+
+Keywords are displayed in the right-side preview panel with visual distinction:
+
+| Type | CSS Class | Appearance | When Used |
+|------|-----------|------------|-----------|
+| **Original** | `.keyword-badge` | Purple solid | Keywords in card's `keywords` array |
+| **Permanent effect** | `.keyword-badge.keyword-added` | Green, dashed border | Added by Auras, Lords, Equipment |
+| **Temporary** | `.keyword-badge.keyword-temporary` | Faded green, italic | Added until end of turn (combat tricks) |
+
+Only combat-relevant keywords are shown. Internal keywords (lords, etb_, etc.) are hidden.
+
+### Adding Keywords to New Cards
+
+**For combat keywords** (flying, deathtouch, etc.):
+- Add to `keywords` array in card definition
+- Will automatically appear in preview panel
+
+**For ETB effects**:
+- Add keyword like `etb_draw`, `etb_bounce`, `etb_counter_two`
+- Implement handler in `game.js` → `resolveETB()` function
+
+**For activated abilities** (costs mana/tap):
+- Use card's `id` directly (not a keyword)
+- Implement in `game.js` → `canActivateAbility()` and `activateAbility()`
+- Example: `jazal_goldmane`, `vampire_neonate`, `dropkick_bomber`
+
+**For temporary keywords** (combat tricks):
+- Use `card.temporaryKeywords = []` array
+- Push keywords: `target.temporaryKeywords.push('first_strike')`
+- Cleared automatically at end of turn in cleanup step
+- Example: Kindled Fury gives first_strike, Dropkick Bomber gives flying
+
+### Instant Targeting Validation
+
+When adding new instants, update `rules.js` → `hasValidTargets()` to ensure:
+- Buff spells check for own creatures
+- Removal spells check for opponent creatures
+- Prevents priority window appearing when no valid targets exist

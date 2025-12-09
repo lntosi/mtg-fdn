@@ -440,9 +440,19 @@ class GameUI {
         // Keywords - incluir keywords base e adicionais
         previewKeywords.innerHTML = '';
 
-        // Keywords originais da carta
+        // Keywords relevantes para combate (mostrar no preview)
+        const combatKeywords = [
+            'flying', 'deathtouch', 'trample', 'lifelink',
+            'first_strike', 'double_strike', 'vigilance',
+            'haste', 'reach', 'menace', 'flash', 'ward',
+            'hexproof', 'indestructible'
+        ];
+
+        // Keywords originais da carta (filtrar apenas as de combate)
         const baseKeywords = card.keywords || [];
-        baseKeywords.forEach(kw => {
+        const visibleBaseKeywords = baseKeywords.filter(kw => combatKeywords.includes(kw));
+
+        visibleBaseKeywords.forEach(kw => {
             const badge = document.createElement('span');
             badge.className = 'keyword-badge';
             badge.textContent = kw.replace('_', ' ');
@@ -450,17 +460,36 @@ class GameUI {
             previewKeywords.appendChild(badge);
         });
 
-        // Keywords adicionais de efeitos (Auras, etc.)
+        // Keywords adicionais de efeitos permanentes (Auras, Lords, etc.) - excluindo temporárias
         if (card.type === 'creature' && this.game.rules) {
             const allKeywords = this.game.rules.getCreatureKeywords(card);
-            const additionalKeywords = allKeywords.filter(kw => !baseKeywords.includes(kw));
+            const temporaryKws = card.temporaryKeywords || [];
+            const additionalKeywords = allKeywords.filter(kw =>
+                !baseKeywords.includes(kw) &&
+                !temporaryKws.includes(kw) &&
+                combatKeywords.includes(kw)
+            );
 
             additionalKeywords.forEach(kw => {
                 const badge = document.createElement('span');
                 badge.className = 'keyword-badge keyword-added';
                 badge.textContent = kw.replace('_', ' ');
                 badge.dataset.keyword = kw;
-                badge.title = 'Adicionado por efeito';
+                badge.title = 'Adicionado por efeito permanente';
+                previewKeywords.appendChild(badge);
+            });
+        }
+
+        // Keywords temporárias (buffs até fim do turno - Kindled Fury, Wildheart Invoker, etc.)
+        if (card.temporaryKeywords && card.temporaryKeywords.length > 0) {
+            const visibleTempKeywords = card.temporaryKeywords.filter(kw => combatKeywords.includes(kw));
+
+            visibleTempKeywords.forEach(kw => {
+                const badge = document.createElement('span');
+                badge.className = 'keyword-badge keyword-temporary';
+                badge.textContent = kw.replace('_', ' ');
+                badge.dataset.keyword = kw;
+                badge.title = 'Temporário (até fim do turno)';
                 previewKeywords.appendChild(badge);
             });
         }
@@ -2240,6 +2269,103 @@ class GameUI {
                     modal.classList.add('hidden');
                     resolve(creature);
                 });
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                creaturesContainer.appendChild(cardEl);
+            });
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * Mostra um modal para o jogador selecionar múltiplos alvos para um trigger/habilidade
+     * @param {Object} options - Opções do prompt
+     * @param {string} options.title - Título do modal (nome da carta)
+     * @param {string} options.description - Descrição do efeito
+     * @param {Array} options.validTargets - Lista de criaturas válidas como alvo
+     * @param {number} options.maxTargets - Número máximo de alvos
+     * @param {number} options.minTargets - Número mínimo de alvos (default 0)
+     * @param {boolean} options.canSkip - Se pode pular (opcional, default false)
+     * @returns {Promise<Array|null>} - Array de criaturas selecionadas ou null se pulou
+     */
+    promptMultiTarget(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('trigger-target-modal');
+            if (!modal) {
+                // Se o modal não existir, escolher automaticamente
+                const autoSelected = options.validTargets.slice(0, options.maxTargets || 2);
+                resolve(autoSelected);
+                return;
+            }
+
+            const title = document.getElementById('trigger-target-title');
+            const description = document.getElementById('trigger-target-description');
+            const creaturesContainer = document.getElementById('trigger-target-creatures');
+            const btnSkip = document.getElementById('btn-trigger-skip');
+
+            const maxTargets = options.maxTargets || 2;
+            const minTargets = options.minTargets || 0;
+            const selectedTargets = [];
+
+            // Configurar conteúdo
+            title.textContent = options.title || 'Selecione Alvos';
+            description.textContent = options.description || `Escolha até ${maxTargets} criaturas:`;
+
+            // Criar botão de confirmar
+            let btnConfirm = document.getElementById('btn-trigger-confirm');
+            if (!btnConfirm) {
+                btnConfirm = document.createElement('button');
+                btnConfirm.id = 'btn-trigger-confirm';
+                btnConfirm.className = 'btn btn-primary';
+                btnConfirm.textContent = 'Confirmar';
+                btnSkip.parentNode.insertBefore(btnConfirm, btnSkip);
+            }
+            btnConfirm.classList.remove('hidden');
+            btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
+            btnConfirm.disabled = selectedTargets.length < minTargets;
+
+            btnConfirm.onclick = () => {
+                modal.classList.add('hidden');
+                btnConfirm.classList.add('hidden');
+                resolve(selectedTargets);
+            };
+
+            // Configurar botão de pular
+            if (options.canSkip || minTargets === 0) {
+                btnSkip.classList.remove('hidden');
+                btnSkip.textContent = 'Pular';
+                btnSkip.onclick = () => {
+                    modal.classList.add('hidden');
+                    btnConfirm.classList.add('hidden');
+                    resolve([]);
+                };
+            } else {
+                btnSkip.classList.add('hidden');
+            }
+
+            // Renderizar criaturas válidas
+            creaturesContainer.innerHTML = '';
+            options.validTargets.forEach(creature => {
+                const cardEl = this.createCardElement(creature, true);
+                cardEl.classList.add('trigger-valid-target');
+
+                cardEl.addEventListener('click', () => {
+                    const idx = selectedTargets.findIndex(t => t.instanceId === creature.instanceId);
+                    if (idx >= 0) {
+                        // Desselecionar
+                        selectedTargets.splice(idx, 1);
+                        cardEl.classList.remove('selected-target');
+                    } else if (selectedTargets.length < maxTargets) {
+                        // Selecionar
+                        selectedTargets.push(creature);
+                        cardEl.classList.add('selected-target');
+                    }
+                    // Atualizar botão
+                    btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
+                    btnConfirm.disabled = selectedTargets.length < minTargets;
+                });
+
                 cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
                 cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
                 creaturesContainer.appendChild(cardEl);
