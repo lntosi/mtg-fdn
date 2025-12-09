@@ -1,0 +1,520 @@
+/**
+ * TriggerManager - Gerencia todos os triggers do jogo
+ *
+ * Este módulo centraliza:
+ * - ETB (enters-the-battlefield) effects
+ * - Death triggers
+ * - Combat triggers (attack/block)
+ * - End of turn triggers
+ * - Other creature enters triggers
+ *
+ * COMO ADICIONAR NOVOS TRIGGERS:
+ *
+ * 1. ETB simples (keyword-based):
+ *    - Adicione o keyword na carta em cards.js (ex: 'etb_draw')
+ *    - Adicione o handler em resolveETB() na seção apropriada
+ *
+ * 2. ETB específico de carta:
+ *    - Adicione um bloco if (card.id === 'sua_carta') em resolveETB()
+ *
+ * 3. Death trigger:
+ *    - Implemente em onCreatureDeath() ou crie método específico
+ *
+ * 4. Combat trigger:
+ *    - Attack triggers: adicione em onDeclareAttackers()
+ *    - Block triggers: adicione em onDeclareBlockers()
+ *
+ * 5. End of turn trigger:
+ *    - Adicione em onEndStep()
+ */
+
+class TriggerManager {
+    constructor(game) {
+        this.game = game;
+    }
+
+    // Atalhos para acesso aos objetos do jogo
+    get ui() { return this.game.ui; }
+    get rules() { return this.game.rules; }
+    get player() { return this.game.player; }
+    get opponent() { return this.game.opponent; }
+
+    // ========================================
+    // ETB TRIGGERS (Enters The Battlefield)
+    // ========================================
+
+    /**
+     * Resolve todos os triggers de entrada de uma carta
+     * @param {Object} card - Carta que entrou em campo
+     * @param {Object} controller - Jogador que controla a carta
+     */
+    resolveETB(card, controller) {
+        const opponent = controller === this.player ? this.opponent : this.player;
+
+        // --- KEYWORD-BASED ETBs ---
+
+        // ETB Draw (Helpful Hunter, etc.)
+        if (card.keywords?.includes('etb_draw')) {
+            this.rules.drawCard(controller);
+            this.ui.log(`${controller.name} comprou uma carta`);
+        }
+
+        // ETB Treasure (Corsair Captain, etc.)
+        if (card.keywords?.includes('etb_treasure')) {
+            this._createTreasureToken(controller, card.name);
+        }
+
+        // ETB Bounce (Bigfin Bouncer, etc.)
+        if (card.keywords?.includes('etb_bounce')) {
+            this._handleBounceETB(card, controller, opponent);
+        }
+
+        // ETB Counter Two (Felidar Savior, etc.)
+        if (card.keywords?.includes('etb_counter_two')) {
+            this._handleCounterTwoETB(card, controller);
+        }
+
+        // ETB Equip Pirate (Pirate's Cutlass)
+        if (card.keywords?.includes('etb_equip_pirate')) {
+            this._handleEquipPirateETB(card, controller);
+        }
+
+        // Raid Draw (Storm Fleet Spy, Skyship Buccaneer)
+        if (card.keywords?.includes('raid_draw')) {
+            this._handleRaidDraw(controller);
+        }
+
+        // --- CARD-SPECIFIC ETBs ---
+
+        // Prideful Parent - criar token Cat
+        if (card.id === 'prideful_parent') {
+            this._createCatToken(controller);
+        }
+
+        // Vampire Spawn - drenar 2 vida
+        if (card.id === 'vampire_spawn') {
+            this._handleVampireSpawnETB(controller, opponent);
+        }
+
+        // Dwynen's Elite - criar token Elf se controla outro
+        if (card.id === 'dwynenss_elite') {
+            this._handleDwynensEliteETB(card, controller);
+        }
+
+        // Elvish Regrower - devolve terreno do cemitério
+        if (card.id === 'elvish_regrower') {
+            this._handleElvishRegrowerETB(controller);
+        }
+
+        // Bloodtithe Collector - força descarte se oponente perdeu vida
+        if (card.id === 'bloodtithe_collector') {
+            this._handleBloodtitheCollectorETB(controller, opponent);
+        }
+
+        // --- TRIGGER PARA OUTRAS CRIATURAS ---
+        if (card.type === 'creature') {
+            this.onOtherCreatureEnters(card, controller);
+        }
+    }
+
+    // ========================================
+    // ETB HELPER METHODS
+    // ========================================
+
+    _createTreasureToken(controller, sourceName) {
+        controller.battlefield.push({
+            instanceId: `treasure_token_${Date.now()}`,
+            name: 'Treasure Token',
+            type: 'artifact',
+            subtype: 'Treasure',
+            text: 'T, Sacrifique este artefato: Adicione uma mana de qualquer cor.',
+            keywords: ['sacrifice_for_mana']
+        });
+        this.ui.log(`${sourceName} criou um token de Tesouro`);
+    }
+
+    _createCatToken(controller) {
+        controller.battlefield.push({
+            instanceId: `cat_token_${Date.now()}`,
+            name: 'Cat Token',
+            type: 'creature',
+            subtype: 'Cat',
+            power: 1,
+            toughness: 1,
+            summoningSickness: true
+        });
+        this.ui.log(`Criado um token Cat 1/1`);
+    }
+
+    _createElfToken(controller) {
+        controller.battlefield.push({
+            instanceId: `elf_token_${Date.now()}`,
+            name: 'Elf Warrior Token',
+            type: 'creature',
+            subtype: 'Elf Warrior',
+            power: 1,
+            toughness: 1,
+            summoningSickness: true
+        });
+    }
+
+    _handleVampireSpawnETB(controller, opponent) {
+        opponent.life -= 2;
+        controller.life += 2;
+        // Marcar que oponente perdeu vida neste turno
+        if (opponent === this.player) {
+            this.game.playerLostLifeThisTurn = true;
+        } else {
+            this.game.opponentLostLifeThisTurn = true;
+        }
+        this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
+    }
+
+    _handleDwynensEliteETB(card, controller) {
+        const hasOtherElf = controller.battlefield.some(c =>
+            c.type === 'creature' &&
+            c.subtype?.includes('Elf') &&
+            c.instanceId !== card.instanceId
+        );
+        if (hasOtherElf) {
+            this._createElfToken(controller);
+            this.ui.log(`Dwynen's Elite criou um token Elf Warrior 1/1`);
+        }
+    }
+
+    _handleElvishRegrowerETB(controller) {
+        const landInGraveyard = controller.graveyard.find(c => c.type === 'land');
+        if (landInGraveyard) {
+            const index = controller.graveyard.indexOf(landInGraveyard);
+            controller.graveyard.splice(index, 1);
+            controller.hand.push(landInGraveyard);
+            this.ui.log(`${landInGraveyard.name} voltou do cemitério para a mão`);
+        }
+    }
+
+    _handleBloodtitheCollectorETB(controller, opponent) {
+        const opponentLostLife = controller === this.player
+            ? this.game.opponentLostLifeThisTurn
+            : this.game.playerLostLifeThisTurn;
+
+        if (opponentLostLife && opponent.hand.length > 0) {
+            const randomIndex = Math.floor(Math.random() * opponent.hand.length);
+            const discarded = opponent.hand.splice(randomIndex, 1)[0];
+            opponent.graveyard.push(discarded);
+            this.ui.log(`${opponent.name} descartou ${discarded.name}`);
+        }
+    }
+
+    _handleBounceETB(card, controller, opponent) {
+        const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
+        if (validTargets.length === 0) return;
+
+        const bounceCreature = (targetCreature) => {
+            const index = opponent.battlefield.indexOf(targetCreature);
+            if (index !== -1) {
+                opponent.battlefield.splice(index, 1);
+                opponent.hand.push(targetCreature);
+                // Limpar estados da criatura
+                targetCreature.tapped = false;
+                targetCreature.damage = 0;
+                targetCreature.powerModifier = 0;
+                targetCreature.toughnessModifier = 0;
+                targetCreature.counters = null;
+                this.ui.log(`${card.name} devolveu ${targetCreature.name} para a mão de ${opponent.name}`);
+                this.ui.render();
+            }
+        };
+
+        if (controller === this.player) {
+            this.ui.promptTriggerTarget({
+                title: `${card.name} - Selecione um Alvo`,
+                description: 'Devolva uma criatura que um oponente controla para a mão de seu dono:',
+                validTargets: validTargets,
+                canSkip: false
+            }).then(selected => {
+                if (selected) bounceCreature(selected);
+            });
+        } else {
+            // IA escolhe a criatura mais forte
+            const target = validTargets.sort((a, b) => {
+                const powerA = (a.power || 0) + (a.powerModifier || 0);
+                const powerB = (b.power || 0) + (b.powerModifier || 0);
+                return powerB - powerA;
+            })[0];
+            bounceCreature(target);
+        }
+    }
+
+    _handleCounterTwoETB(card, controller) {
+        const validTargets = controller.battlefield.filter(c =>
+            c.type === 'creature' && c.instanceId !== card.instanceId
+        );
+        if (validTargets.length === 0) return;
+
+        const applyCounters = (targets) => {
+            targets.forEach(target => {
+                if (!target.counters) target.counters = {};
+                target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                this.ui.log(`${card.name} colocou um contador +1/+1 em ${target.name}`);
+            });
+            this.ui.render();
+        };
+
+        if (controller === this.player) {
+            this.ui.promptMultiTarget({
+                title: `${card.name} - Selecione Alvos`,
+                description: 'Coloque um contador +1/+1 em até duas outras criaturas que você controla:',
+                validTargets: validTargets,
+                maxTargets: 2,
+                minTargets: 0,
+                canSkip: true
+            }).then(selected => {
+                if (selected?.length > 0) applyCounters(selected);
+            });
+        } else {
+            // IA escolhe criaturas menores para bufar
+            const targets = validTargets
+                .sort((a, b) => {
+                    const powerA = (a.power || 0) + (a.powerModifier || 0) + (a.counters?.plusOnePlusOne || 0);
+                    const powerB = (b.power || 0) + (b.powerModifier || 0) + (b.counters?.plusOnePlusOne || 0);
+                    return powerA - powerB;
+                })
+                .slice(0, 2);
+            applyCounters(targets);
+        }
+    }
+
+    _handleEquipPirateETB(card, controller) {
+        const pirateTarget = controller.battlefield.find(c =>
+            c.type === 'creature' && c.subtype?.includes('Pirate')
+        );
+        if (pirateTarget) {
+            card.attachedTo = pirateTarget.instanceId;
+            this.ui.log(`Pirate's Cutlass foi equipado em ${pirateTarget.name}`);
+        }
+    }
+
+    _handleRaidDraw(controller) {
+        const controllerKey = controller === this.player ? 'player' : 'opponent';
+        if (this.game.attackedThisTurn?.[controllerKey]) {
+            this.rules.drawCard(controller);
+            this.ui.log(`Raid: ${controller.name} comprou uma carta`);
+        }
+    }
+
+    // ========================================
+    // OTHER CREATURE ENTERS TRIGGERS
+    // ========================================
+
+    /**
+     * Triggers quando outra criatura entra no campo
+     * @param {Object} enteringCreature - Criatura que acabou de entrar
+     * @param {Object} controller - Jogador que controla a criatura
+     */
+    onOtherCreatureEnters(enteringCreature, controller) {
+        controller.battlefield.forEach(card => {
+            // Beast-Kin Ranger - ganha +1/+0 quando outra criatura entra
+            if (card.id === 'beast_kin_ranger' && card.instanceId !== enteringCreature.instanceId) {
+                card.powerModifier = (card.powerModifier || 0) + 1;
+                this.ui.log(`Beast-Kin Ranger ganha +1/+0 (${enteringCreature.name} entrou em campo)`);
+            }
+        });
+    }
+
+    // ========================================
+    // SPELL CAST TRIGGERS
+    // ========================================
+
+    /**
+     * Brineborn Cutthroat - ganha +1/+1 counter quando lança mágica no turno do oponente
+     * @param {Object} caster - Jogador que lançou a mágica
+     */
+    onSpellCast(caster) {
+        // Verifica se é o turno do oponente do caster
+        const isOpponentsTurn = (caster === this.player && this.game.currentPlayer === this.opponent) ||
+                                (caster === this.opponent && this.game.currentPlayer === this.player);
+
+        if (!isOpponentsTurn) return;
+
+        caster.battlefield.forEach(card => {
+            if (card.id === 'brineborn_cutthroat') {
+                if (!card.counters) card.counters = {};
+                card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
+                this.ui.log(`Brineborn Cutthroat ganha um contador +1/+1 (mágica conjurada no turno do oponente)`);
+                this.ui.render();
+            }
+        });
+    }
+
+    // ========================================
+    // LIFE LOSS TRIGGERS
+    // ========================================
+
+    /**
+     * Vengeful Bloodwitch - ganha vida quando oponente perde vida
+     * @param {Object} controller - Jogador que controla a Bloodwitch
+     * @param {number} lifeAmount - Quantidade de vida perdida pelo oponente
+     */
+    onOpponentLosesLife(controller, lifeAmount) {
+        controller.battlefield.forEach(card => {
+            if (card.id === 'vengeful_bloodwitch') {
+                controller.life += lifeAmount;
+                this.ui.log(`Vengeful Bloodwitch: ${controller.name} ganhou ${lifeAmount} vida(s)`);
+            }
+        });
+    }
+
+    // ========================================
+    // END OF TURN TRIGGERS
+    // ========================================
+
+    /**
+     * Stromkirk Bloodthief - no fim do turno, +1/+1 em vampiro se oponente perdeu vida
+     * @param {Object} controller - Jogador ativo
+     */
+    async onEndStep(controller) {
+        await this._handleStromkirkBloodthief(controller);
+    }
+
+    async _handleStromkirkBloodthief(controller) {
+        const opponentLostLife = controller === this.player
+            ? this.game.opponentLostLifeThisTurn
+            : this.game.playerLostLifeThisTurn;
+
+        if (!opponentLostLife) return;
+
+        for (const card of controller.battlefield) {
+            if (card.id === 'stromkirk_bloodthief') {
+                const vampires = controller.battlefield.filter(c =>
+                    c.type === 'creature' && c.subtype?.includes('Vampire')
+                );
+
+                if (vampires.length > 0) {
+                    let target;
+
+                    if (controller === this.player) {
+                        target = await this.ui.promptTriggerTarget({
+                            title: 'Stromkirk Bloodthief',
+                            description: 'Escolha um Vampiro para receber um contador +1/+1:',
+                            validTargets: vampires,
+                            canSkip: false
+                        });
+                    } else {
+                        target = vampires.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (target) {
+                        if (!target.counters) target.counters = {};
+                        target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                        this.ui.log(`Stromkirk Bloodthief: +1/+1 counter em ${target.name}`);
+                        this.ui.render();
+                    }
+                }
+            }
+        }
+    }
+
+    // ========================================
+    // COMBAT TRIGGERS
+    // ========================================
+
+    /**
+     * Battle-Rattle Shaman - no início do combate, criatura ganha +2/+0
+     * @param {Object} controller - Jogador que está atacando
+     */
+    async onBeginCombat(controller) {
+        await this._handleBattleRattleShaman(controller);
+    }
+
+    async _handleBattleRattleShaman(controller) {
+        for (const card of controller.battlefield) {
+            if (card.id === 'battle_rattle_shaman') {
+                const creatures = controller.battlefield.filter(c => c.type === 'creature');
+
+                if (creatures.length > 0) {
+                    let target;
+
+                    if (controller === this.player) {
+                        target = await this.ui.promptTriggerTarget({
+                            title: 'Battle-Rattle Shaman',
+                            description: 'Escolha uma criatura para receber +2/+0 até o fim do turno:',
+                            validTargets: creatures,
+                            canSkip: false
+                        });
+                    } else {
+                        const others = creatures.filter(c => c.instanceId !== card.instanceId);
+                        target = others.length > 0
+                            ? others.sort((a, b) => this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a))[0]
+                            : card;
+                    }
+
+                    if (target) {
+                        target.powerModifier = (target.powerModifier || 0) + 2;
+                        this.ui.log(`Battle-Rattle Shaman: ${target.name} ganhou +2/+0`);
+                        this.ui.render();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Leonin Vanguard - ganha 1 vida ao atacar com outra criatura
+     * @param {Array} attackers - Lista de atacantes
+     * @param {Object} attackingPlayer - Jogador que está atacando
+     */
+    onDeclareAttackers(attackers, attackingPlayer) {
+        attackingPlayer.battlefield.forEach(card => {
+            if (card.id === 'leonin_vanguard') {
+                const otherAttacker = attackers.some(a => a.instanceId !== card.instanceId);
+                if (otherAttacker) {
+                    attackingPlayer.life += 1;
+                    this.ui.log(`Leonin Vanguard: ${attackingPlayer.name} ganhou 1 vida`);
+                }
+            }
+        });
+    }
+
+    /**
+     * Frenzied Goblin - ao atacar, pagar R para impedir uma criatura de bloquear
+     * @param {Array} attackers - Lista de atacantes
+     * @param {Object} attackingPlayer - Jogador que está atacando
+     */
+    async onFrenziedGoblinAttacks(attackers, attackingPlayer) {
+        const opponent = attackingPlayer === this.player ? this.opponent : this.player;
+
+        const frenziedGoblin = attackers.find(a => a.id === 'frenzied_goblin');
+        if (!frenziedGoblin) return;
+
+        const availableMana = this.rules.calculateAvailableMana(attackingPlayer);
+        if (availableMana.R < 1 && availableMana.any < 1) return;
+
+        const potentialBlockers = opponent.battlefield.filter(c =>
+            c.type === 'creature' && !c.tapped
+        );
+        if (potentialBlockers.length === 0) return;
+
+        if (attackingPlayer === this.player) {
+            const shouldPay = await this.ui.promptFrenziedGoblin(potentialBlockers);
+            if (shouldPay?.target) {
+                this.game.payColoredMana({ R: 1 }, attackingPlayer);
+                this.game.unblockableThisTurn.push(shouldPay.target.instanceId);
+                this.ui.log(`Frenzied Goblin: ${shouldPay.target.name} não pode bloquear neste turno`);
+            }
+        } else {
+            const target = potentialBlockers.sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            )[0];
+            if (target) {
+                this.game.payColoredMana({ R: 1 }, attackingPlayer);
+                this.game.unblockableThisTurn.push(target.instanceId);
+                this.ui.log(`Frenzied Goblin: ${target.name} não pode bloquear neste turno`);
+            }
+        }
+    }
+}
+
+// Exportar para uso global
+window.TriggerManager = TriggerManager;

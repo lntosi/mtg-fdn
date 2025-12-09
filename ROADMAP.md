@@ -114,14 +114,37 @@ Mecânicas mais avançadas:
 
 ---
 
-### 3. Pendências Menores
+### 3. Refatoração Incremental (Em Andamento)
+
+**Objetivo**: Separar responsabilidades do `game.js` para facilitar adição de novos decks.
+
+**Estratégia**: Refatoração conservadora - extrair apenas o necessário, manter `game.js` como coordenador.
+
+#### Fase 1: Extrair Triggers (ATUAL)
+- [x] Criar `js/triggers.js` para centralizar:
+  - ETB effects (enters-the-battlefield)
+  - Death triggers
+  - Combat triggers (raid, etc.)
+  - Lord bonuses
+- [x] Manter `game.js` chamando `TriggerManager`
+- [x] Rodar testes após extração
+
+#### Fase 2: Avaliar Necessidade (Após Decks)
+Após implementar os 5 decks restantes, avaliar se vale extrair:
+- [ ] `combat.js` - Sistema de combate
+- [ ] `stack.js` - Pilha e prioridade
+
+**Benefício esperado**: Ao adicionar novo deck, basta editar `triggers.js` para novos ETBs em vez de navegar pelo `game.js` inteiro.
+
+---
+
+### 4. Pendências Menores
 
 #### UI/UX
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
 
 #### Técnico
 - [ ] **Tratamento de erros**: Capturar e logar erros graciosamente
-- [ ] **Refatoração**: Separar melhor responsabilidades (game.js está grande)
 
 ---
 

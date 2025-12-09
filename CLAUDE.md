@@ -37,6 +37,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 **Core Game Flow:**
 - `main.js` - Entry point, creates GameState instance
 - `game.js` - Main game state and turn flow controller (GameState class)
+- `triggers.js` - **TriggerManager**: ETBs, death triggers, combat triggers, end-of-turn triggers
 - `rules.js` - MTG rules engine: phases, mana payment, combat damage, keywords
 - `ai.js` - AI opponent logic for playing cards and combat decisions
 - `ui.js` - DOM manipulation, rendering, event handling (GameUI class)
@@ -46,6 +47,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 
 **Key Classes:**
 - `GameState` - Central state: players, phase, turn number, combat state. Has persistence via localStorage (saveGame/restoreGame)
+- `TriggerManager` - **All card triggers centralized here** (ETBs, death triggers, combat triggers)
 - `RulesEngine` - Validates plays, calculates mana, resolves combat damage
 - `GameUI` - Renders cards, handles clicks, manages graveyard popup
 - `AIPlayer` - Decides which cards to play, attackers, blockers
@@ -221,7 +223,7 @@ Only combat-relevant keywords are shown. Internal keywords (lords, etb_, etc.) a
 
 **For ETB effects**:
 - Add keyword like `etb_draw`, `etb_bounce`, `etb_counter_two`
-- Implement handler in `game.js` → `resolveETB()` function
+- Implement handler in `triggers.js` → `TriggerManager.resolveETB()` method
 
 **For activated abilities** (costs mana/tap):
 - Use card's `id` directly (not a keyword)
@@ -240,3 +242,61 @@ When adding new instants, update `rules.js` → `hasValidTargets()` to ensure:
 - Buff spells check for own creatures
 - Removal spells check for opponent creatures
 - Prevents priority window appearing when no valid targets exist
+
+## Adding New Decks - Quick Reference
+
+When implementing a new deck, follow this workflow:
+
+### 1. Add cards to `cards.js`
+Define all cards in `CARD_DATABASE` under the deck name.
+
+### 2. Add triggers to `triggers.js`
+This is the **primary file for new card mechanics**. Open `triggers.js` and:
+
+**For ETB effects** - Add to `resolveETB()` method:
+```javascript
+// Card-specific ETB
+if (card.id === 'your_card_id') {
+    this._handleYourCardETB(controller, opponent);
+}
+
+// Or for keyword-based ETB (reusable)
+if (card.keywords?.includes('etb_your_effect')) {
+    // Handle effect
+}
+```
+
+**For combat triggers** - Add to appropriate method:
+- `onBeginCombat()` - Beginning of combat triggers
+- `onDeclareAttackers()` - When attackers are declared
+- `onFrenziedGoblinAttacks()` - Specific attack triggers
+
+**For end of turn triggers** - Add to `onEndStep()`
+
+**For spell cast triggers** - Add to `onSpellCast()`
+
+**For life loss triggers** - Add to `onOpponentLosesLife()`
+
+### 3. Add activated abilities to `game.js`
+Only if the card has activated abilities (tap/mana costs):
+- `canActivateAbility()` - Check if ability can be used
+- `activateAbility()` - Execute the ability
+
+### 4. Update `rules.js` if needed
+- `hasValidTargets()` - For new instant targeting
+- Mana calculation changes
+
+### Example: Adding a new ETB creature
+
+```javascript
+// In triggers.js, inside resolveETB():
+
+// Inspiring Overseer - ETB draw + gain life
+if (card.id === 'inspiring_overseer') {
+    this.rules.drawCard(controller);
+    controller.life += 1;
+    this.ui.log(`${card.name}: ${controller.name} comprou uma carta e ganhou 1 vida`);
+}
+```
+
+This keeps all trigger logic in one place, making it easy to find and modify.
