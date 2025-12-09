@@ -187,10 +187,4 @@ Itens que podem ou não ser implementados:
 
 ---
 
-## Para Avaliar
-
-- **Hover duplo nas cartas**: Zoom CSS local + preview lateral funcionam simultaneamente. Avaliar se manter ambos.
-
----
-
 *Última atualização: Dezembro 2025*
