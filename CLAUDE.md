@@ -243,60 +243,256 @@ When adding new instants, update `rules.js` → `hasValidTargets()` to ensure:
 - Removal spells check for opponent creatures
 - Prevents priority window appearing when no valid targets exist
 
-## Adding New Decks - Quick Reference
+## Adding New Decks - Complete Guide
 
-When implementing a new deck, follow this workflow:
+This guide ensures consistent implementation when adding new decks.
 
-### 1. Add cards to `cards.js`
-Define all cards in `CARD_DATABASE` under the deck name.
+### Workflow Overview
 
-### 2. Add triggers to `triggers.js`
-This is the **primary file for new card mechanics**. Open `triggers.js` and:
-
-**For ETB effects** - Add to `resolveETB()` method:
-```javascript
-// Card-specific ETB
-if (card.id === 'your_card_id') {
-    this._handleYourCardETB(controller, opponent);
-}
-
-// Or for keyword-based ETB (reusable)
-if (card.keywords?.includes('etb_your_effect')) {
-    // Handle effect
-}
+```
+1. cards.js     → Define all cards
+2. triggers.js  → Add ETBs, combat triggers, end-of-turn triggers
+3. game.js      → Add activated abilities (if any)
+4. rules.js     → Add instant targeting validation (if any)
+5. Run tests    → npm test
 ```
 
-**For combat triggers** - Add to appropriate method:
-- `onBeginCombat()` - Beginning of combat triggers
-- `onDeclareAttackers()` - When attackers are declared
-- `onFrenziedGoblinAttacks()` - Specific attack triggers
+### Step 1: Add Cards to `cards.js`
 
-**For end of turn triggers** - Add to `onEndStep()`
-
-**For spell cast triggers** - Add to `onSpellCast()`
-
-**For life loss triggers** - Add to `onOpponentLosesLife()`
-
-### 3. Add activated abilities to `game.js`
-Only if the card has activated abilities (tap/mana costs):
-- `canActivateAbility()` - Check if ability can be used
-- `activateAbility()` - Execute the ability
-
-### 4. Update `rules.js` if needed
-- `hasValidTargets()` - For new instant targeting
-- Mana calculation changes
-
-### Example: Adding a new ETB creature
+Add deck to `CARD_DATABASE` following existing patterns:
 
 ```javascript
-// In triggers.js, inside resolveETB():
+healing: [
+    // Terrenos (8)
+    { id: "plains", name: "Plains", type: "land", produces: "W", qty: 8 },
 
-// Inspiring Overseer - ETB draw + gain life
+    // Criaturas (12)
+    { id: "ajani_pridemate", name: "Ajani's Pridemate", type: "creature",
+      subtype: "Cat Soldier", cost: "1W", cmc: 2, power: 2, toughness: 2,
+      text: "Sempre que você ganhar vida, coloque um contador +1/+1 em Ajani's Pridemate.",
+      qty: 1 },
+
+    // Feitiços (4)
+    { id: "revitalize", name: "Revitalize", type: "instant", cost: "1W", cmc: 2,
+      text: "Ganhe 3 vidas. Compre uma carta.", qty: 1 },
+]
+```
+
+**Card ID Convention**: `snake_case` matching card name (e.g., `ajani_pridemate`)
+
+### Step 2: Add Triggers to `triggers.js`
+
+**This is the PRIMARY file for new mechanics.** All triggers go here.
+
+#### ETB Effects (enters-the-battlefield)
+
+Add to `resolveETB()` method:
+
+```javascript
+// === HEALING DECK TRIGGERS ===
+
+// Inspiring Overseer - ETB draw + gain 1 life
 if (card.id === 'inspiring_overseer') {
     this.rules.drawCard(controller);
     controller.life += 1;
-    this.ui.log(`${card.name}: ${controller.name} comprou uma carta e ganhou 1 vida`);
+    this.ui.log(`${card.name}: ${controller.name} comprou e ganhou 1 vida`);
 }
 ```
 
-This keeps all trigger logic in one place, making it easy to find and modify.
+**Keyword-based ETBs** (reusable across cards):
+```javascript
+// etb_gain_life_3 - gain 3 life on ETB
+if (card.keywords?.includes('etb_gain_life_3')) {
+    controller.life += 3;
+    this.ui.log(`${card.name}: ${controller.name} ganhou 3 vidas`);
+}
+```
+
+#### Lifegain Triggers (Healing deck mechanic)
+
+Create new method for lifegain triggers:
+
+```javascript
+/**
+ * Called whenever a player gains life
+ * @param {Object} player - Player who gained life
+ * @param {number} amount - Amount of life gained
+ */
+onLifeGain(player, amount) {
+    player.battlefield.forEach(card => {
+        // Ajani's Pridemate - +1/+1 counter when you gain life
+        if (card.id === 'ajani_pridemate') {
+            if (!card.counters) card.counters = {};
+            card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
+            this.ui.log(`Ajani's Pridemate ganha um contador +1/+1`);
+        }
+
+        // Twinblade Paladin - has double strike if life >= starting
+        if (card.id === 'twinblade_paladin') {
+            // Check handled in rules.js getCreatureKeywords()
+        }
+    });
+    this.ui.render();
+}
+```
+
+Then call from game.js wherever life is gained.
+
+#### Combat Triggers
+
+Add to appropriate method in TriggerManager:
+
+| Method | When Called | Example Cards |
+|--------|-------------|---------------|
+| `onBeginCombat(controller)` | Start of combat | Battle-Rattle Shaman |
+| `onDeclareAttackers(attackers, player)` | After attackers declared | Leonin Vanguard |
+| `onEndStep(controller)` | End phase | Stromkirk Bloodthief |
+
+#### Fight Mechanic (Primal deck)
+
+Add new method:
+
+```javascript
+/**
+ * Fight - two creatures deal damage to each other
+ * @param {Object} creature1 - First creature
+ * @param {Object} creature2 - Second creature
+ */
+fight(creature1, creature2) {
+    const power1 = this.rules.getCreaturePower(creature1);
+    const power2 = this.rules.getCreaturePower(creature2);
+
+    creature1.damage = (creature1.damage || 0) + power2;
+    creature2.damage = (creature2.damage || 0) + power1;
+
+    this.ui.log(`${creature1.name} e ${creature2.name} lutam!`);
+
+    // Check for deaths
+    this.game.checkCreatureDeath(creature1, /* owner */);
+    this.game.checkCreatureDeath(creature2, /* owner */);
+}
+```
+
+### Step 3: Add Activated Abilities to `game.js`
+
+Only for cards with tap/mana activation costs.
+
+In `canActivateAbility(card, player)`:
+```javascript
+case 'mystic_archaeologist':
+    // 3UU: Draw two cards
+    const mana = this.rules.calculateAvailableMana(player);
+    return mana.U >= 2 && (mana.U + mana.any) >= 5;
+```
+
+In `activateAbility(card, player)`:
+```javascript
+case 'mystic_archaeologist':
+    this.payColoredMana({ U: 2 }, player);
+    this.payGenericMana(3, player);
+    card.tapped = true;
+    this.rules.drawCard(player);
+    this.rules.drawCard(player);
+    this.ui.log(`${card.name}: ${player.name} comprou 2 cartas`);
+    break;
+```
+
+### Step 4: Update `rules.js` for Instants
+
+In `hasValidTargets(card, player, gameState)`:
+
+```javascript
+// Bite Down - requires own creature AND opponent creature (fight)
+case 'bite_down':
+    return player.battlefield.some(c => c.type === 'creature') &&
+           opponent.battlefield.some(c => c.type === 'creature');
+```
+
+### Step 5: Run Tests
+
+```bash
+npm test
+```
+
+All 134+ tests must pass before committing.
+
+---
+
+### Deck-Specific Implementation Notes
+
+#### Healing (W) - Lifegain Triggers
+- Create `onLifeGain(player, amount)` in triggers.js
+- Call from game.js wherever `player.life +=` occurs
+- Ajani's Pridemate: +1/+1 counter on lifegain
+- Twinblade Paladin: conditional double strike (check in rules.js)
+
+#### Primal (G) - Fight Mechanic
+- Create `fight(creature1, creature2)` in triggers.js
+- Bite Down spell: target own creature fights target opponent creature
+- Needs two-target selection UI
+
+#### Inferno (R) - Dragon Synergies
+- Cost reduction: modify `rules.js` mana calculation for Dragons
+- Dragonlord's Servant: Dragons cost 1 less
+
+#### Wizards (U) - Kicker
+- Add `kicked` property to spell resolution
+- Kicker cost: additional mana for extra effect
+- Into the Roil: bounce + draw if kicked
+
+#### Undead (B) - Graveyard Recursion
+- Reassembling Skeleton: activated ability from graveyard
+- Need to check graveyard in `canActivateAbility()`
+- Sacrifice costs: UI prompt to choose creature to sacrifice
+
+---
+
+### Common Patterns Reference
+
+**Create Token:**
+```javascript
+controller.battlefield.push({
+    instanceId: `token_name_${Date.now()}`,
+    name: 'Token Name',
+    type: 'creature',
+    subtype: 'Type',
+    power: 1,
+    toughness: 1,
+    summoningSickness: true
+});
+```
+
+**Add Counter:**
+```javascript
+if (!card.counters) card.counters = {};
+card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
+```
+
+**Temporary Buff (until end of turn):**
+```javascript
+card.powerModifier = (card.powerModifier || 0) + 2;
+card.toughnessModifier = (card.toughnessModifier || 0) + 2;
+// Cleared automatically in cleanup step
+```
+
+**Mark Life Lost (for triggers):**
+```javascript
+if (opponent === this.player) {
+    this.game.playerLostLifeThisTurn = true;
+} else {
+    this.game.opponentLostLifeThisTurn = true;
+}
+```
+
+**Player Choice (human vs AI):**
+```javascript
+if (controller === this.player) {
+    // Human: show UI prompt
+    const target = await this.ui.promptTriggerTarget({ ... });
+} else {
+    // AI: automatic choice (usually strongest/weakest)
+    const target = validTargets.sort((a, b) =>
+        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+    )[0];
+}
+```
