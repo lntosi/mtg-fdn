@@ -150,8 +150,8 @@ Este documento mapeia os efeitos de cartas pendentes e melhorias futuras para o 
 ### 3.3 Prioridade Baixa
 
 - [x] **Seleção manual de bloqueadores**: Jogador escolhe bloqueador e depois clica no atacante que quer bloquear (em vez de atribuição automática)
+- [x] **Desfazer jogada**: Sistema de undo opcional (habilitável via Settings M) para desfazer ações do jogador
 - [ ] **Replay de partida**: Salvar e rever partidas
-- [ ] **Desfazer jogada**: Undo para erros do jogador
 - [ ] **Modo de treino**: Dicas e sugestões de jogadas
 
 ---

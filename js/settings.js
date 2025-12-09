@@ -99,6 +99,17 @@ class SettingsManager {
             btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
         }
 
+        // Undo enabled/disabled
+        const undoEnabled = document.getElementById('undo-enabled');
+        if (undoEnabled) {
+            // Carregar estado atual do game se existir
+            const currentUndoSetting = this.settings.undoEnabled || false;
+            undoEnabled.checked = currentUndoSetting;
+            undoEnabled.addEventListener('change', (e) => {
+                this.setUndoEnabled(e.target.checked);
+            });
+        }
+
         // Conceder via settings
         const btnSettingsConcede = document.getElementById('btn-settings-concede');
         if (btnSettingsConcede) {
@@ -177,6 +188,23 @@ class SettingsManager {
         if (volumeSlider) {
             volumeSlider.value = this.settings.volume;
             if (volumeValue) volumeValue.textContent = `${this.settings.volume}%`;
+        }
+
+        // Sincronizar undo
+        const undoEnabled = document.getElementById('undo-enabled');
+        if (undoEnabled) {
+            undoEnabled.checked = this.settings.undoEnabled || false;
+        }
+    }
+
+    // === Undo ===
+    setUndoEnabled(enabled) {
+        this.settings.undoEnabled = enabled;
+        this.saveSettings();
+
+        // Atualizar o GameState se o jogo estiver em andamento
+        if (window.game) {
+            window.game.saveUndoSetting(enabled);
         }
     }
 

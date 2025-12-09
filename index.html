@@ -45,6 +45,7 @@
                 <button id="btn-attack" disabled>Atacar</button>
                 <button id="btn-block" disabled>Não Bloquear</button>
                 <button id="btn-next-phase" class="btn-secondary" disabled>Pular Fase</button>
+                <button id="btn-undo" class="btn-undo hidden" disabled title="Desfazer última ação">⟲</button>
             </div>
             <div id="message-log"></div>
             <div id="stack"></div>
@@ -467,6 +468,13 @@
             <div class="settings-section">
                 <h3>🎮 Jogo</h3>
                 <div class="game-settings">
+                    <div class="undo-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="undo-enabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Botão Desfazer (Undo)</span>
+                    </div>
                     <button id="btn-settings-concede" class="btn-setting btn-danger">
                         <span class="btn-icon">🏳️</span>
                         <span>Conceder Partida</span>

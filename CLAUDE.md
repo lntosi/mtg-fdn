@@ -83,9 +83,39 @@ Press M to open settings menu with:
 - **Themes**: Roxo Místico (default), Clean, Alto Contraste
 - **Sound**: Toggle on/off, volume slider
 - **Fullscreen**: Toggle fullscreen mode
+- **Undo**: Toggle undo button visibility (disabled by default)
 - **Concede**: Forfeit current game
 
 Settings persist in localStorage.
+
+## Undo System
+
+The game has an optional undo system for learning/testing purposes:
+
+**Enabling Undo:**
+- Press M to open Settings menu
+- Toggle "Botão Desfazer (Undo)" on
+- A "⟲" button appears after "Pular Fase"
+
+**What can be undone:**
+- Playing cards (lands, creatures, spells)
+- Declaring attackers
+- Declaring blockers
+- Activating abilities
+
+**Limitations:**
+- Only player actions are saved (not AI actions)
+- Maximum 20 states in history
+- Undo clears UI selection states
+
+**Debug commands:**
+```javascript
+debug.enableUndo()    // Enable undo system
+debug.disableUndo()   // Disable undo system
+debug.undo()          // Undo last action
+debug.history()       // Show saved states
+debug.clearHistory()  // Clear undo history
+```
 
 ## Debug Mode
 
@@ -113,6 +143,13 @@ debug.state()                          // Show game state
 debug.battlefield()                    // List creatures
 debug.hand()                           // Show hand
 debug.help()                           // Show all commands
+
+// Undo
+debug.undo()                           // Undo last action
+debug.history()                        // Show saved states
+debug.enableUndo()                     // Enable undo system
+debug.disableUndo()                    // Disable undo system
+debug.clearHistory()                   // Clear undo history
 ```
 
 ## Avatars

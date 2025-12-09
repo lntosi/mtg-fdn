@@ -69,6 +69,7 @@ class GameUI {
         this.btnNextPhase = document.getElementById('btn-next-phase');
         this.btnAttack = document.getElementById('btn-attack');
         this.btnBlock = document.getElementById('btn-block');
+        this.btnUndo = document.getElementById('btn-undo');
 
         // Modals
         this.playerCustomization = document.getElementById('player-customization');
@@ -176,6 +177,11 @@ class GameUI {
         this.btnNextPhase.addEventListener('click', () => this.game.nextPhase());
         this.btnAttack.addEventListener('click', () => this.onAttackClick());
         this.btnBlock.addEventListener('click', () => this.onBlockClick());
+
+        // Botão de Undo
+        if (this.btnUndo) {
+            this.btnUndo.addEventListener('click', () => this.onUndoClick());
+        }
 
         // Clique no cemitério para abrir modal
         this.playerGraveyard.addEventListener('click', () => this.showGraveyardModal('player'));
@@ -751,6 +757,37 @@ class GameUI {
         }
     }
 
+    // Handler para clique no botão de Undo
+    onUndoClick() {
+        if (this.game.canUndo()) {
+            this.game.undo();
+        }
+    }
+
+    // Atualiza visibilidade e estado do botão de Undo
+    updateUndoButton() {
+        if (!this.btnUndo) return;
+
+        // Mostrar/esconder baseado na configuração
+        if (this.game.undoEnabled) {
+            this.btnUndo.classList.remove('hidden');
+        } else {
+            this.btnUndo.classList.add('hidden');
+            return;
+        }
+
+        // Habilitar/desabilitar baseado no histórico
+        this.btnUndo.disabled = !this.game.canUndo();
+
+        // Tooltip com descrição da última ação
+        const lastDesc = this.game.getLastUndoDescription();
+        if (lastDesc) {
+            this.btnUndo.title = `Desfazer: ${lastDesc}`;
+        } else {
+            this.btnUndo.title = 'Nenhuma ação para desfazer';
+        }
+    }
+
     // Renderiza o estado completo do jogo
     render() {
         this.renderHand(this.game.player, this.playerHand, true);
@@ -762,6 +799,7 @@ class GameUI {
         this.renderPlayerInfo();
         this.renderPhase();
         this.updateButtons();
+        this.updateUndoButton();
         this.renderStack();
 
         // Desenhar linhas de combate se estivermos esperando bloqueadores OU se IA declarou bloqueadores
