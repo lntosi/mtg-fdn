@@ -178,6 +178,7 @@ Itens que podem ou não ser implementados:
 - ✅ Stack básico e sistema de prioridade
 - ✅ Mulligan (London Mulligan)
 - ✅ Fases de combate detalhadas
+- ✅ Atribuição de dano a múltiplos bloqueadores (Regra 510.1c)
 - ✅ Descarte para 7 cartas
 - ✅ Morte por deck vazio
 - ✅ Contadores (+1/+1, -1/-1)
