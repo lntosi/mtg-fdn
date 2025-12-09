@@ -431,12 +431,15 @@ class RulesEngine {
                 blockers.forEach(blocker => {
                     const blockerPower = this.getCreaturePower(blocker);
                     const blockerToughness = this.getCreatureToughness(blocker);
-                    let damageToBlocker = Math.min(attackerDamage, blockerToughness);
-                    let damageFromBlocker = 0;
 
                     // Se atacante tem first strike/double strike e bloqueador não, atacante pode matar antes de receber dano
                     const blockerHasFirstStrike = blocker.keywords &&
                         (blocker.keywords.includes('first_strike') || blocker.keywords.includes('double_strike'));
+
+                    // Regra 510.1a: criatura causa dano igual ao seu poder (não limitado pela resistência)
+                    // Double strike causa dano duas vezes (first strike + normal damage)
+                    let damageToBlocker = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                    let damageFromBlocker = 0;
 
                     // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
                     if (hasFirstStrike && !blockerHasFirstStrike && attackerPower >= blockerToughness) {
