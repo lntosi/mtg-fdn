@@ -101,9 +101,9 @@ class TriggerManager {
             this._handleDwynensEliteETB(card, controller);
         }
 
-        // Elvish Regrower - devolve terreno do cemitério
+        // Elvish Regrower - devolve permanente do cemitério para a mão
         if (card.id === 'elvish_regrower') {
-            this._handleElvishRegrowerETB(controller);
+            this._handleElvishRegrowerETB(card, controller);
         }
 
         // Bloodtithe Collector - força descarte se oponente perdeu vida
@@ -182,13 +182,52 @@ class TriggerManager {
         }
     }
 
-    _handleElvishRegrowerETB(controller) {
-        const landInGraveyard = controller.graveyard.find(c => c.type === 'land');
-        if (landInGraveyard) {
-            const index = controller.graveyard.indexOf(landInGraveyard);
-            controller.graveyard.splice(index, 1);
-            controller.hand.push(landInGraveyard);
-            this.ui.log(`${landInGraveyard.name} voltou do cemitério para a mão`);
+    _handleElvishRegrowerETB(card, controller) {
+        // Permanentes = criaturas, artefatos, encantamentos, terrenos (não instants/sorceries)
+        const permanentTypes = ['creature', 'artifact', 'enchantment', 'land'];
+        const validTargets = controller.graveyard.filter(c => permanentTypes.includes(c.type));
+
+        if (validTargets.length === 0) {
+            this.ui.log(`${card.name}: ${controller.name} não tem permanentes no cemitério`);
+            return;
+        }
+
+        const returnPermanent = (target) => {
+            const index = controller.graveyard.indexOf(target);
+            if (index !== -1) {
+                controller.graveyard.splice(index, 1);
+                controller.hand.push(target);
+                this.ui.log(`${card.name}: ${controller.name} recuperou ${target.name} do cemitério`);
+                this.ui.render();
+            }
+        };
+
+        if (controller === this.player) {
+            // Jogador escolhe o alvo
+            this.ui.promptTriggerTarget({
+                title: `${card.name} - Recuperar Permanente`,
+                description: 'Escolha uma carta de permanente do seu cemitério para devolver à sua mão:',
+                validTargets: validTargets,
+                canSkip: false
+            }).then(selected => {
+                if (selected) {
+                    returnPermanent(selected);
+                }
+            });
+        } else {
+            // IA escolhe automaticamente (prioriza criaturas mais fortes, depois terrenos)
+            const target = validTargets.sort((a, b) => {
+                // Prioridade: criaturas > terrenos > outros
+                const priority = { creature: 3, land: 2, artifact: 1, enchantment: 1 };
+                const priorityDiff = (priority[b.type] || 0) - (priority[a.type] || 0);
+                if (priorityDiff !== 0) return priorityDiff;
+                // Entre criaturas, prefere as mais fortes
+                if (a.type === 'creature' && b.type === 'creature') {
+                    return (b.power || 0) - (a.power || 0);
+                }
+                return 0;
+            })[0];
+            returnPermanent(target);
         }
     }
 
