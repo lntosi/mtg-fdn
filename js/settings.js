@@ -62,6 +62,12 @@ class SettingsManager {
             btnClose.addEventListener('click', () => this.closeModal());
         }
 
+        // Botão de engrenagem (canto inferior esquerdo)
+        const btnGear = document.getElementById('btn-settings-gear');
+        if (btnGear) {
+            btnGear.addEventListener('click', () => this.toggleModal());
+        }
+
         // Temas
         const themeInputs = document.querySelectorAll('input[name="theme"]');
         themeInputs.forEach(input => {

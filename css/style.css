@@ -3562,6 +3562,68 @@ html {
     --divider-color: #b432a8;
 }
 
+/* === Botão de Engrenagem (Configurações) === */
+.btn-settings-gear {
+    position: fixed;
+    bottom: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+}
+
+.btn-settings-gear:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.9);
+    transform: rotate(45deg);
+}
+
+.btn-settings-gear:active {
+    transform: rotate(45deg) scale(0.95);
+}
+
+.btn-settings-gear svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Tema Clean */
+.theme-clean .btn-settings-gear {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.theme-clean .btn-settings-gear:hover {
+    background: rgba(255, 255, 255, 0.5);
+    border-color: rgba(0, 0, 0, 0.4);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+/* Tema Alto Contraste */
+.theme-high-contrast .btn-settings-gear {
+    background: #000;
+    border-color: #fff;
+    color: #fff;
+}
+
+.theme-high-contrast .btn-settings-gear:hover {
+    background: #333;
+    border-color: #ff0;
+    color: #ff0;
+}
+
 /* === Modal de Configurações === */
 .settings-content {
     max-width: 500px;
