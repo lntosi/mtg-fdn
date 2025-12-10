@@ -1164,10 +1164,13 @@ class GameState {
                 return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 8;
 
             case 'jazal_goldmane':
-                // 3WW: atacantes ganham +X/+X (só durante combate)
+                // 3WW: atacantes ganham +X/+X (só durante combate, com atacantes)
                 if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
-                const mana = this.rules.calculateAvailableMana(player);
-                return mana.W >= 2 && (mana.W + Object.values(mana).reduce((a,b) => a+b, 0) - mana.W) >= 3;
+                if (this.currentAttackers.length === 0) return false;
+                const jazalMana = this.rules.calculateAvailableMana(player);
+                const jazalTotalMana = Object.values(jazalMana).reduce((a,b) => a+b, 0);
+                // Custo 3WW: precisa de 2W específico + 3 qualquer = 5 total, com pelo menos 2W
+                return jazalMana.W >= 2 && jazalTotalMana >= 5;
 
             case 'veteran_goblin_firebomb':
                 // 1, T, Sacrifice: 2 dano a qualquer alvo
@@ -1661,6 +1664,15 @@ class GameState {
 
         const attackerNames = attackers.map(a => a.name).join(', ');
         this.ui.log(`${attackingPlayer.name} ataca com: ${attackerNames}`);
+
+        // Janela de prioridade após declarar atacantes (para habilidades como Jazal Goldmane)
+        if (attackingPlayer === this.player) {
+            this.ui.render(); // Mostrar atacantes antes da janela de prioridade
+            const postAttackResponse = await this.offerPriorityWindow('Atacantes declarados - você pode ativar habilidades');
+            if (postAttackResponse === 'respond') {
+                await this.handlePlayerPriorityResponse();
+            }
+        }
 
         this.phase = PHASES.DECLARE_BLOCKERS;
 
