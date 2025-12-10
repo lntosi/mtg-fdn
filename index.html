@@ -10,10 +10,12 @@
     <div id="game-container">
         <!-- Topo: Info do Oponente + Mão oculta + Grimório -->
         <div id="opponent-area">
-            <div class="player-info">
-                <span class="player-avatar" id="opponent-avatar"></span>
-                <span class="player-name" id="opponent-name">Oponente (IA)</span>
-                <span class="life-total" id="opponent-life">20</span>
+            <div class="player-info-stack">
+                <div class="avatar-life-container">
+                    <span class="player-avatar" id="opponent-avatar"></span>
+                    <span class="life-total" id="opponent-life">20</span>
+                </div>
+                <span class="player-name" id="opponent-name">Oponente</span>
             </div>
             <div class="hand" id="opponent-hand"></div>
             <div class="library-zone">
@@ -61,11 +63,11 @@
         <!-- Bottom: Info do Jogador + Mão + Grimório (mesma linha) -->
         <div id="player-area">
             <div class="player-info-stack">
-                <div class="player-info">
+                <div class="avatar-life-container">
                     <span class="player-avatar" id="player-avatar"></span>
-                    <span class="player-name" id="player-name-display">Você</span>
                     <span class="life-total" id="player-life">20</span>
                 </div>
+                <span class="player-name" id="player-name-display">Você</span>
                 <div class="mana-pool" id="player-mana">
                     <span class="mana-icon mana-W" title="Mana Branco">0</span>
                     <span class="mana-icon mana-U" title="Mana Azul">0</span>

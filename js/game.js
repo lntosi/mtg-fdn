@@ -231,7 +231,8 @@ class GameState {
 
         // Criar jogadores
         this.player = this.createPlayer(playerName, playerDecks, startingLife, playerAvatar);
-        this.opponent = this.createPlayer('Oponente (IA)', aiDecks, startingLife, aiAvatar);
+        const aiName = this.getAvatarName(aiAvatar);
+        this.opponent = this.createPlayer(aiName, aiDecks, startingLife, aiAvatar);
 
         // Embaralhar decks
         this.player.library = shuffleDeck(this.player.library);
@@ -333,8 +334,8 @@ class GameState {
         } else {
             this.activePlayer = this.opponent;
             this.priorityPlayer = this.opponent;
-            this.ui.logTurnStart(1, 'Oponente (IA)');
-            this.ui.log('A IA começa primeiro!');
+            this.ui.logTurnStart(1, this.opponent.name);
+            this.ui.log(`${this.opponent.name} começa primeiro!`);
         }
 
         this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
@@ -346,6 +347,18 @@ class GameState {
         if (!this.playerFirst) {
             setTimeout(() => this.executeAITurn(), 800);
         }
+    }
+
+    getAvatarName(avatar) {
+        const names = {
+            jace: 'Jace',
+            chandra: 'Chandra',
+            liliana: 'Liliana',
+            gideon: 'Gideon',
+            nissa: 'Nissa',
+            ajani: 'Ajani'
+        };
+        return names[avatar] || 'Oponente';
     }
 
     createPlayer(name, deckKeys, startingLife = 20, avatar = null) {
