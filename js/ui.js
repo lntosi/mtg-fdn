@@ -1721,15 +1721,17 @@ class GameUI {
         // Botão de ataque (mostrar apenas na fase de atacantes)
         const canDeclareAttack = isPlayerTurn && this.game.phase === PHASES.DECLARE_ATTACKERS && !hasStack;
         this.btnAttack.disabled = !canDeclareAttack || this.waitingForBlockers;
-        this.btnAttack.textContent = this.selectedAttackers.length > 0
-            ? `Atacar (${this.selectedAttackers.length})`
-            : 'Atacar';
+        // Manter ícone, atualizar tooltip com contagem
+        this.btnAttack.title = this.selectedAttackers.length > 0
+            ? `Atacar com ${this.selectedAttackers.length} criatura(s)`
+            : 'Declarar Atacantes';
 
         // Botão de bloqueio - escondido quando não esperando bloqueadores
         this.btnBlock.disabled = !this.waitingForBlockers;
         const blockCount = Object.values(this.blockerAssignments).flat().length;
-        this.btnBlock.textContent = blockCount > 0
-            ? `Bloquear (${blockCount})`
+        // Manter ícone, atualizar tooltip com contagem
+        this.btnBlock.title = blockCount > 0
+            ? `Bloquear com ${blockCount} criatura(s)`
             : 'Não Bloquear';
     }
 
@@ -1767,6 +1769,10 @@ class GameUI {
             // Fase de atacantes com atacantes selecionados
             if (this.game.phase === PHASES.DECLARE_ATTACKERS && this.selectedAttackers.length > 0) {
                 this.onAttackClick();
+            } else if (this.game.phase === PHASES.DECLARE_ATTACKERS) {
+                // Avançar sem atacar
+                this.log('Você escolheu não atacar');
+                this.game.nextPhase();
             } else {
                 // Avançar fase
                 this.game.nextPhase();

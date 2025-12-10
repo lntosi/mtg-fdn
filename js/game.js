@@ -1467,7 +1467,22 @@ class GameState {
         // Esvaziar floating mana no início de cada fase (regras MTG)
         this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
 
-        this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
+        // Log descritivo para cada fase (mais detalhado que PHASE_NAMES)
+        const phaseLogNames = {
+            [PHASES.UNTAP]: 'Untap',
+            [PHASES.UPKEEP]: 'Upkeep',
+            [PHASES.DRAW]: 'Draw',
+            [PHASES.MAIN1]: 'Main 1',
+            [PHASES.COMBAT_BEGIN]: 'Início do Combate',
+            [PHASES.DECLARE_ATTACKERS]: 'Declarar Atacantes',
+            [PHASES.DECLARE_BLOCKERS]: 'Declarar Bloqueadores',
+            [PHASES.COMBAT_DAMAGE]: 'Dano de Combate',
+            [PHASES.COMBAT_END]: 'Fim do Combate',
+            [PHASES.MAIN2]: 'Main 2',
+            [PHASES.END]: 'End Step',
+            [PHASES.CLEANUP]: 'Cleanup'
+        };
+        this.ui.log(`Fase: ${phaseLogNames[this.phase]}`);
 
         switch (this.phase) {
             case PHASES.UNTAP:
