@@ -29,27 +29,27 @@
             </div>
         </div>
 
-        <!-- Battlefield do Oponente -->
+        <!-- Battlefield do Oponente (lands em cima, criaturas embaixo perto do centro) -->
         <div class="battlefield" id="opponent-battlefield">
             <div class="lands" id="opponent-lands"></div>
             <div class="other-permanents" id="opponent-other"></div>
             <div class="creatures" id="opponent-creatures"></div>
         </div>
 
-        <!-- Zona Central: Controles -->
+        <!-- Zona Central: Controles (compacta) -->
         <div id="middle-zone">
             <div id="phase-indicator">
-                <span id="current-phase">Início do Jogo</span>
-                <span id="turn-indicator">Turno: 0</span>
+                <span id="turn-indicator">T1</span>
+                <span class="phase-separator">•</span>
+                <span id="current-phase">Início</span>
             </div>
             <div id="action-buttons">
                 <button id="btn-main-action" class="btn-main-action" disabled>OK</button>
-                <button id="btn-attack" disabled>Atacar</button>
-                <button id="btn-block" disabled>Não Bloquear</button>
-                <button id="btn-next-phase" class="btn-secondary" disabled>Pular Fase</button>
+                <button id="btn-attack" disabled title="Declarar Atacantes">⚔️</button>
+                <button id="btn-block" disabled title="Não Bloquear">🛡️</button>
+                <button id="btn-next-phase" class="btn-secondary" disabled title="Pular Fase">▶</button>
                 <button id="btn-undo" class="btn-undo hidden" disabled title="Desfazer última ação">⟲</button>
             </div>
-            <div id="message-log"></div>
             <div id="stack"></div>
         </div>
 

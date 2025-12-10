@@ -16,18 +16,18 @@ const PHASES = {
 };
 
 const PHASE_NAMES = {
-    [PHASES.UNTAP]: 'Desvirar',
-    [PHASES.UPKEEP]: 'Manutenção',
-    [PHASES.DRAW]: 'Compra',
-    [PHASES.MAIN1]: 'Fase Principal 1',
-    [PHASES.COMBAT_BEGIN]: 'Início do Combate',
-    [PHASES.DECLARE_ATTACKERS]: 'Declarar Atacantes',
-    [PHASES.DECLARE_BLOCKERS]: 'Declarar Bloqueadores',
-    [PHASES.COMBAT_DAMAGE]: 'Dano de Combate',
-    [PHASES.COMBAT_END]: 'Fim do Combate',
-    [PHASES.MAIN2]: 'Fase Principal 2',
-    [PHASES.END]: 'Etapa Final',
-    [PHASES.CLEANUP]: 'Limpeza'
+    [PHASES.UNTAP]: 'Untap',
+    [PHASES.UPKEEP]: 'Upkeep',
+    [PHASES.DRAW]: 'Draw',
+    [PHASES.MAIN1]: 'Main 1',
+    [PHASES.COMBAT_BEGIN]: 'Combate',
+    [PHASES.DECLARE_ATTACKERS]: 'Combate',
+    [PHASES.DECLARE_BLOCKERS]: 'Combate',
+    [PHASES.COMBAT_DAMAGE]: 'Combate',
+    [PHASES.COMBAT_END]: 'Combate',
+    [PHASES.MAIN2]: 'Main 2',
+    [PHASES.END]: 'End',
+    [PHASES.CLEANUP]: 'Cleanup'
 };
 
 const PHASE_ORDER = [

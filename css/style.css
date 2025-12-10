@@ -372,7 +372,7 @@ body {
 }
 
 #opponent-battlefield {
-    flex-direction: column-reverse;
+    /* Ordem normal: lands em cima, criaturas embaixo (perto do centro/combate) */
 }
 
 #opponent-battlefield .zone-label {
@@ -396,30 +396,21 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+    align-content: center;
     flex: 1;
-    min-height: 100px;
+    min-height: 80px;
     padding: 5px;
     position: relative;
     overflow: visible !important;
-}
-
-.creatures::before {
-    content: 'CREATURES';
-    position: absolute;
-    top: -18px;
-    left: 15px;
-    font-size: 0.65em;
-    color: rgba(200, 150, 200, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 3px;
 }
 
 .lands {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    justify-content: flex-start;
-    min-height: 70px;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px;
     padding: 5px;
     border-top: 1px solid rgba(180, 100, 180, 0.2);
     position: relative;
@@ -431,22 +422,16 @@ body {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    min-height: 50px;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
     padding: 5px;
     position: relative;
     overflow: visible !important;
 }
 
-.other-permanents::before {
-    content: 'ENCHANTMENTS / ARTIFACTS';
-    position: absolute;
-    top: -12px;
-    right: 15px;
-    font-size: 0.55em;
-    color: rgba(200, 150, 200, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.other-permanents:empty {
+    display: none;
 }
 
 .other-permanents .card {
@@ -454,80 +439,68 @@ body {
     height: 117px;
 }
 
-.lands::before {
-    content: 'LANDS';
-    position: absolute;
-    top: -12px;
-    left: 15px;
-    font-size: 0.65em;
-    color: rgba(200, 150, 200, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 3px;
-}
-
+/* Lands do oponente: borda embaixo separando das criaturas */
 #opponent-battlefield .lands {
     border-top: none;
     border-bottom: 1px solid rgba(180, 100, 180, 0.2);
 }
 
-#opponent-battlefield .creatures::before {
-    top: auto;
-    bottom: -18px;
-}
-
-#opponent-battlefield .lands::before {
-    top: auto;
-    bottom: -12px;
-}
-
-/* === Zona Central - Indicador de Fases === */
+/* === Zona Central - Indicador de Fases (Compacta) === */
 #middle-zone {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    padding: 8px 20px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 8px;
-    border: 1px solid rgba(180, 100, 180, 0.3);
+    justify-content: center;
+    gap: 12px;
+    padding: 4px 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    border: 1px solid rgba(180, 100, 180, 0.2);
     z-index: 1;
     position: relative;
 }
 
 #phase-indicator {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    align-items: center;
+    gap: 6px;
+    min-width: 180px;
 }
 
 #current-phase {
-    font-size: 1em;
+    font-size: 0.85em;
     font-weight: bold;
     color: #ffcc00;
-    text-shadow: 0 0 10px rgba(255, 200, 0, 0.5);
+    text-shadow: 0 0 8px rgba(255, 200, 0, 0.4);
+    min-width: 120px;
 }
 
 #turn-indicator {
     font-size: 0.8em;
-    color: #c0a0c0;
+    font-weight: bold;
+    color: #e0c0e0;
+    background: rgba(100, 50, 100, 0.5);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.phase-separator {
+    color: rgba(200, 150, 200, 0.5);
+    font-size: 0.7em;
 }
 
 #action-buttons {
     display: flex;
-    gap: 8px;
+    gap: 4px;
 }
 
 #action-buttons button {
-    padding: 8px 16px;
+    padding: 5px 10px;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 0.85em;
+    font-size: 1em;
     transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 #action-buttons button:disabled {
@@ -539,9 +512,9 @@ body {
 #btn-main-action {
     background: linear-gradient(135deg, #27ae60, #2ecc71);
     color: white;
-    padding: 10px 24px !important;
-    font-size: 0.95em !important;
-    min-width: 140px;
+    padding: 6px 14px !important;
+    font-size: 0.85em !important;
+    min-width: 100px;
     position: relative;
     overflow: hidden;
 }

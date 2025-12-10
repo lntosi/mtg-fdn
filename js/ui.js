@@ -1647,7 +1647,8 @@ class GameUI {
         this.phaseIndicator.textContent = PHASE_NAMES[this.game.phase];
 
         const isPlayerTurn = this.game.isPlayerTurn();
-        this.turnIndicator.textContent = `Turno ${this.game.turnNumber} - ${isPlayerTurn ? 'SEU TURNO' : 'TURNO DO OPONENTE'}`;
+        this.turnIndicator.textContent = `T${this.game.turnNumber}`;
+        this.turnIndicator.title = `Turno ${this.game.turnNumber} - ${isPlayerTurn ? 'Seu turno' : 'Turno do oponente'}`;
 
         // Atualizar classe para indicador visual
         this.turnIndicator.classList.remove('player-turn', 'opponent-turn');
@@ -1854,17 +1855,6 @@ class GameUI {
 
     // Log de mensagens
     log(message, type = 'normal') {
-        // Log compacto no centro
-        const entry = document.createElement('div');
-        entry.textContent = `> ${message}`;
-        this.messageLog.appendChild(entry);
-        this.messageLog.scrollTop = this.messageLog.scrollHeight;
-
-        // Limitar histórico compacto
-        while (this.messageLog.children.length > 50) {
-            this.messageLog.removeChild(this.messageLog.firstChild);
-        }
-
         // Log expandido no painel lateral
         if (this.logPanelContent) {
             const logEntry = document.createElement('div');
