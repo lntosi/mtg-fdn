@@ -1506,7 +1506,8 @@ class GameState {
                 break;
 
             case PHASES.DRAW:
-                if (this.turnNumber > 1 || this.activePlayer !== this.player) {
+                // Regra 103.7a: o jogador que começa pula a compra do primeiro turno
+                if (this.turnNumber > 1) {
                     const drawn = this.rules.drawCard(this.activePlayer);
                     if (drawn && this.isPlayerTurn()) {
                         this.ui.log(`Você comprou: ${drawn.name}`);
