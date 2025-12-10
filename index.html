@@ -58,21 +58,14 @@
             <div class="lands" id="player-lands"></div>
         </div>
 
-        <!-- Bottom: Info do Jogador + Mão + Grimório -->
+        <!-- Bottom: Info do Jogador + Mão + Grimório (mesma linha) -->
         <div id="player-area">
-            <div class="library-zone">
-                <div class="library" id="player-library">
-                    <div class="library-stack"></div>
-                    <span class="library-count">0</span>
+            <div class="player-info-stack">
+                <div class="player-info">
+                    <span class="player-avatar" id="player-avatar"></span>
+                    <span class="player-name" id="player-name-display">Você</span>
+                    <span class="life-total" id="player-life">20</span>
                 </div>
-                <div class="graveyard" id="player-graveyard">
-                    <span class="graveyard-count">0</span>
-                </div>
-            </div>
-            <div class="player-info">
-                <span class="player-avatar" id="player-avatar"></span>
-                <span class="player-name" id="player-name-display">Você</span>
-                <span class="life-total" id="player-life">20</span>
                 <div class="mana-pool" id="player-mana">
                     <span class="mana-icon mana-W" title="Mana Branco">0</span>
                     <span class="mana-icon mana-U" title="Mana Azul">0</span>
@@ -82,10 +75,17 @@
                     <span class="mana-icon mana-C" title="Mana Incolor/Qualquer">0</span>
                 </div>
             </div>
+            <div class="hand" id="player-hand"></div>
+            <div class="library-zone">
+                <div class="library" id="player-library">
+                    <div class="library-stack"></div>
+                    <span class="library-count">0</span>
+                </div>
+                <div class="graveyard" id="player-graveyard">
+                    <span class="graveyard-count">0</span>
+                </div>
+            </div>
         </div>
-
-        <!-- Mão do Jogador (Bottom) -->
-        <div class="hand" id="player-hand"></div>
 
         <!-- Botão de Configurações (canto inferior esquerdo) -->
         <button id="btn-settings-gear" class="btn-settings-gear" title="Configurações (M)">

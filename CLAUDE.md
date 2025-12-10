@@ -2,54 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Official MTG Rules Reference
-
-The official Magic: The Gathering Comprehensive Rules are available at `docs/MagicCompRules 20251114.txt`. Use this as the authoritative source for any rules questions or implementation decisions.
-
 ## Development Principles
 
-### Robust Solutions Over Quick Fixes
+1. **Prefer robust solutions** - Centralize logic, reuse existing methods
+2. **Follow existing patterns** - Check how similar features are already implemented in the codebase
 
-When implementing features or fixing bugs, always prefer **robust, architectural solutions** over quick patches:
+**Rules reference** (`docs/MagicCompRules 20251114.txt`): Consult only when implementing new game mechanics or fixing rules-related bugs. Not needed for UI, CSS, refactoring, or general code changes.
 
-1. **Identify the root cause** - Don't just fix symptoms; understand why the problem exists
-2. **Centralize logic** - Create reusable methods instead of duplicating code
-3. **Consider future cases** - Solutions should handle similar scenarios that may arise
-4. **Validate against rules** - Always verify implementations against `docs/MagicCompRules 20251114.txt`
-
-**Example**: Instead of checking `card.keywords.includes('flying')` in multiple places, use the centralized `rules.hasKeyword(creature, 'flying', isAttacking)` method that considers all keyword sources (base, auras, lords, conditional effects).
-
-### Rules as the Pillar for Validation
-
-The MTG Comprehensive Rules in `/docs` are the **definitive source of truth** for all game mechanics:
-
-- Before implementing any mechanic, search the rules document for relevant sections
-- Reference specific rule numbers in code comments (e.g., "Conforme regra 702.2b")
-- When in doubt, the rules document takes precedence over intuition or other references
-
-Key rules sections frequently referenced:
-- **506-510**: Combat phases and damage
-- **611.3a**: Continuous effects from static abilities
-- **702.x**: Keyword abilities (deathtouch, lifelink, flying, etc.)
-- **704**: State-based actions
-
-## Forge as Implementation Reference
-
-When implementing new features, fixing bugs, or solving complex MTG mechanics, use **Forge** (https://github.com/Card-Forge/forge) as a reference implementation. Forge is a mature, open-source MTG game engine with robust solutions for:
-
-- Priority system and stack resolution
-- Combat phases and damage assignment
-- Keyword abilities and triggered effects
-- State-based actions
-- Complex card interactions
-
-**How to use Forge as reference:**
-1. Search the Forge repository for relevant code patterns
-2. Adapt solutions to our vanilla JavaScript architecture
-3. Simplify where appropriate for our learning-focused scope
-4. Maintain consistency with our existing codebase style
-
-Note: Forge is written in Java, so implementations need to be adapted to JavaScript. Focus on the logic and algorithms rather than direct code translation.
+**Forge reference** (https://github.com/Card-Forge/forge): Optional reference for complex MTG mechanics.
 
 ## Project Overview
 
