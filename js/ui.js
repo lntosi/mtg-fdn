@@ -1064,8 +1064,8 @@ class GameUI {
         }
 
         if (!showFace) {
-            // Carta virada (mão do oponente) - estilo card back oficial MTG
-            cardEl.innerHTML = '<div class="card-back"><span class="card-back-text">MTG</span></div>';
+            // Carta virada (mão do oponente) - card back oficial MTG
+            cardEl.innerHTML = '<div class="card-back"></div>';
             return cardEl;
         }
 
