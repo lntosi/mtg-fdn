@@ -460,11 +460,36 @@ class TriggerManager {
     // ========================================
 
     /**
-     * Battle-Rattle Shaman - no início do combate, criatura ganha +2/+0
+     * Triggers de início de combate
      * @param {Object} controller - Jogador que está atacando
      */
     async onBeginCombat(controller) {
+        await this._handleLeoninVanguard(controller);
         await this._handleBattleRattleShaman(controller);
+    }
+
+    /**
+     * Leonin Vanguard - no início do combate, se controla 3+ criaturas,
+     * ganha +1/+1 até o fim do turno e controlador ganha 1 vida
+     * @param {Object} controller - Jogador ativo
+     */
+    _handleLeoninVanguard(controller) {
+        const creatures = controller.battlefield.filter(c => c.type === 'creature');
+
+        controller.battlefield.forEach(card => {
+            if (card.id === 'leonin_vanguard') {
+                // Condição: controlar 3 ou mais criaturas (incluindo o próprio Leonin Vanguard)
+                if (creatures.length >= 3) {
+                    // +1/+1 até o fim do turno
+                    card.powerModifier = (card.powerModifier || 0) + 1;
+                    card.toughnessModifier = (card.toughnessModifier || 0) + 1;
+                    // Ganhar 1 vida
+                    controller.life += 1;
+                    this.ui.log(`Leonin Vanguard: +1/+1 e ${controller.name} ganhou 1 vida`);
+                    this.ui.render();
+                }
+            }
+        });
     }
 
     async _handleBattleRattleShaman(controller) {
@@ -500,20 +525,13 @@ class TriggerManager {
     }
 
     /**
-     * Leonin Vanguard - ganha 1 vida ao atacar com outra criatura
+     * Triggers ao declarar atacantes
      * @param {Array} attackers - Lista de atacantes
      * @param {Object} attackingPlayer - Jogador que está atacando
      */
     onDeclareAttackers(attackers, attackingPlayer) {
-        attackingPlayer.battlefield.forEach(card => {
-            if (card.id === 'leonin_vanguard') {
-                const otherAttacker = attackers.some(a => a.instanceId !== card.instanceId);
-                if (otherAttacker) {
-                    attackingPlayer.life += 1;
-                    this.ui.log(`Leonin Vanguard: ${attackingPlayer.name} ganhou 1 vida`);
-                }
-            }
-        });
+        // Triggers de "quando ataca" podem ser adicionados aqui
+        // Nota: Leonin Vanguard foi movido para onBeginCombat (trigger correto)
     }
 
     /**

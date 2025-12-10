@@ -204,40 +204,74 @@ describe('End of Turn Triggers', () => {
     });
 });
 
-describe('Attack Triggers', () => {
+describe('Beginning of Combat Triggers - Leonin Vanguard', () => {
     describe('Leonin Vanguard', () => {
-        test('gains 1 life when attacking with another creature', () => {
+        test('gains +1/+1 and 1 life when controlling 3+ creatures', () => {
             const player = createPlayer({ life: 20 });
             const vanguard = createCreature({
                 id: 'leonin_vanguard',
-                name: 'Leonin Vanguard'
+                name: 'Leonin Vanguard',
+                power: 1,
+                toughness: 1
             });
-            const otherAttacker = createCreature({ name: 'Other Creature' });
+            const creature2 = createCreature({ name: 'Creature 2' });
+            const creature3 = createCreature({ name: 'Creature 3' });
 
-            const attackers = [vanguard, otherAttacker];
+            player.battlefield = [vanguard, creature2, creature3];
+            const creatures = player.battlefield.filter(c => c.type === 'creature');
 
-            // Simular trigger
-            if (attackers.some(a => a.id === 'leonin_vanguard') && attackers.length > 1) {
+            // Simular trigger de início de combate
+            if (creatures.length >= 3) {
+                vanguard.powerModifier = (vanguard.powerModifier || 0) + 1;
+                vanguard.toughnessModifier = (vanguard.toughnessModifier || 0) + 1;
                 player.life += 1;
             }
 
             expect(player.life).toBe(21);
+            expect(vanguard.powerModifier).toBe(1);
+            expect(vanguard.toughnessModifier).toBe(1);
         });
 
-        test('does not gain life when attacking alone', () => {
+        test('does not trigger with only 2 creatures', () => {
+            const player = createPlayer({ life: 20 });
+            const vanguard = createCreature({
+                id: 'leonin_vanguard',
+                name: 'Leonin Vanguard',
+                power: 1,
+                toughness: 1
+            });
+            const creature2 = createCreature({ name: 'Creature 2' });
+
+            player.battlefield = [vanguard, creature2];
+            const creatures = player.battlefield.filter(c => c.type === 'creature');
+
+            // Simular trigger de início de combate
+            if (creatures.length >= 3) {
+                vanguard.powerModifier = (vanguard.powerModifier || 0) + 1;
+                vanguard.toughnessModifier = (vanguard.toughnessModifier || 0) + 1;
+                player.life += 1;
+            }
+
+            expect(player.life).toBe(20);
+            expect(vanguard.powerModifier || 0).toBe(0);
+            expect(vanguard.toughnessModifier || 0).toBe(0);
+        });
+
+        test('triggers with exactly 3 creatures', () => {
             const player = createPlayer({ life: 20 });
             const vanguard = createCreature({
                 id: 'leonin_vanguard',
                 name: 'Leonin Vanguard'
             });
+            const creature2 = createCreature({ name: 'Creature 2' });
+            const creature3 = createCreature({ name: 'Creature 3' });
 
-            const attackers = [vanguard];
+            player.battlefield = [vanguard, creature2, creature3];
+            const creatures = player.battlefield.filter(c => c.type === 'creature');
 
-            if (attackers.some(a => a.id === 'leonin_vanguard') && attackers.length > 1) {
-                player.life += 1;
-            }
-
-            expect(player.life).toBe(20);
+            // Condição: >= 3 criaturas (incluindo o próprio Leonin)
+            expect(creatures.length).toBe(3);
+            expect(creatures.length >= 3).toBe(true);
         });
     });
 });

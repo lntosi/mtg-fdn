@@ -13,7 +13,7 @@ const CARD_DATABASE = {
             { id: "cats_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
             // Criaturas (9)
             { id: "savannah_lions", name: "Savannah Lions", type: "creature", subtype: "Cat", cost: "W", cmc: 1, power: 2, toughness: 1, qty: 1 },
-            { id: "leonin_vanguard", name: "Leonin Vanguard", type: "creature", subtype: "Cat Soldier", cost: "W", cmc: 1, power: 1, toughness: 1, text: "Quando atacar, se você controla outra criatura, ganha 1 vida.", keywords: ["lifelink_conditional"], qty: 1 },
+            { id: "leonin_vanguard", name: "Leonin Vanguard", type: "creature", subtype: "Cat Soldier", cost: "W", cmc: 1, power: 1, toughness: 1, text: "No início do combate em seu turno, se você controla três ou mais criaturas, esta criatura ganha +1/+1 até o fim do turno e você ganha 1 vida.", qty: 1 },
             { id: "helpful_hunter", name: "Helpful Hunter", type: "creature", subtype: "Cat", cost: "1W", cmc: 2, power: 1, toughness: 1, text: "Quando entra, compre uma carta.", keywords: ["etb_draw"], qty: 1 },
             { id: "leonin_skyhunter", name: "Leonin Skyhunter", type: "creature", subtype: "Cat Knight", cost: "WW", cmc: 2, power: 2, toughness: 2, keywords: ["flying"], qty: 1 },
             { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "4W", cmc: 5, power: 4, toughness: 4, text: "3W: Coloque um contador +1/+1 em outra criatura atacante alvo. Se ela é Cat, ganha iniciativa até o fim do turno.", qty: 1 },
