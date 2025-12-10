@@ -969,6 +969,12 @@ class GameUI {
                         cardEl.addEventListener('click', () => this.toggleAttacker(card));
                         cardEl.style.cursor = 'pointer';
                     }
+                    // Verificar habilidades ativadas durante combate (Jazal, Ingenious Leonin)
+                    if (this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                        cardEl.classList.add('has-ability');
+                        cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
+                        cardEl.title = 'Clique duplo para ativar habilidade';
+                    }
                 } else if (isPlayer && this.waitingForBlockers) {
                     cardEl.addEventListener('click', () => this.selectBlocker(card));
                     cardEl.style.cursor = 'pointer';
@@ -2346,22 +2352,21 @@ class GameUI {
             title.textContent = options.title || 'Selecione Alvos';
             description.textContent = options.description || `Escolha até ${maxTargets} criaturas:`;
 
-            // Criar botão de confirmar
+            // Criar botão de confirmar (remover o antigo se existir para evitar event listeners duplicados)
             let btnConfirm = document.getElementById('btn-trigger-confirm');
-            if (!btnConfirm) {
-                btnConfirm = document.createElement('button');
-                btnConfirm.id = 'btn-trigger-confirm';
-                btnConfirm.className = 'btn btn-primary';
-                btnConfirm.textContent = 'Confirmar';
-                btnSkip.parentNode.insertBefore(btnConfirm, btnSkip);
+            if (btnConfirm) {
+                btnConfirm.remove();
             }
-            btnConfirm.classList.remove('hidden');
+            btnConfirm = document.createElement('button');
+            btnConfirm.id = 'btn-trigger-confirm';
+            btnConfirm.className = 'btn btn-primary';
             btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
             btnConfirm.disabled = selectedTargets.length < minTargets;
+            btnSkip.parentNode.insertBefore(btnConfirm, btnSkip);
 
             btnConfirm.onclick = () => {
                 modal.classList.add('hidden');
-                btnConfirm.classList.add('hidden');
+                btnConfirm.remove();
                 resolve(selectedTargets);
             };
 
@@ -2371,7 +2376,7 @@ class GameUI {
                 btnSkip.textContent = 'Pular';
                 btnSkip.onclick = () => {
                     modal.classList.add('hidden');
-                    btnConfirm.classList.add('hidden');
+                    btnConfirm.remove();
                     resolve([]);
                 };
             } else {

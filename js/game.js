@@ -1183,6 +1183,13 @@ class GameState {
                 );
                 return dropkickMana.R >= 1 && hasOtherGoblin;
 
+            case 'ingenious_leonin':
+                // 3W: coloca +1/+1 em outra criatura atacante (só durante combate)
+                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                const leoninMana = this.rules.calculateAvailableMana(player);
+                const hasOtherAttacker = this.currentAttackers.some(c => c.instanceId !== card.instanceId);
+                return leoninMana.W >= 1 && (leoninMana.W + Object.values(leoninMana).reduce((a,b) => a+b, 0) - leoninMana.W) >= 3 && hasOtherAttacker;
+
             default:
                 return false;
         }
@@ -1367,6 +1374,44 @@ class GameState {
                         // Marcar para sacrifício ao causar dano de combate
                         dropkickTarget.sacrificeOnCombatDamage = true;
                         this.ui.log(`Dropkick Bomber: ${dropkickTarget.name} ganhou voar (será sacrificado se causar dano de combate)`);
+                        this.ui.render();
+                    }
+                }
+                break;
+
+            case 'ingenious_leonin':
+                // 3W: coloca +1/+1 em outra criatura atacante. Se Cat, ganha iniciativa.
+                this.payColoredMana({ generic: 3, W: 1 }, player);
+                const leoninTargets = this.currentAttackers.filter(c => c.instanceId !== card.instanceId);
+                if (leoninTargets.length > 0) {
+                    let leoninTarget;
+
+                    if (player === this.player) {
+                        leoninTarget = await this.ui.promptTriggerTarget({
+                            title: 'Ingenious Leonin',
+                            description: 'Coloque um contador +1/+1 em outra criatura atacante (se Cat, ganha iniciativa):',
+                            validTargets: leoninTargets,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe o maior atacante
+                        leoninTarget = leoninTargets.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (leoninTarget) {
+                        // Colocar contador +1/+1
+                        if (!leoninTarget.counters) leoninTarget.counters = {};
+                        leoninTarget.counters.plusOnePlusOne = (leoninTarget.counters.plusOnePlusOne || 0) + 1;
+                        this.ui.log(`Ingenious Leonin: ${leoninTarget.name} ganhou um contador +1/+1`);
+
+                        // Se é Cat, ganha iniciativa até o fim do turno
+                        if (leoninTarget.subtype && leoninTarget.subtype.includes('Cat')) {
+                            if (!leoninTarget.temporaryKeywords) leoninTarget.temporaryKeywords = [];
+                            leoninTarget.temporaryKeywords.push('first_strike');
+                            this.ui.log(`Ingenious Leonin: ${leoninTarget.name} ganhou iniciativa até o fim do turno`);
+                        }
                         this.ui.render();
                     }
                 }

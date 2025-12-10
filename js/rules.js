@@ -569,12 +569,6 @@ class RulesEngine {
                 bonuses.sources.push({ name: 'Goblin Oriflamme', power: 1, toughness: 0 });
             }
 
-            // Ingenious Leonin: outras criaturas têm +1/+0
-            if (card.id === 'ingenious_leonin' && card !== creature && creature.type === 'creature') {
-                bonuses.power += 1;
-                bonuses.sources.push({ name: 'Ingenious Leonin', power: 1, toughness: 0 });
-            }
-
             // Elvish Archdruid: outros Elfos têm +1/+1
             if (card.id === 'elvish_archdruid' && card !== creature &&
                 creature.subtype && creature.subtype.includes('Elf')) {

@@ -111,6 +111,11 @@ class TriggerManager {
             this._handleBloodtitheCollectorETB(controller, opponent);
         }
 
+        // Volley Veteran - dano igual ao número de Goblins
+        if (card.id === 'volley_veteran') {
+            this._handleVolleyVeteranETB(card, controller, opponent);
+        }
+
         // --- TRIGGER PARA OUTRAS CRIATURAS ---
         if (card.type === 'creature') {
             this.onOtherCreatureEnters(card, controller);
@@ -241,6 +246,61 @@ class TriggerManager {
             const discarded = opponent.hand.splice(randomIndex, 1)[0];
             opponent.graveyard.push(discarded);
             this.ui.log(`${opponent.name} descartou ${discarded.name}`);
+        }
+    }
+
+    _handleVolleyVeteranETB(card, controller, opponent) {
+        const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
+        if (validTargets.length === 0) return;
+
+        // Contar Goblins (incluindo o próprio Volley Veteran)
+        const goblinCount = controller.battlefield.filter(c =>
+            c.type === 'creature' && c.subtype && c.subtype.includes('Goblin')
+        ).length;
+
+        if (goblinCount === 0) return;
+
+        const dealDamage = (targetCreature) => {
+            targetCreature.damage = (targetCreature.damage || 0) + goblinCount;
+            this.ui.log(`Volley Veteran causou ${goblinCount} de dano a ${targetCreature.name}`);
+
+            // Verificar se a criatura morreu
+            const toughness = this.rules.getCreatureToughness(targetCreature);
+            if (targetCreature.damage >= toughness) {
+                this.game.creatureDies(targetCreature, opponent);
+            }
+            this.ui.render();
+        };
+
+        if (controller === this.player) {
+            this.ui.promptTriggerTarget({
+                title: `Volley Veteran - Selecione um Alvo`,
+                description: `Cause ${goblinCount} de dano a criatura alvo que um oponente controla:`,
+                validTargets: validTargets,
+                canSkip: false
+            }).then(selected => {
+                if (selected) dealDamage(selected);
+            });
+        } else {
+            // IA escolhe a criatura que pode matar, ou a mais forte
+            const target = validTargets.sort((a, b) => {
+                const toughnessA = this.rules.getCreatureToughness(a) - (a.damage || 0);
+                const toughnessB = this.rules.getCreatureToughness(b) - (b.damage || 0);
+                // Prioriza criaturas que podem ser mortas
+                const canKillA = goblinCount >= toughnessA;
+                const canKillB = goblinCount >= toughnessB;
+                if (canKillA && !canKillB) return -1;
+                if (!canKillA && canKillB) return 1;
+                // Entre criaturas que podem ser mortas, prefere as mais fortes
+                if (canKillA && canKillB) {
+                    const powerA = this.rules.getCreaturePower(a);
+                    const powerB = this.rules.getCreaturePower(b);
+                    return powerB - powerA;
+                }
+                // Se não pode matar nenhuma, prefere causar dano na mais forte
+                return this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a);
+            })[0];
+            dealDamage(target);
         }
     }
 
