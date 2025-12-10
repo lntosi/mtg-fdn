@@ -1874,9 +1874,14 @@ class GameState {
         // Draw
         this.phase = PHASES.DRAW;
         this.ui.log('Fase: Comprar');
-        const drawn = this.rules.drawCard(this.opponent);
-        if (drawn) {
-            this.ui.log(`Oponente comprou uma carta`);
+        // Regra 103.7a: o jogador que começa pula a compra do primeiro turno
+        if (this.turnNumber > 1) {
+            const drawn = this.rules.drawCard(this.opponent);
+            if (drawn) {
+                this.ui.log(`Oponente comprou uma carta`);
+            }
+        } else {
+            this.ui.log('Oponente pula a compra (primeiro turno)');
         }
         this.ui.render();
         await this.delay(800);
