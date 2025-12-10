@@ -1666,7 +1666,7 @@ class GameUI {
 
         // Determinar estado e texto do botão principal contextual
         let mainButtonEnabled = false;
-        let mainButtonText = 'Aguarde...';
+        let mainButtonText = 'Wait...';
         let mainButtonTitle = 'Turno do oponente';
         let mainButtonState = 'state-advance';
 
@@ -1674,19 +1674,19 @@ class GameUI {
             // Esperando jogador declarar bloqueadores
             mainButtonEnabled = true;
             const blockCount = Object.values(this.blockerAssignments).flat().length;
-            mainButtonText = blockCount > 0 ? `Bloquear (${blockCount})` : 'Não Bloquear';
+            mainButtonText = blockCount > 0 ? `Block (${blockCount})` : 'No Block';
             mainButtonTitle = 'Confirmar bloqueadores';
             mainButtonState = 'state-block';
         } else if (waitingForPriority) {
             // Janela de prioridade - pode responder
             mainButtonEnabled = true;
-            mainButtonText = 'Passar Prioridade';
-            mainButtonTitle = 'Passar sem responder';
+            mainButtonText = 'Pass';
+            mainButtonTitle = 'Passar prioridade sem responder';
             mainButtonState = 'state-priority';
         } else if (hasStack && hasPriority) {
             // Tem itens na pilha para resolver
             mainButtonEnabled = true;
-            mainButtonText = 'Resolver';
+            mainButtonText = 'Resolve';
             mainButtonTitle = 'Resolver a pilha';
             mainButtonState = 'state-resolve';
         } else if (isPlayerTurn) {
@@ -1696,12 +1696,12 @@ class GameUI {
 
             // Contexto especial para combate
             if (this.game.phase === PHASES.DECLARE_ATTACKERS && this.selectedAttackers.length > 0) {
-                mainButtonText = `Atacar (${this.selectedAttackers.length})`;
+                mainButtonText = `Attack (${this.selectedAttackers.length})`;
                 mainButtonTitle = 'Confirmar atacantes';
                 mainButtonState = 'state-combat';
             } else if (this.game.phase === PHASES.DECLARE_ATTACKERS) {
-                mainButtonText = 'Ir ao Combate';
-                mainButtonTitle = 'Prosseguir sem atacar';
+                mainButtonText = 'To Combat';
+                mainButtonTitle = 'Ir ao combate sem atacar';
                 mainButtonState = 'state-advance';
             } else {
                 mainButtonText = `→ ${nextPhaseName}`;

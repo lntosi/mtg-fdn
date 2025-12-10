@@ -481,14 +481,12 @@ body {
 #btn-main-action {
     background: linear-gradient(135deg, #27ae60, #2ecc71);
     color: white;
-    padding: 6px 8px !important;
-    font-size: 0.8em !important;
-    width: 130px;
+    padding: 6px 10px !important;
+    font-size: 0.75em !important;
+    width: 110px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
 #btn-main-action.state-advance {
