@@ -366,10 +366,11 @@ class RulesEngine {
         // (simplificado: não implementado completamente, mas já marcamos a keyword)
 
         // Flying: só pode ser bloqueado por flying ou reach
-        if (attacker.keywords && attacker.keywords.includes('flying')) {
-            const hasFlying = blocker.keywords && blocker.keywords.includes('flying');
-            const hasReach = blocker.keywords && blocker.keywords.includes('reach');
-            if (!hasFlying && !hasReach) return false;
+        // Usa hasKeyword para considerar efeitos condicionais (ex: flying_when_attacking)
+        if (this.hasKeyword(attacker, 'flying', true)) {
+            const blockerHasFlying = this.hasKeyword(blocker, 'flying', false);
+            const blockerHasReach = this.hasKeyword(blocker, 'reach', false);
+            if (!blockerHasFlying && !blockerHasReach) return false;
         }
 
         return true;
@@ -400,12 +401,20 @@ class RulesEngine {
             );
             const attackerPower = this.getCreaturePower(attacker, true);
 
+            // Obter keywords do atacante considerando efeitos condicionais (ex: Crossway Troublemakers)
+            // Conforme regras MTG 611.3a, 702.2b, 702.15b - keywords são verificadas no momento do dano
+            const attackerHasDoubleStrike = this.hasKeyword(attacker, 'double_strike', true);
+            const attackerHasFirstStrike = this.hasKeyword(attacker, 'first_strike', true) || attackerHasDoubleStrike;
+            const attackerHasDeathtouch = this.hasKeyword(attacker, 'deathtouch', true);
+            const attackerHasLifelink = this.hasKeyword(attacker, 'lifelink', true);
+            const attackerHasTrample = this.hasKeyword(attacker, 'trample', true);
+
             if (blockers.length === 0) {
                 // Dano direto ao jogador
                 let damage = attackerPower;
 
                 // Double Strike: dobra o dano ao jogador (first strike + normal damage)
-                if (attacker.keywords && attacker.keywords.includes('double_strike')) {
+                if (attackerHasDoubleStrike) {
                     damage *= 2;
                 }
 
@@ -419,21 +428,15 @@ class RulesEngine {
                 });
 
                 // Lifelink
-                if (attacker.keywords && attacker.keywords.includes('lifelink')) {
+                if (attackerHasLifelink) {
                     results.lifeGained.attacker += damage;
                 }
             } else {
                 // Combate com bloqueadores
                 let damageToAttacker = 0;
 
-                // Verificar keywords de combate
-                const hasFirstStrike = attacker.keywords &&
-                    (attacker.keywords.includes('first_strike') || attacker.keywords.includes('double_strike'));
-                const hasDoubleStrike = attacker.keywords && attacker.keywords.includes('double_strike');
-                const attackerHasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
-
                 // Double Strike: dano total é dobrado (first strike + normal)
-                const totalAttackerDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
+                const totalAttackerDamage = attackerHasDoubleStrike ? attackerPower * 2 : attackerPower;
 
                 // Obter atribuição de dano para este atacante (ou criar padrão)
                 let damageMap = damageAssignments[attacker.instanceId];
@@ -461,9 +464,10 @@ class RulesEngine {
                     const blockerPower = this.getCreaturePower(blocker);
                     const blockerToughness = this.getCreatureToughness(blocker);
 
-                    // Se atacante tem first strike/double strike e bloqueador não, atacante pode matar antes de receber dano
-                    const blockerHasFirstStrike = blocker.keywords &&
-                        (blocker.keywords.includes('first_strike') || blocker.keywords.includes('double_strike'));
+                    // Keywords do bloqueador (não está atacando, então isAttacking = false)
+                    const blockerHasFirstStrike = this.hasKeyword(blocker, 'first_strike', false) ||
+                        this.hasKeyword(blocker, 'double_strike', false);
+                    const blockerHasDeathtouch = this.hasKeyword(blocker, 'deathtouch', false);
 
                     // Obter dano atribuído a este bloqueador
                     const damageToBlocker = damageMap[blocker.instanceId] || 0;
@@ -472,7 +476,7 @@ class RulesEngine {
                     let damageFromBlocker = 0;
 
                     // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
-                    if (hasFirstStrike && !blockerHasFirstStrike && damageToBlocker >= blockerToughness) {
+                    if (attackerHasFirstStrike && !blockerHasFirstStrike && damageToBlocker >= blockerToughness) {
                         // Bloqueador morre na fase de first strike, não causa dano
                         damageFromBlocker = 0;
                     } else {
@@ -497,18 +501,16 @@ class RulesEngine {
                     }
 
                     // Deathtouch do bloqueador
-                    const blockerHasDeathtouch = blocker.keywords && blocker.keywords.includes('deathtouch');
-
                     if (blockerHasDeathtouch && blockerPower > 0) {
                         // Só causa dano se não morreu na fase de first strike
-                        if (!hasFirstStrike || blockerHasFirstStrike || damageToBlocker < blockerToughness) {
+                        if (!attackerHasFirstStrike || blockerHasFirstStrike || damageToBlocker < blockerToughness) {
                             results.creaturesDied.push(attacker);
                         }
                     }
                 });
 
                 // Trample: dano que não foi atribuído aos bloqueadores vai pro jogador
-                if (attacker.keywords && attacker.keywords.includes('trample')) {
+                if (attackerHasTrample) {
                     // Calcular dano mínimo necessário (dano letal para cada bloqueador)
                     const minDamageNeeded = blockers.reduce((sum, b) => {
                         if (attackerHasDeathtouch) return sum + 1;
@@ -539,7 +541,7 @@ class RulesEngine {
                 }
 
                 // Lifelink do atacante (considera dano total causado incluindo double strike)
-                if (attacker.keywords && attacker.keywords.includes('lifelink')) {
+                if (attackerHasLifelink) {
                     results.lifeGained.attacker += totalDamageDealt + trampleDamage;
                 }
             }
@@ -742,6 +744,24 @@ class RulesEngine {
         }
 
         return keywords;
+    }
+
+    /**
+     * Verifica se uma criatura possui uma keyword específica, considerando
+     * todas as fontes: keywords base, efeitos de outras cartas, auras, etc.
+     *
+     * Esta é a forma canônica de verificar keywords durante o jogo.
+     * Usar este método garante que efeitos condicionais (como Crossway Troublemakers)
+     * sejam corretamente aplicados conforme as regras MTG (611.3a, 702.2b, 702.15b).
+     *
+     * @param {Object} creature - A criatura a verificar
+     * @param {string} keyword - A keyword a procurar
+     * @param {boolean} isAttacking - Se a criatura está atacando (para efeitos condicionais)
+     * @returns {boolean} true se a criatura possui a keyword
+     */
+    hasKeyword(creature, keyword, isAttacking = false) {
+        const keywords = this.getCreatureKeywords(creature, isAttacking);
+        return keywords.includes(keyword);
     }
 
     // Desvirar todas as permanentes

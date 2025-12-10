@@ -736,16 +736,16 @@ body {
     position: relative;
 }
 
-/* Cartas na mão - zoom ainda maior */
+/* Cartas na mão - zoom reduzido pois preview lateral já mostra detalhes */
 #player-hand .card:hover {
     transform: scale(1.5) translateY(-15px);
     z-index: 100;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
 }
 
-/* Cartas no battlefield - zoom lateral para não sair da tela */
+/* Cartas no battlefield - mesmo zoom da mão pois preview lateral já mostra detalhes */
 .battlefield .card:hover {
-    transform: scale(2.5);
+    transform: scale(1.5);
     z-index: 9999 !important;
 }
 

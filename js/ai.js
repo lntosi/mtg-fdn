@@ -8,30 +8,60 @@ class AIPlayer {
 
     // Executa a vez da IA
     async takeTurn() {
-        // Main Phase 1
-        await this.playMainPhase();
+        // Main Phase 1 - segura cartas com condições pós-combate
+        await this.playMainPhase(1);
 
         // Combat
         await this.doCombat();
 
-        // Main Phase 2
-        await this.playMainPhase();
+        // Main Phase 2 - joga cartas seguradas
+        await this.playMainPhase(2);
+    }
+
+    /**
+     * Verifica se uma carta deve ser segurada para a Main Phase 2
+     * Cartas com ETBs condicionais que dependem de "oponente perdeu vida" ou "atacou este turno"
+     * funcionam melhor após o combate
+     * @param {Object} card - Carta a verificar
+     * @returns {boolean} true se deve segurar para Main Phase 2
+     */
+    shouldHoldForMainPhase2(card) {
+        // Cartas com condição "se oponente perdeu vida neste turno"
+        const lostLifeCards = ['bloodtithe_collector'];
+
+        // Cartas com Raid (se atacou este turno)
+        const raidCards = card.keywords &&
+            (card.keywords.includes('raid') || card.keywords.includes('raid_draw'));
+
+        if (lostLifeCards.includes(card.id) || raidCards) {
+            // Verificar se a IA tem atacantes disponíveis que podem causar dano
+            const hasAttackers = this.game.opponent.battlefield.some(c =>
+                c.type === 'creature' && this.rules.canAttack(c)
+            );
+            // Só segura se tiver chance de satisfazer a condição
+            return hasAttackers;
+        }
+
+        return false;
     }
 
     // Fase principal: jogar terrenos e criaturas
-    async playMainPhase() {
+    // phase: 1 = Main Phase 1, 2 = Main Phase 2
+    async playMainPhase(phase = 1) {
         const opponent = this.game.opponent;
 
         // Delay inicial para mostrar que a IA está "pensando"
         this.game.ui.log('IA está pensando...');
         await this.delay(800);
 
-        // 1. Jogar terreno se possível
-        const landInHand = opponent.hand.find(card => card.type === 'land');
-        if (landInHand && this.rules.canPlayLand(opponent)) {
-            await this.game.playCard(landInHand, opponent);
-            this.game.ui.render();
-            await this.delay(1000); // Delay para ver o terreno jogado
+        // 1. Jogar terreno se possível (apenas na Main Phase 1)
+        if (phase === 1) {
+            const landInHand = opponent.hand.find(card => card.type === 'land');
+            if (landInHand && this.rules.canPlayLand(opponent)) {
+                await this.game.playCard(landInHand, opponent);
+                this.game.ui.render();
+                await this.delay(1000); // Delay para ver o terreno jogado
+            }
         }
 
         // 2. Jogar criaturas/feitiços (do mais caro pro mais barato que conseguir pagar)
@@ -39,9 +69,14 @@ class AIPlayer {
         while (playedSomething) {
             playedSomething = false;
 
-            const playableCards = opponent.hand
+            let playableCards = opponent.hand
                 .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
                 .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+            // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
+            if (phase === 1) {
+                playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
+            }
 
             if (playableCards.length > 0) {
                 const cardToPlay = this.chooseBestCard(playableCards);
