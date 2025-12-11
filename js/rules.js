@@ -218,6 +218,14 @@ class RulesEngine {
         const availableMana = this.calculateAvailableMana(player);
         const cost = this.parseCost(card.cost);
 
+        // Tolarian Terror: custo reduzido por instant/sorcery no cemitério
+        if (card.id === 'tolarian_terror') {
+            const instantSorceryCount = player.graveyard.filter(c =>
+                c.type === 'instant' || c.type === 'sorcery'
+            ).length;
+            cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        }
+
         return this.canPayCost(cost, availableMana);
     }
 
@@ -335,6 +343,15 @@ class RulesEngine {
     // Pagar mana (tapa terrenos automaticamente)
     payMana(card, player) {
         const cost = this.parseCost(card.cost);
+
+        // Tolarian Terror: custo reduzido por instant/sorcery no cemitério
+        if (card.id === 'tolarian_terror') {
+            const instantSorceryCount = player.graveyard.filter(c =>
+                c.type === 'instant' || c.type === 'sorcery'
+            ).length;
+            cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        }
+
         const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
         const manaCreatures = player.battlefield.filter(c =>
             c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
@@ -856,6 +873,38 @@ class RulesEngine {
     hasKeyword(creature, keyword, isAttacking = false) {
         const keywords = this.getCreatureKeywords(creature, isAttacking);
         return keywords.includes(keyword);
+    }
+
+    /**
+     * Verifica se uma criatura tem Ward e retorna o custo
+     * @param {Object} creature - A criatura a verificar
+     * @returns {number|null} - O custo de Ward ou null se não tiver Ward
+     */
+    getWardCost(creature) {
+        if (!this.hasKeyword(creature, 'ward', false)) {
+            return null;
+        }
+
+        // Por padrão, Ward custa 2 (Tolarian Terror)
+        // Pode ser expandido no futuro para diferentes custos baseado na carta
+        if (creature.id === 'tolarian_terror') {
+            return 2;
+        }
+
+        // Default Ward cost
+        return 2;
+    }
+
+    /**
+     * Verifica se um jogador pode pagar o custo de Ward
+     * @param {number} wardCost - O custo de Ward a pagar
+     * @param {Object} player - O jogador que deve pagar
+     * @returns {boolean} - true se pode pagar
+     */
+    canPayWard(wardCost, player) {
+        const availableMana = this.calculateAvailableMana(player);
+        const totalMana = Object.values(availableMana).reduce((a, b) => a + b, 0);
+        return totalMana >= wardCost;
     }
 
     // Desvirar todas as permanentes

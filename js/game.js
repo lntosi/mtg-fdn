@@ -434,7 +434,7 @@ class GameState {
                 caster.graveyard.push(card);
                 return;
             }
-            this.resolveSpellWithTarget(card, caster, stackItem.target);
+            await this.resolveSpellWithTarget(card, caster, stackItem.target);
         } else {
             this.resolveSpell(card, caster);
         }
@@ -744,8 +744,8 @@ class GameState {
                 this.rules.payMana(card, player);
                 window.soundManager.playMagic();
 
-                this.ui.promptForTarget(card, validTargets, (target) => {
-                    this.resolveSpellWithTarget(card, player, target);
+                this.ui.promptForTarget(card, validTargets, async (target) => {
+                    await this.resolveSpellWithTarget(card, player, target);
                     player.graveyard.push(card);
                     this.ui.render();
                     this.saveGame();
@@ -761,7 +761,7 @@ class GameState {
                     const validTargets = this.getValidSpellTargets(card, player);
                     if (validTargets.length > 0) {
                         const target = this.ai.chooseBestSpellTarget(card, validTargets);
-                        this.resolveSpellWithTarget(card, player, target);
+                        await this.resolveSpellWithTarget(card, player, target);
                     }
                 } else {
                     this.resolveSpell(card, player);
@@ -954,9 +954,41 @@ class GameState {
     }
 
     // Resolver feitiço com alvo selecionado
-    resolveSpellWithTarget(card, caster, target) {
+    async resolveSpellWithTarget(card, caster, target) {
         const opponent = caster === this.player ? this.opponent : this.player;
         const targetOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
+
+        // === WARD CHECK ===
+        // Ward só se aplica se o caster é oponente do dono do alvo
+        if (target.type === 'creature' && targetOwner !== caster) {
+            const wardCost = this.rules.getWardCost(target);
+            if (wardCost !== null) {
+                const canPay = this.rules.canPayWard(wardCost, caster);
+
+                let willPay = false;
+
+                if (caster === this.player) {
+                    // Jogador decide se paga Ward
+                    willPay = await this.ui.promptWardPayment(target, wardCost, canPay);
+                } else {
+                    // IA sempre tenta pagar se puder
+                    willPay = canPay;
+                    if (willPay) {
+                        this.ui.log(`IA paga ${wardCost} mana pelo Ward de ${target.name}`);
+                    }
+                }
+
+                if (!willPay || !canPay) {
+                    this.ui.log(`${card.name} foi anulado por Ward de ${target.name}!`);
+                    // Spell é anulado, mas mana já foi pago
+                    return;
+                }
+
+                // Pagar o custo de Ward
+                this.payGenericMana(wardCost, caster);
+                this.ui.log(`${caster.name} pagou ${wardCost} mana pelo Ward`);
+            }
+        }
 
         switch (card.id) {
             // === BUFFS ===
@@ -1213,8 +1245,12 @@ class GameState {
 
     // Verifica se uma carta tem habilidade ativada e pode usá-la
     canActivateAbility(card, player) {
-        if (card.tapped) return false;
-        if (card.summoningSickness && card.type === 'creature') return false;
+        // Habilidades que não requerem tap podem ser usadas com summoning sickness
+        const noTapAbilities = ['spectral_sailor'];
+        if (!noTapAbilities.includes(card.id)) {
+            if (card.tapped) return false;
+            if (card.summoningSickness && card.type === 'creature') return false;
+        }
 
         switch (card.id) {
             case 'vampire_neonate':
@@ -1269,6 +1305,26 @@ class GameState {
                 const hasOtherAttacker = this.currentAttackers.some(c => c.instanceId !== card.instanceId);
                 // Custo 3W: precisa de 1W específico + 3 qualquer = 4 total, com pelo menos 1W
                 return leoninMana.W >= 1 && leoninTotalMana >= 4 && hasOtherAttacker;
+
+            case 'spectral_sailor':
+                // 3U: Compre uma carta (não precisa virar, pode ser ativada a qualquer momento)
+                const spectralMana = this.rules.calculateAvailableMana(player);
+                const spectralTotalMana = Object.values(spectralMana).reduce((a,b) => a+b, 0);
+                // Custo 3U: precisa de 1U específico + 3 qualquer = 4 total, com pelo menos 1U
+                return spectralMana.U >= 1 && spectralTotalMana >= 4;
+
+            case 'pirates_cutlass':
+                // Equip 2: só pode ser ativado como sorcery (main phase, seu turno)
+                const isMainPhase = this.phase === PHASES.MAIN1 || this.phase === PHASES.MAIN2;
+                const isPlayerTurn = this.activePlayer === player;
+                if (!isMainPhase || !isPlayerTurn) return false;
+                // Precisa de 2 mana e ter uma criatura válida para equipar
+                const equipMana = this.rules.calculateAvailableMana(player);
+                const equipTotalMana = Object.values(equipMana).reduce((a,b) => a+b, 0);
+                const hasValidTarget = player.battlefield.some(c =>
+                    c.type === 'creature' && c.instanceId !== card.attachedTo
+                );
+                return equipTotalMana >= 2 && hasValidTarget;
 
             default:
                 return false;
@@ -1494,6 +1550,64 @@ class GameState {
                         }
                         this.ui.render();
                     }
+                }
+                break;
+
+            case 'spectral_sailor':
+                // 3U: Compre uma carta
+                this.payColoredMana({ generic: 3, U: 1 }, player);
+                this.rules.drawCard(player);
+                this.ui.log(`Spectral Sailor: ${player.name} comprou uma carta`);
+                break;
+
+            case 'pirates_cutlass':
+                // Equip 2: anexar a outra criatura
+                const equipTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.attachedTo
+                );
+
+                if (equipTargets.length === 0) {
+                    this.ui.log(`Não há criaturas válidas para equipar`);
+                    return false;
+                }
+
+                const attachToCreature = (target) => {
+                    this.payGenericMana(2, player);
+                    const oldTarget = card.attachedTo;
+                    card.attachedTo = target.instanceId;
+
+                    if (oldTarget) {
+                        const oldCreature = player.battlefield.find(c => c.instanceId === oldTarget);
+                        if (oldCreature) {
+                            this.ui.log(`Pirate's Cutlass movido de ${oldCreature.name} para ${target.name}`);
+                        } else {
+                            this.ui.log(`Pirate's Cutlass equipado em ${target.name}`);
+                        }
+                    } else {
+                        this.ui.log(`Pirate's Cutlass equipado em ${target.name}`);
+                    }
+                    this.ui.render();
+                };
+
+                if (player === this.player) {
+                    // Jogador escolhe criatura alvo
+                    const selected = await this.ui.promptTriggerTarget({
+                        title: `Pirate's Cutlass - Equipar`,
+                        description: 'Escolha uma criatura para equipar (custo: 2 mana):',
+                        validTargets: equipTargets,
+                        canSkip: true
+                    });
+                    if (selected) {
+                        attachToCreature(selected);
+                    } else {
+                        return false; // Cancelou
+                    }
+                } else {
+                    // IA escolhe a criatura mais forte
+                    const target = equipTargets.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                    attachToCreature(target);
                 }
                 break;
         }

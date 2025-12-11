@@ -162,6 +162,25 @@ Use o nome completo ou parcial da carta. O sistema encontra cartas que **contêm
 | Felling Blow | Instant | 2G | - | `"Felling"` ou `"Blow"` |
 | Joraga Invocation | Sorcery | 4GG | - | `"Joraga"` ou `"Invocation"` |
 
+### Pirates (Azul) 🏴‍☠️
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Island | Land | - | - | `"Island"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Spectral Sailor | Creature | U | 1/1 flash, flying | `"Spectral"` ou `"Sailor"` |
+| Kitesail Corsair | Creature | 1U | 2/1 flying (attacking) | `"Kitesail"` ou `"Corsair"` |
+| Brineborn Cutthroat | Creature | 1U | 2/1 flash | `"Brineborn"` ou `"Cutthroat"` |
+| Corsair Captain | Creature | 2U | 2/2 (lord) | `"Captain"` |
+| Storm Fleet Spy | Creature | 2U | 2/2 raid | `"Storm Fleet"` ou `"Spy"` |
+| Bigfin Bouncer | Creature | 3U | 3/2 etb_bounce | `"Bigfin"` ou `"Bouncer"` |
+| Skyship Buccaneer | Creature | 3UU | 4/3 flying, raid | `"Skyship"` ou `"Buccaneer"` |
+| Tolarian Terror | Creature | 6U | 5/5 ward (cost reduction) | `"Tolarian"` ou `"Terror"` |
+| Opt | Instant | U | - | `"Opt"` |
+| Cancel | Instant | 1UU | - | `"Cancel"` |
+| Eaten by Piranhas | Enchantment | 1U | - flash | `"Piranhas"` ou `"Eaten"` |
+| Pirate's Cutlass | Artifact | 3 | - equipment | `"Cutlass"` |
+
 ---
 
 ## Exemplos de Uso

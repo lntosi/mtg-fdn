@@ -38,6 +38,7 @@ class GameUI {
         this.initLogPanel();
         this.initCardPreview();
         this.initKeywordTooltip();
+        this.initAllModalsDrag();
     }
 
     initElements() {
@@ -527,6 +528,23 @@ class GameUI {
 
                 previewKeywords.appendChild(statusSection);
             }
+
+            // Equipamentos anexados
+            const attachedEquipments = this.getAttachedEquipments(card);
+            if (attachedEquipments.length > 0) {
+                const equipSection = document.createElement('div');
+                equipSection.className = 'preview-status-section';
+
+                attachedEquipments.forEach(equipment => {
+                    const equipBadge = document.createElement('span');
+                    equipBadge.className = 'status-badge equipment';
+                    equipBadge.textContent = `⚔ ${equipment.name}`;
+                    equipBadge.title = equipment.text || '';
+                    equipSection.appendChild(equipBadge);
+                });
+
+                previewKeywords.appendChild(equipSection);
+            }
         }
 
         // Carregar imagem
@@ -543,6 +561,17 @@ class GameUI {
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
         return allBattlefields.filter(card =>
             card.subtype === 'Aura' && card.attachedTo === creature.instanceId
+        );
+    }
+
+    /**
+     * Retorna os Equipamentos anexados a uma criatura
+     */
+    getAttachedEquipments(creature) {
+        if (!this.game) return [];
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.filter(card =>
+            card.subtype === 'Equipment' && card.attachedTo === creature.instanceId
         );
     }
 
@@ -906,8 +935,8 @@ class GameUI {
         otherContainer.innerHTML = '';
 
         player.battlefield.forEach(card => {
-            // Pular Auras - elas são renderizadas junto com a criatura anexada
-            if (card.subtype === 'Aura' && card.attachedTo) {
+            // Pular Auras e Equipamentos anexados - são renderizados junto com a criatura
+            if ((card.subtype === 'Aura' || card.subtype === 'Equipment') && card.attachedTo) {
                 return;
             }
 
@@ -993,9 +1022,10 @@ class GameUI {
                 }
             }
 
-            // Renderizar Auras anexadas a esta criatura
+            // Renderizar Auras e Equipamentos anexados a esta criatura
             if (card.type === 'creature') {
                 this.renderAttachedAuras(card, cardEl);
+                this.renderAttachedEquipments(card, cardEl, isPlayer);
             }
 
             // Contadores (+1/+1, etc) são exibidos apenas no Preview Lateral
@@ -1057,6 +1087,62 @@ class GameUI {
 
             // Informações detalhadas das auras são exibidas no Preview Lateral
             // A borda colorida da criatura indica visualmente a presença de aura(s)
+        }
+    }
+
+    renderAttachedEquipments(creature, creatureEl, isPlayerCreature) {
+        // Buscar equipamentos anexados a esta criatura
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        const attachedEquipments = allBattlefields.filter(card =>
+            card.subtype === 'Equipment' && card.attachedTo === creature.instanceId
+        );
+
+        if (attachedEquipments.length > 0) {
+            // Adicionar indicador visual de equipamento
+            creatureEl.classList.add('has-equipment');
+
+            // Criar container para ícones de equipamento (pequenos badges)
+            const equipContainer = document.createElement('div');
+            equipContainer.className = 'equipment-indicators';
+
+            attachedEquipments.forEach((equipment) => {
+                const equipBadge = document.createElement('div');
+                equipBadge.className = 'equipment-badge';
+                equipBadge.textContent = '⚔';
+                equipBadge.title = `${equipment.name} - Clique duplo para re-equipar`;
+
+                // Adicionar evento de hover para mostrar preview do equipamento
+                equipBadge.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    this.showCardPreview(equipment);
+                });
+                equipBadge.addEventListener('mouseleave', (e) => {
+                    e.stopPropagation();
+                    this.hideCardPreview();
+                });
+
+                // Adicionar interação para re-equipar (apenas se for do jogador)
+                const equipmentController = this.game.player.battlefield.includes(equipment)
+                    ? this.game.player
+                    : this.game.opponent;
+
+                if (equipmentController === this.game.player && isPlayerCreature) {
+                    // Verificar se pode ativar a habilidade de equip
+                    if (this.game.isPlayerTurn() &&
+                        this.game.canActivateAbility &&
+                        this.game.canActivateAbility(equipment, this.game.player)) {
+                        equipBadge.classList.add('can-reequip');
+                        equipBadge.addEventListener('dblclick', (e) => {
+                            e.stopPropagation();
+                            this.game.activateAbility(equipment, this.game.player);
+                        });
+                    }
+                }
+
+                equipContainer.appendChild(equipBadge);
+            });
+
+            creatureEl.appendChild(equipContainer);
         }
     }
 
@@ -2383,6 +2469,73 @@ class GameUI {
     }
 
     /**
+     * Mostra um modal perguntando se o jogador quer pagar o custo de Ward
+     * @param {Object} target - A criatura com Ward que está sendo mirada
+     * @param {number} wardCost - O custo de Ward a ser pago
+     * @param {boolean} canPay - Se o jogador tem mana suficiente para pagar
+     * @returns {Promise<boolean>} - true se o jogador quer pagar, false se cancela
+     */
+    promptWardPayment(target, wardCost, canPay) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('ward-prompt-modal');
+            if (!modal) {
+                // Se não há modal, assume que não paga (anula)
+                resolve(false);
+                return;
+            }
+
+            const description = document.getElementById('ward-prompt-description');
+            const cardContainer = document.getElementById('ward-prompt-card');
+            const costAmount = document.getElementById('ward-cost-amount');
+            const btnPay = document.getElementById('btn-ward-pay');
+            const btnCancel = document.getElementById('btn-ward-cancel');
+
+            // Configurar conteúdo
+            description.textContent = `${target.name} tem Ward ${wardCost}. Pague ${wardCost} mana ou sua mágica será anulada.`;
+            costAmount.textContent = wardCost;
+
+            // Renderizar a carta alvo
+            cardContainer.innerHTML = '';
+            const cardEl = this.createCardElement(target, true);
+            cardEl.style.transform = 'scale(0.9)';
+            cardContainer.appendChild(cardEl);
+
+            // Configurar botão de pagar
+            btnPay.disabled = !canPay;
+            if (!canPay) {
+                btnPay.textContent = 'Mana Insuficiente';
+            } else {
+                btnPay.textContent = `Pagar ${wardCost}`;
+            }
+
+            // Limpar eventos anteriores
+            const newBtnPay = btnPay.cloneNode(true);
+            const newBtnCancel = btnCancel.cloneNode(true);
+            btnPay.parentNode.replaceChild(newBtnPay, btnPay);
+            btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+
+            newBtnPay.disabled = !canPay;
+            if (!canPay) {
+                newBtnPay.textContent = 'Mana Insuficiente';
+            } else {
+                newBtnPay.textContent = `Pagar ${wardCost}`;
+            }
+
+            newBtnPay.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                resolve(true);
+            });
+
+            newBtnCancel.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                resolve(false);
+            });
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
      * Mostra um modal para o jogador selecionar múltiplos alvos para um trigger/habilidade
      * @param {Object} options - Opções do prompt
      * @param {string} options.title - Título do modal (nome da carta)
@@ -2732,6 +2885,92 @@ class GameUI {
                 isDragging = false;
                 content.classList.remove('dragging');
             }
+        });
+    }
+
+    /**
+     * Torna um modal arrastável pelo header/título
+     * @param {string} modalId - ID do elemento modal
+     * @param {string} handleSelector - Seletor CSS do elemento de arraste (ex: 'h2', '.modal-header')
+     */
+    makeModalDraggable(modalId, handleSelector = 'h2') {
+        const modal = document.getElementById(modalId);
+        const content = modal?.querySelector('.modal-content') || modal?.querySelector('[class*="-content"]');
+        const handle = content?.querySelector(handleSelector);
+
+        if (!handle || !content || content._dragInitialized) return;
+
+        content._dragInitialized = true;
+
+        // Adicionar classe para indicar que é arrastável
+        handle.classList.add('modal-drag-handle');
+
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        handle.addEventListener('mousedown', (e) => {
+            // Não iniciar drag se clicou em um botão dentro do handle
+            if (e.target.tagName === 'BUTTON') return;
+
+            isDragging = true;
+            content.classList.add('dragging');
+
+            const rect = content.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            content.style.position = 'fixed';
+            content.style.left = initialX + 'px';
+            content.style.top = initialY + 'px';
+            content.style.margin = '0';
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newX = initialX + dx;
+            let newY = initialY + dy;
+
+            const maxX = window.innerWidth - content.offsetWidth - 10;
+            const maxY = window.innerHeight - content.offsetHeight - 10;
+
+            newX = Math.max(10, Math.min(newX, maxX));
+            newY = Math.max(10, Math.min(newY, maxY));
+
+            content.style.left = newX + 'px';
+            content.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                content.classList.remove('dragging');
+            }
+        });
+    }
+
+    /**
+     * Inicializa drag em todos os modais do jogo
+     */
+    initAllModalsDrag() {
+        // Lista de modais e seus handles
+        const modals = [
+            { id: 'trigger-target-modal', handle: 'h2' },
+            { id: 'color-choice-modal', handle: 'h2' },
+            { id: 'ward-prompt-modal', handle: 'h2' },
+            { id: 'frenzied-goblin-modal', handle: 'h2' },
+            { id: 'game-end-modal', handle: 'h2' }
+        ];
+
+        modals.forEach(({ id, handle }) => {
+            this.makeModalDraggable(id, handle);
         });
     }
 

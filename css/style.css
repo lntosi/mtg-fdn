@@ -857,6 +857,61 @@ body {
     box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6) !important;
 }
 
+/* === EQUIPAMENTOS ANEXADOS === */
+
+/* Borda dourada/metálica para criaturas equipadas */
+.card.has-equipment {
+    position: relative;
+    box-shadow: 0 0 0 3px #daa520, 0 0 12px 3px rgba(218, 165, 32, 0.6) !important;
+}
+
+/* Container para badges de equipamento */
+.equipment-indicators {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 20;
+}
+
+/* Badge individual de equipamento */
+.equipment-badge {
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, #c0c0c0 0%, #808080 50%, #c0c0c0 100%);
+    border: 2px solid #daa520;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.equipment-badge:hover {
+    transform: scale(1.2);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Badge clicável para re-equipar */
+.equipment-badge.can-reequip {
+    cursor: pointer;
+    animation: equip-pulse 2s infinite;
+}
+
+.equipment-badge.can-reequip:hover {
+    background: linear-gradient(135deg, #ffd700 0%, #daa520 50%, #ffd700 100%);
+}
+
+@keyframes equip-pulse {
+    0%, 100% { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 2px 8px rgba(218, 165, 32, 0.8); }
+}
+
 @keyframes pulse-attack {
     0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
     50% { box-shadow: 0 0 35px 15px #ff6b6b; }
@@ -1462,6 +1517,12 @@ body {
     border: 1px solid rgba(255, 99, 71, 0.5);
 }
 
+.status-badge.equipment {
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.8), rgba(184, 134, 11, 0.8));
+    color: #FFF8DC;
+    border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
 /* Stats base vs atual no preview */
 .card-preview-stats .base-stats {
     color: #888;
@@ -1727,6 +1788,29 @@ body {
 .drop-zone-highlight {
     background: rgba(46, 204, 113, 0.2) !important;
     border: 2px dashed #2ecc71 !important;
+}
+
+/* === Modal Drag Handle (genérico) === */
+.modal-drag-handle {
+    cursor: move;
+    user-select: none;
+    position: relative;
+}
+
+.modal-drag-handle::after {
+    content: '⋮⋮';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+.modal-content.dragging {
+    opacity: 0.95;
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
 }
 
 /* === Ajustar layout para o painel de log === */
@@ -2607,6 +2691,94 @@ body {
 .color-choice-btn.color-G {
     background: linear-gradient(135deg, #1e7b1e, #27ae60);
     color: #fff;
+}
+
+/* === Ward Prompt Modal === */
+.ward-prompt-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.ward-prompt-content h2 {
+    color: #3498db;
+    margin-bottom: 10px;
+    font-size: 1.5em;
+}
+
+.ward-prompt-content h2::before {
+    content: '🛡️ ';
+}
+
+.ward-prompt-content p {
+    color: #e0c0e0;
+    margin-bottom: 15px;
+    font-size: 0.95em;
+}
+
+.ward-target-card {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.ward-cost-display {
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid rgba(52, 152, 219, 0.5);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    color: #e0e0e0;
+}
+
+.ward-cost-amount {
+    color: #f1c40f;
+    font-weight: bold;
+    font-size: 1.3em;
+}
+
+.ward-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-ward-pay, .btn-ward-cancel {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+}
+
+.btn-ward-pay {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.btn-ward-pay:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+.btn-ward-pay:disabled {
+    background: #4a4a4a;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-ward-cancel {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+}
+
+.btn-ward-cancel:hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
 }
 
 /* === Scry UI === */

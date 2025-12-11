@@ -384,12 +384,40 @@ class TriggerManager {
     }
 
     _handleEquipPirateETB(card, controller) {
-        const pirateTarget = controller.battlefield.find(c =>
+        const validPirates = controller.battlefield.filter(c =>
             c.type === 'creature' && c.subtype?.includes('Pirate')
         );
-        if (pirateTarget) {
-            card.attachedTo = pirateTarget.instanceId;
-            this.ui.log(`Pirate's Cutlass foi equipado em ${pirateTarget.name}`);
+
+        if (validPirates.length === 0) {
+            this.ui.log(`Pirate's Cutlass entrou sem Piratas para equipar`);
+            return;
+        }
+
+        const attachEquipment = (target) => {
+            card.attachedTo = target.instanceId;
+            this.ui.log(`Pirate's Cutlass foi equipado em ${target.name}`);
+            this.ui.render();
+        };
+
+        if (validPirates.length === 1) {
+            // Apenas um Pirata - equipar automaticamente
+            attachEquipment(validPirates[0]);
+        } else if (controller === this.player) {
+            // Jogador escolhe qual Pirata equipar
+            this.ui.promptTriggerTarget({
+                title: `Pirate's Cutlass`,
+                description: 'Escolha um Pirata para equipar:',
+                validTargets: validPirates,
+                canSkip: false
+            }).then(selected => {
+                if (selected) attachEquipment(selected);
+            });
+        } else {
+            // IA escolhe o Pirata mais forte
+            const target = validPirates.sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            )[0];
+            attachEquipment(target);
         }
     }
 
@@ -430,8 +458,8 @@ class TriggerManager {
      */
     onSpellCast(caster) {
         // Verifica se é o turno do oponente do caster
-        const isOpponentsTurn = (caster === this.player && this.game.currentPlayer === this.opponent) ||
-                                (caster === this.opponent && this.game.currentPlayer === this.player);
+        const isOpponentsTurn = (caster === this.player && this.game.activePlayer === this.opponent) ||
+                                (caster === this.opponent && this.game.activePlayer === this.player);
 
         if (!isOpponentsTurn) return;
 

@@ -2,6 +2,47 @@
 
 Este documento rastreia o status de validação de todas as cartas do jogo.
 
+## Processo de Validação
+
+Para validar uma carta corretamente, siga estes passos:
+
+### 1. Consultar Scryfall
+- Acesse `https://scryfall.com/card/fdn/[número]` ou busque pelo nome
+- Anote o texto oficial em inglês da carta
+- Verifique: tipo, subtipo, custo de mana, poder/resistência, keywords, habilidades
+
+### 2. Comparar com cards.js
+- Verifique se `id`, `name`, `type`, `subtype`, `cost`, `cmc`, `power`, `toughness` estão corretos
+- Verifique se `keywords` inclui todas as habilidades da carta
+- Verifique se `text` reflete o texto oficial (pode ser em português)
+
+### 3. Verificar Implementação
+Para cada tipo de habilidade, verificar o arquivo correspondente:
+
+| Tipo | Onde Verificar |
+|------|----------------|
+| **Keywords simples** | `rules.js` → `getCreatureKeywords()`, `canBlock()`, `canAttack()` |
+| **ETB triggers** | `triggers.js` → `resolveETB()` |
+| **Death triggers** | `triggers.js` → `onCreatureDeath()` |
+| **Combat triggers** | `triggers.js` → `onBeginCombat()`, `onDeclareAttackers()` |
+| **End step triggers** | `triggers.js` → `onEndStep()` |
+| **Activated abilities** | `game.js` → `canActivateAbility()`, `activateAbility()` |
+| **Static effects (lords)** | `rules.js` → `calculateBonuses()` |
+| **Spell effects** | `game.js` → `resolveSpell()` |
+| **Cost reduction** | `rules.js` → `hasEnoughMana()`, `payMana()` |
+
+### 4. Testar em Jogo (Opcional)
+- Usar comandos debug para adicionar carta à mão/campo
+- Verificar se comportamento corresponde ao esperado
+
+### 5. Atualizar Status
+- ✓ = Texto oficial verificado E implementação correta
+- ⚠ = Ainda não verificado contra Scryfall
+- ✗ = Bug conhecido (descrever nas notas)
+- \- = Carta vanilla (só stats, sem habilidades)
+
+---
+
 ## Legenda
 
 | Status | Significado |
@@ -111,24 +152,26 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 ---
 
-## PIRATES (Azul)
+## PIRATES (Azul) - **VALIDADO COM SCRYFALL** ✓
 
-| Card | Tipo | Habilidade | Status | Notas |
-|------|------|------------|--------|-------|
-| Island | Land | Produz U | ✓ | |
-| Uncharted Haven | Land | Produz cor escolhida, entra virado | ✓ | Jogador escolhe cor ao entrar |
-| Spectral Sailor | Creature | Keywords + Activated | ⚠ | Flash + Flying + 3U: draw |
-| Kitesail Corsair | Creature | Conditional keyword | ⚠ | Flying quando atacando |
-| Brineborn Cutthroat | Creature | Keyword + Triggered | ⚠ | Flash + counter quando conjura no turno oponente |
-| Corsair Captain | Creature | Static (lord) + ETB | ⚠ | Piratas +1/+1 + cria Treasure |
-| Storm Fleet Spy | Creature | ETB (raid) | ⚠ | Raid: draw |
-| Bigfin Bouncer | Creature | ETB (bounce) | ✓ | Devolve criatura oponente |
-| Skyship Buccaneer | Creature | Keywords + ETB (raid) | ⚠ | Flying + Raid: draw |
-| Tolarian Terror | Creature | Static + Keyword | ⚠ | Custo reduzido + Ward 2 |
-| Opt | Instant | Spell (scry + draw) | ⚠ | Scry 1, draw |
-| Cancel | Instant | Spell (counter) | ⚠ | Counterspell |
-| Eaten by Piranhas | Aura | Flash + Static (debuff) | ✓ | Flash funciona, base 1/1 + counters |
-| Pirate's Cutlass | Equipment | ETB + Static | ⚠ | Auto-equip pirata + +2/+1 |
+| Card | Tipo | Habilidade | Scryfall | Status | Notas |
+|------|------|------------|----------|--------|-------|
+| Island | Land | Produz U | ✓ | ✓ | Terreno básico |
+| Uncharted Haven | Land | Produz cor escolhida, entra virado | ✓ | ✓ | Jogador escolhe cor ao entrar |
+| Spectral Sailor | Creature 1/1 | Flash, Flying, {3}{U}: Draw | ✓ | ✓ | Habilidade ativada implementada |
+| Kitesail Corsair | Creature 2/1 | Flying while attacking | ✓ | ✓ | `flying_when_attacking` em rules.js |
+| Brineborn Cutthroat | Creature 2/1 | Flash, +1/+1 on spell during opponent's turn | ✓ | ✓ | Trigger em `onSpellCast()` |
+| Corsair Captain | Creature 2/2 | ETB Treasure, Other Pirates +1/+1 | ✓ | ✓ | Lord em `calculateBonuses()` |
+| Storm Fleet Spy | Creature 2/2 | Raid: draw a card | ✓ | ✓ | `raid_draw` em triggers.js |
+| Bigfin Bouncer | Creature 3/2 | ETB bounce opponent creature | ✓ | ✓ | `etb_bounce` com prompt de alvo |
+| Skyship Buccaneer | Creature 4/3 | Flying, Raid: draw | ✓ | ✓ | Flying + `raid_draw` |
+| Tolarian Terror | Creature 5/5 | Cost reduction, Ward {2} | ✓ | ✓ | Custo e Ward totalmente implementados |
+| Opt | Instant | Scry 1, Draw | ✓ | ✓ | Scry com escolha do jogador |
+| Cancel | Instant | Counter target spell | ✓ | ✓ | `counterspell` keyword |
+| Eaten by Piranhas | Aura | Flash, base 1/1, loses abilities | ✓ | ✓ | Flash + debuff implementado |
+| Pirate's Cutlass | Equipment | ETB attach Pirate, +2/+1, Equip {2} | ✓ | ✓ | ETB + Equip implementados |
+
+*Todas as cartas do deck Pirates foram validadas e implementadas.
 
 ---
 
@@ -136,8 +179,8 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Status | Quantidade | Percentual |
 |--------|------------|------------|
-| ✓ Validado | 29 | 41% |
-| ⚠ Verificar | 36 | 51% |
+| ✓ Validado | 42 | 60% |
+| ⚠ Verificar | 23 | 33% |
 | ✗ Bug conhecido | 0 | 0% |
 | - Vanilla | 5 | 7% |
 | **Total** | **70** | **100%** |
@@ -148,6 +191,12 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Data | Card | Problema | Correção |
 |------|------|----------|----------|
+| 2025-12-11 | Pirate's Cutlass | ETB não permitia escolha de Pirata | Implementado prompt de seleção para múltiplos piratas |
+| 2025-12-11 | Pirate's Cutlass | Habilidade Equip 2 não implementada | Implementado em canActivateAbility/activateAbility + UI |
+| 2025-12-11 | Equipamentos (geral) | Não tinham renderização visual | Implementado sistema de badges e borda dourada |
+| 2025-12-11 | Brineborn Cutthroat | Jogo congelava ao atacar | `currentPlayer` → `activePlayer` em triggers.js |
+| 2025-12-11 | Spectral Sailor | Habilidade ativada não implementada | Implementado 3U: draw em canActivateAbility/activateAbility |
+| 2025-12-11 | Tolarian Terror | Redução de custo não implementada | Implementado em hasEnoughMana/payMana |
 | 2025-12-11 | Felidar Savior | Botão "Confirmar" sem estilo no modal | Adicionado CSS `.btn-trigger-confirm` |
 | 2025-12-11 | Battle-Rattle Shaman | Habilidade obrigatória (deveria ser "may") | Alterado `canSkip: true` |
 | 2025-12-11 | Ingenious Leonin | Cálculo de mana errado (3 em vez de 4) | Corrigido para `leoninTotalMana >= 4` |
@@ -157,6 +206,19 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 | 2025-12-11 | Eaten by Piranhas | Flash não funcionava (só jogava na main phase) | Cartas com Flash agora usam `canCastInstant()` |
 | 2025-12-11 | Eaten by Piranhas | Só podia mirar criaturas do oponente | Agora pode mirar qualquer criatura |
 | 2025-12-11 | Eaten by Piranhas | Stats fixos 1/1 ignoravam counters | Agora usa base 1/1 + counters + bônus |
+| 2025-12-11 | Tolarian Terror | Ward {2} era apenas visual | Implementado prompt para jogador pagar Ward + IA paga automaticamente |
+| 2025-12-11 | Modais/Prompts | Alguns modais não eram arrastáveis | Criado `makeModalDraggable()` para padronizar drag em todos os modais |
+
+---
+
+## Limitações Conhecidas
+
+Mecânicas que estão parcialmente implementadas ou simplificadas:
+
+| Mecânica | Carta(s) | Limitação | Impacto |
+|----------|----------|-----------|---------|
+| **Hexproof** | Snakeskin Veil (temp) | Proteção temporária não verificada em targeting | Baixo |
+| **Must be blocked** | Joraga Invocation | Não força bloqueio | Médio |
 
 ---
 
@@ -167,16 +229,14 @@ Cartas com mecânicas complexas que podem ter bugs:
 
 1. **Crossway Troublemakers** - Múltiplos efeitos (static + death trigger + pay life)
 2. **Stromkirk Bloodthief** - End step trigger condicional
-3. **Brineborn Cutthroat** - Trigger em turno do oponente
-4. **Frenzied Goblin** - Combat trigger com custo
-5. **Goblin Firebomb** - Activated ability complexa
+3. **Frenzied Goblin** - Combat trigger com custo
+4. **Goblin Firebomb** - Activated ability complexa
 
 ### Média Prioridade
 Cartas com interações específicas:
 
-- Auras (Pacifism, Untamed Hunger, Eaten by Piranhas)
-- Lords (Corsair Captain, Elvish Archdruid)
-- Equipments (Pirate's Cutlass)
+- Auras (Pacifism, Untamed Hunger)
+- Lords (Elvish Archdruid)
 - Tokens (Dragon Fodder, Prideful Parent)
 
 ### Baixa Prioridade

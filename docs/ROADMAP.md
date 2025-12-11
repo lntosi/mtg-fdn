@@ -43,7 +43,9 @@ Reutiliza mecânicas de Cats. Mecânicas novas:
 | Twinblade Paladin | Criatura | Double strike condicional | Alta |
 | Inspiring Overseer | Criatura | Flying, ETB draw + life | Média |
 | Prayer of Binding | Enchantment | Exílio temporário | Alta |
-| Quick-Draw Katana | Equipamento | First strike, auto-equip | Média |
+| Quick-Draw Katana | Equipamento | First strike, auto-equip | Baixa* |
+
+*Sistema de Equipment já implementado (Pirate's Cutlass). Requer apenas configuração.
 
 #### 1.2 Primal (Verde) - ~3h
 Similar a Elves. Mecânicas novas:
@@ -68,9 +70,11 @@ Similar a Goblins. Mecânicas novas:
 | Carta | Tipo | Mecânica | Complexidade |
 |-------|------|----------|:------------:|
 | Terror of Mount Velus | Criatura | Dá double strike a todos | Alta |
-| Dragonlord's Servant | Criatura | Reduz custo de Dragons | Alta |
+| Dragonlord's Servant | Criatura | Reduz custo de Dragons | Média* |
 | Rapacious Dragon | Criatura | ETB cria Treasure | Média |
 | Scorching Dragonfire | Instant | 3 dano + exile | Média |
+
+*Redução de custo já implementada (Tolarian Terror). Requer adaptação para Dragons.
 
 #### 1.4 Wizards (Azul) - ~3h
 Similar a Pirates. Mecânicas novas:
@@ -186,7 +190,7 @@ Itens que podem ou não ser implementados:
 - ✅ Goblins (R) - Aggro, Lords, Haste
 - ✅ Vampires (B) - Drain, Flying, Death triggers
 - ✅ Elves (G) - Ramp, Lords, Mana dorks
-- ✅ Pirates (U) - Flash, Raid, Counterspell, Bounce, Scry, Equipment
+- ✅ Pirates (U) - Flash, Raid, Counterspell, Bounce, Scry, Equipment, Ward
 
 ### Gameplay
 - ✅ Sistema de seleção de alvo genérico
@@ -218,9 +222,12 @@ Itens que podem ou não ser implementados:
 - ✅ Configurações de som
 
 ### Técnico
-- ✅ Testes unitários (Jest) - 134 testes
+- ✅ Testes unitários (Jest) - 135 testes
 - ✅ Validação de cartas via Scryfall
 - ✅ Modo Debug completo
+- ✅ Ward mechanic (Tolarian Terror)
+- ✅ Equipment system (Pirate's Cutlass: ETB + Equip)
+- ✅ Modais arrastáveis padronizados
 
 </details>
 

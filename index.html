@@ -390,6 +390,24 @@
         </div>
     </div>
 
+    <!-- Modal de Ward (Pagar custo extra para mirar criatura com Ward) -->
+    <div id="ward-prompt-modal" class="modal hidden">
+        <div class="modal-content ward-prompt-content">
+            <h2 id="ward-prompt-title">Ward</h2>
+            <p id="ward-prompt-description">A criatura alvo tem Ward. Pague o custo extra ou a mágica será anulada.</p>
+            <div id="ward-prompt-card" class="ward-target-card"></div>
+            <div class="ward-cost-display">
+                <span>Custo: </span>
+                <span id="ward-cost-amount" class="ward-cost-amount">2</span>
+                <span> mana</span>
+            </div>
+            <div class="ward-buttons">
+                <button id="btn-ward-pay" class="btn-ward-pay">Pagar</button>
+                <button id="btn-ward-cancel" class="btn-ward-cancel">Cancelar (Anular)</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Janela de Prioridade (Responder com Instant) -->
     <div id="priority-window-modal" class="modal hidden">
         <div class="modal-content priority-window-content">
