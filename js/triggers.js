@@ -482,7 +482,7 @@ class TriggerManager {
      * @param {Object} creature - Criatura que morreu
      * @param {Object} owner - Jogador que controlava a criatura
      */
-    onCreatureDeath(creature, owner) {
+    async onCreatureDeath(creature, owner) {
         const opponent = owner === this.player ? this.opponent : this.player;
 
         // Vengeful Bloodwitch - quando esta ou outra criatura que você controla morre,
@@ -512,6 +512,60 @@ class TriggerManager {
                 this.game.playerLostLifeThisTurn = true;
             } else {
                 this.game.opponentLostLifeThisTurn = true;
+            }
+        }
+
+        // Crossway Troublemakers - quando um Vampiro que você controla morre,
+        // você pode pagar 2 vidas. Se fizer isso, compre uma carta.
+        const isVampire = creature.subtype?.includes('Vampire');
+        if (isVampire) {
+            for (const card of owner.battlefield) {
+                if (card.id === 'crossway_troublemakers' && owner.life > 2) {
+                    if (owner === this.player) {
+                        // Jogador humano - perguntar se quer pagar
+                        const shouldPay = await this.ui.promptYesNo({
+                            title: 'Crossway Troublemakers',
+                            description: `${creature.name} morreu. Pagar 2 vidas para comprar uma carta?`,
+                            yesText: 'Pagar 2 vidas',
+                            noText: 'Não pagar'
+                        });
+                        if (shouldPay) {
+                            owner.life -= 2;
+                            this.rules.drawCard(owner);
+                            this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
+                        }
+                    } else {
+                        // IA sempre paga se tiver vida suficiente (> 4 para ser seguro)
+                        if (owner.life > 4) {
+                            owner.life -= 2;
+                            this.rules.drawCard(owner);
+                            this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
+                        }
+                    }
+                }
+            }
+
+            // Se o próprio Crossway Troublemakers morreu (ele é Vampire)
+            if (creature.id === 'crossway_troublemakers' && owner.life > 2) {
+                if (owner === this.player) {
+                    const shouldPay = await this.ui.promptYesNo({
+                        title: 'Crossway Troublemakers',
+                        description: 'Crossway Troublemakers morreu. Pagar 2 vidas para comprar uma carta?',
+                        yesText: 'Pagar 2 vidas',
+                        noText: 'Não pagar'
+                    });
+                    if (shouldPay) {
+                        owner.life -= 2;
+                        this.rules.drawCard(owner);
+                        this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
+                    }
+                } else {
+                    if (owner.life > 4) {
+                        owner.life -= 2;
+                        this.rules.drawCard(owner);
+                        this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
+                    }
+                }
             }
         }
 

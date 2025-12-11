@@ -29,78 +29,17 @@ Este documento mapeia o desenvolvimento do jogo.
 
 ### 1. Decks Restantes (Prioridade Principal)
 
+Para implementação dos 5 decks restantes, consulte o plano detalhado em [`04_FUTURE_DECKS_PLAN.md`](04_FUTURE_DECKS_PLAN.md).
+
 Ordem sugerida (do mais simples ao mais complexo):
 
-#### 1.1 Healing (Branco) - ~3h
-Reutiliza mecânicas de Cats. Mecânicas novas:
-- **Lifegain triggers** (Ajani's Pridemate: +1/+1 quando ganha vida)
-- **Double strike condicional** (Twinblade Paladin)
-- **Exílio temporário** (Prayer of Binding)
-
-| Carta | Tipo | Mecânica | Complexidade |
-|-------|------|----------|:------------:|
-| Ajani's Pridemate | Criatura | +1/+1 quando ganha vida | Alta |
-| Twinblade Paladin | Criatura | Double strike condicional | Alta |
-| Inspiring Overseer | Criatura | Flying, ETB draw + life | Média |
-| Prayer of Binding | Enchantment | Exílio temporário | Alta |
-| Quick-Draw Katana | Equipamento | First strike, auto-equip | Baixa* |
-
-*Sistema de Equipment já implementado (Pirate's Cutlass). Requer apenas configuração.
-
-#### 1.2 Primal (Verde) - ~3h
-Similar a Elves. Mecânicas novas:
-- **Fight** (Bite Down)
-- **Distribuição de counters** (Biogenic Upgrade)
-- **Lord global** (Aggressive Mammoth dá trample a todos)
-
-| Carta | Tipo | Mecânica | Complexidade |
-|-------|------|----------|:------------:|
-| Aggressive Mammoth | Criatura | Dá trample a todos | Média |
-| Wildwood Scourge | Criatura | +1/+1 quando outro ganha counter | Alta |
-| Bite Down | Instant | Fight | Alta |
-| Giant Growth | Instant | +3/+3 | Baixa |
-| Biogenic Upgrade | Sorcery | Distribui counters | Média |
-
-#### 1.3 Inferno (Vermelho) - ~4h
-Similar a Goblins. Mecânicas novas:
-- **Dragon synergies** (Kargan Dragonrider)
-- **Cost reduction** (Dragonlord's Servant)
-- Reutiliza Treasure tokens
-
-| Carta | Tipo | Mecânica | Complexidade |
-|-------|------|----------|:------------:|
-| Terror of Mount Velus | Criatura | Dá double strike a todos | Alta |
-| Dragonlord's Servant | Criatura | Reduz custo de Dragons | Média* |
-| Rapacious Dragon | Criatura | ETB cria Treasure | Média |
-| Scorching Dragonfire | Instant | 3 dano + exile | Média |
-
-*Redução de custo já implementada (Tolarian Terror). Requer adaptação para Dragons.
-
-#### 1.4 Wizards (Azul) - ~3h
-Similar a Pirates. Mecânicas novas:
-- **Kicker** (Into the Roil)
-- **Prowess-like** (Clinquant Skymage)
-
-| Carta | Tipo | Mecânica | Complexidade |
-|-------|------|----------|:------------:|
-| Mystic Archaeologist | Criatura | Draw ativado | Média |
-| Clinquant Skymage | Criatura | Prowess-like | Média |
-| Into the Roil | Instant | Bounce + kicker draw | Média |
-| Arcane Epiphany | Instant | Draw 3 | Baixa |
-
-#### 1.5 Undead (Preto) - ~5h (mais complexo)
-Mecânicas mais avançadas:
-- **Graveyard recursion** (Reassembling Skeleton)
-- **Sacrifice costs** (Eaten Alive)
-- **Death triggers** (Maalfeld Twins)
-- **Mill/Surveil** (Crow of Dark Tidings)
-
-| Carta | Tipo | Mecânica | Complexidade |
-|-------|------|----------|:------------:|
-| Death Baron | Criatura | Lord + deathtouch | Alta |
-| Reassembling Skeleton | Criatura | Recursão | Alta |
-| Maalfeld Twins | Criatura | Death: cria tokens | Alta |
-| Eaten Alive | Sorcery | Sacrifice + exile | Alta |
+| Ordem | Deck | Mecânica Nova | Esforço |
+|:-----:|------|---------------|:-------:|
+| 1 | Healing (W) | Lifegain triggers | ⭐⭐ |
+| 2 | Inferno (R) | Dragon cost reduction | ⭐⭐ |
+| 3 | Primal (G) | Fight | ⭐⭐⭐ |
+| 4 | Wizards (U) | Kicker | ⭐⭐⭐ |
+| 5 | Undead (B) | Graveyard recursion | ⭐⭐⭐⭐ |
 
 ---
 
@@ -139,7 +78,7 @@ Sistema de dificuldade com 3 níveis que afetam o comportamento estratégico da 
 
 **Estratégia**: Refatoração conservadora - extrair apenas o necessário, manter `game.js` como coordenador.
 
-#### Fase 1: Extrair Triggers (ATUAL)
+#### Fase 1: Extrair Triggers (CONCLUÍDA)
 - [x] Criar `js/triggers.js` para centralizar:
   - ETB effects (enters-the-battlefield)
   - Death triggers
@@ -220,6 +159,7 @@ Itens que podem ou não ser implementados:
 - ✅ Menu de configurações (tecla M)
 - ✅ Modo tela cheia
 - ✅ Configurações de som
+- ✅ Modais arrastáveis padronizados
 
 ### Técnico
 - ✅ Testes unitários (Jest) - 135 testes
@@ -227,9 +167,37 @@ Itens que podem ou não ser implementados:
 - ✅ Modo Debug completo
 - ✅ Ward mechanic (Tolarian Terror)
 - ✅ Equipment system (Pirate's Cutlass: ETB + Equip)
-- ✅ Modais arrastáveis padronizados
 
 </details>
+
+---
+
+## Atualizações Recentes (Dezembro 2025)
+
+### Validação Completa de Cartas
+Todos os 5 decks foram validados contra a API do Scryfall:
+
+| Deck | Status | Bugs Corrigidos |
+|------|--------|-----------------|
+| Cats | ✅ | Elspeth's Smite (era exile direto, agora 3 dano + exile) |
+| Goblins | ✅ | Incinerating Blast (5→6 dano + loot), Goblin Firebomb (custo e efeito) |
+| Vampires | ✅ | Offer Immortality (efeito completo), Crossway Troublemakers (death trigger) |
+| Elves | ✅ | Felling Blow (one-sided fight completo) |
+| Pirates | ✅ | Eaten by Piranhas (Flash + targeting), Ward funcional |
+
+### Mecânicas Robustas Implementadas
+- **Must Be Blocked** (Joraga Invocation) - IA respeita obrigatoriedade
+- **Hexproof Targeting** - Inclui hexproof temporário (Snakeskin Veil)
+- **Yes/No Prompts** - Para efeitos opcionais do jogador
+- **Loot Interativo** - Jogador escolhe carta para descartar
+
+### Documentação Reorganizada
+- `docs/01_TESTING.md` - Guia de testes automatizados
+- `docs/02_DEBUG.md` - Comandos de debug
+- `docs/03_CARD_VALIDATION.md` - Status de validação das cartas
+- `docs/04_FUTURE_DECKS_PLAN.md` - Plano para 5 decks restantes
+- `docs/ROADMAP.md` - Este arquivo
+- `docs/MagicCompRules 20251114.txt` - Regras oficiais do Magic
 
 ---
 

@@ -1505,17 +1505,27 @@ class GameUI {
 
         creaturesContainer.innerHTML = '';
 
-        // Mostrar a carta
+        // Mostrar a carta com imagem completa
         const cardElement = document.createElement('div');
         cardElement.className = 'trigger-target-creature scry-card-preview';
-        cardElement.innerHTML = `
-            <div class="card-mini scry-card">
+
+        // Container para a imagem da carta
+        const cardImageContainer = document.createElement('div');
+        cardImageContainer.className = 'scry-card-image-container';
+
+        // Placeholder enquanto carrega
+        cardImageContainer.innerHTML = `
+            <div class="scry-card-loading">
                 <div class="card-name">${card.name}</div>
                 <div class="card-type">${card.type}${card.subtype ? ' - ' + card.subtype : ''}</div>
-                ${card.cost ? `<div class="card-cost">${card.cost}</div>` : ''}
             </div>
         `;
+
+        cardElement.appendChild(cardImageContainer);
         creaturesContainer.appendChild(cardElement);
+
+        // Carregar imagem da carta assincronamente
+        this.loadScryCardImage(card, cardImageContainer);
 
         // Botões de ação
         const buttonsContainer = document.createElement('div');
@@ -1542,6 +1552,24 @@ class GameUI {
         creaturesContainer.appendChild(buttonsContainer);
 
         modal.classList.remove('hidden');
+    }
+
+    async loadScryCardImage(card, container) {
+        try {
+            let imageUrl;
+            if (window.imageManager.isToken(card.name)) {
+                imageUrl = await window.imageManager.getTokenImageUrl(card.name, 'normal');
+            } else {
+                imageUrl = await window.imageManager.getCardImageUrl(card.name, 'normal');
+            }
+
+            if (imageUrl) {
+                container.innerHTML = `<img class="scry-card-image" src="${imageUrl}" alt="${card.name}">`;
+            }
+        } catch (err) {
+            console.warn('Failed to load scry card image:', err);
+            // Mantém o placeholder com nome/tipo
+        }
     }
 
     // === Sistema de Seleção de Alvo na Stack (Counterspell) ===
@@ -2469,6 +2497,56 @@ class GameUI {
     }
 
     /**
+     * Mostra um modal de confirmação Sim/Não genérico
+     * @param {Object} options - Opções do prompt
+     * @param {string} options.title - Título do modal
+     * @param {string} options.description - Descrição/pergunta
+     * @param {string} options.yesText - Texto do botão Sim (opcional, default "Sim")
+     * @param {string} options.noText - Texto do botão Não (opcional, default "Não")
+     * @returns {Promise<boolean>} - true se Sim, false se Não
+     */
+    promptYesNo(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('yes-no-modal');
+            if (!modal) {
+                // Fallback: assume Não
+                resolve(false);
+                return;
+            }
+
+            const title = document.getElementById('yes-no-title');
+            const description = document.getElementById('yes-no-description');
+            const btnYes = document.getElementById('btn-yes');
+            const btnNo = document.getElementById('btn-no');
+
+            // Configurar conteúdo
+            title.textContent = options.title || 'Confirmar';
+            description.textContent = options.description || 'Deseja realizar esta ação?';
+            btnYes.textContent = options.yesText || 'Sim';
+            btnNo.textContent = options.noText || 'Não';
+
+            // Event handlers
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                btnYes.onclick = null;
+                btnNo.onclick = null;
+            };
+
+            btnYes.onclick = () => {
+                cleanup();
+                resolve(true);
+            };
+
+            btnNo.onclick = () => {
+                cleanup();
+                resolve(false);
+            };
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
      * Mostra um modal perguntando se o jogador quer pagar o custo de Ward
      * @param {Object} target - A criatura com Ward que está sendo mirada
      * @param {number} wardCost - O custo de Ward a ser pago
@@ -2773,6 +2851,13 @@ class GameUI {
             const instantsContainer = document.getElementById('priority-instants');
             const btnRespond = document.getElementById('btn-priority-respond');
             const btnPass = document.getElementById('btn-priority-pass');
+
+            // Verificar se todos os elementos existem
+            if (!reasonEl || !instantsContainer || !btnRespond || !btnPass) {
+                console.error('Priority window: missing DOM elements');
+                resolve('pass');
+                return;
+            }
 
             // Configurar conteúdo
             reasonEl.textContent = reason;

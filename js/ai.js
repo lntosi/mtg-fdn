@@ -262,7 +262,33 @@ class AIPlayer {
     chooseBlockers(attackers, possibleBlockers) {
         const assignments = {};
 
-        attackers.forEach(attacker => {
+        // PRIMEIRO: Bloquear atacantes com mustBeBlocked (obrigatório)
+        const mustBlockAttackers = attackers.filter(a => a.mustBeBlocked);
+        mustBlockAttackers.forEach(attacker => {
+            const availableBlockers = possibleBlockers.filter(b =>
+                this.rules.canBlock(b, attacker) && !b.assignedToBlock
+            );
+
+            if (availableBlockers.length > 0) {
+                // Escolher o bloqueador que causa menos prejuízo
+                // Prioridade: bloqueador que mata atacante sem morrer > bloqueador mais fraco
+                const attackerToughness = this.rules.getCreatureToughness(attacker);
+
+                const bestBlocker = availableBlockers.find(b => {
+                    const blockerPower = this.rules.getCreaturePower(b);
+                    return blockerPower >= attackerToughness ||
+                        (b.keywords && b.keywords.includes('deathtouch'));
+                }) || availableBlockers.sort((a, b) =>
+                    this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+                )[0]; // Menor poder se não consegue matar
+
+                bestBlocker.assignedToBlock = true;
+                assignments[attacker.instanceId] = [bestBlocker];
+            }
+        });
+
+        // SEGUNDO: Lógica normal para outros atacantes
+        attackers.filter(a => !a.mustBeBlocked).forEach(attacker => {
             const attackerPower = this.rules.getCreaturePower(attacker);
             const attackerToughness = this.rules.getCreatureToughness(attacker);
 
@@ -317,6 +343,7 @@ class AIPlayer {
         const player = this.game.player;
 
         // Para remoções: escolher a criatura mais forte do oponente
+        // Nota: felling_blow agora é one-sided fight, não remoção direta
         if (['heros_downfall', 'moment_of_craving', 'incinerating_blast',
              'volley', 'felling_blow', 'broken_wings', 'angelic_edict',
              'elspeths_smite'].includes(spell.id)) {

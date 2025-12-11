@@ -3,39 +3,39 @@
 
 class SoundManager {
     constructor() {
-        this.enabled = true;
+        // Sons desabilitados por padrão (Pixabay bloqueou acesso cross-origin)
+        // Para habilitar, adicione arquivos locais em assets/sounds/ e atualize soundUrls
+        this.enabled = false;
         this.volume = 0.5;
         this.sounds = {};
         this.loaded = false;
 
-        // URLs de sons gratuitos (Pixabay - sem necessidade de atribuição)
+        // URLs de sons - desabilitado temporariamente
+        // Para reabilitar: coloque arquivos .mp3 em assets/sounds/ e atualize os caminhos
         this.soundUrls = {
-            // Sons de cartas
-            cardPlay: 'https://cdn.pixabay.com/audio/2022/03/15/audio_7a39095a92.mp3', // Card flip
-            cardDraw: 'https://cdn.pixabay.com/audio/2022/03/15/audio_8a0e6dc819.mp3', // Card slide
-
-            // Sons de ação
-            attack: 'https://cdn.pixabay.com/audio/2022/03/24/audio_d9166af0b4.mp3', // Swoosh
-            damage: 'https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3', // Hit
-            block: 'https://cdn.pixabay.com/audio/2022/10/30/audio_5ace8ab68f.mp3', // Shield
-
-            // Sons de UI
-            buttonClick: 'https://cdn.pixabay.com/audio/2022/03/15/audio_3b6b3e0e8e.mp3', // Click
-            turnStart: 'https://cdn.pixabay.com/audio/2021/08/04/audio_12b0c7443c.mp3', // Notification
-
-            // Sons de resultado
-            victory: 'https://cdn.pixabay.com/audio/2021/08/04/audio_c518b55a13.mp3', // Win fanfare
-            defeat: 'https://cdn.pixabay.com/audio/2022/03/15/audio_7625acd24f.mp3', // Lose
-
-            // Ambiente
-            magic: 'https://cdn.pixabay.com/audio/2022/03/15/audio_61e02f6c00.mp3' // Magic spell
+            // cardPlay: 'assets/sounds/card-flip.mp3',
+            // cardDraw: 'assets/sounds/card-slide.mp3',
+            // attack: 'assets/sounds/swoosh.mp3',
+            // damage: 'assets/sounds/hit.mp3',
+            // block: 'assets/sounds/shield.mp3',
+            // buttonClick: 'assets/sounds/click.mp3',
+            // turnStart: 'assets/sounds/notification.mp3',
+            // victory: 'assets/sounds/win.mp3',
+            // defeat: 'assets/sounds/lose.mp3',
+            // magic: 'assets/sounds/magic.mp3'
         };
 
         this.init();
     }
 
     init() {
-        // Pré-carregar sons
+        // Sons desabilitados - não carregar nada
+        if (Object.keys(this.soundUrls).length === 0) {
+            this.loaded = true;
+            return;
+        }
+
+        // Pré-carregar sons (quando habilitado)
         for (const [name, url] of Object.entries(this.soundUrls)) {
             this.sounds[name] = new Audio();
             this.sounds[name].src = url;

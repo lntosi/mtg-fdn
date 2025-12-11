@@ -2781,12 +2781,107 @@ body {
     box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
 }
 
+/* === Yes/No Modal === */
+.yes-no-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.yes-no-content h2 {
+    color: #9b59b6;
+    margin-bottom: 15px;
+}
+
+.yes-no-content p {
+    color: #e0e0e0;
+    margin-bottom: 25px;
+    font-size: 1.1em;
+}
+
+.yes-no-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-yes, .btn-no {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: bold;
+}
+
+.btn-yes {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.btn-yes:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+.btn-no {
+    background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+    color: white;
+}
+
+.btn-no:hover {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(149, 165, 166, 0.5);
+}
+
 /* === Scry UI === */
 .scry-card-preview {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+}
+
+.scry-card-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+.scry-card-image {
+    max-height: 340px;
+    width: auto;
+    border-radius: 4.5% / 3.2%;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease;
+}
+
+.scry-card-image:hover {
+    transform: scale(1.02);
+}
+
+.scry-card-loading {
+    padding: 40px 30px;
+    background: linear-gradient(135deg, #3b5998 0%, #1e3c72 100%);
+    border-radius: 10px;
+    border: 2px solid #6b8bc3;
+    min-width: 200px;
+    text-align: center;
+}
+
+.scry-card-loading .card-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.scry-card-loading .card-type {
+    font-size: 1em;
+    color: #c0d0e0;
 }
 
 .scry-card {

@@ -194,13 +194,11 @@ class RulesEngine {
             return hasValidTargets;
         }
 
-        // Felling Blow - criaturas com flying ou reach do oponente
+        // Felling Blow - precisa de criatura sua E criatura do oponente
         if (card.id === 'felling_blow') {
-            const hasValidTargets = opponent.battlefield.some(c =>
-                c.type === 'creature' && c.keywords &&
-                (c.keywords.includes('flying') || c.keywords.includes('reach'))
-            );
-            return hasValidTargets;
+            const hasOwnCreature = player.battlefield.some(c => c.type === 'creature');
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            return hasOwnCreature && hasOpponentCreature;
         }
 
         // Counterspells - precisam de algo na stack
@@ -873,6 +871,32 @@ class RulesEngine {
     hasKeyword(creature, keyword, isAttacking = false) {
         const keywords = this.getCreatureKeywords(creature, isAttacking);
         return keywords.includes(keyword);
+    }
+
+    /**
+     * Verifica se uma criatura pode ser alvo de uma spell/ability de um oponente
+     * Considera hexproof (permanente e temporário)
+     * @param {Object} creature - A criatura a verificar
+     * @param {Object} caster - Quem está conjurando (oponente da criatura)
+     * @returns {boolean} true se pode ser alvo
+     */
+    canBeTargetedBy(creature, caster) {
+        // Verificar quem controla a criatura
+        const creatureController = this.game.player.battlefield.includes(creature)
+            ? this.game.player
+            : this.game.opponent;
+
+        // Se o caster é o mesmo controlador, hexproof não se aplica
+        if (caster === creatureController) {
+            return true;
+        }
+
+        // Hexproof impede que oponentes mirem a criatura
+        if (this.hasKeyword(creature, 'hexproof', false)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

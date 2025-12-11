@@ -730,6 +730,59 @@ class GameState {
             // Verificar se precisa de alvo
             const needsTarget = this.spellNeedsTarget(card);
 
+            // Felling Blow tem fluxo especial: escolher SUA criatura primeiro, depois do oponente
+            if (card.id === 'felling_blow' && player === this.player) {
+                const ownCreatures = player.battlefield.filter(c => c.type === 'creature');
+                const opponent = this.opponent;
+                const opponentCreatures = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && this.rules.canBeTargetedBy(c, player)
+                );
+
+                if (ownCreatures.length === 0 || opponentCreatures.length === 0) {
+                    this.ui.log(`Não há alvos válidos para ${card.name}`);
+                    player.hand.push(card);
+                    return false;
+                }
+
+                // Pagar mana antes de selecionar
+                this.rules.payMana(card, player);
+                window.soundManager.playMagic();
+
+                // PASSO 1: Escolher sua criatura
+                const ownTarget = await this.ui.promptTriggerTarget({
+                    title: 'Felling Blow - Sua Criatura',
+                    description: 'Escolha sua criatura para receber +1/+1:',
+                    validTargets: ownCreatures,
+                    canSkip: false
+                });
+
+                if (!ownTarget) {
+                    player.graveyard.push(card);
+                    return true;
+                }
+
+                // PASSO 2: Escolher criatura do oponente
+                this.ui.promptForTarget(card, opponentCreatures, async (enemyTarget) => {
+                    // Adiciona +1/+1 counter
+                    if (!ownTarget.counters) ownTarget.counters = {};
+                    ownTarget.counters.plusOnePlusOne = (ownTarget.counters.plusOnePlusOne || 0) + 1;
+                    this.ui.log(`${ownTarget.name} ganhou um contador +1/+1`);
+
+                    // Calcula dano (após o counter)
+                    const damage = this.rules.getCreaturePower(ownTarget);
+                    enemyTarget.damage = (enemyTarget.damage || 0) + damage;
+                    this.ui.log(`${ownTarget.name} causou ${damage} de dano a ${enemyTarget.name}`);
+
+                    // Verifica se a criatura alvo morreu
+                    await this.checkCreatureDeath(enemyTarget, opponent);
+
+                    player.graveyard.push(card);
+                    this.ui.render();
+                    this.saveGame();
+                });
+                return true;
+            }
+
             if (needsTarget && player === this.player) {
                 // Jogador precisa selecionar alvo
                 const validTargets = this.getValidSpellTargets(card, player);
@@ -905,7 +958,10 @@ class GameState {
             case 'moment_of_craving':
             case 'heros_downfall':
             case 'incinerating_blast':
-                targets = opponent.battlefield.filter(c => c.type === 'creature');
+                // Filtrar criaturas que podem ser alvo (não têm hexproof)
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
+                );
                 break;
 
             // === REMOÇÃO COM RESTRIÇÃO ===
@@ -917,32 +973,37 @@ class GameState {
                 break;
 
             case 'volley':
-                // Só criaturas com flying
+                // Só criaturas com flying que podem ser alvo
                 targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+                    c.type === 'creature' &&
+                    c.keywords && c.keywords.includes('flying') &&
+                    this.rules.canBeTargetedBy(c, caster)
                 );
                 break;
 
             case 'felling_blow':
-                // Só criaturas com flying
+                // Felling Blow tem dois alvos: criatura sua + criatura do oponente
+                // Retorna criaturas do oponente (segundo alvo); primeiro alvo é tratado separadamente
                 targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+                    c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
                 );
                 break;
 
             case 'angelic_edict':
-                // Criatura ou encantamento
+                // Criatura ou encantamento (criaturas verificam hexproof)
                 targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' || c.type === 'enchantment'
+                    (c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)) ||
+                    c.type === 'enchantment'
                 );
                 break;
 
             case 'broken_wings':
-                // Artefato, encantamento ou criatura com flying
+                // Artefato, encantamento ou criatura com flying (criaturas verificam hexproof)
                 targets = opponent.battlefield.filter(c =>
                     c.type === 'artifact' ||
                     c.type === 'enchantment' ||
-                    (c.type === 'creature' && c.keywords && c.keywords.includes('flying'))
+                    (c.type === 'creature' && c.keywords && c.keywords.includes('flying') &&
+                     this.rules.canBeTargetedBy(c, caster))
                 );
                 break;
 
@@ -1009,18 +1070,18 @@ class GameState {
             case 'snakeskin_veil':
                 if (!target.counters) target.counters = {};
                 target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+                // Hexproof temporário até o fim do turno
+                if (!target.temporaryKeywords) target.temporaryKeywords = [];
+                target.temporaryKeywords.push('hexproof');
                 this.ui.log(`${target.name} ganhou um contador +1/+1 e resistência a magia`);
                 break;
 
             case 'offer_immortality':
-                // Simplificado: só o +1/+1 se vampiro
-                if (target.subtype && target.subtype.includes('Vampire')) {
-                    if (!target.counters) target.counters = {};
-                    target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
-                    this.ui.log(`${target.name} ganhou indestrutível e +1/+1`);
-                } else {
-                    this.ui.log(`${target.name} ganhou indestrutível`);
-                }
+                // Deathtouch + indestructible até o fim do turno
+                if (!target.temporaryKeywords) target.temporaryKeywords = [];
+                target.temporaryKeywords.push('deathtouch');
+                target.temporaryKeywords.push('indestructible');
+                this.ui.log(`${target.name} ganhou toque mortífero e indestrutível`);
                 break;
 
             // === DANO ===
@@ -1029,30 +1090,73 @@ class GameState {
                 target.toughnessModifier = (target.toughnessModifier || 0) - 2;
                 caster.life += 2;
                 this.ui.log(`${target.name} recebeu -2/-2. ${caster.name} ganhou 2 vidas`);
-                this.checkCreatureDeath(target, targetOwner);
+                await this.checkCreatureDeath(target, targetOwner);
                 break;
 
             case 'volley':
                 target.damage = (target.damage || 0) + 3;
                 this.ui.log(`Volley causou 3 de dano a ${target.name}`);
-                this.checkCreatureDeath(target, targetOwner);
+                await this.checkCreatureDeath(target, targetOwner);
                 break;
 
             case 'incinerating_blast':
-                target.damage = (target.damage || 0) + 5;
-                this.ui.log(`Incinerating Blast causou 5 de dano a ${target.name}`);
-                this.checkCreatureDeath(target, targetOwner);
+                // 6 dano a criatura alvo + loot opcional
+                target.damage = (target.damage || 0) + 6;
+                this.ui.log(`Incinerating Blast causou 6 de dano a ${target.name}`);
+                await this.checkCreatureDeath(target, targetOwner);
+
+                // Loot opcional - perguntar se quer descartar para comprar
+                if (caster.hand.length > 0) {
+                    if (caster === this.player) {
+                        // Jogador pode escolher
+                        const wantsLoot = await this.ui.promptYesNo({
+                            title: 'Incinerating Blast - Loot',
+                            description: 'Deseja descartar uma carta para comprar uma carta?',
+                            yesText: 'Sim, descartar',
+                            noText: 'Não'
+                        });
+
+                        if (wantsLoot) {
+                            // Prompt para escolher carta a descartar
+                            const cardToDiscard = await this.ui.promptTriggerTarget({
+                                title: 'Escolha carta para descartar',
+                                description: 'Selecione uma carta da sua mão para descartar:',
+                                validTargets: caster.hand,
+                                canSkip: false
+                            });
+
+                            if (cardToDiscard) {
+                                const index = caster.hand.indexOf(cardToDiscard);
+                                if (index > -1) {
+                                    caster.hand.splice(index, 1);
+                                    caster.graveyard.push(cardToDiscard);
+                                    this.rules.drawCard(caster);
+                                    this.ui.log(`${caster.name} descartou ${cardToDiscard.name} e comprou uma carta`);
+                                }
+                            }
+                        }
+                    } else {
+                        // IA faz loot automaticamente
+                        const discarded = caster.hand.shift();
+                        caster.graveyard.push(discarded);
+                        this.rules.drawCard(caster);
+                        this.ui.log(`${caster.name} descartou ${discarded.name} e comprou uma carta`);
+                    }
+                }
                 break;
 
             // === REMOÇÃO ===
             case 'heros_downfall':
-                this.destroyPermanent(target, targetOwner);
+                await this.destroyPermanent(target, targetOwner);
                 this.ui.log(`${target.name} foi destruído`);
                 break;
 
             case 'elspeths_smite':
-                this.exilePermanent(target, targetOwner);
-                this.ui.log(`${target.name} foi exilado`);
+                // Causa 3 de dano. Se morrer neste turno, exila em vez de ir pro cemitério
+                target.damage = (target.damage || 0) + 3;
+                target.exileOnDeath = true; // Flag para exilar em vez de destruir
+                this.ui.log(`Elspeth's Smite causou 3 de dano a ${target.name}`);
+                await this.checkCreatureDeath(target, targetOwner);
                 break;
 
             case 'angelic_edict':
@@ -1061,12 +1165,45 @@ class GameState {
                 break;
 
             case 'felling_blow':
-                this.destroyPermanent(target, targetOwner);
-                this.ui.log(`${target.name} foi destruído`);
+                // Felling Blow: +1/+1 em sua criatura, ela causa dano = poder à criatura do oponente
+                // "target" aqui é a criatura do oponente (segundo alvo)
+                // Precisamos escolher uma criatura do caster para receber o +1/+1 e causar o dano
+                const ownCreatures = caster.battlefield.filter(c => c.type === 'creature');
+                if (ownCreatures.length > 0) {
+                    let ownTarget;
+                    if (caster === this.player) {
+                        ownTarget = await this.ui.promptTriggerTarget({
+                            title: 'Felling Blow',
+                            description: 'Escolha sua criatura para receber +1/+1 e causar dano:',
+                            validTargets: ownCreatures,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA: escolhe a criatura com maior poder
+                        ownTarget = ownCreatures.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (ownTarget) {
+                        // Adiciona +1/+1 counter
+                        if (!ownTarget.counters) ownTarget.counters = {};
+                        ownTarget.counters.plusOnePlusOne = (ownTarget.counters.plusOnePlusOne || 0) + 1;
+                        this.ui.log(`${ownTarget.name} ganhou um contador +1/+1`);
+
+                        // Calcula dano (após o counter)
+                        const damage = this.rules.getCreaturePower(ownTarget);
+                        target.damage = (target.damage || 0) + damage;
+                        this.ui.log(`${ownTarget.name} causou ${damage} de dano a ${target.name}`);
+
+                        // Verifica se a criatura alvo morreu
+                        await this.checkCreatureDeath(target, targetOwner);
+                    }
+                }
                 break;
 
             case 'broken_wings':
-                this.destroyPermanent(target, targetOwner);
+                await this.destroyPermanent(target, targetOwner);
                 this.ui.log(`${target.name} foi destruído`);
                 break;
 
@@ -1123,14 +1260,15 @@ class GameState {
                 break;
 
             case 'joraga_invocation':
-                // +3/+3 para todas criaturas
+                // +3/+3 para todas criaturas e devem ser bloqueadas
                 caster.battlefield.forEach(c => {
                     if (c.type === 'creature') {
                         c.powerModifier = (c.powerModifier || 0) + 3;
                         c.toughnessModifier = (c.toughnessModifier || 0) + 3;
+                        c.mustBeBlocked = true; // Flag para forçar bloqueio
                     }
                 });
-                this.ui.log(`Todas as criaturas ganharam +3/+3!`);
+                this.ui.log(`Todas as criaturas ganharam +3/+3 e devem ser bloqueadas!`);
                 break;
 
             case 'opt':
@@ -1175,21 +1313,27 @@ class GameState {
 
     // === UTILITÁRIOS DE ESTADO DE CRIATURAS ===
 
-    checkCreatureDeath(creature, owner) {
+    async checkCreatureDeath(creature, owner) {
         const toughness = this.rules.getCreatureToughness(creature);
         const damage = creature.damage || 0;
 
         if (toughness <= 0 || damage >= toughness) {
-            this.destroyPermanent(creature, owner);
+            // Se marcado para exílio ao morrer (Elspeth's Smite), exila em vez de destruir
+            if (creature.exileOnDeath) {
+                this.exilePermanent(creature, owner);
+                this.ui.log(`${creature.name} foi exilado`);
+            } else {
+                await this.destroyPermanent(creature, owner);
+            }
         }
     }
 
-    destroyPermanent(permanent, owner) {
+    async destroyPermanent(permanent, owner) {
         const index = owner.battlefield.indexOf(permanent);
         if (index > -1) {
             // Chamar death triggers ANTES de mover para o cemitério (criatura ainda "vê" o campo)
             if (permanent.type === 'creature' && this.triggers) {
-                this.triggers.onCreatureDeath(permanent, owner);
+                await this.triggers.onCreatureDeath(permanent, owner);
             }
 
             owner.battlefield.splice(index, 1);
@@ -1283,9 +1427,9 @@ class GameState {
                 // Custo 3WW: precisa de 2W específico + 3 qualquer = 5 total, com pelo menos 2W
                 return jazalMana.W >= 2 && jazalTotalMana >= 5;
 
-            case 'veteran_goblin_firebomb':
-                // 1, T, Sacrifice: 2 dano a qualquer alvo
-                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 1;
+            case 'goblin_firebomb':
+                // 7, T, Sacrifice: destroy target permanent
+                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 7;
 
             case 'dropkick_bomber':
                 // R: outro Goblin ganha voar e "quando causa dano de combate, sacrifique-o"
@@ -1358,7 +1502,6 @@ class GameState {
                 } else {
                     this.opponentLostLifeThisTurn = true;
                 }
-                this.triggers.onOpponentLosesLife(player, 1);
                 this.ui.log(`Vampire Neonate: ${opponent.name} perdeu 1 vida, ${player.name} ganhou 1 vida`);
                 break;
 
@@ -1454,26 +1597,16 @@ class GameState {
                 this.ui.log(`Jazal Goldmane: Atacantes ganharam +${attackerCount}/+${attackerCount}`);
                 break;
 
-            case 'veteran_goblin_firebomb':
-                // 1, T, Sacrifica: 2 dano a qualquer alvo
-                this.payGenericMana(1, player);
+            case 'goblin_firebomb':
+                // 7, T, Sacrifice: destroy target permanent
+                this.payGenericMana(7, player);
                 card.tapped = true;
-                // Sacrificar
-                this.destroyPermanent(card, player);
-                // 2 dano ao oponente (simplificado)
-                const creatureTarget = opponent.battlefield.find(c => c.type === 'creature');
-                if (creatureTarget) {
-                    creatureTarget.damage = (creatureTarget.damage || 0) + 2;
-                    this.checkCreatureDeath(creatureTarget, opponent);
-                    this.ui.log(`Veteran's Goblin Firebomb causou 2 de dano a ${creatureTarget.name}`);
-                } else {
-                    opponent.life -= 2;
-                    if (opponent === this.player) {
-                        this.playerLostLifeThisTurn = true;
-                    } else {
-                        this.opponentLostLifeThisTurn = true;
-                    }
-                    this.ui.log(`Veteran's Goblin Firebomb causou 2 de dano a ${opponent.name}`);
+                await this.destroyPermanent(card, player);
+                // Destruir permanente alvo do oponente (simplificado: maior criatura)
+                const firebombTarget = opponent.battlefield.find(c => c.type === 'creature');
+                if (firebombTarget) {
+                    await this.destroyPermanent(firebombTarget, opponent);
+                    this.ui.log(`Goblin Firebomb destruiu ${firebombTarget.name}`);
                 }
                 break;
 
@@ -1799,6 +1932,7 @@ class GameState {
                     c.powerModifier = 0;
                     c.toughnessModifier = 0;
                     c.temporaryKeywords = [];
+                    c.mustBeBlocked = false; // Limpar flag de must be blocked
                 });
 
                 // Descartar até 7 cartas
@@ -1901,6 +2035,13 @@ class GameState {
     }
 
     async declareBlockers(assignments) {
+        // Verificar se todos os atacantes com mustBeBlocked estão sendo bloqueados
+        const validation = this.validateMustBeBlocked(assignments);
+        if (!validation.valid) {
+            this.ui.log(`⚠️ ${validation.message}`);
+            // Não impede o jogador, apenas avisa (em MTG real, é obrigatório)
+        }
+
         // Salvar estado para undo antes de confirmar bloqueadores
         const blockerCount = Object.values(assignments).flat().length;
         if (blockerCount > 0) {
@@ -1929,7 +2070,47 @@ class GameState {
         }
     }
 
+    /**
+     * Valida se atacantes com mustBeBlocked estão sendo bloqueados
+     * @param {Object} assignments - Mapa de bloqueios {attackerId: [blockerIds]}
+     * @returns {Object} { valid: boolean, message: string }
+     */
+    validateMustBeBlocked(assignments) {
+        // Identificar atacantes com mustBeBlocked
+        const mustBlockAttackers = this.currentAttackers.filter(a => a.mustBeBlocked);
+
+        if (mustBlockAttackers.length === 0) {
+            return { valid: true, message: '' };
+        }
+
+        // Verificar quais estão sendo bloqueados
+        const blockedAttackerIds = Object.keys(assignments);
+        const unblockedMustBlock = mustBlockAttackers.filter(a =>
+            !blockedAttackerIds.includes(a.instanceId)
+        );
+
+        // Verificar se o defensor tem bloqueadores disponíveis
+        const defendingPlayer = this.isPlayerTurn() ? this.opponent : this.player;
+        const availableBlockers = defendingPlayer.battlefield.filter(c =>
+            c.type === 'creature' &&
+            !c.tapped &&
+            this.rules.canBlock(c) &&
+            !Object.values(assignments).flat().includes(c.instanceId)
+        );
+
+        if (unblockedMustBlock.length > 0 && availableBlockers.length > 0) {
+            const names = unblockedMustBlock.map(a => a.name).join(', ');
+            return {
+                valid: false,
+                message: `${names} deve(m) ser bloqueado(s) se possível!`
+            };
+        }
+
+        return { valid: true, message: '' };
+    }
+
     async resolveCombat() {
+        try {
         if (this.currentAttackers.length === 0) return;
 
         // Determinar quem está atacando baseado em quem possui as criaturas atacantes
@@ -2015,8 +2196,6 @@ class GameState {
             } else {
                 this.opponentLostLifeThisTurn = true;
             }
-            // Trigger Vengeful Bloodwitch - ganha vida quando oponente perde vida
-            this.triggers.onOpponentLosesLife(attackingPlayer, results.damageToPlayers.defender);
         }
 
         // Aplicar vida ganha
@@ -2026,22 +2205,29 @@ class GameState {
         }
 
         // Remover criaturas mortas
-        results.creaturesDied.forEach(creature => {
+        for (const creature of results.creaturesDied) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
-            this.destroyPermanent(creature, owner);
+            await this.destroyPermanent(creature, owner);
             this.ui.log(`${creature.name} morreu em combate`);
-        });
+        }
 
         // Sacrificar criaturas marcadas com sacrificeOnCombatDamage (Dropkick Bomber ability)
-        this.currentAttackers.forEach(attacker => {
+        for (const attacker of this.currentAttackers) {
             if (attacker.sacrificeOnCombatDamage && !results.creaturesDied.includes(attacker)) {
                 const owner = this.player.battlefield.includes(attacker) ? this.player : this.opponent;
-                this.destroyPermanent(attacker, owner);
+                await this.destroyPermanent(attacker, owner);
                 this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
             }
-        });
+        }
 
         this.ui.render();
+        } catch (error) {
+            console.error('Erro em resolveCombat:', error);
+            this.ui.log(`[ERRO] Falha ao resolver combate: ${error.message}`);
+            // Tentar continuar o jogo mesmo com erro
+            this.currentAttackers = [];
+            this.blockerAssignments = {};
+        }
     }
 
     async endTurn() {
@@ -2228,37 +2414,48 @@ class GameState {
     }
 
     async continueAfterBlocking() {
-        // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
-        // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
-        const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
+        try {
+            // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
+            // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
+            const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
 
-        if (priorityResponse === 'respond') {
-            await this.handlePlayerPriorityResponse();
+            if (priorityResponse === 'respond') {
+                await this.handlePlayerPriorityResponse();
+            }
+
+            // Resolver combate
+            this.phase = PHASES.COMBAT_DAMAGE;
+            this.ui.log('Resolvendo dano de combate...');
+            await this.delay(800);
+            await this.resolveCombat();
+            this.ui.render();
+
+            // Delay maior para ver resultado do combate
+            await this.delay(1200);
+
+            // Limpar atacantes
+            this.currentAttackers = [];
+            this.blockerAssignments = {};
+
+            // Continuar o turno da IA
+            await this.finishAITurn();
+        } catch (error) {
+            console.error('Erro em continueAfterBlocking:', error);
+            this.ui.log(`[ERRO] Falha após bloqueio: ${error.message}`);
+            // Tentar recuperar e continuar
+            this.currentAttackers = [];
+            this.blockerAssignments = {};
+            this.ui.waitingForBlockers = false;
+            await this.finishAITurn();
         }
-
-        // Resolver combate
-        this.phase = PHASES.COMBAT_DAMAGE;
-        this.ui.log('Resolvendo dano de combate...');
-        await this.delay(800);
-        await this.resolveCombat();
-        this.ui.render();
-
-        // Delay maior para ver resultado do combate
-        await this.delay(1200);
-
-        // Limpar atacantes
-        this.currentAttackers = [];
-        this.blockerAssignments = {};
-
-        // Continuar o turno da IA
-        await this.finishAITurn();
     }
 
     async finishAITurn() {
-        await this.delay(600);
+        try {
+            await this.delay(600);
 
-        // Main Phase 2
-        this.phase = PHASES.MAIN2;
+            // Main Phase 2
+            this.phase = PHASES.MAIN2;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
         await this.delay(500);
@@ -2277,11 +2474,21 @@ class GameState {
             await this.handlePlayerPriorityResponse();
         }
 
-        // Limpar dano e modificadores temporários
+        // Limpar dano e modificadores temporários (criaturas da IA)
         this.opponent.battlefield.forEach(c => {
             c.damage = 0;
             c.powerModifier = 0;
             c.toughnessModifier = 0;
+            c.temporaryKeywords = [];
+            c.mustBeBlocked = false;
+        });
+
+        // Limpar modificadores temporários das criaturas do jogador também
+        // (buffs que duravam "até o fim do turno" do oponente)
+        this.player.battlefield.forEach(c => {
+            // Apenas limpar temporaryKeywords, não dano (será limpo no cleanup do jogador)
+            c.temporaryKeywords = [];
+            c.mustBeBlocked = false;
         });
 
         await this.delay(800);
@@ -2297,6 +2504,15 @@ class GameState {
         this.ui.log(`--- Seu Turno ${this.turnNumber} ---`);
         this.saveGame(); // Auto-save no início do turno do jogador
         await this.handlePhase();
+        } catch (error) {
+            console.error('Erro em finishAITurn:', error);
+            this.ui.log(`[ERRO] Falha ao finalizar turno da IA: ${error.message}`);
+            // Tentar recuperar
+            this.activePlayer = this.player;
+            this.turnNumber++;
+            this.phase = PHASES.UNTAP;
+            this.ui.render();
+        }
     }
 
     pass() {

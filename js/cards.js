@@ -23,7 +23,7 @@ const CARD_DATABASE = {
             // Feitiços e Encantamentos (3)
             { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
             { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
-            { id: "elspeths_smite", name: "Elspeth's Smite", type: "instant", cost: "W", cmc: 1, text: "Exile criatura atacante ou bloqueadora alvo.", qty: 1 },
+            { id: "elspeths_smite", name: "Elspeth's Smite", type: "instant", cost: "W", cmc: 1, text: "Causa 3 de dano a criatura atacante ou bloqueadora alvo. Se ela morrer neste turno, exile-a.", qty: 1 },
             { id: "angelic_edict", name: "Angelic Edict", type: "sorcery", cost: "4W", cmc: 5, text: "Exile criatura ou encantamento alvo.", qty: 1 }
         ]
     },
@@ -48,7 +48,7 @@ const CARD_DATABASE = {
             { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
             { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },
             { id: "volley_veteran", name: "Volley Veteran", type: "creature", subtype: "Goblin Warrior", cost: "3R", cmc: 4, power: 4, toughness: 2, text: "Quando entra, causa dano a criatura alvo que um oponente controla igual ao número de Goblins que você controla.", qty: 1 },
-            { id: "incinerating_blast", name: "Incinerating Blast", type: "sorcery", cost: "4R", cmc: 5, text: "Causa 5 de dano a criatura ou planeswalker alvo.", qty: 1 },
+            { id: "incinerating_blast", name: "Incinerating Blast", type: "sorcery", cost: "4R", cmc: 5, text: "Causa 6 de dano a criatura alvo. Você pode descartar uma carta. Se fizer isso, compre uma carta.", qty: 1 },
             // Artefato (1)
             { id: "goblin_oriflamme", name: "Goblin Oriflamme", type: "enchantment", cost: "1R", cmc: 2, text: "Criaturas atacantes que você controla têm +1/+0.", qty: 1 },
             { id: "goblin_firebomb", name: "Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, keywords: ["flash"], text: "Lampejo. 7, T, Sacrifique este artefato: Destrua permanente alvo.", qty: 1 }
@@ -75,7 +75,7 @@ const CARD_DATABASE = {
             { id: "crossway_troublemakers", name: "Crossway Troublemakers", type: "creature", subtype: "Vampire", cost: "5B", cmc: 6, power: 5, toughness: 5, text: "Vampiros atacantes têm toque mortífero e vínculo com a vida. Quando um Vampiro que você controla morre, você pode pagar 2 vidas. Se fizer isso, compre uma carta.", qty: 1 },
             // Feitiços (4)
             { id: "moment_of_craving", name: "Moment of Craving", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo recebe -2/-2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
-            { id: "offer_immortality", name: "Offer Immortality", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo ganha indestrutível até o fim do turno. Se é Vampiro, coloque um contador +1/+1 nela.", qty: 1 },
+            { id: "offer_immortality", name: "Offer Immortality", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo ganha toque mortífero e indestrutível até o fim do turno.", qty: 1 },
             { id: "heros_downfall", name: "Hero's Downfall", type: "instant", cost: "1BB", cmc: 3, text: "Destrua criatura ou planeswalker alvo.", qty: 1 },
             { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
         ]
@@ -102,7 +102,7 @@ const CARD_DATABASE = {
             // Feitiços (4)
             { id: "snakeskin_veil", name: "Snakeskin Veil", type: "instant", cost: "G", cmc: 1, text: "Coloque um contador +1/+1 em criatura alvo que você controla. Ela ganha resistência a magia até o fim do turno.", qty: 1 },
             { id: "broken_wings", name: "Broken Wings", type: "instant", cost: "2G", cmc: 3, text: "Destrua artefato, encantamento ou criatura com voar alvo.", qty: 1 },
-            { id: "felling_blow", name: "Felling Blow", type: "sorcery", cost: "2G", cmc: 3, text: "Destrua criatura alvo com voar.", qty: 1 },
+            { id: "felling_blow", name: "Felling Blow", type: "sorcery", cost: "2G", cmc: 3, text: "Coloque um contador +1/+1 em criatura alvo que você controla. Então ela causa dano igual ao seu poder a criatura alvo que um oponente controla.", qty: 1 },
             { id: "joraga_invocation", name: "Joraga Invocation", type: "sorcery", cost: "4GG", cmc: 6, text: "Cada criatura que você controla recebe +3/+3 até o fim do turno e deve ser bloqueada neste turno se possível.", qty: 1 }
         ]
     },
