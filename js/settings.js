@@ -5,7 +5,8 @@ class SettingsManager {
         this.defaults = {
             theme: 'default',
             soundEnabled: true,
-            volume: 50
+            volume: 50,
+            logPanelEnabled: false  // Histórico retraído por padrão
         };
 
         this.settings = this.loadSettings();
@@ -20,6 +21,7 @@ class SettingsManager {
         this.bindEvents();
         this.applyTheme(this.settings.theme);
         this.applySoundSettings();
+        this.applyLogPanelSetting();
         this.initialized = true;
     }
 
@@ -44,15 +46,11 @@ class SettingsManager {
     }
 
     bindEvents() {
-        // Tecla M para abrir/fechar configurações
+        // Tecla ESC para abrir/fechar configurações
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'm' && !this.isInputFocused()) {
+            if (e.key === 'Escape' && !this.isInputFocused()) {
                 e.preventDefault();
                 this.toggleModal();
-            }
-            // ESC também fecha
-            if (e.key === 'Escape' && this.isOpen()) {
-                this.closeModal();
             }
         });
 
@@ -60,12 +58,6 @@ class SettingsManager {
         const btnClose = document.getElementById('btn-close-settings');
         if (btnClose) {
             btnClose.addEventListener('click', () => this.closeModal());
-        }
-
-        // Botão de engrenagem (canto inferior esquerdo)
-        const btnGear = document.getElementById('btn-settings-gear');
-        if (btnGear) {
-            btnGear.addEventListener('click', () => this.toggleModal());
         }
 
         // Temas
@@ -105,6 +97,15 @@ class SettingsManager {
             btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
         }
 
+        // Log panel enabled/disabled
+        const logPanelEnabled = document.getElementById('log-panel-enabled');
+        if (logPanelEnabled) {
+            logPanelEnabled.checked = this.settings.logPanelEnabled;
+            logPanelEnabled.addEventListener('change', (e) => {
+                this.setLogPanelEnabled(e.target.checked);
+            });
+        }
+
         // Undo enabled/disabled
         const undoEnabled = document.getElementById('undo-enabled');
         if (undoEnabled) {
@@ -113,6 +114,17 @@ class SettingsManager {
             undoEnabled.checked = currentUndoSetting;
             undoEnabled.addEventListener('change', (e) => {
                 this.setUndoEnabled(e.target.checked);
+            });
+        }
+
+        // Reiniciar partida via settings
+        const btnSettingsRestart = document.getElementById('btn-settings-restart');
+        if (btnSettingsRestart) {
+            btnSettingsRestart.addEventListener('click', () => {
+                if (confirm('Reiniciar a partida com os mesmos decks?')) {
+                    this.closeModal();
+                    this.restartGame();
+                }
             });
         }
 
@@ -200,6 +212,33 @@ class SettingsManager {
         const undoEnabled = document.getElementById('undo-enabled');
         if (undoEnabled) {
             undoEnabled.checked = this.settings.undoEnabled || false;
+        }
+    }
+
+    // === Log Panel ===
+    setLogPanelEnabled(enabled) {
+        this.settings.logPanelEnabled = enabled;
+        this.saveSettings();
+        this.applyLogPanelSetting();
+    }
+
+    applyLogPanelSetting() {
+        const logPanel = document.getElementById('log-panel');
+        const gameContainer = document.getElementById('game-container');
+        const btnShowLog = document.getElementById('btn-show-log');
+
+        if (!logPanel || !gameContainer) return;
+
+        if (this.settings.logPanelEnabled) {
+            // Mostrar log panel
+            logPanel.classList.remove('collapsed');
+            gameContainer.classList.remove('log-collapsed');
+            if (btnShowLog) btnShowLog.classList.add('hidden');
+        } else {
+            // Esconder log panel
+            logPanel.classList.add('collapsed');
+            gameContainer.classList.add('log-collapsed');
+            if (btnShowLog) btnShowLog.classList.remove('hidden');
         }
     }
 
@@ -331,6 +370,39 @@ class SettingsManager {
                 if (text) text.textContent = 'Tela Cheia';
             }
         }
+    }
+
+    // === Reiniciar Partida ===
+    restartGame() {
+        if (!window.game) return;
+
+        // Salvar configurações atuais da partida
+        const currentConfig = {
+            playerDecks: window.game.playerDeckKeys,
+            aiDecks: window.game.aiDeckKeys,
+            startingLife: window.game.startingLife || 20,
+            playerName: window.game.player?.name || 'Você',
+            playerAvatar: window.game.playerAvatar,
+            playerFirst: window.game.playerFirst
+        };
+
+        // Verificar se temos os decks salvos
+        if (!currentConfig.playerDecks || !currentConfig.aiDecks) {
+            console.error('Não foi possível reiniciar: dados da partida não encontrados');
+            return;
+        }
+
+        // Reiniciar o jogo com as mesmas configurações
+        window.game.startGame(
+            currentConfig.playerDecks,
+            currentConfig.aiDecks,
+            {
+                startingLife: currentConfig.startingLife,
+                playerName: currentConfig.playerName,
+                playerAvatar: currentConfig.playerAvatar,
+                playerFirst: currentConfig.playerFirst
+            }
+        );
     }
 }
 

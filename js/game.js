@@ -212,13 +212,16 @@ class GameState {
         this.playerDeckKeys = playerDecks;
         this.aiDeckKeys = aiDecks;
 
-        // Opções de jogo
-        const startingLife = options.startingLife || 20;
-        const playerName = options.playerName || 'Você';
-        const playerAvatar = options.playerAvatar || 'jace';
-
-        // Quem começa (default: jogador primeiro)
+        // Opções de jogo (salvar para reinício)
+        this.startingLife = options.startingLife || 20;
+        this.playerName = options.playerName || 'Você';
+        this.playerAvatar = options.playerAvatar || 'jace';
         this.playerFirst = options.playerFirst !== undefined ? options.playerFirst : true;
+
+        // Variáveis locais para uso no método
+        const startingLife = this.startingLife;
+        const playerName = this.playerName;
+        const playerAvatar = this.playerAvatar;
 
         // Escolher avatar da IA baseado nos decks
         const aiAvatar = this.getAIAvatar(aiDecks);
@@ -2250,6 +2253,17 @@ class GameState {
         }
 
         this.ui.render();
+    }
+
+    // Pular diretamente para End Step (botão "Encerrar Turno")
+    async skipToEndStep() {
+        if (!this.isPlayerTurn()) {
+            return;
+        }
+
+        this.ui.log('Pulando para End Step...');
+        this.phase = PHASES.END;
+        await this.handlePhase();
     }
 
     // Descarte para tamanho de mão (máximo 7 cartas)

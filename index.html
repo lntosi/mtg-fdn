@@ -19,12 +19,14 @@
             </div>
             <div class="hand" id="opponent-hand"></div>
             <div class="library-zone">
-                <div class="library" id="opponent-library">
-                    <div class="library-stack"></div>
-                    <span class="library-count">0</span>
-                </div>
-                <div class="graveyard" id="opponent-graveyard">
-                    <span class="graveyard-count">0</span>
+                <div class="library-zone-row">
+                    <div class="library" id="opponent-library">
+                        <div class="library-stack"></div>
+                        <span class="library-count">0</span>
+                    </div>
+                    <div class="graveyard" id="opponent-graveyard">
+                        <span class="graveyard-count">0</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -45,9 +47,8 @@
             </div>
             <div id="action-buttons">
                 <button id="btn-main-action" class="btn-main-action" disabled>OK</button>
-                <button id="btn-attack" disabled title="Declarar Atacantes">⚔️</button>
-                <button id="btn-block" disabled title="Não Bloquear">🛡️</button>
                 <button id="btn-next-phase" class="btn-secondary" disabled title="Pular Fase">▶</button>
+                <button id="btn-end-turn" class="btn-secondary" disabled title="Encerrar Turno">▶▶</button>
                 <button id="btn-undo" class="btn-undo hidden" disabled title="Desfazer última ação">⟲</button>
             </div>
             <div id="stack"></div>
@@ -79,22 +80,17 @@
             </div>
             <div class="hand" id="player-hand"></div>
             <div class="library-zone">
-                <div class="library" id="player-library">
-                    <div class="library-stack"></div>
-                    <span class="library-count">0</span>
-                </div>
-                <div class="graveyard" id="player-graveyard">
-                    <span class="graveyard-count">0</span>
+                <div class="library-zone-row">
+                    <div class="library" id="player-library">
+                        <div class="library-stack"></div>
+                        <span class="library-count">0</span>
+                    </div>
+                    <div class="graveyard" id="player-graveyard">
+                        <span class="graveyard-count">0</span>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Botão de Configurações (canto inferior esquerdo) -->
-        <button id="btn-settings-gear" class="btn-settings-gear" title="Configurações (M)">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-            </svg>
-        </button>
     </div>
 
     <!-- Tela de Personalização do Jogador -->
@@ -504,10 +500,17 @@
                 </div>
             </div>
 
-            <!-- Tela Cheia -->
+            <!-- Exibição -->
             <div class="settings-section">
                 <h3>🖥️ Exibição</h3>
                 <div class="display-settings">
+                    <div class="log-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="log-panel-enabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Histórico de Partida</span>
+                    </div>
                     <button id="btn-fullscreen" class="btn-setting">
                         <span class="btn-icon">⛶</span>
                         <span>Tela Cheia</span>
@@ -526,6 +529,10 @@
                         </label>
                         <span>Botão Desfazer (Undo)</span>
                     </div>
+                    <button id="btn-settings-restart" class="btn-setting btn-warning">
+                        <span class="btn-icon">🔄</span>
+                        <span>Reiniciar Partida</span>
+                    </button>
                     <button id="btn-settings-concede" class="btn-setting btn-danger">
                         <span class="btn-icon">🏳️</span>
                         <span>Conceder Partida</span>
@@ -542,7 +549,7 @@
             </div>
 
             <div class="settings-footer">
-                <span class="settings-hint">Pressione <kbd>M</kbd> para fechar</span>
+                <span class="settings-hint">Pressione <kbd>ESC</kbd> para fechar</span>
             </div>
         </div>
     </div>

@@ -66,9 +66,9 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - At end of opponent's turn
 - Auto-pass if no valid responses available
 
-## Settings Menu (M key)
+## Settings Menu (ESC key)
 
-Press M to open settings menu with:
+Press ESC to open settings menu with:
 - **Themes**: Roxo Místico (default), Clean, Alto Contraste
 - **Sound**: Toggle on/off, volume slider
 - **Fullscreen**: Toggle fullscreen mode
@@ -82,7 +82,7 @@ Settings persist in localStorage.
 The game has an optional undo system for learning/testing purposes:
 
 **Enabling Undo:**
-- Press M to open Settings menu
+- Press ESC to open Settings menu
 - Toggle "Botão Desfazer (Undo)" on
 - A "⟲" button appears after "Pular Fase"
 

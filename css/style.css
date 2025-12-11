@@ -48,9 +48,17 @@ body {
 /* === Grimório e Cemitério === */
 .library-zone {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 8px;
     align-items: center;
     flex-shrink: 0;
+}
+
+/* Linha horizontal: grimório + cemitério */
+.library-zone-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
 .library {
@@ -321,7 +329,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 15px 20px;
+    padding: 15px 100px 15px 20px; /* Espaço reservado à direita para .other-permanents */
     background: rgba(0, 0, 0, 0.3);
     border-radius: 12px;
     border: 2px solid rgba(180, 100, 180, 0.25);
@@ -386,17 +394,23 @@ body {
     overflow: visible !important;
 }
 
-/* Zona de outros permanentes (encantamentos, artefatos) - canto direito */
+/* Zona de outros permanentes (encantamentos, artefatos) - canto lateral */
+/* Posicionamento absoluto para não afetar o fluxo das criaturas/lands */
 .other-permanents {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
-    min-height: 0;
+    flex-direction: column;
+    align-items: flex-end;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    max-height: calc(100% - 20px);
+    max-width: 180px;
     padding: 5px;
-    position: relative;
     overflow: visible !important;
+    z-index: 5;
 }
 
 .other-permanents:empty {
@@ -404,8 +418,8 @@ body {
 }
 
 .other-permanents .card {
-    width: 84px;
-    height: 117px;
+    width: 70px;
+    height: 98px;
 }
 
 /* Lands do oponente: borda embaixo separando das criaturas */
@@ -513,8 +527,9 @@ body {
     background: linear-gradient(135deg, #8e44ad, #9b59b6);
 }
 
-/* Botão secundário (Pular Fase) */
-#btn-next-phase.btn-secondary {
+/* Botões secundários (Pular Fase, Encerrar Turno) */
+#btn-next-phase.btn-secondary,
+#btn-end-turn.btn-secondary {
     background: linear-gradient(135deg, #5a5a5a, #6a6a6a);
     color: #ccc;
     padding: 6px 8px !important;
@@ -523,7 +538,8 @@ body {
     opacity: 0.8;
 }
 
-#btn-next-phase.btn-secondary:hover:not(:disabled) {
+#btn-next-phase.btn-secondary:hover:not(:disabled),
+#btn-end-turn.btn-secondary:hover:not(:disabled) {
     opacity: 1;
 }
 
@@ -550,16 +566,6 @@ body {
     display: none;
 }
 
-#btn-attack {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    color: white;
-    width: 36px;
-}
-#btn-block {
-    background: linear-gradient(135deg, #8e44ad, #9b59b6);
-    color: white;
-    width: 36px;
-}
 
 #action-buttons button:not(:disabled):hover {
     transform: scale(1.05);
@@ -659,6 +665,7 @@ body {
     align-items: center;
     gap: 4px;
     flex: 0 0 auto;
+    min-width: 100px; /* Largura consistente para ambos os jogadores */
 }
 
 /* Container do avatar com vida sobreposta */
@@ -3895,11 +3902,8 @@ html {
 
 /* === Botão de Engrenagem (Configurações) === */
 .btn-settings-gear {
-    position: fixed;
-    bottom: 15px;
-    left: 15px;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
@@ -3909,7 +3913,6 @@ html {
     justify-content: center;
     color: rgba(255, 255, 255, 0.5);
     transition: all 0.3s ease;
-    z-index: 100;
     backdrop-filter: blur(4px);
 }
 
@@ -3958,9 +3961,11 @@ html {
 /* === Modal de Configurações === */
 .settings-content {
     max-width: 500px;
+    max-height: 90vh;
     background: linear-gradient(180deg, #2d1b3d 0%, #1a0a1f 100%);
     border-radius: 16px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .settings-header {
@@ -4116,7 +4121,8 @@ html {
 }
 
 .sound-toggle,
-.undo-toggle {
+.undo-toggle,
+.log-toggle {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -4129,6 +4135,8 @@ html {
 /* Toggle Switch */
 .toggle-switch {
     position: relative;
+    display: inline-block;
+    flex-shrink: 0;
     width: 50px;
     height: 26px;
 }
@@ -4222,7 +4230,7 @@ html {
 .game-settings {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .btn-setting {
@@ -4248,6 +4256,15 @@ html {
 
 .btn-setting .btn-icon {
     font-size: 1.2em;
+}
+
+.btn-setting.btn-warning {
+    background: rgba(241, 196, 15, 0.2);
+    border-color: rgba(241, 196, 15, 0.4);
+}
+
+.btn-setting.btn-warning:hover {
+    background: rgba(241, 196, 15, 0.4);
 }
 
 .btn-setting.btn-danger {
@@ -4462,6 +4479,16 @@ body.theme-clean {
 
 .theme-clean .btn-setting:hover {
     background: rgba(0, 0, 0, 0.2);
+}
+
+.theme-clean .btn-setting.btn-warning {
+    background: rgba(200, 150, 0, 0.15);
+    border-color: rgba(200, 150, 0, 0.3);
+    color: #996600;
+}
+
+.theme-clean .btn-setting.btn-warning:hover {
+    background: rgba(200, 150, 0, 0.25);
 }
 
 .theme-clean .btn-setting.btn-danger {

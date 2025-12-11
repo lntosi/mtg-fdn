@@ -68,8 +68,7 @@ class GameUI {
         // Botões
         this.btnMainAction = document.getElementById('btn-main-action');
         this.btnNextPhase = document.getElementById('btn-next-phase');
-        this.btnAttack = document.getElementById('btn-attack');
-        this.btnBlock = document.getElementById('btn-block');
+        this.btnEndTurn = document.getElementById('btn-end-turn');
         this.btnUndo = document.getElementById('btn-undo');
 
         // Modals
@@ -176,8 +175,7 @@ class GameUI {
         // Botões de ação
         this.btnMainAction.addEventListener('click', () => this.onMainActionClick());
         this.btnNextPhase.addEventListener('click', () => this.game.nextPhase());
-        this.btnAttack.addEventListener('click', () => this.onAttackClick());
-        this.btnBlock.addEventListener('click', () => this.onBlockClick());
+        this.btnEndTurn.addEventListener('click', () => this.game.skipToEndStep());
 
         // Botão de Undo
         if (this.btnUndo) {
@@ -301,6 +299,15 @@ class GameUI {
                 btnShowLog.classList.add('hidden');
             }
         }
+
+        // Sincronizar com configurações
+        if (window.settingsManager) {
+            window.settingsManager.settings.logPanelEnabled = !isCollapsed;
+            window.settingsManager.saveSettings();
+            // Atualizar checkbox se modal estiver aberto
+            const checkbox = document.getElementById('log-panel-enabled');
+            if (checkbox) checkbox.checked = !isCollapsed;
+        }
     }
 
     showLogPanel() {
@@ -310,6 +317,14 @@ class GameUI {
         const btnShowLog = document.getElementById('btn-show-log');
         if (btnShowLog) {
             btnShowLog.classList.add('hidden');
+        }
+
+        // Sincronizar com configurações
+        if (window.settingsManager) {
+            window.settingsManager.settings.logPanelEnabled = true;
+            window.settingsManager.saveSettings();
+            const checkbox = document.getElementById('log-panel-enabled');
+            if (checkbox) checkbox.checked = true;
         }
     }
 
@@ -1838,21 +1853,12 @@ class GameUI {
         // Botão secundário "Pular Fase" - só habilitado em situações específicas
         this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority;
 
-        // Botão de ataque (mostrar apenas na fase de atacantes)
-        const canDeclareAttack = isPlayerTurn && this.game.phase === PHASES.DECLARE_ATTACKERS && !hasStack;
-        this.btnAttack.disabled = !canDeclareAttack || this.waitingForBlockers;
-        // Manter ícone, atualizar tooltip com contagem
-        this.btnAttack.title = this.selectedAttackers.length > 0
-            ? `Atacar com ${this.selectedAttackers.length} criatura(s)`
-            : 'Declarar Atacantes';
-
-        // Botão de bloqueio - escondido quando não esperando bloqueadores
-        this.btnBlock.disabled = !this.waitingForBlockers;
-        const blockCount = Object.values(this.blockerAssignments).flat().length;
-        // Manter ícone, atualizar tooltip com contagem
-        this.btnBlock.title = blockCount > 0
-            ? `Bloquear com ${blockCount} criatura(s)`
-            : 'Não Bloquear';
+        // Botão "Encerrar Turno" - pula direto para End Step
+        // Desabilitado durante combate ativo, stack, ou esperando bloqueadores
+        const inActiveCombat = this.game.phase === PHASES.DECLARE_ATTACKERS ||
+                              this.game.phase === PHASES.DECLARE_BLOCKERS ||
+                              this.game.phase === PHASES.COMBAT_DAMAGE;
+        this.btnEndTurn.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority || inActiveCombat;
     }
 
     getNextPhaseName() {
