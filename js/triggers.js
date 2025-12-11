@@ -561,13 +561,16 @@ class TriggerManager {
                     let target;
 
                     if (controller === this.player) {
+                        // Jogador escolhe - habilidade é opcional ("you may")
                         target = await this.ui.promptTriggerTarget({
                             title: 'Battle-Rattle Shaman',
-                            description: 'Escolha uma criatura para receber +2/+0 até o fim do turno:',
+                            description: 'Você pode fazer uma criatura alvo ganhar +2/+0 até o fim do turno:',
                             validTargets: creatures,
-                            canSkip: false
+                            canSkip: true
                         });
                     } else {
+                        // IA sempre usa a habilidade se tiver alvos válidos
+                        // Prefere outras criaturas, mas pode escolher a si mesmo
                         const others = creatures.filter(c => c.instanceId !== card.instanceId);
                         target = others.length > 0
                             ? others.sort((a, b) => this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a))[0]

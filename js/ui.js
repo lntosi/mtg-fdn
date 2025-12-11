@@ -2359,7 +2359,7 @@ class GameUI {
             }
             btnConfirm = document.createElement('button');
             btnConfirm.id = 'btn-trigger-confirm';
-            btnConfirm.className = 'btn btn-primary';
+            btnConfirm.className = 'btn-trigger-confirm';
             btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
             btnConfirm.disabled = selectedTargets.length < minTargets;
             btnSkip.parentNode.insertBefore(btnConfirm, btnSkip);

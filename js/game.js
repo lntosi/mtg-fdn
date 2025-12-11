@@ -1190,8 +1190,10 @@ class GameState {
                 // 3W: coloca +1/+1 em outra criatura atacante (só durante combate)
                 if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
                 const leoninMana = this.rules.calculateAvailableMana(player);
+                const leoninTotalMana = Object.values(leoninMana).reduce((a,b) => a+b, 0);
                 const hasOtherAttacker = this.currentAttackers.some(c => c.instanceId !== card.instanceId);
-                return leoninMana.W >= 1 && (leoninMana.W + Object.values(leoninMana).reduce((a,b) => a+b, 0) - leoninMana.W) >= 3 && hasOtherAttacker;
+                // Custo 3W: precisa de 1W específico + 3 qualquer = 4 total, com pelo menos 1W
+                return leoninMana.W >= 1 && leoninTotalMana >= 4 && hasOtherAttacker;
 
             default:
                 return false;
