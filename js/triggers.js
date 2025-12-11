@@ -446,21 +446,48 @@ class TriggerManager {
     }
 
     // ========================================
-    // LIFE LOSS TRIGGERS
+    // DEATH TRIGGERS
     // ========================================
 
     /**
-     * Vengeful Bloodwitch - ganha vida quando oponente perde vida
-     * @param {Object} controller - Jogador que controla a Bloodwitch
-     * @param {number} lifeAmount - Quantidade de vida perdida pelo oponente
+     * Triggers quando uma criatura morre
+     * @param {Object} creature - Criatura que morreu
+     * @param {Object} owner - Jogador que controlava a criatura
      */
-    onOpponentLosesLife(controller, lifeAmount) {
-        controller.battlefield.forEach(card => {
+    onCreatureDeath(creature, owner) {
+        const opponent = owner === this.player ? this.opponent : this.player;
+
+        // Vengeful Bloodwitch - quando esta ou outra criatura que você controla morre,
+        // oponente alvo perde 1 vida e você ganha 1 vida
+        owner.battlefield.forEach(card => {
             if (card.id === 'vengeful_bloodwitch') {
-                controller.life += lifeAmount;
-                this.ui.log(`Vengeful Bloodwitch: ${controller.name} ganhou ${lifeAmount} vida(s)`);
+                opponent.life -= 1;
+                owner.life += 1;
+                this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
+
+                // Marcar que oponente perdeu vida neste turno (para outros triggers)
+                if (opponent === this.player) {
+                    this.game.playerLostLifeThisTurn = true;
+                } else {
+                    this.game.opponentLostLifeThisTurn = true;
+                }
             }
         });
+
+        // Se a própria Bloodwitch morreu, ela também dispara (antes de ir pro cemitério)
+        if (creature.id === 'vengeful_bloodwitch') {
+            opponent.life -= 1;
+            owner.life += 1;
+            this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
+
+            if (opponent === this.player) {
+                this.game.playerLostLifeThisTurn = true;
+            } else {
+                this.game.opponentLostLifeThisTurn = true;
+            }
+        }
+
+        this.ui.render();
     }
 
     // ========================================

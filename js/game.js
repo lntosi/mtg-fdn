@@ -667,6 +667,32 @@ class GameState {
                 card.tapped = true;
             }
 
+            // Terrenos que precisam escolher cor ao entrar (Uncharted Haven)
+            if (card.produces === 'any' && !card.chosenColor) {
+                const deckColors = this.rules.getPlayerDeckColors(player);
+
+                if (deckColors.length > 0) {
+                    if (player === this.player) {
+                        // Jogador escolhe a cor
+                        const chosenColor = await this.ui.promptColorChoice({
+                            title: `${card.name}`,
+                            description: 'Escolha a cor de mana que este terreno produzirá:',
+                            colors: deckColors
+                        });
+                        card.chosenColor = chosenColor;
+
+                        const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
+                        this.ui.log(`${card.name} produzirá mana ${colorNames[chosenColor]}`);
+                    } else {
+                        // IA escolhe a cor mais necessária
+                        card.chosenColor = this.chooseColorForAI(player, deckColors);
+
+                        const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
+                        this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
+                    }
+                }
+            }
+
             this.ui.log(`${player.name} jogou ${card.name}`);
         } else if (card.type === 'instant' || card.type === 'sorcery') {
             // Verificar se é um counterspell (caso especial - mira na stack)
@@ -1129,9 +1155,58 @@ class GameState {
     destroyPermanent(permanent, owner) {
         const index = owner.battlefield.indexOf(permanent);
         if (index > -1) {
+            // Chamar death triggers ANTES de mover para o cemitério (criatura ainda "vê" o campo)
+            if (permanent.type === 'creature' && this.triggers) {
+                this.triggers.onCreatureDeath(permanent, owner);
+            }
+
             owner.battlefield.splice(index, 1);
             owner.graveyard.push(permanent);
         }
+    }
+
+    /**
+     * IA escolhe cor para Uncharted Haven baseado nas cartas na mão
+     * Prioriza cores que a IA precisa para jogar cartas na mão
+     * @param {Object} player - Jogador (IA)
+     * @param {Array} availableColors - Cores disponíveis no deck
+     * @returns {string} - Cor escolhida
+     */
+    chooseColorForAI(player, availableColors) {
+        // Contar quantas cartas na mão precisam de cada cor
+        const colorNeeds = {};
+        availableColors.forEach(c => colorNeeds[c] = 0);
+
+        player.hand.forEach(card => {
+            if (card.cost) {
+                const colorMatches = card.cost.match(/[WUBRG]/g);
+                if (colorMatches) {
+                    colorMatches.forEach(c => {
+                        if (colorNeeds[c] !== undefined) {
+                            colorNeeds[c]++;
+                        }
+                    });
+                }
+            }
+        });
+
+        // Contar mana já disponível de cada cor
+        const availableMana = this.rules.calculateAvailableMana(player);
+
+        // Escolher a cor com maior necessidade e menor disponibilidade
+        let bestColor = availableColors[0];
+        let bestScore = -999;
+
+        availableColors.forEach(color => {
+            // Score = necessidade - disponibilidade
+            const score = colorNeeds[color] - (availableMana[color] || 0);
+            if (score > bestScore) {
+                bestScore = score;
+                bestColor = color;
+            }
+        });
+
+        return bestColor;
     }
 
     // === HABILIDADES ATIVADAS ===

@@ -2541,6 +2541,74 @@ body {
     opacity: 0.6;
 }
 
+/* === Modal de Escolha de Cor (Uncharted Haven) === */
+.color-choice-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.color-choice-content h2 {
+    color: #f1c40f;
+    margin-bottom: 10px;
+}
+
+.color-choice-content p {
+    color: #e0c0e0;
+    margin-bottom: 20px;
+}
+
+.color-choice-options {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.color-choice-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    font-size: 28px;
+    font-weight: bold;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-choice-btn:hover {
+    transform: scale(1.15);
+    border-color: #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+}
+
+.color-choice-btn.color-W {
+    background: linear-gradient(135deg, #f9f6e8, #e8e4d0);
+    color: #8b7355;
+}
+
+.color-choice-btn.color-U {
+    background: linear-gradient(135deg, #0a6bc0, #1e90ff);
+    color: #fff;
+}
+
+.color-choice-btn.color-B {
+    background: linear-gradient(135deg, #2d2d2d, #4a4a4a);
+    color: #b8b8b8;
+}
+
+.color-choice-btn.color-R {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: #fff;
+}
+
+.color-choice-btn.color-G {
+    background: linear-gradient(135deg, #1e7b1e, #27ae60);
+    color: #fff;
+}
+
 /* === Scry UI === */
 .scry-card-preview {
     display: flex;

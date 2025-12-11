@@ -57,15 +57,18 @@ class RulesEngine {
             return this.canPlayLand(player);
         }
 
-        // Feitiços/Criaturas: main phase, mana suficiente
+        // Cartas com Flash podem ser jogadas como instants
+        const hasFlash = card.keywords && card.keywords.includes('flash');
+
+        // Instantes (ou cartas com Flash): qualquer momento com prioridade
+        if (card.type === 'instant' || hasFlash) {
+            return this.canCastInstant(card, player);
+        }
+
+        // Feitiços/Criaturas/Encantamentos/Artefatos: main phase, mana suficiente
         if (card.type === 'creature' || card.type === 'sorcery' ||
             card.type === 'enchantment' || card.type === 'artifact') {
             return this.canCastSpell(card, player);
-        }
-
-        // Instantes: qualquer momento com prioridade
-        if (card.type === 'instant') {
-            return this.canCastInstant(card, player);
         }
 
         return false;
@@ -84,12 +87,59 @@ class RulesEngine {
         const isActivePlayer = this.game.activePlayer === player;
         const hasEnoughMana = this.hasEnoughMana(card, player);
 
-        return isMainPhase && isActivePlayer && hasEnoughMana;
+        if (!isMainPhase || !isActivePlayer || !hasEnoughMana) {
+            return false;
+        }
+
+        // Auras precisam de alvos válidos
+        if (card.type === 'enchantment' && card.subtype === 'Aura') {
+            return this.hasValidAuraTargets(card, player);
+        }
+
+        return true;
+    }
+
+    /**
+     * Verifica se uma Aura tem alvos válidos
+     */
+    hasValidAuraTargets(aura, player) {
+        const opponent = player === this.game.player ? this.game.opponent : this.game.player;
+
+        // Auras de buff (Untamed Hunger) - miram suas próprias criaturas
+        if (aura.id === 'untamed_hunger') {
+            return player.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Pacifism - mira apenas criaturas do oponente
+        if (aura.id === 'pacifism') {
+            return opponent.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Eaten by Piranhas - pode mirar QUALQUER criatura (tem Flash, pode ser usada defensivamente)
+        if (aura.id === 'eaten_by_piranhas') {
+            const allCreatures = [
+                ...player.battlefield.filter(c => c.type === 'creature'),
+                ...opponent.battlefield.filter(c => c.type === 'creature')
+            ];
+            return allCreatures.length > 0;
+        }
+
+        // Default: qualquer criatura no campo
+        const allCreatures = [
+            ...player.battlefield.filter(c => c.type === 'creature'),
+            ...opponent.battlefield.filter(c => c.type === 'creature')
+        ];
+        return allCreatures.length > 0;
     }
 
     canCastInstant(card, player) {
         const hasEnoughMana = this.hasEnoughMana(card, player);
         if (!hasEnoughMana) return false;
+
+        // Auras com Flash precisam verificar alvos válidos
+        if (card.type === 'enchantment' && card.subtype === 'Aura') {
+            return this.hasValidAuraTargets(card, player);
+        }
 
         // Verificar se há alvos válidos para instants com restrições
         if (!this.hasValidTargets(card, player)) return false;
@@ -177,7 +227,12 @@ class RulesEngine {
         player.battlefield.forEach(card => {
             if (card.type === 'land' && !card.tapped) {
                 if (card.produces === 'any') {
-                    mana.any++;
+                    // Uncharted Haven: usa a cor escolhida, ou 'any' se ainda não escolheu
+                    if (card.chosenColor) {
+                        mana[card.chosenColor]++;
+                    } else {
+                        mana.any++;
+                    }
                 } else if (card.produces) {
                     mana[card.produces]++;
                 }
@@ -202,6 +257,40 @@ class RulesEngine {
         }
 
         return mana;
+    }
+
+    /**
+     * Detecta as cores presentes no deck do jogador
+     * Usado para determinar opções válidas para Uncharted Haven
+     * @param {Object} player - Jogador
+     * @returns {Array} - Array de cores (ex: ['W', 'G'])
+     */
+    getPlayerDeckColors(player) {
+        const colors = new Set();
+
+        // Verificar todas as zonas do jogador
+        const allCards = [
+            ...player.library,
+            ...player.hand,
+            ...player.battlefield,
+            ...player.graveyard
+        ];
+
+        allCards.forEach(card => {
+            // Terrenos básicos que produzem cor específica
+            if (card.type === 'land' && card.produces && card.produces !== 'any') {
+                colors.add(card.produces);
+            }
+            // Também verificar custos de mana das cartas para detectar cores
+            if (card.cost) {
+                const colorMatches = card.cost.match(/[WUBRG]/g);
+                if (colorMatches) {
+                    colorMatches.forEach(c => colors.add(c));
+                }
+            }
+        });
+
+        return Array.from(colors);
     }
 
     parseCost(costString) {
@@ -266,10 +355,13 @@ class RulesEngine {
                 needed -= fromFloating;
             }
 
-            // Usar terrenos da cor
+            // Usar terrenos da cor (incluindo Uncharted Haven com cor escolhida)
             for (const land of lands) {
                 if (needed <= 0) break;
-                if (land.produces === color && !land.tapped) {
+                // Terreno produz a cor diretamente OU é um Haven que escolheu essa cor
+                const producesColor = land.produces === color ||
+                    (land.produces === 'any' && land.chosenColor === color);
+                if (producesColor && !land.tapped) {
                     land.tapped = true;
                     needed--;
                 }
@@ -284,10 +376,10 @@ class RulesEngine {
                 }
             }
 
-            // Usar terrenos "any"
+            // Usar terrenos "any" que ainda não escolheram cor (fallback)
             for (const land of lands) {
                 if (needed <= 0) break;
-                if (land.produces === 'any' && !land.tapped) {
+                if (land.produces === 'any' && !land.chosenColor && !land.tapped) {
                     land.tapped = true;
                     needed--;
                 }
@@ -645,14 +737,18 @@ class RulesEngine {
     }
 
     getCreaturePower(creature, isAttacking = false) {
-        // Verificar se está afetado por Eaten by Piranhas (base 1/1)
+        // Eaten by Piranhas: base power/toughness vira 1/1, mas counters e outros bônus ainda aplicam
+        let power;
         if (this.isAffectedByEatenByPiranhas(creature)) {
-            return 1;
+            power = 1; // Base 1/1
+        } else {
+            power = creature.power || 0;
         }
 
-        let power = creature.power || 0;
+        // Modificadores temporários (até fim do turno)
         power += creature.powerModifier || 0;
 
+        // Bônus de lords, auras, etc.
         const bonuses = this.getCreatureBonuses(creature, isAttacking);
         power += bonuses.power;
 
@@ -660,14 +756,18 @@ class RulesEngine {
     }
 
     getCreatureToughness(creature, isAttacking = false) {
-        // Verificar se está afetado por Eaten by Piranhas (base 1/1)
+        // Eaten by Piranhas: base power/toughness vira 1/1, mas counters e outros bônus ainda aplicam
+        let toughness;
         if (this.isAffectedByEatenByPiranhas(creature)) {
-            return 1;
+            toughness = 1; // Base 1/1
+        } else {
+            toughness = creature.toughness || 0;
         }
 
-        let toughness = creature.toughness || 0;
+        // Modificadores temporários (até fim do turno)
         toughness += creature.toughnessModifier || 0;
 
+        // Bônus de lords, auras, etc.
         const bonuses = this.getCreatureBonuses(creature, isAttacking);
         toughness += bonuses.toughness;
 

@@ -2319,6 +2319,70 @@ class GameUI {
     }
 
     /**
+     * Mostra um modal para o jogador escolher uma cor de mana
+     * Usado para Uncharted Haven e terrenos similares
+     * @param {Object} options - Opções do prompt
+     * @param {string} options.title - Título do modal
+     * @param {string} options.description - Descrição
+     * @param {Array} options.colors - Cores disponíveis (ex: ['W', 'G'])
+     * @returns {Promise<string>} - Cor escolhida (ex: 'W')
+     */
+    promptColorChoice(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('color-choice-modal');
+            if (!modal) {
+                // Fallback: escolhe a primeira cor
+                resolve(options.colors[0]);
+                return;
+            }
+
+            const title = document.getElementById('color-choice-title');
+            const description = document.getElementById('color-choice-description');
+            const optionsContainer = document.getElementById('color-choice-options');
+
+            // Nomes das cores em português
+            const colorNames = {
+                W: 'Branco',
+                U: 'Azul',
+                B: 'Preto',
+                R: 'Vermelho',
+                G: 'Verde'
+            };
+
+            // Símbolos de mana
+            const colorSymbols = {
+                W: '☀',
+                U: '💧',
+                B: '💀',
+                R: '🔥',
+                G: '🌳'
+            };
+
+            // Configurar conteúdo
+            title.textContent = options.title || 'Escolha uma Cor';
+            description.textContent = options.description || 'Este terreno produzirá mana da cor escolhida:';
+
+            // Renderizar botões de cor
+            optionsContainer.innerHTML = '';
+            options.colors.forEach(color => {
+                const btn = document.createElement('button');
+                btn.className = `color-choice-btn color-${color}`;
+                btn.innerHTML = colorSymbols[color] || color;
+                btn.title = colorNames[color] || color;
+
+                btn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    resolve(color);
+                });
+
+                optionsContainer.appendChild(btn);
+            });
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
      * Mostra um modal para o jogador selecionar múltiplos alvos para um trigger/habilidade
      * @param {Object} options - Opções do prompt
      * @param {string} options.title - Título do modal (nome da carta)
