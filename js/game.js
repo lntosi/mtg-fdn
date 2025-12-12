@@ -57,6 +57,16 @@ class GameState {
         this.ai = new AIPlayer(this, this.rules);
         this.triggers = new TriggerManager(this);
 
+        // Aviso antes de sair da página durante combate
+        window.addEventListener('beforeunload', (e) => {
+            const inCombat = this.currentAttackers.length > 0 ||
+                           (this.phase && this.phase.includes('combat'));
+            if (inCombat) {
+                e.preventDefault();
+                e.returnValue = 'Você está no meio do combate. Sair vai perder o progresso.';
+            }
+        });
+
         // Tentar restaurar jogo salvo
         if (this.hasSavedGame()) {
             this.showRestorePrompt();

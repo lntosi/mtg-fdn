@@ -121,6 +121,9 @@ class SettingsManager {
         const btnSettingsRestart = document.getElementById('btn-settings-restart');
         if (btnSettingsRestart) {
             btnSettingsRestart.addEventListener('click', () => {
+                // Não permitir durante exploração pós-jogo
+                if (window.game?.viewingBattlefield) return;
+
                 if (confirm('Reiniciar a partida com os mesmos decks?')) {
                     this.closeModal();
                     this.restartGame();
@@ -181,6 +184,16 @@ class SettingsManager {
 
         // Sincronizar UI com settings atuais
         this.syncUI();
+
+        // Desabilitar reiniciar se estiver no modo de exploração pós-jogo
+        const btnRestart = document.getElementById('btn-settings-restart');
+        if (btnRestart) {
+            const isViewingBattlefield = window.game?.viewingBattlefield === true;
+            btnRestart.disabled = isViewingBattlefield;
+            btnRestart.style.opacity = isViewingBattlefield ? '0.5' : '1';
+            btnRestart.style.cursor = isViewingBattlefield ? 'not-allowed' : 'pointer';
+            btnRestart.title = isViewingBattlefield ? 'Não disponível durante exploração do battlefield' : '';
+        }
 
         this.modal.classList.remove('hidden');
         window.soundManager?.playButtonClick();
