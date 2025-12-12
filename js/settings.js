@@ -135,6 +135,9 @@ class SettingsManager {
         const btnSettingsConcede = document.getElementById('btn-settings-concede');
         if (btnSettingsConcede) {
             btnSettingsConcede.addEventListener('click', () => {
+                // Não permitir durante exploração pós-jogo
+                if (window.game?.viewingBattlefield) return;
+
                 this.closeModal();
                 // Usar o sistema de conceder existente
                 const concedeModal = document.getElementById('concede-modal');
@@ -185,14 +188,23 @@ class SettingsManager {
         // Sincronizar UI com settings atuais
         this.syncUI();
 
-        // Desabilitar reiniciar se estiver no modo de exploração pós-jogo
+        // Desabilitar reiniciar e conceder se estiver no modo de exploração pós-jogo
+        const isViewingBattlefield = window.game?.viewingBattlefield === true;
+
         const btnRestart = document.getElementById('btn-settings-restart');
         if (btnRestart) {
-            const isViewingBattlefield = window.game?.viewingBattlefield === true;
             btnRestart.disabled = isViewingBattlefield;
             btnRestart.style.opacity = isViewingBattlefield ? '0.5' : '1';
             btnRestart.style.cursor = isViewingBattlefield ? 'not-allowed' : 'pointer';
             btnRestart.title = isViewingBattlefield ? 'Não disponível durante exploração do battlefield' : '';
+        }
+
+        const btnConcede = document.getElementById('btn-settings-concede');
+        if (btnConcede) {
+            btnConcede.disabled = isViewingBattlefield;
+            btnConcede.style.opacity = isViewingBattlefield ? '0.5' : '1';
+            btnConcede.style.cursor = isViewingBattlefield ? 'not-allowed' : 'pointer';
+            btnConcede.title = isViewingBattlefield ? 'Não disponível durante exploração do battlefield' : '';
         }
 
         this.modal.classList.remove('hidden');

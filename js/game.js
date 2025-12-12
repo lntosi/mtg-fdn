@@ -32,6 +32,11 @@ class GameState {
         this.waitingForPriorityResponse = false; // Aguardando resposta do jogador na janela de prioridade
         this.priorityWindowReason = null; // Razão da janela de prioridade atual
 
+        // === Arena-Style Priority (botão Continuar) ===
+        this.awaitingPlayerContinue = false; // Aguardando jogador clicar "Continuar"
+        this.continueReason = null; // Motivo da pausa (para tooltip/log)
+        this.continueCallback = null; // Callback para resolver Promise quando jogador clica "Continuar"
+
         // === Floating Mana (mana flutuante) ===
         this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
 
@@ -425,6 +430,12 @@ class GameState {
         if (stackItem.item.type === 'instant' || stackItem.item.type === 'sorcery') {
             // Resolver feitiço
             await this.resolveStackedSpell(stackItem);
+        } else if (stackItem.item.type === 'creature') {
+            // Resolver criatura (entra no battlefield)
+            await this.resolveCreatureFromStack(stackItem);
+        } else if (stackItem.item.type === 'enchantment' || stackItem.item.type === 'artifact') {
+            // Resolver permanente (encantamento/artefato)
+            await this.resolvePermanentFromStack(stackItem);
         } else if (stackItem.item.isAbility) {
             // Resolver habilidade ativada
             await this.resolveStackedAbility(stackItem);
@@ -466,6 +477,50 @@ class GameState {
             await ability.effect(controller, stackItem.target);
         }
 
+        this.ui.render();
+    }
+
+    // Resolve uma criatura da pilha (entra no battlefield)
+    async resolveCreatureFromStack(stackItem) {
+        const card = stackItem.item;
+        const controller = stackItem.controller;
+
+        card.summoningSickness = true;
+        controller.battlefield.push(card);
+
+        // Trigger de entrada (delegado ao TriggerManager)
+        await this.triggers.resolveETB(card, controller);
+
+        this.ui.log(`${card.name} entrou no battlefield`);
+        this.ui.render();
+    }
+
+    // Resolve um permanente (enchantment/artifact) da pilha
+    async resolvePermanentFromStack(stackItem) {
+        const card = stackItem.item;
+        const controller = stackItem.controller;
+
+        // Se é uma Aura, precisa de alvo (já deve estar em stackItem.target)
+        if (card.subtype === 'Aura' && stackItem.target) {
+            // Verificar se alvo ainda é válido
+            if (!this.isTargetStillValid(stackItem.target)) {
+                this.ui.log(`${card.name} foi anulado (alvo inválido)`);
+                controller.graveyard.push(card);
+                return;
+            }
+
+            // Anexar aura ao alvo
+            card.attachedTo = stackItem.target;
+            if (!stackItem.target.attachedAuras) stackItem.target.attachedAuras = [];
+            stackItem.target.attachedAuras.push(card);
+        }
+
+        controller.battlefield.push(card);
+
+        // Trigger de entrada
+        await this.triggers.resolveETB(card, controller);
+
+        this.ui.log(`${card.name} entrou no battlefield`);
         this.ui.render();
     }
 
@@ -523,10 +578,16 @@ class GameState {
     async aiHandlePriority() {
         await this.delay(500);
 
-        // Por enquanto, a IA sempre passa a prioridade
-        // Futuramente pode ser expandido para responder com instants
         this.ui.log('IA avaliando resposta...');
-        await this.delay(800);
+        await this.delay(600);
+
+        // Verificar se IA pode e deve responder
+        const aiResponse = await this.aiDecideResponse();
+
+        if (aiResponse) {
+            // IA respondeu com alguma carta - não passa prioridade ainda
+            return;
+        }
 
         // Passar prioridade de volta
         this.bothPlayersPassed = true;
@@ -543,6 +604,112 @@ class GameState {
         }
 
         this.ui.render();
+    }
+
+    /**
+     * IA avalia se deve responder com instant/ability
+     * @returns {boolean} true se IA respondeu, false se passou
+     */
+    async aiDecideResponse() {
+        const stackTop = this.peekStack();
+        if (!stackTop) return false;
+
+        // Verificar se tem Cancel e mana para usar
+        const cancel = this.opponent.hand.find(c =>
+            c.id === 'cancel' && this.rules.canCastSpell(c, this.opponent)
+        );
+
+        if (cancel && this.shouldCounterspell(stackTop.item)) {
+            this.ui.log(`IA: Cancel em ${stackTop.item.name}!`);
+            await this.delay(500);
+
+            // Jogar o Cancel
+            const index = this.opponent.hand.indexOf(cancel);
+            if (index > -1) this.opponent.hand.splice(index, 1);
+
+            this.rules.payMana(cancel, this.opponent);
+            window.soundManager?.playMagic();
+
+            // Anular o spell do topo da pilha
+            this.resolveCounterspell(cancel, this.opponent, stackTop);
+            return true;
+        }
+
+        // Verificar removal instants
+        const removals = this.opponent.hand.filter(c =>
+            c.type === 'instant' &&
+            this.isRemovalSpell(c) &&
+            this.rules.canCastSpell(c, this.opponent)
+        );
+
+        // IA usa removal em ameaças grandes (criaturas CMC >= 4)
+        if (removals.length > 0 && stackTop.item.type === 'creature' && stackTop.item.cmc >= 4) {
+            // Poderia usar removal aqui, mas por simplicidade deixamos para futuro
+            // Por ora a IA só usa Cancel
+        }
+
+        return false;
+    }
+
+    /**
+     * Avalia se a IA deve usar counterspell neste spell
+     */
+    shouldCounterspell(spell) {
+        // Cancelar criaturas com CMC alto (>= 4)
+        if (spell.type === 'creature' && spell.cmc >= 4) return true;
+
+        // Cancelar removal que mataria criatura da IA
+        if (this.isRemovalSpell(spell)) {
+            // Se IA tem criaturas valiosas no campo, proteger
+            const aiCreatures = this.opponent.battlefield.filter(c => c.type === 'creature');
+            if (aiCreatures.some(c => c.cmc >= 3)) return true;
+        }
+
+        // Cancelar buffs grandes
+        if (spell.type === 'instant' || spell.type === 'sorcery') {
+            // Joraga Invocation, por exemplo
+            if (spell.id === 'joraga_invocation') return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Verifica se uma carta é um spell de removal
+     */
+    isRemovalSpell(card) {
+        const removalIds = [
+            'murder', 'lightning_bolt', 'doom_blade', 'go_for_the_throat',
+            'eaten_by_piranhas', 'finishing_blow', 'elspeth_smite',
+            'disfigure', 'cut_down', 'fatal_push', 'unholy_heat'
+        ];
+        return removalIds.includes(card.id);
+    }
+
+    /**
+     * Oferece janela de resposta ao oponente quando um spell é jogado
+     * Usa sistema Arena-style: pausa + botão Continuar
+     */
+    async offerResponseToOpponent(caster) {
+        const responder = caster === this.player ? this.opponent : this.player;
+        const stackTop = this.peekStack();
+
+        if (!stackTop) return;
+
+        // Se o oponente é o jogador humano
+        if (responder === this.player) {
+            // Arena-style: aguardar jogador clicar "Continuar" (ou usar instant)
+            await this.waitForPlayerContinue(`Oponente conjurou ${stackTop.item.name}`);
+        } else {
+            // Oponente é a IA
+            await this.aiHandlePriority();
+            return; // aiHandlePriority já resolve a pilha
+        }
+
+        // Se chegou aqui, jogador passou - resolver topo da pilha
+        if (!this.isStackEmpty()) {
+            await this.resolveTopOfStack();
+        }
     }
 
     // Verifica se o jogador pode responder (tem prioridade e há algo na pilha)
@@ -644,6 +811,62 @@ class GameState {
      */
     isWaitingForPriorityResponse() {
         return this.waitingForPriorityResponse === true;
+    }
+
+    // === ARENA-STYLE PRIORITY (Botão Continuar) ===
+
+    /**
+     * Pausa o jogo e aguarda o jogador clicar "Continuar"
+     * Auto-pass se não tem respostas disponíveis
+     * @param {string} reason - Motivo da pausa (ex: "Oponente conjurou Goblin")
+     */
+    async waitForPlayerContinue(reason) {
+        // Auto-pass se não tem respostas
+        if (!this.playerHasResponses()) {
+            return;
+        }
+
+        this.awaitingPlayerContinue = true;
+        this.continueReason = reason;
+
+        // Tocar som de notificação
+        window.soundManager?.playTurnStart();
+
+        // Highlight nas cartas jogáveis e renderizar
+        this.ui.highlightPlayableCards(true);
+        this.ui.render();
+
+        // Aguardar jogador clicar "Continuar"
+        return new Promise((resolve) => {
+            this.continueCallback = resolve;
+        });
+    }
+
+    /**
+     * Chamado quando jogador clica "Continuar"
+     * Resolve a Promise e continua o fluxo do jogo
+     */
+    playerContinue() {
+        if (!this.awaitingPlayerContinue) return;
+
+        this.awaitingPlayerContinue = false;
+        this.continueReason = null;
+        this.ui.highlightPlayableCards(false);
+
+        if (this.continueCallback) {
+            this.continueCallback();
+            this.continueCallback = null;
+        }
+
+        this.ui.render();
+    }
+
+    /**
+     * Verifica se estamos aguardando o jogador clicar "Continuar"
+     * @returns {boolean}
+     */
+    isAwaitingPlayerContinue() {
+        return this.awaitingPlayerContinue === true;
     }
 
     // Jogar uma carta
@@ -845,15 +1068,17 @@ class GameState {
             return true; // Retorna aqui pois playAura cuida do resto
         } else {
             // Permanentes (criaturas, encantamentos não-aura, artefatos)
+            // NOVO: Colocar na pilha para permitir counterspells
             this.rules.payMana(card, player);
 
-            card.summoningSickness = (card.type === 'creature');
-            player.battlefield.push(card);
+            this.ui.log(`${player.name} conjurou ${card.name}`);
+            window.soundManager?.playMagic();
 
-            // Trigger de entrada (delegado ao TriggerManager)
-            await this.triggers.resolveETB(card, player);
+            // Adicionar à pilha
+            const stackItem = this.addToStack(card, player);
 
-            this.ui.log(`${player.name} jogou ${card.name}`);
+            // Oferecer janela de resposta ao oponente
+            await this.offerResponseToOpponent(player);
         }
 
         this.ui.render();
@@ -2036,17 +2261,15 @@ class GameState {
                 this.ui.log('Oponente declarou bloqueadores');
                 // Renderizar para mostrar as linhas de bloqueio
                 this.ui.render();
+                // Delay para jogador visualizar bloqueadores antes da janela de prioridade
+                await this.delay(800);
             } else {
                 this.ui.log('Oponente não bloqueou');
             }
 
-            // IMPORTANTE: Dar janela de prioridade ao jogador após bloqueadores serem declarados
-            // Isso permite usar instants como Elspeth's Smite para remover bloqueadores
-            const priorityResponse = await this.offerPriorityWindow('Bloqueadores declarados - você pode responder');
-
-            if (priorityResponse === 'respond') {
-                await this.handlePlayerPriorityResponse();
-            }
+            // Arena-style: aguardar jogador clicar "Continuar" após bloqueadores
+            // Permite usar instants como Elspeth's Smite para remover bloqueadores
+            await this.waitForPlayerContinue('Bloqueadores declarados');
 
             this.phase = PHASES.COMBAT_DAMAGE;
             await this.handlePhase();
@@ -2366,10 +2589,8 @@ class GameState {
         this.ui.log('Fase: Início do Combate');
         this.ui.render();
 
-        const beginCombatResponse = await this.offerPriorityWindow('Início do combate do oponente');
-        if (beginCombatResponse === 'respond') {
-            await this.handlePlayerPriorityResponse();
-        }
+        // Arena-style: aguardar jogador clicar "Continuar" no início do combate
+        await this.waitForPlayerContinue('Início do combate do oponente');
 
         // Combat - Declarar atacantes
         this.phase = PHASES.DECLARE_ATTACKERS;
@@ -2425,17 +2646,8 @@ class GameState {
                     if (played) {
                         this.ui.render();
                         playedSomething = true;
-
-                        // Se foi uma mágica (não terreno), oferecer janela de prioridade
-                        if (cardToPlay.type !== 'land') {
-                            await this.delay(600);
-
-                            const response = await this.offerPriorityWindow(`Oponente lançou ${cardToPlay.name}`);
-
-                            if (response === 'respond') {
-                                await this.handlePlayerPriorityResponse();
-                            }
-                        }
+                        // Janela de prioridade agora é oferecida dentro de playCard() via offerResponseToOpponent()
+                        await this.delay(400);
                     }
                 }
             }
@@ -2500,11 +2712,9 @@ class GameState {
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
 
-        // Janela de prioridade no end step (momento clássico para jogar instants)
-        const endStepResponse = await this.offerPriorityWindow('Fim do turno do oponente');
-        if (endStepResponse === 'respond') {
-            await this.handlePlayerPriorityResponse();
-        }
+        // Arena-style: aguardar jogador clicar "Continuar" no end step
+        // Momento clássico para jogar instants
+        await this.waitForPlayerContinue('Fim do turno do oponente');
 
         // Limpar dano e modificadores temporários (criaturas da IA)
         this.opponent.battlefield.forEach(c => {

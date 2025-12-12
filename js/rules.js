@@ -201,9 +201,19 @@ class RulesEngine {
             return hasOwnCreature && hasOpponentCreature;
         }
 
-        // Counterspells - precisam de algo na stack
+        // Counterspells - precisam de spell do oponente na stack
         if (card.keywords && card.keywords.includes('counterspell')) {
-            return !this.game.isStackEmpty();
+            // Verificar se há spells do oponente na pilha
+            return this.game.stack.some(item =>
+                item.controller !== player && item.item.type !== 'land'
+            );
+        }
+
+        // Cancel por ID específico (caso não tenha keyword)
+        if (card.id === 'cancel') {
+            return this.game.stack.some(item =>
+                item.controller !== player && item.item.type !== 'land'
+            );
         }
 
         // Para outros instants, assumir que sempre há alvos válidos

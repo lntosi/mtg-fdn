@@ -519,6 +519,24 @@ body {
     animation: priorityButtonPulse 1s ease-in-out infinite;
 }
 
+#btn-main-action.state-continue {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    border-color: #64B5F6;
+    color: #fff;
+    animation: continueButtonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes continueButtonPulse {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(33, 150, 243, 0.8);
+        transform: scale(1.02);
+    }
+}
+
 #btn-main-action.state-combat {
     background: linear-gradient(135deg, #c0392b, #e74c3c);
 }
@@ -3690,6 +3708,17 @@ html {
 @keyframes instantGlow {
     0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4); }
     50% { box-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6); }
+}
+
+/* Destaque de Habilidades Ativáveis (Arena-style) */
+.ability-highlight {
+    animation: abilityGlow 1s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 30px rgba(0, 191, 255, 0.4) !important;
+}
+
+@keyframes abilityGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 30px rgba(0, 191, 255, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(0, 191, 255, 1), 0 0 50px rgba(0, 191, 255, 0.6); }
 }
 
 /* Indicador de espera de resposta durante turno da IA */

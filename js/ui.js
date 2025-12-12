@@ -1810,7 +1810,7 @@ class GameUI {
         const waitingForPriority = this.game.isWaitingForPriorityResponse && this.game.isWaitingForPriorityResponse();
 
         // Remover todas as classes de estado do botão principal
-        this.btnMainAction.classList.remove('state-advance', 'state-resolve', 'state-priority', 'state-combat', 'state-block');
+        this.btnMainAction.classList.remove('state-advance', 'state-resolve', 'state-priority', 'state-combat', 'state-block', 'state-continue');
 
         // Determinar estado e texto do botão principal contextual
         let mainButtonEnabled = false;
@@ -1831,6 +1831,12 @@ class GameUI {
             mainButtonText = 'Pass';
             mainButtonTitle = 'Passar prioridade sem responder';
             mainButtonState = 'state-priority';
+        } else if (this.game.awaitingPlayerContinue) {
+            // Arena-style: aguardando jogador clicar "Continuar"
+            mainButtonEnabled = true;
+            mainButtonText = 'Continuar';
+            mainButtonTitle = this.game.continueReason || 'Clique para continuar';
+            mainButtonState = 'state-continue';
         } else if (hasStack && hasPriority) {
             // Tem itens na pilha para resolver
             mainButtonEnabled = true;
@@ -1864,14 +1870,15 @@ class GameUI {
         this.btnMainAction.classList.add(mainButtonState);
 
         // Botão secundário "Pular Fase" - só habilitado em situações específicas
-        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority;
+        const awaitingContinue = this.game.awaitingPlayerContinue;
+        this.btnNextPhase.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority || awaitingContinue;
 
         // Botão "Encerrar Turno" - pula direto para End Step
         // Desabilitado durante combate ativo, stack, ou esperando bloqueadores
         const inActiveCombat = this.game.phase === PHASES.DECLARE_ATTACKERS ||
                               this.game.phase === PHASES.DECLARE_BLOCKERS ||
                               this.game.phase === PHASES.COMBAT_DAMAGE;
-        this.btnEndTurn.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority || inActiveCombat;
+        this.btnEndTurn.disabled = !isPlayerTurn || this.waitingForBlockers || hasStack || waitingForPriority || inActiveCombat || awaitingContinue;
     }
 
     getNextPhaseName() {
@@ -1898,6 +1905,9 @@ class GameUI {
         if (this.waitingForBlockers) {
             // Confirmar bloqueadores
             this.onBlockClick();
+        } else if (this.game.awaitingPlayerContinue) {
+            // Arena-style: jogador clicou "Continuar"
+            this.game.playerContinue();
         } else if (this.game.isWaitingForPriorityResponse && this.game.isWaitingForPriorityResponse()) {
             // Passar prioridade
             this.game.pass();
@@ -3094,6 +3104,8 @@ class GameUI {
      * @param {boolean} highlight - true para destacar, false para remover destaque
      */
     highlightPlayableInstants(highlight) {
+        if (!this.playerHand) return;
+
         const handCards = this.playerHand.querySelectorAll('.card');
         handCards.forEach(cardEl => {
             if (highlight) {
@@ -3104,6 +3116,31 @@ class GameUI {
                 }
             } else {
                 cardEl.classList.remove('instant-highlight');
+            }
+        });
+    }
+
+    /**
+     * Destaca todas as cartas jogáveis (instants + habilidades ativáveis)
+     * Usado pelo sistema Arena-style
+     * @param {boolean} highlight - true para destacar, false para remover destaque
+     */
+    highlightPlayableCards(highlight) {
+        // Destacar instants na mão
+        this.highlightPlayableInstants(highlight);
+
+        // Destacar criaturas com habilidades ativáveis no battlefield
+        if (!this.playerBattlefield) return;
+
+        const battlefieldCards = this.playerBattlefield.querySelectorAll('.card');
+        battlefieldCards.forEach(cardEl => {
+            if (highlight) {
+                const card = this.findCardByElement(cardEl);
+                if (card && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    cardEl.classList.add('ability-highlight');
+                }
+            } else {
+                cardEl.classList.remove('ability-highlight');
             }
         });
     }
