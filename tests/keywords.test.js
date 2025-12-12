@@ -167,8 +167,8 @@ describe('Haste', () => {
         expect(rules.canAttack(normal)).toBe(false);
     });
 
-    test('Frenzied Goblin can attack immediately', () => {
-        const goblin = CREATURES.frenziedGoblin();
+    test('Goblin Smuggler (haste) can attack immediately', () => {
+        const goblin = CREATURES.goblinSmuggler();
         goblin.summoningSickness = true;
 
         expect(rules.canAttack(goblin)).toBe(true);

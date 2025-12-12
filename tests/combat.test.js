@@ -289,8 +289,8 @@ describe('Combat Restrictions', () => {
             expect(rules.canAttack(creature)).toBe(true);
         });
 
-        test('Frenzied Goblin with haste can attack immediately', () => {
-            const goblin = CREATURES.frenziedGoblin();
+        test('Goblin Smuggler (haste) can attack immediately', () => {
+            const goblin = CREATURES.goblinSmuggler();
             goblin.summoningSickness = true;
 
             expect(rules.canAttack(goblin)).toBe(true);

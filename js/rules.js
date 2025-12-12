@@ -446,7 +446,8 @@ class RulesEngine {
     // Verifica se criatura pode atacar
     canAttack(creature) {
         if (creature.tapped) return false;
-        if (creature.summoningSickness) return false;
+        // Haste permite atacar mesmo com summoning sickness (regra 702.10)
+        if (creature.summoningSickness && !this.hasKeyword(creature, 'haste', false)) return false;
         if (creature.type !== 'creature') return false;
 
         // Verificar se tem Pacifism anexado

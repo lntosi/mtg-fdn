@@ -137,7 +137,15 @@ const CREATURES = {
         name: 'Frenzied Goblin',
         subtype: 'Goblin Berserker',
         power: 1,
-        toughness: 1,
+        toughness: 1
+    }),
+
+    goblinSmuggler: () => createCreature({
+        id: 'goblin_smuggler',
+        name: 'Goblin Smuggler',
+        subtype: 'Goblin Rogue',
+        power: 2,
+        toughness: 2,
         keywords: ['haste']
     }),
 

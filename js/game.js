@@ -1633,7 +1633,9 @@ class GameState {
         const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
-            if (card.summoningSickness && card.type === 'creature') return false;
+            // Haste permite usar habilidades de tap mesmo com summoning sickness (regra 702.10)
+            const hasHaste = card.keywords?.includes('haste') || this.rules.hasKeyword(card, 'haste', false);
+            if (card.summoningSickness && card.type === 'creature' && !hasHaste) return false;
         }
 
         switch (card.id) {
