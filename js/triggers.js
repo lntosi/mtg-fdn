@@ -514,10 +514,16 @@ class TriggerManager {
 
         // Crossway Troublemakers - quando um Vampiro que você controla morre,
         // você pode pagar 2 vidas. Se fizer isso, compre uma carta.
+        // NOTA: onCreatureDeath é chamado ANTES da criatura sair do campo,
+        // então CT ainda está no battlefield quando morre (se vê morrendo).
         const isVampire = creature.subtype?.includes('Vampire');
         if (isVampire) {
-            for (const card of owner.battlefield) {
-                if (card.id === 'crossway_troublemakers' && owner.life > 2) {
+            // Encontrar todos os Crossway Troublemakers do dono
+            // (inclui o próprio CT se ele está morrendo - ele vê sua própria morte)
+            const troublemakers = owner.battlefield.filter(c => c.id === 'crossway_troublemakers');
+
+            for (const ct of troublemakers) {
+                if (owner.life > 2) {
                     if (owner === this.player) {
                         // Jogador humano - perguntar se quer pagar
                         const shouldPay = await this.ui.promptYesNo({
@@ -538,29 +544,6 @@ class TriggerManager {
                             this.rules.drawCard(owner);
                             this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                         }
-                    }
-                }
-            }
-
-            // Se o próprio Crossway Troublemakers morreu (ele é Vampire)
-            if (creature.id === 'crossway_troublemakers' && owner.life > 2) {
-                if (owner === this.player) {
-                    const shouldPay = await this.ui.promptYesNo({
-                        title: 'Crossway Troublemakers',
-                        description: 'Crossway Troublemakers morreu. Pagar 2 vidas para comprar uma carta?',
-                        yesText: 'Pagar 2 vidas',
-                        noText: 'Não pagar'
-                    });
-                    if (shouldPay) {
-                        owner.life -= 2;
-                        this.rules.drawCard(owner);
-                        this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
-                    }
-                } else {
-                    if (owner.life > 4) {
-                        owner.life -= 2;
-                        this.rules.drawCard(owner);
-                        this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                     }
                 }
             }

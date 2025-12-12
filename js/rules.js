@@ -475,7 +475,8 @@ class RulesEngine {
         if (blocker.id === 'vampire_interloper') return false;
 
         // Verificar se criatura não pode bloquear este atacante (Frenzied Goblin, Goblin Smuggler)
-        if (this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(attacker.instanceId)) {
+        // Só verifica se attacker foi passado
+        if (attacker && this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(attacker.instanceId)) {
             return false;
         }
 
@@ -484,7 +485,8 @@ class RulesEngine {
 
         // Flying: só pode ser bloqueado por flying ou reach
         // Usa hasKeyword para considerar efeitos condicionais (ex: flying_when_attacking)
-        if (this.hasKeyword(attacker, 'flying', true)) {
+        // Só verifica se attacker foi passado
+        if (attacker && this.hasKeyword(attacker, 'flying', true)) {
             const blockerHasFlying = this.hasKeyword(blocker, 'flying', false);
             const blockerHasReach = this.hasKeyword(blocker, 'reach', false);
             if (!blockerHasFlying && !blockerHasReach) return false;
@@ -807,6 +809,28 @@ class RulesEngine {
             card.subtype === 'Aura' &&
             card.attachedTo === creature.instanceId
         );
+    }
+
+    // Alias para compatibilidade
+    hasEatenByPiranhas(creature) {
+        return this.isAffectedByEatenByPiranhas(creature);
+    }
+
+    /**
+     * Verifica se criatura perdeu todas as habilidades (por qualquer efeito)
+     * Extensível para futuras cartas como Turn to Frog, Humility, etc.
+     * @param {Object} creature - Criatura a verificar
+     * @returns {boolean}
+     */
+    hasLostAllAbilities(creature) {
+        // Eaten by Piranhas
+        if (this.isAffectedByEatenByPiranhas(creature)) return true;
+
+        // Futuras cartas podem ser adicionadas aqui:
+        // if (this.isAffectedByTurnToFrog(creature)) return true;
+        // if (this.isAffectedByHumility(creature)) return true;
+
+        return false;
     }
 
     // Retorna keywords adicionais de uma criatura (de efeitos)

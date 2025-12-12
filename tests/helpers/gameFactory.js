@@ -165,6 +165,22 @@ const CREATURES = {
         subtype: 'Goblin Pirate',
         power: 2,
         toughness: 2
+    }),
+
+    crosswayTroublemakers: () => createCreature({
+        id: 'crossway_troublemakers',
+        name: 'Crossway Troublemakers',
+        subtype: 'Vampire',
+        power: 5,
+        toughness: 5
+    }),
+
+    vampireNeonate: () => createCreature({
+        id: 'vampire_neonate',
+        name: 'Vampire Neonate',
+        subtype: 'Vampire',
+        power: 1,
+        toughness: 1
     })
 };
 

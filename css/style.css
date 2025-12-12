@@ -1511,6 +1511,20 @@ body {
     font-style: italic;
 }
 
+/* Keyword perdida (Eaten by Piranhas, etc) */
+.card-preview-keywords .keyword-badge.keyword-lost {
+    background: rgba(100, 50, 50, 0.5);
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* Indicador de debuff (Sem habilidades) */
+.card-preview-keywords .keyword-badge.keyword-debuff {
+    background: rgba(180, 40, 40, 0.8);
+    border: 1px solid rgba(255, 80, 80, 0.6);
+    color: #ffcccc;
+}
+
 /* Seção de status (Auras anexadas) no preview */
 .preview-status-section {
     display: flex;

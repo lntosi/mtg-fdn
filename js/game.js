@@ -361,6 +361,11 @@ class GameState {
         this.ui.render();
         this.saveGame();
 
+        // Iniciar música de fundo
+        if (window.soundManager) {
+            window.soundManager.playMusic();
+        }
+
         // Se IA começa, executar turno da IA
         if (!this.playerFirst) {
             setTimeout(() => this.executeAITurn(), 800);
@@ -2332,15 +2337,19 @@ class GameState {
 
         // Verificar se o defensor tem bloqueadores disponíveis
         const defendingPlayer = this.isPlayerTurn() ? this.opponent : this.player;
-        const availableBlockers = defendingPlayer.battlefield.filter(c =>
+        const potentialBlockers = defendingPlayer.battlefield.filter(c =>
             c.type === 'creature' &&
             !c.tapped &&
-            this.rules.canBlock(c) &&
             !Object.values(assignments).flat().includes(c.instanceId)
         );
 
-        if (unblockedMustBlock.length > 0 && availableBlockers.length > 0) {
-            const names = unblockedMustBlock.map(a => a.name).join(', ');
+        // Verificar se algum bloqueador pode legalmente bloquear algum atacante mustBeBlocked
+        const blockableAttackers = unblockedMustBlock.filter(attacker =>
+            potentialBlockers.some(blocker => this.rules.canBlock(blocker, attacker))
+        );
+
+        if (blockableAttackers.length > 0) {
+            const names = blockableAttackers.map(a => a.name).join(', ');
             return {
                 valid: false,
                 message: `${names} deve(m) ser bloqueado(s) se possível!`
@@ -2789,11 +2798,14 @@ class GameState {
         // Limpar save ao fim do jogo
         this.clearSavedGame();
 
-        // Som de vitória ou derrota
-        if (winner === 'player') {
-            window.soundManager.playVictory();
-        } else {
-            window.soundManager.playDefeat();
+        // Parar música de fundo e tocar som de vitória/derrota
+        if (window.soundManager) {
+            window.soundManager.stopMusic();
+            if (winner === 'player') {
+                window.soundManager.playVictory();
+            } else {
+                window.soundManager.playDefeat();
+            }
         }
 
         // Mostrar tela de fim de jogo melhorada

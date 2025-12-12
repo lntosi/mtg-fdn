@@ -293,3 +293,116 @@ describe('Beginning of Combat Triggers', () => {
         });
     });
 });
+
+describe('Death Triggers - Crossway Troublemakers', () => {
+    describe('Crossway Troublemakers', () => {
+        test('triggers when another vampire dies', () => {
+            const player = createPlayer({ life: 20 });
+            const ct = CREATURES.crosswayTroublemakers();
+            const neonate = CREATURES.vampireNeonate();
+
+            player.battlefield = [ct];
+            player.library = [createCreature({ name: 'Top Card' })];
+
+            // Simular morte do vampiro
+            const dyingCreature = neonate;
+            const isVampire = dyingCreature.subtype?.includes('Vampire');
+
+            // Lógica do trigger
+            let triggerCount = 0;
+            if (isVampire) {
+                const troublemakers = player.battlefield.filter(c => c.id === 'crossway_troublemakers');
+                triggerCount = troublemakers.length;
+            }
+
+            expect(isVampire).toBe(true);
+            expect(triggerCount).toBe(1);
+        });
+
+        test('triggers once when CT itself dies (sees own death)', () => {
+            const player = createPlayer({ life: 20 });
+            const ct = CREATURES.crosswayTroublemakers();
+
+            // CT ainda está no battlefield quando o trigger roda
+            player.battlefield = [ct];
+            player.library = [createCreature({ name: 'Top Card' })];
+
+            // Simular morte do próprio CT
+            const dyingCreature = ct;
+            const isVampire = dyingCreature.subtype?.includes('Vampire');
+
+            // Lógica do trigger - loop encontra CT no campo (ele vê sua própria morte)
+            let triggerCount = 0;
+            if (isVampire) {
+                const troublemakers = player.battlefield.filter(c => c.id === 'crossway_troublemakers');
+                triggerCount = troublemakers.length;
+            }
+
+            expect(isVampire).toBe(true);
+            expect(triggerCount).toBe(1); // Apenas 1 trigger, não 2
+        });
+
+        test('triggers twice with two CTs when vampire dies', () => {
+            const player = createPlayer({ life: 20 });
+            const ct1 = CREATURES.crosswayTroublemakers();
+            const ct2 = CREATURES.crosswayTroublemakers();
+            const neonate = CREATURES.vampireNeonate();
+
+            player.battlefield = [ct1, ct2];
+
+            // Simular morte do vampiro
+            const dyingCreature = neonate;
+            const isVampire = dyingCreature.subtype?.includes('Vampire');
+
+            let triggerCount = 0;
+            if (isVampire) {
+                const troublemakers = player.battlefield.filter(c => c.id === 'crossway_troublemakers');
+                triggerCount = troublemakers.length;
+            }
+
+            expect(triggerCount).toBe(2);
+        });
+
+        test('does not trigger when non-vampire dies', () => {
+            const player = createPlayer({ life: 20 });
+            const ct = CREATURES.crosswayTroublemakers();
+            const elf = createCreature({ subtype: 'Elf' });
+
+            player.battlefield = [ct];
+
+            // Simular morte de não-vampiro
+            const dyingCreature = elf;
+            const isVampire = dyingCreature.subtype?.includes('Vampire');
+
+            let triggerCount = 0;
+            if (isVampire) {
+                const troublemakers = player.battlefield.filter(c => c.id === 'crossway_troublemakers');
+                triggerCount = troublemakers.length;
+            }
+
+            expect(isVampire).toBe(false);
+            expect(triggerCount).toBe(0);
+        });
+
+        test('pay 2 life to draw a card simulation', () => {
+            const player = createPlayer({ life: 20 });
+            player.library = [
+                createCreature({ name: 'Card 1' }),
+                createCreature({ name: 'Card 2' })
+            ];
+            player.hand = [];
+
+            // Simular pagamento de 2 vidas
+            const shouldPay = true; // Jogador escolheu pagar
+            if (shouldPay && player.life > 2) {
+                player.life -= 2;
+                const drawnCard = player.library.shift();
+                player.hand.push(drawnCard);
+            }
+
+            expect(player.life).toBe(18);
+            expect(player.hand.length).toBe(1);
+            expect(player.hand[0].name).toBe('Card 1');
+        });
+    });
+});

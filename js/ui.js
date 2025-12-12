@@ -470,17 +470,32 @@ class GameUI {
             'hexproof', 'indestructible'
         ];
 
+        // Verificar se criatura perdeu habilidades (Eaten by Piranhas, etc.)
+        const lostAbilities = card.type === 'creature' && this.game?.rules?.hasLostAllAbilities(card);
+
         // Keywords originais da carta (filtrar apenas as de combate)
         const baseKeywords = card.keywords || [];
         const visibleBaseKeywords = baseKeywords.filter(kw => combatKeywords.includes(kw));
 
         visibleBaseKeywords.forEach(kw => {
             const badge = document.createElement('span');
-            badge.className = 'keyword-badge';
+            badge.className = lostAbilities ? 'keyword-badge keyword-lost' : 'keyword-badge';
             badge.textContent = kw.replace('_', ' ');
             badge.dataset.keyword = kw;
+            if (lostAbilities) {
+                badge.title = 'Perdida (Eaten by Piranhas)';
+            }
             previewKeywords.appendChild(badge);
         });
+
+        // Mostrar indicador de "sem habilidades" se afetado por Eaten by Piranhas
+        if (lostAbilities) {
+            const lostBadge = document.createElement('span');
+            lostBadge.className = 'keyword-badge keyword-debuff';
+            lostBadge.textContent = '🚫 Sem habilidades';
+            lostBadge.title = 'Criatura perdeu todas as habilidades';
+            previewKeywords.appendChild(lostBadge);
+        }
 
         // Keywords adicionais de efeitos permanentes (Auras, Lords, etc.) - excluindo temporárias
         if (card.type === 'creature' && this.game.rules) {
@@ -533,6 +548,7 @@ class GameUI {
                     const auraController = this.game.player.battlefield.includes(aura)
                         ? this.game.player : this.game.opponent;
                     const isDebuff = aura.id === 'pacifism' ||
+                        aura.id === 'eaten_by_piranhas' ||
                         (auraController !== creatureController && !aura.text?.includes('+'));
 
                     statusBadge.className = isDebuff ? 'status-badge debuff' : 'status-badge buff';

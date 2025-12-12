@@ -5,7 +5,8 @@ class SettingsManager {
         this.defaults = {
             theme: 'default',
             soundEnabled: true,
-            volume: 50,
+            sfxVolume: 50,          // Volume dos efeitos sonoros
+            musicVolume: 30,        // Volume da música de fundo
             logPanelEnabled: false  // Histórico retraído por padrão
         };
 
@@ -77,17 +78,31 @@ class SettingsManager {
             });
         }
 
-        // Volume slider
-        const volumeSlider = document.getElementById('volume-slider');
-        const volumeValue = document.getElementById('volume-value');
-        if (volumeSlider) {
-            volumeSlider.value = this.settings.volume;
-            if (volumeValue) volumeValue.textContent = `${this.settings.volume}%`;
+        // SFX Volume slider
+        const sfxVolumeSlider = document.getElementById('sfx-volume-slider');
+        const sfxVolumeValue = document.getElementById('sfx-volume-value');
+        if (sfxVolumeSlider) {
+            sfxVolumeSlider.value = this.settings.sfxVolume;
+            if (sfxVolumeValue) sfxVolumeValue.textContent = `${this.settings.sfxVolume}%`;
 
-            volumeSlider.addEventListener('input', (e) => {
+            sfxVolumeSlider.addEventListener('input', (e) => {
                 const vol = parseInt(e.target.value);
-                this.setVolume(vol);
-                if (volumeValue) volumeValue.textContent = `${vol}%`;
+                this.setSfxVolume(vol);
+                if (sfxVolumeValue) sfxVolumeValue.textContent = `${vol}%`;
+            });
+        }
+
+        // Music Volume slider
+        const musicVolumeSlider = document.getElementById('music-volume-slider');
+        const musicVolumeValue = document.getElementById('music-volume-value');
+        if (musicVolumeSlider) {
+            musicVolumeSlider.value = this.settings.musicVolume;
+            if (musicVolumeValue) musicVolumeValue.textContent = `${this.settings.musicVolume}%`;
+
+            musicVolumeSlider.addEventListener('input', (e) => {
+                const vol = parseInt(e.target.value);
+                this.setMusicVolume(vol);
+                if (musicVolumeValue) musicVolumeValue.textContent = `${vol}%`;
             });
         }
 
@@ -224,12 +239,20 @@ class SettingsManager {
         const soundEnabled = document.getElementById('sound-enabled');
         if (soundEnabled) soundEnabled.checked = this.settings.soundEnabled;
 
-        // Sincronizar volume
-        const volumeSlider = document.getElementById('volume-slider');
-        const volumeValue = document.getElementById('volume-value');
-        if (volumeSlider) {
-            volumeSlider.value = this.settings.volume;
-            if (volumeValue) volumeValue.textContent = `${this.settings.volume}%`;
+        // Sincronizar volume SFX
+        const sfxVolumeSlider = document.getElementById('sfx-volume-slider');
+        const sfxVolumeValue = document.getElementById('sfx-volume-value');
+        if (sfxVolumeSlider) {
+            sfxVolumeSlider.value = this.settings.sfxVolume;
+            if (sfxVolumeValue) sfxVolumeValue.textContent = `${this.settings.sfxVolume}%`;
+        }
+
+        // Sincronizar volume Music
+        const musicVolumeSlider = document.getElementById('music-volume-slider');
+        const musicVolumeValue = document.getElementById('music-volume-value');
+        if (musicVolumeSlider) {
+            musicVolumeSlider.value = this.settings.musicVolume;
+            if (musicVolumeValue) musicVolumeValue.textContent = `${this.settings.musicVolume}%`;
         }
 
         // Sincronizar undo
@@ -353,9 +376,19 @@ class SettingsManager {
         this.saveSettings();
     }
 
-    setVolume(volume) {
-        this.settings.volume = volume;
-        this.applySoundSettings();
+    setSfxVolume(volume) {
+        this.settings.sfxVolume = volume;
+        if (window.soundManager) {
+            window.soundManager.setSfxVolume(volume / 100);
+        }
+        this.saveSettings();
+    }
+
+    setMusicVolume(volume) {
+        this.settings.musicVolume = volume;
+        if (window.soundManager) {
+            window.soundManager.setMusicVolume(volume / 100);
+        }
         this.saveSettings();
     }
 
@@ -366,7 +399,8 @@ class SettingsManager {
             } else {
                 window.soundManager.mute();
             }
-            window.soundManager.setVolume(this.settings.volume / 100);
+            window.soundManager.setSfxVolume(this.settings.sfxVolume / 100);
+            window.soundManager.setMusicVolume(this.settings.musicVolume / 100);
         }
     }
 
