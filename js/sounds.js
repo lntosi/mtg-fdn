@@ -60,21 +60,29 @@ class SoundManager {
 
     // === EFEITOS SONOROS ===
 
-    play(soundName) {
+    play(soundName, delay = 0) {
         if (!this.enabled || !this.sounds[soundName]) return;
 
-        try {
-            // Clonar o áudio para permitir sobreposição
-            const sound = this.sounds[soundName].cloneNode();
-            sound.volume = this.sfxVolume;
-            sound.play().catch(e => {
-                // Silenciar erros de autoplay bloqueado
-                if (e.name !== 'NotAllowedError') {
-                    console.log('Erro ao tocar som:', e.message);
-                }
-            });
-        } catch (e) {
-            console.log('Erro ao tocar som:', e);
+        const playSound = () => {
+            try {
+                // Clonar o áudio para permitir sobreposição
+                const sound = this.sounds[soundName].cloneNode();
+                sound.volume = this.sfxVolume;
+                sound.play().catch(e => {
+                    // Silenciar erros de autoplay bloqueado
+                    if (e.name !== 'NotAllowedError') {
+                        console.log('Erro ao tocar som:', e.message);
+                    }
+                });
+            } catch (e) {
+                console.log('Erro ao tocar som:', e);
+            }
+        };
+
+        if (delay > 0) {
+            setTimeout(playSound, delay);
+        } else {
+            playSound();
         }
     }
 
@@ -82,8 +90,8 @@ class SoundManager {
     playCardPlay() { this.play('cardPlay'); }
     playCardDraw() { this.play('cardDraw'); }
     playAttack() { this.play('attack'); }
-    playBlock() { this.play('block'); }
-    playDamage() { this.play('damage'); }
+    playBlock() { this.play('block', 400); }      // Delay após attack
+    playDamage() { this.play('damage', 600); }    // Delay após attack/block
     playMagic() { this.play('magic'); }
     playTurnStart() { this.play('turnStart'); }
     playVictory() { this.play('victory'); }
