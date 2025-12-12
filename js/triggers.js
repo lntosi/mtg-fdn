@@ -48,7 +48,7 @@ class TriggerManager {
      * @param {Object} card - Carta que entrou em campo
      * @param {Object} controller - Jogador que controla a carta
      */
-    resolveETB(card, controller) {
+    async resolveETB(card, controller) {
         const opponent = controller === this.player ? this.opponent : this.player;
 
         // --- KEYWORD-BASED ETBs ---
@@ -113,7 +113,7 @@ class TriggerManager {
 
         // Volley Veteran - dano igual ao número de Goblins
         if (card.id === 'volley_veteran') {
-            this._handleVolleyVeteranETB(card, controller, opponent);
+            await this._handleVolleyVeteranETB(card, controller, opponent);
         }
 
         // --- TRIGGER PARA OUTRAS CRIATURAS ---
@@ -249,7 +249,7 @@ class TriggerManager {
         }
     }
 
-    _handleVolleyVeteranETB(card, controller, opponent) {
+    async _handleVolleyVeteranETB(card, controller, opponent) {
         const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
         if (validTargets.length === 0) return;
 
@@ -260,15 +260,12 @@ class TriggerManager {
 
         if (goblinCount === 0) return;
 
-        const dealDamage = (targetCreature) => {
+        const dealDamage = async (targetCreature) => {
             targetCreature.damage = (targetCreature.damage || 0) + goblinCount;
             this.ui.log(`Volley Veteran causou ${goblinCount} de dano a ${targetCreature.name}`);
 
             // Verificar se a criatura morreu
-            const toughness = this.rules.getCreatureToughness(targetCreature);
-            if (targetCreature.damage >= toughness) {
-                this.game.creatureDies(targetCreature, opponent);
-            }
+            await this.game.checkCreatureDeath(targetCreature, opponent);
             this.ui.render();
         };
 
@@ -278,8 +275,8 @@ class TriggerManager {
                 description: `Cause ${goblinCount} de dano a criatura alvo que um oponente controla:`,
                 validTargets: validTargets,
                 canSkip: false
-            }).then(selected => {
-                if (selected) dealDamage(selected);
+            }).then(async (selected) => {
+                if (selected) await dealDamage(selected);
             });
         } else {
             // IA escolhe a criatura que pode matar, ou a mais forte
@@ -300,7 +297,7 @@ class TriggerManager {
                 // Se não pode matar nenhuma, prefere causar dano na mais forte
                 return this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a);
             })[0];
-            dealDamage(target);
+            await dealDamage(target);
         }
     }
 

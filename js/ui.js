@@ -1009,14 +1009,27 @@ class GameUI {
             // Eventos de clique normais
             else if (card.type === 'creature') {
                 if (isPlayer && this.game.phase === PHASES.DECLARE_ATTACKERS && this.game.isPlayerTurn()) {
+                    const hasAbility = this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player);
+
                     if (this.game.rules.canAttack(card)) {
-                        cardEl.addEventListener('click', () => this.toggleAttacker(card));
+                        if (hasAbility) {
+                            // Se tem habilidade, usar timer para distinguir click de dblclick
+                            cardEl.addEventListener('click', () => {
+                                clearTimeout(this.attackerClickTimeout); // Cancela timeout anterior
+                                this.attackerClickTimeout = setTimeout(() => this.toggleAttacker(card), 250);
+                            });
+                        } else {
+                            cardEl.addEventListener('click', () => this.toggleAttacker(card));
+                        }
                         cardEl.style.cursor = 'pointer';
                     }
                     // Verificar habilidades ativadas durante combate (Jazal, Ingenious Leonin)
-                    if (this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    if (hasAbility) {
                         cardEl.classList.add('has-ability');
-                        cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
+                        cardEl.addEventListener('dblclick', () => {
+                            clearTimeout(this.attackerClickTimeout);
+                            this.game.activateAbility(card, this.game.player);
+                        });
                         cardEl.title = 'Clique duplo para ativar habilidade';
                     }
                 } else if (isPlayer && this.waitingForBlockers) {

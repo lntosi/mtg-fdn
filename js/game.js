@@ -841,7 +841,7 @@ class GameState {
             player.battlefield.push(card);
 
             // Trigger de entrada (delegado ao TriggerManager)
-            this.triggers.resolveETB(card, player);
+            await this.triggers.resolveETB(card, player);
 
             this.ui.log(`${player.name} jogou ${card.name}`);
         }
@@ -1393,7 +1393,7 @@ class GameState {
     // Verifica se uma carta tem habilidade ativada e pode usá-la
     canActivateAbility(card, player) {
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
-        const noTapAbilities = ['spectral_sailor'];
+        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
             if (card.summoningSickness && card.type === 'creature') return false;
@@ -1423,8 +1423,10 @@ class GameState {
 
             case 'jazal_goldmane':
                 // 3WW: atacantes ganham +X/+X (só durante combate, com atacantes)
-                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
-                if (this.currentAttackers.length === 0) return false;
+                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS && this.phase !== PHASES.COMBAT_DAMAGE) return false;
+                // Verificar atacantes confirmados OU selecionados na UI (durante DECLARE_ATTACKERS)
+                const jazalAttackers = this.currentAttackers.length > 0 ? this.currentAttackers : (this.ui?.selectedAttackers || []);
+                if (jazalAttackers.length === 0) return false;
                 const jazalMana = this.rules.calculateAvailableMana(player);
                 const jazalTotalMana = Object.values(jazalMana).reduce((a,b) => a+b, 0);
                 // Custo 3WW: precisa de 2W específico + 3 qualquer = 5 total, com pelo menos 2W
@@ -1446,10 +1448,12 @@ class GameState {
 
             case 'ingenious_leonin':
                 // 3W: coloca +1/+1 em outra criatura atacante (só durante combate)
-                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                if (this.phase !== PHASES.DECLARE_ATTACKERS && this.phase !== PHASES.DECLARE_BLOCKERS && this.phase !== PHASES.COMBAT_DAMAGE) return false;
                 const leoninMana = this.rules.calculateAvailableMana(player);
                 const leoninTotalMana = Object.values(leoninMana).reduce((a,b) => a+b, 0);
-                const hasOtherAttacker = this.currentAttackers.some(c => c.instanceId !== card.instanceId);
+                // Verificar atacantes confirmados OU selecionados na UI
+                const leoninAttackers = this.currentAttackers.length > 0 ? this.currentAttackers : (this.ui?.selectedAttackers || []);
+                const hasOtherAttacker = leoninAttackers.some(c => c.instanceId !== card.instanceId);
                 // Custo 3W: precisa de 1W específico + 3 qualquer = 4 total, com pelo menos 1W
                 return leoninMana.W >= 1 && leoninTotalMana >= 4 && hasOtherAttacker;
 
@@ -1592,8 +1596,10 @@ class GameState {
             case 'jazal_goldmane':
                 // 3WW: criaturas atacantes ganham +X/+X onde X é número de atacantes
                 this.payColoredMana({ generic: 3, W: 2 }, player);
-                const attackerCount = this.currentAttackers.length;
-                this.currentAttackers.forEach(attacker => {
+                // Usar atacantes confirmados OU selecionados na UI
+                const jazalTargets = this.currentAttackers.length > 0 ? this.currentAttackers : (this.ui?.selectedAttackers || []);
+                const attackerCount = jazalTargets.length;
+                jazalTargets.forEach(attacker => {
                     attacker.powerModifier = (attacker.powerModifier || 0) + attackerCount;
                     attacker.toughnessModifier = (attacker.toughnessModifier || 0) + attackerCount;
                 });
@@ -1654,7 +1660,9 @@ class GameState {
             case 'ingenious_leonin':
                 // 3W: coloca +1/+1 em outra criatura atacante. Se Cat, ganha iniciativa.
                 this.payColoredMana({ generic: 3, W: 1 }, player);
-                const leoninTargets = this.currentAttackers.filter(c => c.instanceId !== card.instanceId);
+                // Usar atacantes confirmados OU selecionados na UI
+                const leoninAllAttackers = this.currentAttackers.length > 0 ? this.currentAttackers : (this.ui?.selectedAttackers || []);
+                const leoninTargets = leoninAllAttackers.filter(c => c.instanceId !== card.instanceId);
                 if (leoninTargets.length > 0) {
                     let leoninTarget;
 
