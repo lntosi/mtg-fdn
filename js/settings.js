@@ -3,7 +3,6 @@
 class SettingsManager {
     constructor() {
         this.defaults = {
-            theme: 'default',
             soundEnabled: true,
             sfxVolume: 50,          // Volume dos efeitos sonoros
             musicVolume: 30,        // Volume da música de fundo
@@ -20,7 +19,6 @@ class SettingsManager {
 
         this.modal = document.getElementById('settings-modal');
         this.bindEvents();
-        this.applyTheme(this.settings.theme);
         this.applySoundSettings();
         this.applyLogPanelSetting();
         this.initialized = true;
@@ -60,14 +58,6 @@ class SettingsManager {
         if (btnClose) {
             btnClose.addEventListener('click', () => this.closeModal());
         }
-
-        // Temas
-        const themeInputs = document.querySelectorAll('input[name="theme"]');
-        themeInputs.forEach(input => {
-            input.addEventListener('change', (e) => {
-                this.setTheme(e.target.value);
-            });
-        });
 
         // Som enabled/disabled
         const soundEnabled = document.getElementById('sound-enabled');
@@ -231,10 +221,6 @@ class SettingsManager {
     }
 
     syncUI() {
-        // Sincronizar tema selecionado
-        const themeInput = document.querySelector(`input[name="theme"][value="${this.settings.theme}"]`);
-        if (themeInput) themeInput.checked = true;
-
         // Sincronizar som
         const soundEnabled = document.getElementById('sound-enabled');
         if (soundEnabled) soundEnabled.checked = this.settings.soundEnabled;
@@ -307,65 +293,6 @@ class SettingsManager {
         if (window.game) {
             if (turnInfo) turnInfo.textContent = `Turno: ${window.game.turnNumber || '-'}`;
             if (phaseInfo) phaseInfo.textContent = `Fase: ${window.game.phase || '-'}`;
-        }
-    }
-
-    // === Temas ===
-    setTheme(theme) {
-        this.settings.theme = theme;
-        this.applyTheme(theme);
-        this.saveSettings();
-    }
-
-    applyTheme(theme) {
-        const root = document.documentElement;
-        const body = document.body;
-        const gameContainer = document.getElementById('game-container');
-
-        // Remover classes de tema anteriores
-        body.classList.remove('theme-default', 'theme-clean', 'theme-dark');
-        if (gameContainer) {
-            gameContainer.classList.remove('theme-default', 'theme-clean', 'theme-dark');
-        }
-
-        // Aplicar novo tema
-        body.classList.add(`theme-${theme}`);
-        if (gameContainer) {
-            gameContainer.classList.add(`theme-${theme}`);
-        }
-
-        // Aplicar variáveis CSS por tema
-        switch (theme) {
-            case 'clean':
-                root.style.setProperty('--bg-primary', '#c8c8c8');
-                root.style.setProperty('--bg-secondary', '#e0e0e0');
-                root.style.setProperty('--bg-battlefield', '#d4d4d4');
-                root.style.setProperty('--text-primary', '#1a1a1a');
-                root.style.setProperty('--text-secondary', '#4a4a4a');
-                root.style.setProperty('--accent-color', '#cc0000');
-                root.style.setProperty('--card-border', '#888888');
-                root.style.setProperty('--divider-color', '#cc0000');
-                break;
-            case 'dark':
-                root.style.setProperty('--bg-primary', '#0a0a0a');
-                root.style.setProperty('--bg-secondary', '#1a1a1a');
-                root.style.setProperty('--bg-battlefield', '#0f0f0f');
-                root.style.setProperty('--text-primary', '#ffffff');
-                root.style.setProperty('--text-secondary', '#cccccc');
-                root.style.setProperty('--accent-color', '#ffcc00');
-                root.style.setProperty('--card-border', '#444444');
-                root.style.setProperty('--divider-color', '#ffcc00');
-                break;
-            default: // default purple theme
-                root.style.setProperty('--bg-primary', '#1a0a1f');
-                root.style.setProperty('--bg-secondary', '#2d1b3d');
-                root.style.setProperty('--bg-battlefield', '#1a0a1f');
-                root.style.setProperty('--text-primary', '#ffffff');
-                root.style.setProperty('--text-secondary', '#b8a8c8');
-                root.style.setProperty('--accent-color', '#b432a8');
-                root.style.setProperty('--card-border', '#6a4a7a');
-                root.style.setProperty('--divider-color', '#b432a8');
-                break;
         }
     }
 

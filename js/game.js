@@ -1671,7 +1671,10 @@ class GameState {
 
             case 'goblin_firebomb':
                 // 7, T, Sacrifice: destroy target permanent
-                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 7;
+                const firebombMana = Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0);
+                const firebombOpponent = player === this.player ? this.opponent : this.player;
+                const hasTargetPermanent = firebombOpponent.battlefield.length > 0;
+                return firebombMana >= 7 && hasTargetPermanent;
 
             case 'dropkick_bomber':
                 // R: outro Goblin ganha voar e "quando causa dano de combate, sacrifique-o"
@@ -1845,15 +1848,50 @@ class GameState {
 
             case 'goblin_firebomb':
                 // 7, T, Sacrifice: destroy target permanent
+                const firebombValidTargets = opponent.battlefield.filter(c =>
+                    !c.keywords?.includes('indestructible')
+                );
+
+                if (firebombValidTargets.length === 0) {
+                    this.ui.log('Não há permanentes válidos para destruir');
+                    return;
+                }
+
+                let firebombTarget;
+
+                if (player === this.player) {
+                    // Jogador humano escolhe o alvo
+                    firebombTarget = await this.ui.promptTriggerTarget({
+                        title: 'Goblin Firebomb',
+                        description: 'Escolha um permanente para destruir:',
+                        validTargets: firebombValidTargets,
+                        canSkip: false
+                    });
+
+                    if (!firebombTarget) {
+                        this.ui.log('Ativação cancelada');
+                        return;
+                    }
+                } else {
+                    // IA escolhe: prioriza criaturas por poder, depois outros permanentes
+                    const creatures = firebombValidTargets.filter(c => c.type === 'creature');
+                    if (creatures.length > 0) {
+                        firebombTarget = creatures.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    } else {
+                        firebombTarget = firebombValidTargets[0];
+                    }
+                }
+
+                // Pagar custo e sacrificar
                 this.payGenericMana(7, player);
                 card.tapped = true;
                 await this.destroyPermanent(card, player);
-                // Destruir permanente alvo do oponente (simplificado: maior criatura)
-                const firebombTarget = opponent.battlefield.find(c => c.type === 'creature');
-                if (firebombTarget) {
-                    await this.destroyPermanent(firebombTarget, opponent);
-                    this.ui.log(`Goblin Firebomb destruiu ${firebombTarget.name}`);
-                }
+
+                // Destruir o alvo escolhido
+                await this.destroyPermanent(firebombTarget, opponent);
+                this.ui.log(`Goblin Firebomb destruiu ${firebombTarget.name}`);
                 break;
 
             case 'dropkick_bomber':

@@ -937,6 +937,64 @@ body {
     50% { box-shadow: 0 2px 8px rgba(218, 165, 32, 0.8); }
 }
 
+/* === AURAS ANEXADAS (Badges) === */
+
+/* Container para badges de aura - posicionado na parte inferior */
+.aura-indicators {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 3px;
+    z-index: 20;
+}
+
+/* Badge individual de aura */
+.aura-badge {
+    min-width: 28px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Aura debuff (Pacifism, etc.) - vermelho */
+.aura-badge.debuff {
+    background: linear-gradient(135deg, #8b0000 0%, #5c0000 50%, #8b0000 100%);
+    border: 2px solid #ff4444;
+    color: #ffcccc;
+}
+
+/* Aura buff (Untamed Hunger, etc.) - verde */
+.aura-badge.buff {
+    background: linear-gradient(135deg, #228b22 0%, #145214 50%, #228b22 100%);
+    border: 2px solid #44ff44;
+    color: #ccffcc;
+}
+
+.aura-badge:hover {
+    transform: scale(1.3);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+    z-index: 25;
+}
+
+.aura-badge.debuff:hover {
+    background: linear-gradient(135deg, #aa0000 0%, #770000 50%, #aa0000 100%);
+}
+
+.aura-badge.buff:hover {
+    background: linear-gradient(135deg, #2eaa2e 0%, #1a6b1a 50%, #2eaa2e 100%);
+}
+
 @keyframes pulse-attack {
     0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
     50% { box-shadow: 0 0 35px 15px #ff6b6b; }
@@ -3294,50 +3352,6 @@ body {
     color: #fff;
 }
 
-/* Clean theme - Game options */
-.theme-clean .game-options {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.theme-clean .option-section label {
-    color: #333;
-}
-
-.theme-clean .option-section select {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(0, 0, 0, 0.2);
-    color: #1a1a1a;
-}
-
-.theme-clean .option-section select option {
-    background: #f0f0f0;
-    color: #1a1a1a;
-}
-
-.theme-clean .ai-deck-options {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-.theme-clean .ai-deck-label {
-    color: #555;
-}
-
-.theme-clean .deck-option-small {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.theme-clean .deck-option-small:hover {
-    background: rgba(0, 0, 0, 0.15);
-}
-
-.theme-clean .deck-option-small span {
-    color: #333;
-}
-
-.theme-clean .deck-option-small input:checked + span {
-    color: #cc0000;
-}
-
 /* === Responsividade ao Zoom do Navegador === */
 
 /* Usar unidades relativas para melhor adaptação ao zoom */
@@ -3975,32 +3989,6 @@ html {
     height: 22px;
 }
 
-/* Tema Clean */
-.theme-clean .btn-settings-gear {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(0, 0, 0, 0.2);
-    color: rgba(0, 0, 0, 0.4);
-}
-
-.theme-clean .btn-settings-gear:hover {
-    background: rgba(255, 255, 255, 0.5);
-    border-color: rgba(0, 0, 0, 0.4);
-    color: rgba(0, 0, 0, 0.8);
-}
-
-/* Tema Alto Contraste */
-.theme-high-contrast .btn-settings-gear {
-    background: #000;
-    border-color: #fff;
-    color: #fff;
-}
-
-.theme-high-contrast .btn-settings-gear:hover {
-    background: #333;
-    border-color: #ff0;
-    color: #ff0;
-}
-
 /* === Modal de Configurações === */
 .settings-content {
     max-width: 500px;
@@ -4056,104 +4044,6 @@ html {
     font-size: 1em;
     color: #b8a8c8;
     font-weight: 600;
-}
-
-/* === Seletor de Temas === */
-.theme-options {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-}
-
-.theme-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.theme-option input[type="radio"] {
-    display: none;
-}
-
-.theme-preview {
-    width: 100px;
-    height: 70px;
-    border-radius: 8px;
-    border: 3px solid transparent;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s;
-}
-
-.theme-option:hover .theme-preview {
-    transform: scale(1.05);
-}
-
-.theme-option input:checked + .theme-preview {
-    border-color: #ffd700;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-}
-
-.theme-preview-battlefield {
-    position: absolute;
-    top: 50%;
-    left: 5%;
-    right: 5%;
-    height: 2px;
-}
-
-.theme-preview-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.5em;
-    opacity: 0.3;
-}
-
-/* Preview do tema Default (Roxo) */
-.theme-preview-default {
-    background: linear-gradient(135deg, #1a0a1f 0%, #2d1b3d 100%);
-}
-
-.theme-preview-default .theme-preview-battlefield {
-    background: #b432a8;
-}
-
-/* Preview do tema Clean (Cinza) */
-.theme-preview-clean {
-    background: linear-gradient(180deg, #d4d4d4 0%, #b8b8b8 100%);
-}
-
-.theme-preview-clean .theme-preview-battlefield {
-    background: #cc0000;
-}
-
-.theme-preview-clean .theme-preview-watermark {
-    color: #cc0000;
-}
-
-/* Preview do tema Dark (Alto Contraste) */
-.theme-preview-dark {
-    background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
-}
-
-.theme-preview-dark .theme-preview-battlefield {
-    background: #ffcc00;
-}
-
-.theme-name {
-    margin-top: 8px;
-    font-size: 0.85em;
-    color: #b8a8c8;
-    transition: color 0.2s;
-}
-
-.theme-option input:checked ~ .theme-name {
-    color: #ffd700;
-    font-weight: bold;
 }
 
 /* === Configurações de Som === */
@@ -4351,420 +4241,6 @@ html {
     border-radius: 4px;
     font-family: inherit;
     font-size: 0.9em;
-}
-
-/* ============================================= */
-/* === TEMAS VISUAIS === */
-/* ============================================= */
-
-/* === Tema Clean (Cinza com Marca d'água) === */
-body.theme-clean {
-    background: linear-gradient(180deg, #c8c8c8 0%, #a8a8a8 100%);
-}
-
-.theme-clean #game-container {
-    background:
-        radial-gradient(ellipse at center, rgba(200, 200, 200, 0.3) 0%, transparent 70%);
-}
-
-/* Zona central no tema clean */
-.theme-clean #middle-zone {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-/* Marca d'água do Planeswalker */
-.theme-clean #game-container::before {
-    content: '✦';
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 200px;
-    color: rgba(204, 0, 0, 0.08);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.theme-clean .battlefield {
-    background: rgba(212, 212, 212, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.theme-clean .player-info {
-    background: rgba(255, 255, 255, 0.8);
-    color: #1a1a1a;
-}
-
-.theme-clean #phase-indicator {
-    background: transparent;
-    color: #1a1a1a;
-}
-
-.theme-clean #message-log {
-    background: rgba(200, 200, 200, 0.5);
-    color: #1a1a1a;
-}
-
-.theme-clean .life-total {
-    background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
-    color: #fff;
-}
-
-.theme-clean .card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.theme-clean #action-buttons button {
-    background: linear-gradient(180deg, #444 0%, #222 100%);
-    color: #fff;
-}
-
-.theme-clean #action-buttons button:hover:not(:disabled) {
-    background: linear-gradient(180deg, #555 0%, #333 100%);
-}
-
-/* Preservar cores do botão principal contextual no tema clean */
-.theme-clean #btn-main-action.state-advance {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-}
-
-.theme-clean #btn-main-action.state-resolve {
-    background: linear-gradient(135deg, #2980b9, #3498db);
-}
-
-.theme-clean #btn-main-action.state-priority {
-    background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
-    color: #1a1a1a;
-}
-
-.theme-clean #btn-main-action.state-combat {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-}
-
-.theme-clean #btn-main-action.state-block {
-    background: linear-gradient(135deg, #8e44ad, #9b59b6);
-}
-
-.theme-clean .log-panel {
-    background: rgba(255, 255, 255, 0.95);
-    color: #1a1a1a;
-}
-
-.theme-clean .modal-content {
-    background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
-    color: #1a1a1a;
-}
-
-/* Clean theme - Settings modal */
-.theme-clean .settings-content {
-    background: linear-gradient(180deg, #f5f5f5 0%, #e0e0e0 100%);
-}
-
-.theme-clean .settings-header {
-    background: rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.theme-clean .settings-header h2 {
-    color: #1a1a1a;
-}
-
-.theme-clean .btn-close-settings {
-    color: #666;
-}
-
-.theme-clean .btn-close-settings:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #1a1a1a;
-}
-
-.theme-clean .settings-section {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.theme-clean .settings-section h3 {
-    color: #333;
-}
-
-.theme-clean .theme-name {
-    color: #333;
-}
-
-.theme-clean .theme-option input:checked ~ .theme-name {
-    color: #cc0000;
-}
-
-.theme-clean .sound-toggle span {
-    color: #1a1a1a;
-}
-
-.theme-clean .volume-control label {
-    color: #333;
-}
-
-.theme-clean #volume-value {
-    color: #1a1a1a;
-}
-
-.theme-clean #volume-slider {
-    background: #bbb;
-}
-
-.theme-clean #volume-slider::-webkit-slider-thumb {
-    background: linear-gradient(135deg, #cc0000, #990000);
-}
-
-.theme-clean .btn-setting {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    color: #1a1a1a;
-}
-
-.theme-clean .btn-setting:hover {
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.theme-clean .btn-setting.btn-warning {
-    background: rgba(200, 150, 0, 0.15);
-    border-color: rgba(200, 150, 0, 0.3);
-    color: #996600;
-}
-
-.theme-clean .btn-setting.btn-warning:hover {
-    background: rgba(200, 150, 0, 0.25);
-}
-
-.theme-clean .btn-setting.btn-danger {
-    background: rgba(204, 0, 0, 0.15);
-    border-color: rgba(204, 0, 0, 0.3);
-    color: #cc0000;
-}
-
-.theme-clean .btn-setting.btn-danger:hover {
-    background: rgba(204, 0, 0, 0.25);
-}
-
-.theme-clean .match-info {
-    color: #555;
-}
-
-.theme-clean .settings-footer {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-.theme-clean .settings-hint {
-    color: #666;
-}
-
-.theme-clean .settings-hint kbd {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-    color: #333;
-}
-
-/* Clean theme - All text elements */
-.theme-clean .player-name,
-.theme-clean #player-name-display,
-.theme-clean #opponent-name {
-    color: #1a1a1a;
-}
-
-.theme-clean .log-panel {
-    background: #f8f8f8;
-    border: 1px solid #ccc;
-}
-
-.theme-clean .log-panel-header {
-    background: #eee;
-    color: #1a1a1a;
-    border-bottom: 1px solid #ccc;
-}
-
-.theme-clean .log-panel-content,
-.theme-clean #log-panel-content {
-    color: #1a1a1a;
-}
-
-.theme-clean #message-log {
-    color: #1a1a1a;
-}
-
-/* Clean theme - Stack */
-.theme-clean #stack {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-}
-
-.theme-clean .stack-empty-text {
-    color: #555;
-}
-
-.theme-clean .stack-item {
-    background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(0, 0, 0, 0.2);
-}
-
-.theme-clean .stack-item-name {
-    color: #1a1a1a;
-}
-
-.theme-clean .stack-item-controller {
-    color: #555;
-}
-
-.theme-clean .stack-item-target {
-    color: #333;
-}
-
-.theme-clean #current-phase {
-    color: #1a1a1a;
-    background: transparent;
-}
-
-.theme-clean #turn-indicator {
-    color: #1a1a1a;
-}
-
-.theme-clean #turn-indicator.player-turn {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-    color: #fff;
-}
-
-.theme-clean #turn-indicator.opponent-turn {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    color: #fff;
-}
-
-.theme-clean .mana-pool .mana-icon {
-    color: #1a1a1a;
-}
-
-.theme-clean .library-count,
-.theme-clean .graveyard-count {
-    color: #1a1a1a;
-    background: rgba(255, 255, 255, 0.9);
-}
-
-/* Clean theme - Modals */
-.theme-clean .modal-content h2 {
-    color: #1a1a1a;
-}
-
-.theme-clean .modal-content p {
-    color: #333;
-}
-
-.theme-clean .modal-content label {
-    color: #333;
-}
-
-.theme-clean .deck-option .deck-name {
-    color: #1a1a1a;
-}
-
-.theme-clean .avatar-name {
-    color: #333;
-}
-
-.theme-clean .customization-section label {
-    color: #333;
-}
-
-/* Clean theme - Zone labels */
-.theme-clean .lands::before,
-.theme-clean .creatures::before,
-.theme-clean .other-permanents::before {
-    color: rgba(100, 100, 100, 0.6);
-}
-
-/* === Tema Dark (Alto Contraste) === */
-body.theme-dark {
-    background: #000;
-}
-
-.theme-dark #game-container {
-    background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
-}
-
-.theme-dark .battlefield {
-    background: rgba(20, 20, 20, 0.8);
-    border: 1px solid #333;
-}
-
-.theme-dark .player-info {
-    background: rgba(30, 30, 30, 0.9);
-    border: 1px solid #444;
-}
-
-.theme-dark .life-total {
-    background: linear-gradient(180deg, #ffcc00 0%, #b8860b 100%);
-    color: #000;
-    font-weight: bold;
-}
-
-.theme-dark .card {
-    border: 1px solid #555;
-    box-shadow: 0 0 10px rgba(255, 204, 0, 0.2);
-}
-
-.theme-dark .card:hover {
-    box-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
-}
-
-.theme-dark #action-buttons button {
-    background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
-    border: 1px solid #ffcc00;
-    color: #ffcc00;
-}
-
-.theme-dark #action-buttons button:hover:not(:disabled) {
-    background: linear-gradient(180deg, #ffcc00 0%, #b8860b 100%);
-    color: #000;
-}
-
-/* Preservar cores do botão principal contextual no tema dark */
-.theme-dark #btn-main-action.state-advance {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-    border-color: #2ecc71;
-    color: #fff;
-}
-
-.theme-dark #btn-main-action.state-resolve {
-    background: linear-gradient(135deg, #2980b9, #3498db);
-    border-color: #3498db;
-    color: #fff;
-}
-
-.theme-dark #btn-main-action.state-priority {
-    background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
-    border-color: #ffd700;
-    color: #1a1a1a;
-}
-
-.theme-dark #btn-main-action.state-combat {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    border-color: #e74c3c;
-    color: #fff;
-}
-
-.theme-dark #btn-main-action.state-block {
-    background: linear-gradient(135deg, #8e44ad, #9b59b6);
-    border-color: #9b59b6;
-    color: #fff;
-}
-
-.theme-dark .log-panel {
-    background: rgba(10, 10, 10, 0.95);
-    border: 1px solid #333;
-}
-
-.theme-dark .modal-content {
-    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
-    border: 1px solid #444;
-}
-
-.theme-dark #volume-slider::-webkit-slider-thumb {
-    background: linear-gradient(135deg, #ffcc00, #b8860b);
 }
 
 /* === Fullscreen Adjustments === */

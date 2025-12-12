@@ -1102,14 +1102,19 @@ class GameUI {
             let hasDebuff = false;
             let hasBuff = false;
 
+            // Criar container para badges de aura
+            const auraContainer = document.createElement('div');
+            auraContainer.className = 'aura-indicators';
+
             attachedAuras.forEach((aura) => {
                 // Determinar se é buff ou debuff
                 const auraController = this.game.player.battlefield.includes(aura)
                     ? this.game.player
                     : this.game.opponent;
 
-                // Auras negativas: Pacifism (impede ataque/bloqueio)
+                // Auras negativas: Pacifism, Eaten by Piranhas
                 const isDebuff = aura.id === 'pacifism' ||
+                    aura.id === 'eaten_by_piranhas' ||
                     (auraController !== creatureController && !aura.text?.includes('+'));
 
                 if (isDebuff) {
@@ -1117,7 +1122,27 @@ class GameUI {
                 } else {
                     hasBuff = true;
                 }
+
+                // Criar badge clicável para a aura
+                const auraBadge = document.createElement('div');
+                auraBadge.className = isDebuff ? 'aura-badge debuff' : 'aura-badge buff';
+                auraBadge.textContent = this.getAuraShortName(aura.name);
+                auraBadge.title = `${aura.name} - Passe o mouse para ver detalhes`;
+
+                // Adicionar evento de hover para mostrar preview da aura
+                auraBadge.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    this.showCardPreview(aura);
+                });
+                auraBadge.addEventListener('mouseleave', (e) => {
+                    e.stopPropagation();
+                    this.hideCardPreview();
+                });
+
+                auraContainer.appendChild(auraBadge);
             });
+
+            creatureEl.appendChild(auraContainer);
 
             // Adicionar classe para borda colorida indicando presença de aura
             creatureEl.classList.add('has-aura');
@@ -1128,10 +1153,20 @@ class GameUI {
             if (hasBuff && !hasDebuff) {
                 creatureEl.classList.add('has-buff-aura');
             }
-
-            // Informações detalhadas das auras são exibidas no Preview Lateral
-            // A borda colorida da criatura indica visualmente a presença de aura(s)
         }
+    }
+
+    /**
+     * Retorna nome abreviado para badge de aura
+     */
+    getAuraShortName(name) {
+        const abbreviations = {
+            'Pacifism': 'PAC',
+            'Untamed Hunger': 'UH',
+            'Eaten by Piranhas': 'EBP',
+            'Tricks of the Trade': 'TT'
+        };
+        return abbreviations[name] || name.substring(0, 3).toUpperCase();
     }
 
     renderAttachedEquipments(creature, creatureEl, isPlayerCreature) {
