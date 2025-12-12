@@ -208,7 +208,6 @@ class SettingsManager {
         }
 
         this.modal.classList.remove('hidden');
-        window.soundManager?.playButtonClick();
     }
 
     closeModal() {

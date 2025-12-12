@@ -2905,11 +2905,6 @@ class GameUI {
                 instantsContainer.innerHTML = '<p class="no-instants">Nenhum instant disponível</p>';
             }
 
-            // Som de alerta
-            if (window.soundManager && window.soundManager.playNotification) {
-                window.soundManager.playNotification();
-            }
-
             // Handlers dos botões
             const cleanup = () => {
                 modal.classList.add('hidden');

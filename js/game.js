@@ -829,9 +829,6 @@ class GameState {
         this.awaitingPlayerContinue = true;
         this.continueReason = reason;
 
-        // Tocar som de notificação
-        window.soundManager?.playTurnStart();
-
         // Highlight nas cartas jogáveis e renderizar
         this.ui.highlightPlayableCards(true);
         this.ui.render();
@@ -2982,11 +2979,6 @@ class GameState {
         if (this.ui) {
             this.ui.log(`⟲ Desfeito: ${snapshot.description}`);
             this.ui.render();
-        }
-
-        // Som de undo
-        if (window.soundManager) {
-            window.soundManager.playButtonClick();
         }
 
         return true;
