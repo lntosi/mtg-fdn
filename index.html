@@ -433,7 +433,16 @@
             </div>
             <div class="priority-buttons">
                 <button id="btn-priority-respond" class="btn-priority-respond">Responder</button>
-                <button id="btn-priority-pass" class="btn-priority-pass">Passar</button>
+                <div class="stack-badge-wrapper">
+                    <button id="btn-priority-pass" class="btn-priority-pass">
+                        Passar
+                        <span id="stack-badge" class="stack-badge hidden">[0]</span>
+                    </button>
+                    <div id="stack-dropdown" class="stack-dropdown hidden">
+                        <div class="stack-dropdown-header">📚 Pilha</div>
+                        <div id="stack-dropdown-items" class="stack-dropdown-items"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

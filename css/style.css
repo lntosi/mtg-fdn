@@ -3797,6 +3797,131 @@ html {
     color: #fff;
 }
 
+/* Stack Badge e Dropdown */
+.stack-badge-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.stack-badge {
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-radius: 10px;
+    animation: stackPulse 1.5s ease-in-out infinite;
+}
+
+.stack-badge.hidden {
+    display: none;
+}
+
+@keyframes stackPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.05); }
+}
+
+.stack-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    min-width: 220px;
+    background: linear-gradient(180deg, #2a1a3f 0%, #1a0a2f 100%);
+    border: 2px solid #9b59b6;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(155, 89, 182, 0.4);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.stack-badge-wrapper:hover .stack-dropdown:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.stack-dropdown.hidden {
+    display: none;
+}
+
+.stack-dropdown-header {
+    padding: 10px 15px;
+    font-weight: bold;
+    font-size: 1em;
+    color: #e0c3fc;
+    border-bottom: 1px solid #9b59b6;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(155, 89, 182, 0.2) 0%, transparent 100%);
+    border-radius: 8px 8px 0 0;
+}
+
+.stack-dropdown-items {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.stack-dropdown-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(155, 89, 182, 0.3);
+    transition: background 0.2s;
+}
+
+.stack-dropdown-item:last-child {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.stack-dropdown-item:hover {
+    background: rgba(155, 89, 182, 0.15);
+}
+
+.stack-dropdown-item-index {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    background: #9b59b6;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75em;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.stack-dropdown-item-name {
+    color: #fff;
+    font-weight: 500;
+}
+
+.stack-dropdown-item-controller {
+    font-size: 0.8em;
+    color: #b388eb;
+    margin-left: 28px;
+}
+
+.stack-dropdown-item-target {
+    font-size: 0.75em;
+    color: #f7931e;
+    margin-left: 28px;
+}
+
+.stack-dropdown-item.stack-top {
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid #ffd700;
+}
+
+.stack-dropdown-item.stack-top .stack-dropdown-item-index {
+    background: linear-gradient(135deg, #ffd700 0%, #ff6b35 100%);
+}
+
 /* Indicador de Prioridade Flutuante */
 .priority-indicator {
     position: fixed;

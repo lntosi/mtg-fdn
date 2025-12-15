@@ -2170,6 +2170,7 @@ class GameUI {
         if (this.game.stack.length === 0) {
             stackEl.classList.add('empty');
             stackEl.innerHTML = '<span class="stack-empty-text">Pilha vazia</span>';
+            this.updateStackBadge(); // Update badge when stack changes
             return;
         }
 
@@ -2209,6 +2210,61 @@ class GameUI {
             : 'Prioridade do oponente';
         priorityEl.textContent = priorityText;
         stackEl.appendChild(priorityEl);
+
+        // Update the badge and dropdown
+        this.updateStackBadge();
+    }
+
+    // === STACK BADGE E DROPDOWN ===
+    updateStackBadge() {
+        const badge = document.getElementById('stack-badge');
+        const dropdown = document.getElementById('stack-dropdown');
+        const dropdownItems = document.getElementById('stack-dropdown-items');
+
+        if (!badge || !dropdown || !dropdownItems) return;
+
+        const stackCount = this.game.stack.length;
+
+        if (stackCount === 0) {
+            badge.classList.add('hidden');
+            dropdown.classList.add('hidden');
+            return;
+        }
+
+        // Show badge with count
+        badge.textContent = `[${stackCount}]`;
+        badge.classList.remove('hidden');
+        dropdown.classList.remove('hidden');
+
+        // Populate dropdown items (top to bottom = LIFO order)
+        dropdownItems.innerHTML = '';
+        const stackItems = [...this.game.stack].reverse();
+
+        stackItems.forEach((stackItem, index) => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'stack-dropdown-item';
+
+            if (index === 0) {
+                itemEl.classList.add('stack-top');
+            }
+
+            const item = stackItem.item;
+            const controllerName = stackItem.controller === this.game.player ? 'Você' : 'Oponente';
+            const displayIndex = stackCount - index; // Show as 3, 2, 1 (top first)
+
+            let itemHtml = `
+                <span class="stack-dropdown-item-index">${displayIndex}</span>
+                <span class="stack-dropdown-item-name">${item.name || 'Habilidade'}</span>
+                <div class="stack-dropdown-item-controller">${controllerName}</div>
+            `;
+
+            if (stackItem.target) {
+                itemHtml += `<div class="stack-dropdown-item-target">→ ${stackItem.target.name}</div>`;
+            }
+
+            itemEl.innerHTML = itemHtml;
+            dropdownItems.appendChild(itemEl);
+        });
     }
 
     // === SISTEMA DE MULLIGAN ===
