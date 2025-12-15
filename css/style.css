@@ -4383,6 +4383,47 @@ html {
     transform: translateX(-50%) translateY(0);
 }
 
+/* === Priority Stops === */
+.priority-stops-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.priority-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.priority-column h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+    color: #9a8aaa;
+    font-weight: 600;
+    text-align: center;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.priority-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85em;
+}
+
+.priority-toggle span {
+    color: #ccc;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 450px) {
+    .priority-stops-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* === Footer === */
 .settings-footer {
     padding: 15px 25px;

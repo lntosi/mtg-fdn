@@ -187,6 +187,55 @@ class SettingsManager {
                 }
             });
         }
+
+        // Priority Stops - Seu turno
+        this.bindPriorityStop('stop-upkeep', 'upkeep', false);
+        this.bindPriorityStop('stop-begin-combat', 'beginCombat', false);
+        this.bindPriorityStop('stop-after-attackers', 'afterAttackers', false);
+        this.bindPriorityStop('stop-after-blockers', 'afterBlockers', false);
+        this.bindPriorityStop('stop-end-step', 'endStep', false);
+
+        // Priority Stops - Turno do oponente
+        this.bindPriorityStop('stop-opp-upkeep', 'upkeep', true);
+        this.bindPriorityStop('stop-opp-begin-combat', 'beginCombat', true);
+        this.bindPriorityStop('stop-opp-after-attackers', 'afterAttackers', true);
+        this.bindPriorityStop('stop-opp-after-blockers', 'afterBlockers', true);
+        this.bindPriorityStop('stop-opp-end-step', 'endStep', true);
+    }
+
+    /**
+     * Vincula um checkbox de priority stop ao estado do jogo
+     * @param {string} elementId - ID do checkbox
+     * @param {string} stopType - Tipo de stop (upkeep, beginCombat, etc.)
+     * @param {boolean} isOpponentTurn - Se é para o turno do oponente
+     */
+    bindPriorityStop(elementId, stopType, isOpponentTurn) {
+        const checkbox = document.getElementById(elementId);
+        if (!checkbox) return;
+
+        // Sincronizar com estado atual do jogo
+        if (window.game?.priorityStops) {
+            if (isOpponentTurn) {
+                checkbox.checked = window.game.priorityStops.opponentTurn?.[stopType] || false;
+            } else {
+                checkbox.checked = window.game.priorityStops[stopType] || false;
+            }
+        }
+
+        checkbox.addEventListener('change', (e) => {
+            if (!window.game) return;
+
+            if (isOpponentTurn) {
+                if (!window.game.priorityStops.opponentTurn) {
+                    window.game.priorityStops.opponentTurn = {};
+                }
+                window.game.priorityStops.opponentTurn[stopType] = e.target.checked;
+            } else {
+                window.game.priorityStops[stopType] = e.target.checked;
+            }
+
+            window.game.savePriorityStops();
+        });
     }
 
     /**
@@ -293,6 +342,41 @@ class SettingsManager {
         if (undoEnabled) {
             undoEnabled.checked = this.settings.undoEnabled || false;
         }
+
+        // Sincronizar priority stops
+        this.syncPriorityStops();
+    }
+
+    /**
+     * Sincroniza os checkboxes de priority stops com o estado do jogo
+     */
+    syncPriorityStops() {
+        if (!window.game?.priorityStops) return;
+
+        const stops = window.game.priorityStops;
+
+        // Seu turno
+        this.setCheckbox('stop-upkeep', stops.upkeep);
+        this.setCheckbox('stop-begin-combat', stops.beginCombat);
+        this.setCheckbox('stop-after-attackers', stops.afterAttackers);
+        this.setCheckbox('stop-after-blockers', stops.afterBlockers);
+        this.setCheckbox('stop-end-step', stops.endStep);
+
+        // Turno do oponente
+        const oppStops = stops.opponentTurn || {};
+        this.setCheckbox('stop-opp-upkeep', oppStops.upkeep);
+        this.setCheckbox('stop-opp-begin-combat', oppStops.beginCombat);
+        this.setCheckbox('stop-opp-after-attackers', oppStops.afterAttackers);
+        this.setCheckbox('stop-opp-after-blockers', oppStops.afterBlockers);
+        this.setCheckbox('stop-opp-end-step', oppStops.endStep);
+    }
+
+    /**
+     * Helper para definir estado de um checkbox
+     */
+    setCheckbox(elementId, checked) {
+        const el = document.getElementById(elementId);
+        if (el) el.checked = checked || false;
     }
 
     // === Log Panel ===

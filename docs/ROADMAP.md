@@ -102,7 +102,7 @@ Após implementar os 5 decks restantes, avaliar se vale extrair:
 - [ ] **Responsividade mobile**: Adaptar para tablets/celulares
 
 #### Técnico
-- [ ] **Tratamento de erros**: Capturar e logar erros graciosamente
+- [x] **Tratamento de erros**: Sistema de logs com captura automática de erros JS (LogManager)
 
 ---
 
@@ -158,15 +158,21 @@ Itens que podem ou não ser implementados:
 - ✅ Temas visuais (3 opções)
 - ✅ Menu de configurações (tecla M)
 - ✅ Modo tela cheia
-- ✅ Configurações de som
+- ✅ Configurações de som (efeitos + música de fundo separados)
 - ✅ Modais arrastáveis padronizados
+- ✅ Símbolos de mana MTG reais no preview
+- ✅ Indicador de stack (hourglass) para permanentes pendentes
+- ✅ Preview aprimorado com display de dano/buffs (base → atual → efetivo)
+- ✅ Aura badges no preview de criaturas encantadas
 
 ### Técnico
-- ✅ Testes unitários (Jest) - 135 testes
+- ✅ Testes unitários (Jest) - 140 testes
 - ✅ Validação de cartas via Scryfall
 - ✅ Modo Debug completo
 - ✅ Ward mechanic (Tolarian Terror)
 - ✅ Equipment system (Pirate's Cutlass: ETB + Equip)
+- ✅ Sistema de logs exportável (LogManager)
+- ✅ Captura automática de erros JavaScript
 
 </details>
 
@@ -198,6 +204,13 @@ Todos os 5 decks foram validados contra a API do Scryfall:
 - `docs/04_FUTURE_DECKS_PLAN.md` - Plano para 5 decks restantes
 - `docs/ROADMAP.md` - Este arquivo
 - `docs/MagicCompRules 20251114.txt` - Regras oficiais do Magic
+
+### Bug Fixes Recentes
+- Haste funciona corretamente para ataques e tap abilities
+- Marcação de dano em combate em criaturas sobreviventes
+- Summoning sickness só aplica a criaturas (não enchantments/artifacts)
+- Vengeful Bloodwitch não dispara duplo quando morre
+- Lord bonuses exibidos corretamente no log exportado
 
 ---
 
