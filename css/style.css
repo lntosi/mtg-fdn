@@ -1699,6 +1699,33 @@ body {
     font-weight: bold;
 }
 
+.card-preview-stats .current-stats.buffed {
+    color: #90EE90; /* Verde para buff */
+}
+
+.card-preview-stats .current-stats.debuffed {
+    color: #e74c3c; /* Vermelho para debuff */
+}
+
+.card-preview-stats .effective-stats {
+    font-weight: bold;
+}
+
+.card-preview-stats .effective-stats.damaged {
+    color: #e74c3c; /* Vermelho para dano */
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.card-preview-stats .damage-indicator {
+    margin-left: 8px;
+    padding: 2px 6px;
+    background: rgba(231, 76, 60, 0.3);
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.5);
+}
+
 /* === Painel de Log Expandido === */
 .log-panel {
     position: fixed;

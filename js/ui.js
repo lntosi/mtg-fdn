@@ -448,13 +448,42 @@ class GameUI {
             const baseToughness = card.toughness || 0;
             const power = this.game.rules ? this.game.rules.getCreaturePower(card) : basePower;
             const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card) : baseToughness;
+            const damage = card.damage || 0;
+            const effectiveToughness = toughness - damage;
 
-            // Mostrar stats base e atual se diferentes
-            if (power !== basePower || toughness !== baseToughness) {
-                previewStats.innerHTML = `<span class="base-stats">${basePower}/${baseToughness}</span> → <span class="current-stats">${power}/${toughness}</span>`;
+            const hasModifiers = power !== basePower || toughness !== baseToughness;
+            const hasDamage = damage > 0;
+
+            let statsHtml = '';
+
+            if (hasModifiers && hasDamage) {
+                // Tem buff/debuff E dano: "1/2 → 2/3 → 2/1"
+                const isBuffed = power > basePower || toughness > baseToughness;
+                const currentClass = isBuffed ? 'current-stats buffed' : 'current-stats debuffed';
+                statsHtml = `<span class="base-stats">${basePower}/${baseToughness}</span> → ` +
+                           `<span class="${currentClass}">${power}/${toughness}</span> → ` +
+                           `<span class="effective-stats damaged">${power}/${effectiveToughness}</span>`;
+            } else if (hasModifiers) {
+                // Só buff/debuff: "1/2 → 2/3"
+                const isBuffed = power > basePower || toughness > baseToughness;
+                const currentClass = isBuffed ? 'current-stats buffed' : 'current-stats debuffed';
+                statsHtml = `<span class="base-stats">${basePower}/${baseToughness}</span> → ` +
+                           `<span class="${currentClass}">${power}/${toughness}</span>`;
+            } else if (hasDamage) {
+                // Só dano: "3/3 → 3/1"
+                statsHtml = `<span class="base-stats">${power}/${toughness}</span> → ` +
+                           `<span class="effective-stats damaged">${power}/${effectiveToughness}</span>`;
             } else {
-                previewStats.textContent = `${power}/${toughness}`;
+                // Sem modificações
+                statsHtml = `${power}/${toughness}`;
             }
+
+            // Adicionar indicador de dano se houver
+            if (hasDamage) {
+                statsHtml += `<span class="damage-indicator" title="Dano marcado (limpo no fim do turno)">⚔️ ${damage}</span>`;
+            }
+
+            previewStats.innerHTML = statsHtml;
         } else {
             previewStats.textContent = '';
         }
