@@ -54,6 +54,10 @@ class GameState {
         this.stateHistory = []; // Histórico de estados para undo
         this.maxHistorySize = 20; // Máximo de estados salvos
         this.undoEnabled = this.loadUndoSetting(); // Carrega preferência do usuário
+
+        // === Controle de Sessão (para cancelar operações ao reiniciar) ===
+        this.gameSessionId = 0; // Incrementado a cada startGame
+        this.pendingTimeouts = []; // IDs de timeouts pendentes
     }
 
     init() {
@@ -223,6 +227,10 @@ class GameState {
     }
 
     startGame(playerDecks, aiDecks, options = {}) {
+        // Cancelar operações pendentes de partida anterior
+        this.cancelAllPendingTimeouts();
+        this.gameSessionId++;
+
         // Salvar escolha de decks
         this.playerDeckKeys = playerDecks;
         this.aiDeckKeys = aiDecks;
@@ -268,6 +276,23 @@ class GameState {
 
         this.ui.log(`Jogo iniciado! Seus decks: ${playerDecks.join(' + ')}`);
         this.ui.log(`Decks do oponente: ${aiDecks.join(' + ')}`);
+
+        // Registrar info da partida no LogManager
+        if (window.logManager) {
+            window.logManager.setGameInfo({
+                playerDecks: playerDecks,
+                aiDecks: aiDecks,
+                playerName: playerName,
+                startingLife: startingLife,
+                playerFirst: this.playerFirst
+            });
+            window.logManager.state('Partida iniciada', {
+                playerDecks,
+                aiDecks,
+                startingLife,
+                playerFirst: this.playerFirst
+            });
+        }
 
         // Configurar ícones de mana para mostrar apenas as cores dos decks do jogador
         this.ui.setupManaIconsForDecks(playerDecks);
@@ -368,7 +393,7 @@ class GameState {
 
         // Se IA começa, executar turno da IA
         if (!this.playerFirst) {
-            setTimeout(() => this.executeAITurn(), 800);
+            this.safeTimeout(() => this.executeAITurn(), 800);
         }
     }
 
@@ -2593,6 +2618,19 @@ class GameState {
     }
 
     async executeAITurn() {
+        try {
+            await this._executeAITurnInternal();
+        } catch (err) {
+            // Silenciosamente ignorar se o jogo foi reiniciado
+            if (err.message === 'Game session changed') {
+                console.log('AI turn cancelled: game restarted');
+                return;
+            }
+            throw err; // Re-throw outros erros
+        }
+    }
+
+    async _executeAITurnInternal() {
         // Indicar início do turno da IA
         this.ui.log('--- Turno do Oponente ---');
         await this.delay(600);
@@ -2835,6 +2873,15 @@ class GameState {
         this.winner = winner;
         this.gameOverReason = reason;
 
+        // Registrar fim de jogo no LogManager
+        if (window.logManager) {
+            window.logManager.state(`Jogo encerrado - ${winner === 'player' ? 'VITÓRIA' : 'DERROTA'}`, {
+                winner,
+                reason,
+                finalState: window.logManager.captureGameState()
+            });
+        }
+
         // Limpar save ao fim do jogo
         this.clearSavedGame();
 
@@ -2874,7 +2921,44 @@ class GameState {
     }
 
     delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        const sessionAtStart = this.gameSessionId;
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                if (this.gameSessionId !== sessionAtStart) {
+                    reject(new Error('Game session changed'));
+                } else {
+                    resolve();
+                }
+            }, ms);
+        });
+    }
+
+    /**
+     * Cria um timeout seguro que é cancelado se o jogo reiniciar
+     * @param {Function} callback - Função a executar
+     * @param {number} ms - Delay em milissegundos
+     * @returns {number} - ID do timeout
+     */
+    safeTimeout(callback, ms) {
+        const sessionAtCreation = this.gameSessionId;
+        const timeoutId = setTimeout(() => {
+            // Só executa se ainda estiver na mesma sessão
+            if (this.gameSessionId === sessionAtCreation) {
+                callback();
+            }
+            // Remove da lista de pendentes
+            this.pendingTimeouts = this.pendingTimeouts.filter(id => id !== timeoutId);
+        }, ms);
+        this.pendingTimeouts.push(timeoutId);
+        return timeoutId;
+    }
+
+    /**
+     * Cancela todos os timeouts pendentes (usado ao reiniciar)
+     */
+    cancelAllPendingTimeouts() {
+        this.pendingTimeouts.forEach(id => clearTimeout(id));
+        this.pendingTimeouts = [];
     }
 
     // === SISTEMA DE UNDO ===

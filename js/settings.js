@@ -165,6 +165,53 @@ class SettingsManager {
         document.addEventListener('fullscreenchange', () => {
             this.updateFullscreenButton();
         });
+
+        // Exportar log (baixar arquivo)
+        const btnExportLog = document.getElementById('btn-export-log');
+        if (btnExportLog) {
+            btnExportLog.addEventListener('click', () => {
+                if (window.logManager) {
+                    const filename = window.logManager.download('txt');
+                    this.showToast(`Log exportado: ${filename}`);
+                }
+            });
+        }
+
+        // Copiar log para clipboard
+        const btnCopyLog = document.getElementById('btn-copy-log');
+        if (btnCopyLog) {
+            btnCopyLog.addEventListener('click', async () => {
+                if (window.logManager) {
+                    const success = await window.logManager.copyToClipboard();
+                    this.showToast(success ? 'Log copiado!' : 'Erro ao copiar');
+                }
+            });
+        }
+    }
+
+    /**
+     * Mostra um toast de feedback
+     */
+    showToast(message, duration = 2000) {
+        // Remover toast existente
+        const existing = document.querySelector('.settings-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'settings-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        // Animar entrada
+        requestAnimationFrame(() => {
+            toast.classList.add('show');
+        });
+
+        // Remover após duração
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
     }
 
     isInputFocused() {

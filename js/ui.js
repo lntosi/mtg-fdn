@@ -2061,6 +2061,22 @@ class GameUI {
 
     // Log de mensagens
     log(message, type = 'normal') {
+        // Registrar no LogManager para debug/export
+        if (window.logManager) {
+            // Categorizar automaticamente baseado no conteúdo
+            let category = 'action';
+            if (message.includes('dano') || message.includes('perdeu') || message.includes('destruído')) {
+                category = 'combat';
+            } else if (message.includes('ganhou') && message.includes('vida')) {
+                category = 'state';
+            } else if (message.includes('jogou') || message.includes('lançou')) {
+                category = 'spell';
+            } else if (message.includes('trigger') || message.includes('ETB') || message.includes(':')) {
+                category = 'trigger';
+            }
+            window.logManager.add(category, message);
+        }
+
         // Log expandido no painel lateral
         if (this.logPanelContent) {
             const logEntry = document.createElement('div');
@@ -2086,6 +2102,15 @@ class GameUI {
     // Log de início de turno
     logTurnStart(turnNumber, playerName) {
         const message = `═══ Turno ${turnNumber} - ${playerName} ═══`;
+
+        // Registrar no LogManager
+        if (window.logManager) {
+            window.logManager.turn(`Turno ${turnNumber} - ${playerName}`, {
+                turnNumber,
+                activePlayer: playerName
+            });
+        }
+
         if (this.logPanelContent) {
             const logEntry = document.createElement('div');
             logEntry.className = 'log-entry turn-start';

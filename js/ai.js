@@ -492,9 +492,27 @@ class AIPlayer {
         return assignment;
     }
 
-    // Delay para visualização
+    // Delay para visualização (com verificação de sessão)
     delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        const sessionAtStart = this.game.gameSessionId;
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                // Verifica se ainda estamos na mesma sessão
+                if (this.game.gameSessionId !== sessionAtStart) {
+                    reject(new Error('Game session changed'));
+                } else {
+                    resolve();
+                }
+            }, ms);
+        });
+    }
+
+    /**
+     * Verifica se ainda estamos na mesma sessão do jogo
+     * Útil para verificar antes de continuar operações async
+     */
+    isSessionValid(sessionId) {
+        return this.game.gameSessionId === sessionId;
     }
 }
 
