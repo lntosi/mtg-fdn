@@ -833,6 +833,20 @@ body {
     box-shadow: 0 0 20px 8px #2ecc71;
 }
 
+/* Carta sendo conjurada (aguardando seleção de alvo) */
+.card.pending-cast {
+    box-shadow: 0 0 25px 10px #3498db !important;
+    border: 3px solid #3498db !important;
+    animation: pending-cast-pulse 1s ease-in-out infinite;
+    transform: translateY(-8px);
+    z-index: 100;
+}
+
+@keyframes pending-cast-pulse {
+    0%, 100% { box-shadow: 0 0 25px 10px #3498db; }
+    50% { box-shadow: 0 0 35px 15px #2980b9; }
+}
+
 .card.valid-target {
     box-shadow: 0 0 25px 10px #f39c12;
     animation: pulse-target 0.6s infinite;
@@ -2746,48 +2760,68 @@ body {
 }
 
 .color-choice-btn {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.2);
     cursor: pointer;
-    font-size: 28px;
-    font-weight: bold;
     transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .color-choice-btn:hover {
     transform: scale(1.15);
     border-color: #f1c40f;
-    box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.7);
 }
 
+/* Aumentar o tamanho dos ícones de mana dentro dos botões */
+.color-choice-btn .ms {
+    font-size: 48px;
+}
+
+/* Cores de borda por tipo de mana */
 .color-choice-btn.color-W {
-    background: linear-gradient(135deg, #f9f6e8, #e8e4d0);
-    color: #8b7355;
+    border-color: rgba(249, 231, 159, 0.6);
+}
+
+.color-choice-btn.color-W:hover {
+    box-shadow: 0 0 25px rgba(249, 231, 159, 0.8);
 }
 
 .color-choice-btn.color-U {
-    background: linear-gradient(135deg, #0a6bc0, #1e90ff);
-    color: #fff;
+    border-color: rgba(52, 152, 219, 0.6);
+}
+
+.color-choice-btn.color-U:hover {
+    box-shadow: 0 0 25px rgba(52, 152, 219, 0.8);
 }
 
 .color-choice-btn.color-B {
-    background: linear-gradient(135deg, #2d2d2d, #4a4a4a);
-    color: #b8b8b8;
+    border-color: rgba(127, 140, 141, 0.6);
+}
+
+.color-choice-btn.color-B:hover {
+    box-shadow: 0 0 25px rgba(127, 140, 141, 0.8);
 }
 
 .color-choice-btn.color-R {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    color: #fff;
+    border-color: rgba(231, 76, 60, 0.6);
+}
+
+.color-choice-btn.color-R:hover {
+    box-shadow: 0 0 25px rgba(231, 76, 60, 0.8);
 }
 
 .color-choice-btn.color-G {
-    background: linear-gradient(135deg, #1e7b1e, #27ae60);
-    color: #fff;
+    border-color: rgba(39, 174, 96, 0.6);
+}
+
+.color-choice-btn.color-G:hover {
+    box-shadow: 0 0 25px rgba(39, 174, 96, 0.8);
 }
 
 /* === Ward Prompt Modal === */

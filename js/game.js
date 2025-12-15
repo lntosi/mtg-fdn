@@ -908,14 +908,27 @@ class GameState {
             this.saveStateSnapshot(`Jogou ${card.name}`);
         }
 
-        // Remover da mão
-        const handIndex = player.hand.indexOf(card);
-        if (handIndex > -1) {
-            player.hand.splice(handIndex, 1);
-        }
-
         // Se jogador jogou um instant durante janela de prioridade, completar a resposta
         const wasWaitingForResponse = this.isWaitingForPriorityResponse() && player === this.player && card.type === 'instant';
+
+        // Verificar se é feitiço/aura que precisa de seleção de alvo pelo jogador
+        // Nesses casos, a carta fica na mão (marcada como pendingCast) até o alvo ser selecionado
+        const needsPlayerTargeting = player === this.player && (
+            ((card.type === 'instant' || card.type === 'sorcery') && this.spellNeedsTarget(card)) ||
+            (card.type === 'enchantment' && card.subtype === 'Aura')
+        );
+
+        // Remover da mão (exceto se precisar de seleção de alvo pelo jogador)
+        if (!needsPlayerTargeting) {
+            const handIndex = player.hand.indexOf(card);
+            if (handIndex > -1) {
+                player.hand.splice(handIndex, 1);
+            }
+        } else {
+            // Marcar carta como "sendo conjurada" para highlight visual
+            card.pendingCast = true;
+            this.ui.render();
+        }
 
         // Som de jogar carta
         window.soundManager.playCardPlay();
@@ -1003,7 +1016,8 @@ class GameState {
 
                 if (ownCreatures.length === 0 || opponentCreatures.length === 0) {
                     this.ui.log(`Não há alvos válidos para ${card.name}`);
-                    player.hand.push(card);
+                    // Carta já está na mão (pendingCast), apenas limpar o flag
+                    delete card.pendingCast;
                     return false;
                 }
 
@@ -1020,12 +1034,25 @@ class GameState {
                 });
 
                 if (!ownTarget) {
+                    // Remover da mão e enviar para cemitério
+                    const handIndex = player.hand.indexOf(card);
+                    if (handIndex > -1) {
+                        player.hand.splice(handIndex, 1);
+                    }
+                    delete card.pendingCast;
                     player.graveyard.push(card);
                     return true;
                 }
 
                 // PASSO 2: Escolher criatura do oponente
                 this.ui.promptForTarget(card, opponentCreatures, async (enemyTarget) => {
+                    // Remover carta da mão após seleção do alvo
+                    const handIndex = player.hand.indexOf(card);
+                    if (handIndex > -1) {
+                        player.hand.splice(handIndex, 1);
+                    }
+                    delete card.pendingCast;
+
                     // Adiciona +1/+1 counter
                     if (!ownTarget.counters) ownTarget.counters = {};
                     ownTarget.counters.plusOnePlusOne = (ownTarget.counters.plusOnePlusOne || 0) + 1;
@@ -1052,7 +1079,8 @@ class GameState {
 
                 if (validTargets.length === 0) {
                     this.ui.log(`Não há alvos válidos para ${card.name}`);
-                    player.hand.push(card);
+                    // Carta já está na mão (pendingCast), apenas limpar o flag
+                    delete card.pendingCast;
                     return false;
                 }
 
@@ -1061,6 +1089,13 @@ class GameState {
                 window.soundManager.playMagic();
 
                 this.ui.promptForTarget(card, validTargets, async (target) => {
+                    // Remover carta da mão após seleção do alvo
+                    const handIndex = player.hand.indexOf(card);
+                    if (handIndex > -1) {
+                        player.hand.splice(handIndex, 1);
+                    }
+                    delete card.pendingCast;
+
                     await this.resolveSpellWithTarget(card, player, target);
                     player.graveyard.push(card);
                     this.ui.render();
@@ -1147,7 +1182,8 @@ class GameState {
 
         if (validTargets.length === 0) {
             this.ui.log(`Não há alvos válidos para ${aura.name}`);
-            player.hand.push(aura); // Devolver para a mão
+            // Carta já está na mão (pendingCast), apenas limpar o flag
+            delete aura.pendingCast;
             return;
         }
 
@@ -1158,6 +1194,13 @@ class GameState {
             window.soundManager.playMagic();
 
             this.ui.promptForTarget(aura, validTargets, (target) => {
+                // Remover carta da mão após seleção do alvo
+                const handIndex = player.hand.indexOf(aura);
+                if (handIndex > -1) {
+                    player.hand.splice(handIndex, 1);
+                }
+                delete aura.pendingCast;
+
                 this.attachAura(aura, target, player);
             });
         } else {
@@ -1777,6 +1820,8 @@ class GameState {
                     this.opponentLostLifeThisTurn = true;
                 }
                 this.ui.log(`Vampire Neonate: ${opponent.name} perdeu 1 vida, ${player.name} ganhou 1 vida`);
+                // Verificar fim de jogo após perda de vida
+                this.checkGameOver();
                 break;
 
             case 'goblin_smuggler':
@@ -2534,6 +2579,11 @@ class GameState {
                 this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
             }
         }
+
+        // Limpar linhas de combate após criaturas morrerem (evita linhas órfãs)
+        this.blockerAssignments = {};
+        this.ui.blockerAssignments = {};
+        this.ui.clearCombatLines();
 
         this.ui.render();
         } catch (error) {

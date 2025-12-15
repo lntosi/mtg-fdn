@@ -885,6 +885,11 @@ class GameUI {
                 cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
                 cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
 
+                // Destacar carta sendo conjurada (aguardando seleção de alvo)
+                if (card.pendingCast) {
+                    cardEl.classList.add('pending-cast');
+                }
+
                 // Verificar se pode jogar
                 // Instants podem ser jogados fora do turno do jogador (durante combate do oponente, etc)
                 const canPlay = this.game.rules.canPlayCard(card, player);
@@ -895,7 +900,8 @@ class GameUI {
                 // Instants podem ser jogados a qualquer momento, inclusive durante fase de bloqueio
                 const canPlayNow = canPlay && (isPlayerTurn || isInstant);
 
-                if (canPlayNow) {
+                // Não pode clicar em carta que está pendingCast (aguardando alvo)
+                if (canPlayNow && !card.pendingCast) {
                     cardEl.classList.add('playable');
                     if (isPlayerTurn) {
                         cardEl.classList.add('draggable');
@@ -1551,8 +1557,8 @@ class GameUI {
 
     cancelTargeting() {
         if (this.waitingForTarget && this.pendingAura) {
-            // Devolver carta para a mão
-            this.game.player.hand.push(this.pendingAura);
+            // Limpar marcação de pendingCast (carta já está na mão)
+            delete this.pendingAura.pendingCast;
             this.log(`Seleção de alvo cancelada`);
         }
 
@@ -2568,13 +2574,13 @@ class GameUI {
                 G: 'Verde'
             };
 
-            // Símbolos de mana
+            // Símbolos de mana (usando Mana Font)
             const colorSymbols = {
-                W: '☀',
-                U: '💧',
-                B: '💀',
-                R: '🔥',
-                G: '🌳'
+                W: '<i class="ms ms-w ms-cost ms-2x"></i>',
+                U: '<i class="ms ms-u ms-cost ms-2x"></i>',
+                B: '<i class="ms ms-b ms-cost ms-2x"></i>',
+                R: '<i class="ms ms-r ms-cost ms-2x"></i>',
+                G: '<i class="ms ms-g ms-cost ms-2x"></i>'
             };
 
             // Configurar conteúdo

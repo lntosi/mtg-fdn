@@ -173,6 +173,8 @@ class TriggerManager {
             this.game.opponentLostLifeThisTurn = true;
         }
         this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
+        // Verificar fim de jogo após perda de vida
+        this.game.checkGameOver();
     }
 
     _handleDwynensEliteETB(card, controller) {
@@ -484,11 +486,13 @@ class TriggerManager {
 
         // Vengeful Bloodwitch - quando esta ou outra criatura que você controla morre,
         // oponente alvo perde 1 vida e você ganha 1 vida
+        let bloodwitchTriggered = false;
         owner.battlefield.forEach(card => {
             if (card.id === 'vengeful_bloodwitch') {
                 opponent.life -= 1;
                 owner.life += 1;
                 this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
+                bloodwitchTriggered = true;
 
                 // Marcar que oponente perdeu vida neste turno (para outros triggers)
                 if (opponent === this.player) {
@@ -504,12 +508,18 @@ class TriggerManager {
             opponent.life -= 1;
             owner.life += 1;
             this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
+            bloodwitchTriggered = true;
 
             if (opponent === this.player) {
                 this.game.playerLostLifeThisTurn = true;
             } else {
                 this.game.opponentLostLifeThisTurn = true;
             }
+        }
+
+        // Verificar fim de jogo após triggers de perda de vida
+        if (bloodwitchTriggered) {
+            this.game.checkGameOver();
         }
 
         // Crossway Troublemakers - quando um Vampiro que você controla morre,
