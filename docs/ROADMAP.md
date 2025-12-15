@@ -156,14 +156,16 @@ Itens que podem ou não ser implementados:
 - ✅ Personalização do jogador (nome + avatar)
 - ✅ Vida inicial configurável
 - ✅ Temas visuais (3 opções)
-- ✅ Menu de configurações (tecla M)
+- ✅ Menu de configurações (tecla ESC) com layout duas colunas
 - ✅ Modo tela cheia
 - ✅ Configurações de som (efeitos + música de fundo separados)
-- ✅ Modais arrastáveis padronizados
+- ✅ Modais arrastáveis padronizados (incluindo Settings)
 - ✅ Símbolos de mana MTG reais no preview
 - ✅ Indicador de stack (hourglass) para permanentes pendentes
+- ✅ Stack badge com hover dropdown no botão de prioridade
 - ✅ Preview aprimorado com display de dano/buffs (base → atual → efetivo)
 - ✅ Aura badges no preview de criaturas encantadas
+- ✅ Priority stops configuráveis (estilo Arena)
 
 ### Técnico
 - ✅ Testes unitários (Jest) - 140 testes
@@ -211,6 +213,23 @@ Todos os 5 decks foram validados contra a API do Scryfall:
 - Summoning sickness só aplica a criaturas (não enchantments/artifacts)
 - Vengeful Bloodwitch não dispara duplo quando morre
 - Lord bonuses exibidos corretamente no log exportado
+
+### Novas Funcionalidades (Dezembro 2025)
+
+#### Stack Badge com Hover Dropdown
+- Badge `[N]` no botão "Passar Prioridade" mostra quantidade de itens na pilha
+- Hover expande dropdown com lista completa (LIFO order)
+- Topo da pilha destacado em dourado
+
+#### Priority Stops Configuráveis (estilo Arena)
+- Janelas de prioridade em: Upkeep, Início Combate, Após Atacantes, Após Bloqueadores, End Step
+- Configurações separadas para seu turno e turno do oponente
+- Auto-pass quando não há respostas válidas
+
+#### Settings Modal Redesenhado
+- Layout em duas colunas (Som/Exibição/Debug | Priority Stops)
+- Modal arrastável pelo título
+- Botão "Resetar Padrão" (SFX 70%, Música 80%, Log OFF, Undo OFF)
 
 ---
 

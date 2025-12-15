@@ -54,6 +54,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `resolveTopOfStack()` - Resolve top item
 - `passPriority()` - Pass priority to other player
 - `isStackEmpty()`, `canRespond(player)` - Check stack state
+- **Stack Badge**: Shows `[N]` on priority button with hover dropdown listing all items (LIFO order)
 
 **AI Action Delays:** AI has built-in delays between actions for better visibility:
 - Phase transitions: 500-800ms
@@ -61,19 +62,29 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - Combat decisions: 800-1200ms
 
 **Priority Windows:** Player receives priority windows to respond with instants:
-- After AI declares blockers (before combat damage)
-- When AI casts spells
-- At end of opponent's turn
+- Configurable stops: Upkeep, Begin Combat, After Attackers, After Blockers, End Step
+- Separate settings for your turn vs opponent's turn (Settings menu → Priority Stops)
+- When AI casts spells (always)
 - Auto-pass if no valid responses available
+- `priorityStops` object in GameState controls behavior, persists to localStorage
 
 ## Settings Menu (ESC key)
 
-Press ESC to open settings menu with:
-- **Themes**: Roxo Místico (default), Clean, Alto Contraste
-- **Sound**: Toggle on/off, volume slider
-- **Fullscreen**: Toggle fullscreen mode
-- **Undo**: Toggle undo button visibility (disabled by default)
-- **Concede**: Forfeit current game
+Press ESC to open settings menu (two-column layout, draggable by title):
+
+**Left Column:**
+- **Sound**: Toggle on/off, SFX volume (default 70%), Music volume (default 80%)
+- **Display**: Log panel toggle, Undo toggle, Fullscreen button
+- **Debug**: Export/Copy game log
+
+**Right Column:**
+- **Priority Stops**: Configure when you get priority windows (Arena-style)
+  - Your Turn: Upkeep, Begin Combat, After Attackers, After Blockers, End Step
+  - Opponent Turn: Same options with different defaults
+
+**Footer:**
+- **Reset Defaults**: Restores all settings (SFX 70%, Music 80%, Log OFF, Undo OFF)
+- **Restart/Concede**: Game control buttons
 
 Settings persist in localStorage.
 
@@ -401,7 +412,7 @@ case 'bite_down':
 npm test
 ```
 
-All 134+ tests must pass before committing.
+All 140 tests must pass before committing.
 
 ---
 
