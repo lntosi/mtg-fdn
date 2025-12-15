@@ -1489,6 +1489,59 @@ body {
     50% { transform: translate(-50%, -50%) translateY(-5px); opacity: 1; }
 }
 
+/* Indicador de permanente na pilha (aguardando resolução) */
+.card.pending-resolution {
+    position: relative;
+    opacity: 0.85;
+}
+
+.card.pending-resolution::before {
+    content: '⏳';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.2em;
+    z-index: 16;
+    opacity: 0.9;
+    animation: pending-pulse 1.2s ease-in-out infinite;
+    pointer-events: none;
+    filter: drop-shadow(0 0 8px rgba(100, 150, 255, 0.8));
+}
+
+.card.pending-resolution::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(100, 150, 255, 0.3);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 15;
+    animation: pending-glow 1.2s ease-in-out infinite;
+}
+
+@keyframes pending-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes pending-glow {
+    0%, 100% {
+        background: rgba(100, 150, 255, 0.25);
+        box-shadow: inset 0 0 15px rgba(100, 150, 255, 0.3);
+    }
+    50% {
+        background: rgba(100, 150, 255, 0.35);
+        box-shadow: inset 0 0 25px rgba(100, 150, 255, 0.5);
+    }
+}
+
 /* === Preview de Carta === */
 .card-preview {
     position: fixed;

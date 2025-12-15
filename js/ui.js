@@ -988,6 +988,11 @@ class GameUI {
                 cardEl.classList.add('summoning-sick');
             }
 
+            // Indicador de permanente na pilha (aguardando resolução)
+            if (card.pendingResolution) {
+                cardEl.classList.add('pending-resolution');
+            }
+
             // Indicador visual de criatura danificada
             if (card.type === 'creature' && (card.damage || 0) > 0) {
                 cardEl.classList.add('creature-damaged');

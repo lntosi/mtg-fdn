@@ -439,8 +439,18 @@ class GameState {
             timestamp: Date.now()
         };
         this.stack.push(stackItem);
+
+        // Para permanentes (criaturas, etc.), mostrar preview no battlefield imediatamente
+        // Eles ficam com indicador visual "na pilha" até a resolução
+        if (item.type === 'creature' || (item.type === 'enchantment' && item.subtype !== 'Aura') || item.type === 'artifact') {
+            item.pendingResolution = true;
+            item.summoningSickness = true;
+            controller.battlefield.push(item);
+        }
+
         this.ui.log(`${item.name || 'Habilidade'} adicionado à pilha`);
         this.ui.renderStack();
+        this.ui.render(); // Atualizar battlefield para mostrar preview
         return stackItem;
     }
 
@@ -515,8 +525,8 @@ class GameState {
         const card = stackItem.item;
         const controller = stackItem.controller;
 
-        card.summoningSickness = true;
-        controller.battlefield.push(card);
+        // Remover flag de pendingResolution (criatura já está no battlefield desde addToStack)
+        delete card.pendingResolution;
 
         // Trigger de entrada (delegado ao TriggerManager)
         await this.triggers.resolveETB(card, controller);
@@ -543,9 +553,12 @@ class GameState {
             card.attachedTo = stackItem.target;
             if (!stackItem.target.attachedAuras) stackItem.target.attachedAuras = [];
             stackItem.target.attachedAuras.push(card);
+            // Auras ainda não estão no battlefield (não passaram por addToStack com preview)
+            controller.battlefield.push(card);
+        } else {
+            // Para não-Auras, remover flag de pendingResolution (já está no battlefield)
+            delete card.pendingResolution;
         }
-
-        controller.battlefield.push(card);
 
         // Trigger de entrada
         await this.triggers.resolveETB(card, controller);
@@ -1536,6 +1549,17 @@ class GameState {
         const stackIndex = this.stack.indexOf(stackTarget);
         if (stackIndex > -1) {
             this.stack.splice(stackIndex, 1);
+
+            // Se o item estava no battlefield com preview (pendingResolution), remover de lá também
+            const item = stackTarget.item;
+            if (item.pendingResolution) {
+                const bfIndex = stackTarget.controller.battlefield.indexOf(item);
+                if (bfIndex > -1) {
+                    stackTarget.controller.battlefield.splice(bfIndex, 1);
+                }
+                delete item.pendingResolution;
+            }
+
             // A mágica anulada vai para o cemitério do seu controlador
             stackTarget.controller.graveyard.push(stackTarget.item);
             this.ui.log(`${counterCard.name} anulou ${stackTarget.item.name}!`);
