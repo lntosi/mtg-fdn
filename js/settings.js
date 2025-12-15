@@ -47,16 +47,66 @@ class SettingsManager {
      * Inicializa o modal como arrastável pelo header
      */
     initDraggable() {
-        if (window.game?.ui) {
-            window.game.ui.makeModalDraggable('settings-modal', '.settings-header');
-        } else {
-            // Se o game ainda não existe, aguardar e tentar novamente
-            setTimeout(() => {
-                if (window.game?.ui) {
-                    window.game.ui.makeModalDraggable('settings-modal', '.settings-header');
-                }
-            }, 1000);
-        }
+        const modal = document.getElementById('settings-modal');
+        const content = modal?.querySelector('.settings-content');
+        const handle = content?.querySelector('.settings-header');
+
+        if (!handle || !content || content._dragInitialized) return;
+
+        content._dragInitialized = true;
+
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        handle.addEventListener('mousedown', (e) => {
+            // Não iniciar drag se clicou em um botão
+            if (e.target.tagName === 'BUTTON') return;
+
+            isDragging = true;
+            content.classList.add('dragging');
+
+            const rect = content.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // Mudar para position fixed para arrastar livremente
+            content.style.position = 'fixed';
+            content.style.left = initialX + 'px';
+            content.style.top = initialY + 'px';
+            content.style.margin = '0';
+            content.style.transform = 'none';
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            let newX = initialX + dx;
+            let newY = initialY + dy;
+
+            // Limitar aos bounds da janela
+            const maxX = window.innerWidth - content.offsetWidth - 10;
+            const maxY = window.innerHeight - content.offsetHeight - 10;
+
+            newX = Math.max(10, Math.min(newX, maxX));
+            newY = Math.max(10, Math.min(newY, maxY));
+
+            content.style.left = newX + 'px';
+            content.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                content.classList.remove('dragging');
+            }
+        });
     }
 
     loadSettings() {
@@ -357,6 +407,16 @@ class SettingsManager {
     closeModal() {
         if (!this.modal) return;
         this.modal.classList.add('hidden');
+
+        // Resetar posição do modal para centralizar na próxima abertura
+        const content = this.modal.querySelector('.settings-content');
+        if (content) {
+            content.style.position = '';
+            content.style.left = '';
+            content.style.top = '';
+            content.style.margin = '';
+            content.style.transform = '';
+        }
     }
 
     syncUI() {
