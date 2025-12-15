@@ -4503,17 +4503,18 @@ html {
 /* === Settings Actions (footer buttons) === */
 .settings-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 40px;
     padding: 15px 18px;
     background: rgba(0, 0, 0, 0.2);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.settings-actions-left,
-.settings-actions-right {
-    display: flex;
-    gap: 10px;
+/* Botão full width (para dentro de seções) */
+.btn-setting.btn-full {
+    width: 100%;
+    margin-top: 12px;
 }
 
 /* === Settings Footer === */
