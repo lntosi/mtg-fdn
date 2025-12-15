@@ -58,6 +58,63 @@ class GameState {
         // === Controle de Sessão (para cancelar operações ao reiniciar) ===
         this.gameSessionId = 0; // Incrementado a cada startGame
         this.pendingTimeouts = []; // IDs de timeouts pendentes
+
+        // === Priority Stops (configurable) ===
+        // Define em quais fases o jogador quer parar para ter prioridade
+        // Similar ao sistema de "stops" do MTG Arena
+        this.priorityStops = this.loadPriorityStops();
+    }
+
+    /**
+     * Carrega configuração de priority stops do localStorage
+     * @returns {Object} Configuração de stops
+     */
+    loadPriorityStops() {
+        const saved = localStorage.getItem('mtg_priority_stops');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.warn('Erro ao carregar priority stops:', e);
+            }
+        }
+        // Configuração padrão: stops mínimos para não atrapalhar
+        return {
+            upkeep: false,           // Parar no upkeep (para triggers)
+            beginCombat: false,      // Parar no início do combate (antes de atacantes)
+            afterAttackers: true,    // Parar após atacantes declarados
+            afterBlockers: true,     // Parar após bloqueadores declarados
+            endStep: false,          // Parar no end step
+            opponentTurn: {          // Stops durante turno do oponente
+                upkeep: false,
+                beginCombat: true,   // Parar antes da IA atacar
+                afterAttackers: true,
+                afterBlockers: true,
+                endStep: true        // Última chance antes do turno voltar
+            }
+        };
+    }
+
+    /**
+     * Salva configuração de priority stops no localStorage
+     */
+    savePriorityStops() {
+        localStorage.setItem('mtg_priority_stops', JSON.stringify(this.priorityStops));
+    }
+
+    /**
+     * Verifica se deve parar para prioridade em uma determinada fase
+     * @param {string} stopType - Tipo de stop (upkeep, beginCombat, etc.)
+     * @returns {boolean}
+     */
+    shouldStopForPriority(stopType) {
+        const isPlayerTurn = this.isPlayerTurn();
+
+        if (isPlayerTurn) {
+            return this.priorityStops[stopType] || false;
+        } else {
+            return this.priorityStops.opponentTurn?.[stopType] || false;
+        }
     }
 
     init() {
@@ -790,6 +847,34 @@ class GameState {
         if (hasAbilities) return true;
 
         return false;
+    }
+
+    /**
+     * Registra quando prioridade é passada (para logs mais detalhados)
+     * @param {string} phase - Fase em que a prioridade foi passada
+     * @param {boolean} auto - Se foi auto-pass (sem respostas disponíveis)
+     */
+    logPriorityPass(phase, auto = false) {
+        const phaseNames = {
+            upkeep: 'Upkeep',
+            beginCombat: 'Início do Combate',
+            afterAttackers: 'Após Atacantes',
+            afterBlockers: 'Após Bloqueadores',
+            endStep: 'End Step'
+        };
+
+        const phaseName = phaseNames[phase] || phase;
+        const isPlayerTurn = this.isPlayerTurn();
+        const activePlayerName = isPlayerTurn ? 'Você' : 'Oponente';
+
+        // Log opcional para debug (pode ser ativado via configuração)
+        if (window.logManager && window.logManager.isVerbose) {
+            if (auto) {
+                window.logManager.log(`[PRIORITY] ${phaseName}: ${activePlayerName} passou (auto)`, 'debug');
+            } else {
+                window.logManager.log(`[PRIORITY] ${phaseName}: ${activePlayerName} passou`, 'debug');
+            }
+        }
     }
 
     /**
@@ -2259,6 +2344,18 @@ class GameState {
                 break;
 
             case PHASES.UPKEEP:
+                // CR 503: Upkeep triggers acontecem, depois ambos jogadores têm prioridade
+                // Por enquanto sem triggers de upkeep implementados, mas oferecemos a janela se configurado
+                if (this.shouldStopForPriority('upkeep') && this.playerHasResponses()) {
+                    const response = await this.offerPriorityWindow('Upkeep - você pode jogar instants');
+                    if (response === 'respond') {
+                        await this.handlePlayerPriorityResponse();
+                    } else {
+                        this.logPriorityPass('upkeep');
+                    }
+                } else {
+                    this.logPriorityPass('upkeep', true); // auto-pass
+                }
                 await this.nextPhase();
                 break;
 
@@ -2276,8 +2373,21 @@ class GameState {
                 break;
 
             case PHASES.COMBAT_BEGIN:
-                // Trigger Battle-Rattle Shaman no início do combate
+                // CR 507: Beginning of combat triggers disparam, depois prioridade
                 await this.triggers.onBeginCombat(this.activePlayer);
+
+                // Janela de prioridade após triggers de início de combate
+                // Permite jogar instants antes de atacantes serem declarados
+                if (this.shouldStopForPriority('beginCombat') && this.playerHasResponses()) {
+                    const response = await this.offerPriorityWindow('Início do Combate - antes de declarar atacantes');
+                    if (response === 'respond') {
+                        await this.handlePlayerPriorityResponse();
+                    } else {
+                        this.logPriorityPass('beginCombat');
+                    }
+                } else {
+                    this.logPriorityPass('beginCombat', true);
+                }
                 await this.nextPhase();
                 break;
 
@@ -2305,8 +2415,21 @@ class GameState {
                 break;
 
             case PHASES.END:
-                // Trigger Stromkirk Bloodthief no fim do turno
+                // CR 513: End step triggers disparam, depois ambos jogadores têm prioridade
                 await this.triggers.onEndStep(this.activePlayer);
+
+                // Janela de prioridade no end step
+                // Última chance antes do cleanup (onde normalmente não há prioridade)
+                if (this.shouldStopForPriority('endStep') && this.playerHasResponses()) {
+                    const response = await this.offerPriorityWindow('End Step - última chance antes do fim do turno');
+                    if (response === 'respond') {
+                        await this.handlePlayerPriorityResponse();
+                    } else {
+                        this.logPriorityPass('endStep');
+                    }
+                } else {
+                    this.logPriorityPass('endStep', true);
+                }
                 await this.nextPhase();
                 break;
 
@@ -2377,10 +2500,16 @@ class GameState {
 
         // Janela de prioridade após declarar atacantes (para habilidades como Jazal Goldmane)
         if (attackingPlayer === this.player) {
-            this.ui.render(); // Mostrar atacantes antes da janela de prioridade
-            const postAttackResponse = await this.offerPriorityWindow('Atacantes declarados - você pode ativar habilidades');
-            if (postAttackResponse === 'respond') {
-                await this.handlePlayerPriorityResponse();
+            if (this.shouldStopForPriority('afterAttackers') && this.playerHasResponses()) {
+                this.ui.render(); // Mostrar atacantes antes da janela de prioridade
+                const postAttackResponse = await this.offerPriorityWindow('Atacantes declarados - você pode ativar habilidades');
+                if (postAttackResponse === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                } else {
+                    this.logPriorityPass('afterAttackers');
+                }
+            } else {
+                this.logPriorityPass('afterAttackers', true);
             }
         }
 
@@ -2388,6 +2517,22 @@ class GameState {
 
         // Se jogador está sendo atacado, pedir bloqueadores
         if (attackingPlayer === this.opponent) {
+            // CR 508.1: Após atacantes declarados, jogador ativo (IA) recebe prioridade,
+            // depois jogador não-ativo (jogador humano) recebe prioridade
+            // Esta é a janela para usar instants/habilidades ANTES de declarar bloqueadores
+            if (this.shouldStopForPriority('afterAttackers') && this.playerHasResponses()) {
+                this.ui.render();
+                await this.delay(500); // Dar tempo para ver os atacantes
+                const response = await this.offerPriorityWindow('Oponente declarou atacantes - você pode responder antes de bloquear');
+                if (response === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                } else {
+                    this.logPriorityPass('afterAttackers');
+                }
+            } else {
+                this.logPriorityPass('afterAttackers', true);
+            }
+
             this.ui.promptForBlockers(attackers);
         } else {
             // IA escolhe bloqueadores
@@ -2822,10 +2967,15 @@ class GameState {
         try {
             // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
             // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
-            const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
-
-            if (priorityResponse === 'respond') {
-                await this.handlePlayerPriorityResponse();
+            if (this.shouldStopForPriority('afterBlockers') && this.playerHasResponses()) {
+                const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
+                if (priorityResponse === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                } else {
+                    this.logPriorityPass('afterBlockers');
+                }
+            } else {
+                this.logPriorityPass('afterBlockers', true);
             }
 
             // Resolver combate
