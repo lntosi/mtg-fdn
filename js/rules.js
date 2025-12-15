@@ -613,6 +613,11 @@ class RulesEngine {
                         damageToAttacker: damageFromBlocker
                     });
 
+                    // Marcar dano no bloqueador
+                    if (damageToBlocker > 0) {
+                        blocker.damage = (blocker.damage || 0) + damageToBlocker;
+                    }
+
                     // Verificar se bloqueador morre
                     if (attackerHasDeathtouch && damageToBlocker > 0) {
                         results.creaturesDied.push(blocker);
@@ -652,6 +657,11 @@ class RulesEngine {
                         attacker: attacker.name,
                         damage: trampleDamage
                     });
+                }
+
+                // Marcar dano no atacante
+                if (damageToAttacker > 0) {
+                    attacker.damage = (attacker.damage || 0) + damageToAttacker;
                 }
 
                 // Verificar se atacante morre
