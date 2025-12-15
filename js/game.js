@@ -444,7 +444,10 @@ class GameState {
         // Eles ficam com indicador visual "na pilha" até a resolução
         if (item.type === 'creature' || (item.type === 'enchantment' && item.subtype !== 'Aura') || item.type === 'artifact') {
             item.pendingResolution = true;
-            item.summoningSickness = true;
+            // Apenas criaturas têm summoning sickness
+            if (item.type === 'creature') {
+                item.summoningSickness = true;
+            }
             controller.battlefield.push(item);
         }
 
