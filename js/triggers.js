@@ -487,8 +487,11 @@ class TriggerManager {
         // Vengeful Bloodwitch - quando esta ou outra criatura que você controla morre,
         // oponente alvo perde 1 vida e você ganha 1 vida
         let bloodwitchTriggered = false;
+
+        // Procura por Vengeful Bloodwitches no campo do dono da criatura que morreu
+        // IMPORTANTE: Exclui a própria criatura morrendo do loop (tratada separadamente abaixo)
         owner.battlefield.forEach(card => {
-            if (card.id === 'vengeful_bloodwitch') {
+            if (card.id === 'vengeful_bloodwitch' && card !== creature) {
                 opponent.life -= 1;
                 owner.life += 1;
                 this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
@@ -503,7 +506,7 @@ class TriggerManager {
             }
         });
 
-        // Se a própria Bloodwitch morreu, ela também dispara (antes de ir pro cemitério)
+        // Se a própria Bloodwitch morreu, ela também dispara uma vez (antes de ir pro cemitério)
         if (creature.id === 'vengeful_bloodwitch') {
             opponent.life -= 1;
             owner.life += 1;

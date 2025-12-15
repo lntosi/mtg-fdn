@@ -349,13 +349,22 @@ class LogManager {
         if (creatures.length > 0) {
             output += `  Criaturas:\n`;
             creatures.forEach(c => {
-                const power = (c.power || 0) + (c.powerModifier || 0) + (c.counters?.plusOnePlusOne || 0);
-                const toughness = (c.toughness || 0) + (c.toughnessModifier || 0) + (c.counters?.plusOnePlusOne || 0);
+                // Usar rules engine para calcular stats com lord bonuses
+                const rules = window.game?.rules;
+                let power, toughness;
+                if (rules) {
+                    power = rules.getCreaturePower(c, player);
+                    toughness = rules.getCreatureToughness(c, player);
+                } else {
+                    // Fallback se rules não disponível
+                    power = (c.power || 0) + (c.powerModifier || 0) + (c.counters?.plusOnePlusOne || 0);
+                    toughness = (c.toughness || 0) + (c.toughnessModifier || 0) + (c.counters?.plusOnePlusOne || 0);
+                }
                 const effectiveToughness = toughness - (c.damage || 0);
                 const status = [];
                 if (c.tapped) status.push('T');
                 if (c.summoningSickness) status.push('SS');
-                if (c.damage) status.push(`-${c.damage}dmg`);
+                if (c.damage) status.push(`${c.damage}dmg`);
                 if (c.counters?.plusOnePlusOne) status.push(`+${c.counters.plusOnePlusOne}/+${c.counters.plusOnePlusOne}`);
                 if (c.attachments?.length) status.push(`[${c.attachments.map(a => a.name).join(', ')}]`);
 
