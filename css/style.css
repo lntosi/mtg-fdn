@@ -4230,7 +4230,8 @@ html {
 
 /* === Modal de Configurações === */
 .settings-content {
-    max-width: 500px;
+    max-width: 720px;
+    min-width: 640px;
     max-height: 90vh;
     background: linear-gradient(180deg, #2d1b3d 0%, #1a0a1f 100%);
     border-radius: 16px;
@@ -4242,14 +4243,19 @@ html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 25px;
+    padding: 15px 20px;
     background: rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: grab;
+}
+
+.settings-header:active {
+    cursor: grabbing;
 }
 
 .settings-header h2 {
     margin: 0;
-    font-size: 1.4em;
+    font-size: 1.3em;
     color: #fff;
 }
 
@@ -4269,8 +4275,24 @@ html {
     color: #fff;
 }
 
+/* Layout de duas colunas */
+.settings-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.settings-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-column:first-child {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .settings-section {
-    padding: 20px 25px;
+    padding: 15px 18px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -4279,10 +4301,16 @@ html {
 }
 
 .settings-section h3 {
-    margin: 0 0 15px 0;
-    font-size: 1em;
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
     color: #b8a8c8;
     font-weight: 600;
+}
+
+/* Seção de prioridade ocupa altura total */
+.settings-section-priority {
+    flex: 1;
+    border-bottom: none;
 }
 
 /* === Configurações de Som === */
@@ -4448,16 +4476,107 @@ html {
     background: rgba(231, 76, 60, 0.4);
 }
 
-/* === Info da Partida === */
-.settings-info {
-    background: rgba(0, 0, 0, 0.2);
+/* Botão compacto */
+.btn-setting.btn-compact {
+    padding: 10px 14px;
+    font-size: 0.85em;
 }
 
-.match-info {
+.btn-setting.btn-compact .btn-icon {
+    font-size: 1em;
+}
+
+/* Botão Reset */
+.btn-setting.btn-reset {
+    background: rgba(52, 152, 219, 0.2);
+    border-color: rgba(52, 152, 219, 0.4);
+}
+
+.btn-setting.btn-reset:hover {
+    background: rgba(52, 152, 219, 0.4);
+}
+
+.btn-setting.btn-reset .btn-icon {
+    font-size: 1.3em;
+}
+
+/* === Settings Actions (footer buttons) === */
+.settings-actions {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 18px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-actions-left,
+.settings-actions-right {
+    display: flex;
+    gap: 10px;
+}
+
+/* === Settings Footer === */
+.settings-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-footer .match-info {
+    display: flex;
+    gap: 20px;
     color: #888;
-    font-size: 0.9em;
+    font-size: 0.85em;
+}
+
+.settings-hint {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.settings-hint kbd {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+/* === Display Settings Compact === */
+.display-settings-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-row {
+    display: flex;
+    gap: 20px;
+}
+
+.settings-row .log-toggle,
+.settings-row .undo-toggle {
+    margin-bottom: 0;
+}
+
+/* === Toggle Switch Small (para priority stops) === */
+.toggle-switch-sm {
+    width: 40px;
+    height: 22px;
+}
+
+.toggle-switch-sm .toggle-slider:before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+}
+
+.toggle-switch-sm input:checked + .toggle-slider:before {
+    transform: translateX(18px);
 }
 
 /* === Log Export Settings === */
@@ -4512,63 +4631,34 @@ html {
 .priority-stops-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 12px;
 }
 
 .priority-column {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .priority-column h4 {
-    margin: 0 0 8px 0;
-    font-size: 0.9em;
+    margin: 0 0 6px 0;
+    font-size: 0.8em;
     color: #9a8aaa;
     font-weight: 600;
     text-align: center;
-    padding-bottom: 5px;
+    padding-bottom: 4px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .priority-toggle {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.85em;
+    gap: 8px;
+    font-size: 0.8em;
 }
 
 .priority-toggle span {
     color: #ccc;
-}
-
-/* Responsive: stack columns on small screens */
-@media (max-width: 450px) {
-    .priority-stops-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* === Footer === */
-.settings-footer {
-    padding: 15px 25px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.3);
-}
-
-.settings-hint {
-    color: #666;
-    font-size: 0.85em;
-}
-
-.settings-hint kbd {
-    display: inline-block;
-    padding: 2px 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 0.9em;
 }
 
 /* === Fullscreen Adjustments === */

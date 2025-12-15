@@ -455,7 +455,7 @@
         </div>
     </div>
 
-    <!-- Modal de Configurações (M key) -->
+    <!-- Modal de Configurações (ESC key) -->
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content settings-content">
             <div class="settings-header">
@@ -463,183 +463,190 @@
                 <button id="btn-close-settings" class="btn-close-settings">✕</button>
             </div>
 
-            <!-- Configurações de Som -->
-            <div class="settings-section">
-                <h3>🔊 Som</h3>
-                <div class="sound-settings">
-                    <div class="sound-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="sound-enabled" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span>Sons Ativados</span>
+            <div class="settings-body">
+                <!-- Coluna Esquerda -->
+                <div class="settings-column">
+                    <!-- Som -->
+                    <div class="settings-section">
+                        <h3>🔊 Som</h3>
+                        <div class="sound-settings">
+                            <div class="sound-toggle">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="sound-enabled" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span>Sons Ativados</span>
+                            </div>
+                            <div class="volume-control">
+                                <label for="sfx-volume-slider">Efeitos:</label>
+                                <input type="range" id="sfx-volume-slider" min="0" max="100" value="70">
+                                <span id="sfx-volume-value">70%</span>
+                            </div>
+                            <div class="volume-control">
+                                <label for="music-volume-slider">Música:</label>
+                                <input type="range" id="music-volume-slider" min="0" max="100" value="80">
+                                <span id="music-volume-value">80%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="volume-control">
-                        <label for="sfx-volume-slider">Efeitos Sonoros:</label>
-                        <input type="range" id="sfx-volume-slider" min="0" max="100" value="50">
-                        <span id="sfx-volume-value">50%</span>
+
+                    <!-- Exibição + Jogo (combinados) -->
+                    <div class="settings-section">
+                        <h3>🖥️ Exibição</h3>
+                        <div class="display-settings-compact">
+                            <div class="settings-row">
+                                <div class="log-toggle">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="log-panel-enabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Histórico</span>
+                                </div>
+                                <div class="undo-toggle">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="undo-enabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Undo</span>
+                                </div>
+                            </div>
+                            <button id="btn-fullscreen" class="btn-setting btn-compact">
+                                <span class="btn-icon">⛶</span>
+                                <span>Tela Cheia</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="volume-control">
-                        <label for="music-volume-slider">Música de Fundo:</label>
-                        <input type="range" id="music-volume-slider" min="0" max="100" value="30">
-                        <span id="music-volume-value">30%</span>
+
+                    <!-- Log de Debug -->
+                    <div class="settings-section">
+                        <h3>📋 Debug</h3>
+                        <div class="log-export-buttons">
+                            <button id="btn-export-log" class="btn-setting btn-compact">
+                                <span class="btn-icon">📥</span>
+                                <span>Baixar Log</span>
+                            </button>
+                            <button id="btn-copy-log" class="btn-setting btn-compact">
+                                <span class="btn-icon">📋</span>
+                                <span>Copiar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita -->
+                <div class="settings-column">
+                    <!-- Priority Stops -->
+                    <div class="settings-section settings-section-priority">
+                        <h3>⏸️ Paradas de Prioridade</h3>
+                        <div class="priority-stops-grid">
+                            <div class="priority-column">
+                                <h4>Seu Turno</h4>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-upkeep">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Upkeep</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-begin-combat">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Início Combate</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-after-attackers" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Após Atacantes</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-after-blockers" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Após Bloqueadores</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-end-step">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>End Step</span>
+                                </div>
+                            </div>
+                            <div class="priority-column">
+                                <h4>Turno Oponente</h4>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-opp-upkeep">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Upkeep</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-opp-begin-combat" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Início Combate</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-opp-after-attackers" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Após Atacantes</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-opp-after-blockers" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>Após Bloqueadores</span>
+                                </div>
+                                <div class="priority-toggle">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input type="checkbox" id="stop-opp-end-step" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span>End Step</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Exibição -->
-            <div class="settings-section">
-                <h3>🖥️ Exibição</h3>
-                <div class="display-settings">
-                    <div class="log-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="log-panel-enabled" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span>Histórico de Partida</span>
-                    </div>
-                    <button id="btn-fullscreen" class="btn-setting">
-                        <span class="btn-icon">⛶</span>
-                        <span>Tela Cheia</span>
+            <!-- Ações de Jogo (footer area) -->
+            <div class="settings-actions">
+                <div class="settings-actions-left">
+                    <button id="btn-reset-defaults" class="btn-setting btn-reset">
+                        <span class="btn-icon">↺</span>
+                        <span>Resetar Padrão</span>
                     </button>
                 </div>
-            </div>
-
-            <!-- Log de Debug -->
-            <div class="settings-section">
-                <h3>📋 Log de Debug</h3>
-                <div class="log-export-settings">
-                    <p class="settings-description">Exporte o log da partida para reportar bugs ou comportamentos inesperados.</p>
-                    <div class="log-export-buttons">
-                        <button id="btn-export-log" class="btn-setting">
-                            <span class="btn-icon">📥</span>
-                            <span>Baixar Log (.txt)</span>
-                        </button>
-                        <button id="btn-copy-log" class="btn-setting">
-                            <span class="btn-icon">📋</span>
-                            <span>Copiar Log</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Priority Stops (Paradas de Prioridade) -->
-            <div class="settings-section">
-                <h3>⏸️ Paradas de Prioridade</h3>
-                <p class="settings-description">Configure quando você quer ter a chance de jogar instants/habilidades.</p>
-
-                <div class="priority-stops-grid">
-                    <div class="priority-column">
-                        <h4>Seu Turno</h4>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-upkeep">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Upkeep</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-begin-combat">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Início do Combate</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-after-attackers" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Após Atacantes</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-after-blockers" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Após Bloqueadores</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-end-step">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>End Step</span>
-                        </div>
-                    </div>
-                    <div class="priority-column">
-                        <h4>Turno do Oponente</h4>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-opp-upkeep">
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Upkeep</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-opp-begin-combat" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Início do Combate</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-opp-after-attackers" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Após Atacantes</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-opp-after-blockers" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>Após Bloqueadores</span>
-                        </div>
-                        <div class="priority-toggle">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="stop-opp-end-step" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <span>End Step</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ações de Jogo -->
-            <div class="settings-section">
-                <h3>🎮 Jogo</h3>
-                <div class="game-settings">
-                    <div class="undo-toggle">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="undo-enabled">
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span>Botão Desfazer (Undo)</span>
-                    </div>
-                    <button id="btn-settings-restart" class="btn-setting btn-warning">
+                <div class="settings-actions-right">
+                    <button id="btn-settings-restart" class="btn-setting btn-warning btn-compact">
                         <span class="btn-icon">🔄</span>
-                        <span>Reiniciar Partida</span>
+                        <span>Reiniciar</span>
                     </button>
-                    <button id="btn-settings-concede" class="btn-setting btn-danger">
+                    <button id="btn-settings-concede" class="btn-setting btn-danger btn-compact">
                         <span class="btn-icon">🏳️</span>
-                        <span>Conceder Partida</span>
+                        <span>Conceder</span>
                     </button>
                 </div>
             </div>
 
             <!-- Info da Partida -->
-            <div class="settings-section settings-info">
+            <div class="settings-footer">
                 <div class="match-info">
                     <span id="settings-turn-info">Turno: -</span>
                     <span id="settings-phase-info">Fase: -</span>
                 </div>
-            </div>
-
-            <div class="settings-footer">
-                <span class="settings-hint">Pressione <kbd>ESC</kbd> para fechar</span>
+                <span class="settings-hint">Arraste o título para mover · <kbd>ESC</kbd> fecha</span>
             </div>
         </div>
     </div>

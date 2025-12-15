@@ -2,11 +2,29 @@
 
 class SettingsManager {
     constructor() {
+        // Valores padrão para todas as configurações
         this.defaults = {
             soundEnabled: true,
-            sfxVolume: 50,          // Volume dos efeitos sonoros
-            musicVolume: 30,        // Volume da música de fundo
-            logPanelEnabled: false  // Histórico retraído por padrão
+            sfxVolume: 70,          // Volume dos efeitos sonoros (70%)
+            musicVolume: 80,        // Volume da música de fundo (80%)
+            logPanelEnabled: false, // Histórico desabilitado por padrão
+            undoEnabled: false      // Undo desabilitado por padrão
+        };
+
+        // Valores padrão para priority stops
+        this.priorityStopsDefaults = {
+            upkeep: false,
+            beginCombat: false,
+            afterAttackers: true,
+            afterBlockers: true,
+            endStep: false,
+            opponentTurn: {
+                upkeep: false,
+                beginCombat: true,
+                afterAttackers: true,
+                afterBlockers: true,
+                endStep: true
+            }
         };
 
         this.settings = this.loadSettings();
@@ -21,7 +39,24 @@ class SettingsManager {
         this.bindEvents();
         this.applySoundSettings();
         this.applyLogPanelSetting();
+        this.initDraggable();
         this.initialized = true;
+    }
+
+    /**
+     * Inicializa o modal como arrastável pelo header
+     */
+    initDraggable() {
+        if (window.game?.ui) {
+            window.game.ui.makeModalDraggable('settings-modal', '.settings-header');
+        } else {
+            // Se o game ainda não existe, aguardar e tentar novamente
+            setTimeout(() => {
+                if (window.game?.ui) {
+                    window.game.ui.makeModalDraggable('settings-modal', '.settings-header');
+                }
+            }, 1000);
+        }
     }
 
     loadSettings() {
@@ -201,6 +236,14 @@ class SettingsManager {
         this.bindPriorityStop('stop-opp-after-attackers', 'afterAttackers', true);
         this.bindPriorityStop('stop-opp-after-blockers', 'afterBlockers', true);
         this.bindPriorityStop('stop-opp-end-step', 'endStep', true);
+
+        // Botão Reset Padrão
+        const btnResetDefaults = document.getElementById('btn-reset-defaults');
+        if (btnResetDefaults) {
+            btnResetDefaults.addEventListener('click', () => {
+                this.resetToDefaults();
+            });
+        }
     }
 
     /**
@@ -377,6 +420,38 @@ class SettingsManager {
     setCheckbox(elementId, checked) {
         const el = document.getElementById(elementId);
         if (el) el.checked = checked || false;
+    }
+
+    /**
+     * Reseta todas as configurações para os valores padrão
+     */
+    resetToDefaults() {
+        // Resetar configurações gerais
+        this.settings = { ...this.defaults };
+        this.saveSettings();
+
+        // Aplicar configurações de som
+        this.setSoundEnabled(this.defaults.soundEnabled);
+        this.setSfxVolume(this.defaults.sfxVolume);
+        this.setMusicVolume(this.defaults.musicVolume);
+
+        // Aplicar configurações de exibição
+        this.setLogPanelEnabled(this.defaults.logPanelEnabled);
+
+        // Aplicar configuração de undo
+        this.setUndoEnabled(this.defaults.undoEnabled);
+
+        // Resetar priority stops
+        if (window.game) {
+            window.game.priorityStops = JSON.parse(JSON.stringify(this.priorityStopsDefaults));
+            window.game.savePriorityStops();
+        }
+
+        // Sincronizar UI com novos valores
+        this.syncUI();
+
+        // Feedback visual
+        this.showToast('Configurações resetadas para o padrão!');
     }
 
     // === Log Panel ===
