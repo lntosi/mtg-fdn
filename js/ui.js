@@ -538,7 +538,10 @@ class GameUI {
 
         // Keywords adicionais de efeitos permanentes (Auras, Lords, etc.) - excluindo temporárias
         if (card.type === 'creature' && this.game.rules) {
-            const allKeywords = this.game.rules.getCreatureKeywords(card);
+            // Verificar se a criatura está atacando (para keywords condicionais como Crossway Troublemakers)
+            const isAttackingForKeywords = this.selectedAttackers?.includes(card) ||
+                                           this.game.currentAttackers?.includes(card) || false;
+            const allKeywords = this.game.rules.getCreatureKeywords(card, isAttackingForKeywords);
             const temporaryKws = card.temporaryKeywords || [];
             const additionalKeywords = allKeywords.filter(kw =>
                 !baseKeywords.includes(kw) &&

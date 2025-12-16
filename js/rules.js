@@ -855,12 +855,14 @@ class RulesEngine {
 
         // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
         if (isAttacking && creature.subtype && creature.subtype.includes('Vampire')) {
-            controller.battlefield.forEach(card => {
-                if (card.id === 'crossway_troublemakers') {
-                    if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
-                    if (!keywords.includes('lifelink')) keywords.push('lifelink');
-                }
-            });
+            // Procurar por id ou por nome como fallback
+            const crosswayFound = controller.battlefield.find(c =>
+                c.id === 'crossway_troublemakers' || c.name === 'Crossway Troublemakers'
+            );
+            if (crosswayFound) {
+                if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
+                if (!keywords.includes('lifelink')) keywords.push('lifelink');
+            }
         }
 
         // Kitesail Corsair: tem voar enquanto ataca
