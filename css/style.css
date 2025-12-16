@@ -10,7 +10,7 @@ body {
     background: linear-gradient(135deg, #1a0a1f 0%, #2d1b3d 50%, #1a0a1f 100%);
     color: #fff;
     min-height: 100vh;
-    overflow: visible;
+    overflow: hidden;
 }
 
 /* === Container Principal - Battlemat Style === */
