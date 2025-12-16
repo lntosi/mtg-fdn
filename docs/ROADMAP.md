@@ -50,6 +50,8 @@ Ordem sugerida (do mais simples ao mais complexo):
 - [ ] **Uso de remoções**: IA usar feitiços de remoção estrategicamente
 - [ ] **Avaliação de trades**: IA calcular melhor trocas de combate
 - [ ] **Timing de instants**: IA jogar instants no momento certo
+- [ ] **Criaturas com poder 0**: IA não deveria atacar com criaturas sem poder (ex: Vampire Neonate 0/3)
+- [ ] **Uso de habilidades ativadas**: IA deveria priorizar habilidades ativadas quando vantajosas (ex: Vampire Neonate drena 1 vida por 2 mana em vez de atacar com 0 dano)
 
 #### 2.2 Níveis de Dificuldade
 
