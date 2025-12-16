@@ -481,8 +481,7 @@ class RulesEngine {
             return false;
         }
 
-        // Menace: precisa ser bloqueado por pelo menos 2 criaturas
-        // (simplificado: não implementado completamente, mas já marcamos a keyword)
+        // Menace: validado em game.js validateMenaceBlocks() e ai.js chooseBlockers()
 
         // Flying: só pode ser bloqueado por flying ou reach
         // Usa hasKeyword para considerar efeitos condicionais (ex: flying_when_attacking)

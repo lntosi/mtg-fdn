@@ -234,12 +234,13 @@ class AIPlayer {
             // 4. Tem lifelink
             // 5. Estamos ganhando muito (agressivo)
 
-            const hasEvasion = attacker.keywords &&
-                (attacker.keywords.includes('flying') || attacker.keywords.includes('menace'));
+            // Usar hasKeyword para considerar keywords de auras (Untamed Hunger = menace)
+            const hasEvasion = this.rules.hasKeyword(attacker, 'flying', true) ||
+                               this.rules.hasKeyword(attacker, 'menace', true);
 
             const canBeBlocked = defenderCreatures.some(b => this.rules.canBlock(b, attacker));
 
-            const hasLifelink = attacker.keywords && attacker.keywords.includes('lifelink');
+            const hasLifelink = this.rules.hasKeyword(attacker, 'lifelink', true);
 
             const lifeAdvantage = this.game.opponent.life - this.game.player.life;
 
@@ -262,6 +263,66 @@ class AIPlayer {
     chooseBlockers(attackers, possibleBlockers) {
         const assignments = {};
 
+        // Helper: verificar se atacante tem menace (considera auras como Untamed Hunger)
+        const hasMenace = (attacker) => this.rules.hasKeyword(attacker, 'menace', true);
+
+        // Helper: atribuir bloqueadores a um atacante
+        const assignBlockers = (attacker, blockers) => {
+            blockers.forEach(b => b.assignedToBlock = true);
+            assignments[attacker.instanceId] = blockers;
+        };
+
+        // Helper: selecionar melhor bloqueador para matar atacante
+        const selectBestBlocker = (availableBlockers, attackerToughness) => {
+            return availableBlockers.find(b => {
+                const blockerPower = this.rules.getCreaturePower(b);
+                return blockerPower >= attackerToughness ||
+                    this.rules.hasKeyword(b, 'deathtouch', false);
+            }) || availableBlockers.sort((a, b) =>
+                this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+            )[0];
+        };
+
+        // Helper: selecionar par de bloqueadores para menace
+        const selectMenaceBlockers = (availableBlockers, attacker) => {
+            if (availableBlockers.length < 2) return null;
+
+            const attackerToughness = this.rules.getCreatureToughness(attacker);
+            const attackerPower = this.rules.getCreaturePower(attacker);
+
+            // Ordenar por poder (maior primeiro)
+            const sorted = [...availableBlockers].sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            );
+
+            // Verificar se os dois melhores bloqueadores conseguem matar o atacante
+            const b1 = sorted[0];
+            const b2 = sorted[1];
+            const combinedPower = this.rules.getCreaturePower(b1) + this.rules.getCreaturePower(b2);
+            const canKill = combinedPower >= attackerToughness ||
+                this.rules.hasKeyword(b1, 'deathtouch', false) ||
+                this.rules.hasKeyword(b2, 'deathtouch', false);
+
+            // Verificar quantos bloqueadores morrem
+            const b1Dies = attackerPower >= this.rules.getCreatureToughness(b1);
+            const b2Dies = attackerPower >= this.rules.getCreatureToughness(b2);
+            const blockerDeaths = (b1Dies ? 1 : 0) + (b2Dies ? 1 : 0);
+
+            // Bloquear se:
+            // 1. Conseguimos matar sem perder nenhum bloqueador
+            // 2. Conseguimos matar perdendo só 1 bloqueador e atacante tem 4+ de poder
+            // 3. Estamos em risco de morrer
+            if (canKill && blockerDeaths === 0) {
+                return [b1, b2];
+            } else if (canKill && blockerDeaths === 1 && attackerPower >= 4) {
+                return [b1, b2];
+            } else if (this.game.opponent.life <= attackerPower * 2) {
+                return [b1, b2];
+            }
+
+            return null;
+        };
+
         // PRIMEIRO: Bloquear atacantes com mustBeBlocked (obrigatório)
         const mustBlockAttackers = attackers.filter(a => a.mustBeBlocked);
         mustBlockAttackers.forEach(attacker => {
@@ -269,21 +330,27 @@ class AIPlayer {
                 this.rules.canBlock(b, attacker) && !b.assignedToBlock
             );
 
-            if (availableBlockers.length > 0) {
-                // Escolher o bloqueador que causa menos prejuízo
-                // Prioridade: bloqueador que mata atacante sem morrer > bloqueador mais fraco
-                const attackerToughness = this.rules.getCreatureToughness(attacker);
+            const attackerHasMenace = hasMenace(attacker);
 
-                const bestBlocker = availableBlockers.find(b => {
-                    const blockerPower = this.rules.getCreaturePower(b);
-                    return blockerPower >= attackerToughness ||
-                        (b.keywords && b.keywords.includes('deathtouch'));
-                }) || availableBlockers.sort((a, b) =>
-                    this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
-                )[0]; // Menor poder se não consegue matar
-
-                bestBlocker.assignedToBlock = true;
-                assignments[attacker.instanceId] = [bestBlocker];
+            if (attackerHasMenace) {
+                // Menace: precisa de 2 bloqueadores
+                if (availableBlockers.length >= 2) {
+                    const pair = selectMenaceBlockers(availableBlockers, attacker);
+                    if (pair) {
+                        assignBlockers(attacker, pair);
+                    } else {
+                        // Mesmo sem vantagem, mustBeBlocked é obrigatório
+                        assignBlockers(attacker, [availableBlockers[0], availableBlockers[1]]);
+                    }
+                }
+                // Se não tem 2 bloqueadores disponíveis, não pode bloquear menace
+            } else {
+                // Sem menace: 1 bloqueador
+                if (availableBlockers.length > 0) {
+                    const attackerToughness = this.rules.getCreatureToughness(attacker);
+                    const bestBlocker = selectBestBlocker(availableBlockers, attackerToughness);
+                    assignBlockers(attacker, [bestBlocker]);
+                }
             }
         });
 
@@ -291,6 +358,7 @@ class AIPlayer {
         attackers.filter(a => !a.mustBeBlocked).forEach(attacker => {
             const attackerPower = this.rules.getCreaturePower(attacker);
             const attackerToughness = this.rules.getCreatureToughness(attacker);
+            const attackerHasMenace = hasMenace(attacker);
 
             // Encontrar bloqueadores válidos não usados
             const availableBlockers = possibleBlockers.filter(b =>
@@ -299,14 +367,24 @@ class AIPlayer {
 
             if (availableBlockers.length === 0) return;
 
-            // Estratégia: bloquear se podemos matar sem morrer, ou se atacante é muito forte
+            // MENACE: precisa de 2 bloqueadores
+            if (attackerHasMenace) {
+                const pair = selectMenaceBlockers(availableBlockers, attacker);
+                if (pair) {
+                    assignBlockers(attacker, pair);
+                }
+                // Se não conseguiu selecionar um bom par, não bloqueia
+                return;
+            }
+
+            // Lógica normal (sem menace): 1 bloqueador
             for (const blocker of availableBlockers) {
                 const blockerPower = this.rules.getCreaturePower(blocker);
                 const blockerToughness = this.rules.getCreatureToughness(blocker);
 
                 const blockerDies = attackerPower >= blockerToughness;
                 const attackerDies = blockerPower >= attackerToughness ||
-                    (blocker.keywords && blocker.keywords.includes('deathtouch'));
+                    this.rules.hasKeyword(blocker, 'deathtouch', false);
 
                 // Bloquear se:
                 // 1. Matamos o atacante sem morrer
@@ -314,17 +392,14 @@ class AIPlayer {
                 // 3. Temos muito mais vida
 
                 if (attackerDies && !blockerDies) {
-                    blocker.assignedToBlock = true;
-                    assignments[attacker.instanceId] = [blocker];
+                    assignBlockers(attacker, [blocker]);
                     break;
                 } else if (attackerPower >= 4 && attackerDies) {
-                    blocker.assignedToBlock = true;
-                    assignments[attacker.instanceId] = [blocker];
+                    assignBlockers(attacker, [blocker]);
                     break;
                 } else if (this.game.opponent.life <= attackerPower * 2) {
                     // Bloquear se vamos morrer em breve
-                    blocker.assignedToBlock = true;
-                    assignments[attacker.instanceId] = [blocker];
+                    assignBlockers(attacker, [blocker]);
                     break;
                 }
             }

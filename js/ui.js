@@ -2010,6 +2010,19 @@ class GameUI {
             mainButtonText = blockCount > 0 ? `Block (${blockCount})` : 'No Block';
             mainButtonTitle = 'Confirmar bloqueadores';
             mainButtonState = 'state-block';
+
+            // Verificar se há bloqueios inválidos contra menace (apenas 1 bloqueador)
+            const menaceWarnings = [];
+            for (const attackerId in this.blockerAssignments) {
+                const blockers = this.blockerAssignments[attackerId];
+                const attacker = this.game.currentAttackers?.find(a => a.instanceId === attackerId);
+                if (attacker && this.game.rules.hasKeyword(attacker, 'menace', true) && blockers.length === 1) {
+                    menaceWarnings.push(attacker.name);
+                }
+            }
+            if (menaceWarnings.length > 0) {
+                mainButtonTitle = `⚠️ ${menaceWarnings.join(', ')} tem Menace - precisa de 2 bloqueadores!`;
+            }
         } else if (waitingForPriority) {
             // Janela de prioridade - pode responder
             mainButtonEnabled = true;

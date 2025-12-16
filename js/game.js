@@ -2315,6 +2315,9 @@ class GameState {
 
     // Avançar para próxima fase
     async nextPhase() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         const currentIndex = PHASE_ORDER.indexOf(this.phase);
         let nextIndex = currentIndex + 1;
 
@@ -2329,6 +2332,9 @@ class GameState {
     }
 
     async handlePhase() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         // Esvaziar floating mana no início de cada fase (regras MTG)
         this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
 
@@ -2596,6 +2602,16 @@ class GameState {
             // Não impede o jogador, apenas avisa (em MTG real, é obrigatório)
         }
 
+        // Validar bloqueios contra criaturas com menace (requer 2+ bloqueadores)
+        const menaceValidation = this.validateMenaceBlocks(assignments);
+        if (!menaceValidation.valid) {
+            this.ui.log(`⚠️ ${menaceValidation.message}`);
+            // Remover bloqueios inválidos (menace com apenas 1 bloqueador)
+            menaceValidation.invalidAttackers.forEach(attacker => {
+                delete assignments[attacker.instanceId];
+            });
+        }
+
         // Salvar estado para undo antes de confirmar bloqueadores
         const blockerCount = Object.values(assignments).flat().length;
         if (blockerCount > 0) {
@@ -2665,6 +2681,41 @@ class GameState {
         }
 
         return { valid: true, message: '' };
+    }
+
+    /**
+     * Valida se bloqueios contra criaturas com menace têm pelo menos 2 bloqueadores
+     * @param {Object} assignments - Mapa de bloqueios {attackerId: [blockers]}
+     * @returns {Object} { valid: boolean, message: string, invalidAttackers: Array }
+     */
+    validateMenaceBlocks(assignments) {
+        const invalidAttackers = [];
+
+        for (const attackerId in assignments) {
+            const blockers = assignments[attackerId];
+            const attacker = this.currentAttackers.find(a => a.instanceId === attackerId);
+
+            if (!attacker) continue;
+
+            // Verificar se atacante tem menace
+            if (this.rules.hasKeyword(attacker, 'menace', true)) {
+                // Menace requer pelo menos 2 bloqueadores
+                if (blockers.length < 2) {
+                    invalidAttackers.push(attacker);
+                }
+            }
+        }
+
+        if (invalidAttackers.length > 0) {
+            const names = invalidAttackers.map(a => a.name).join(', ');
+            return {
+                valid: false,
+                message: `${names} tem Ameaçar (Menace) - precisa de pelo menos 2 bloqueadores!`,
+                invalidAttackers
+            };
+        }
+
+        return { valid: true, message: '', invalidAttackers: [] };
     }
 
     async resolveCombat() {
@@ -2754,6 +2805,9 @@ class GameState {
             } else {
                 this.opponentLostLifeThisTurn = true;
             }
+            // Verificar fim de jogo imediatamente após dano de combate
+            this.checkGameOver();
+            if (this.gameOver) return;
         }
 
         // Aplicar vida ganha
@@ -2794,6 +2848,9 @@ class GameState {
     }
 
     async endTurn() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         this.ui.log(`Fim do turno ${this.turnNumber}`);
 
         // Trocar jogador ativo
@@ -2879,6 +2936,9 @@ class GameState {
     }
 
     async _executeAITurnInternal() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         // Indicar início do turno da IA
         this.ui.log('--- Turno do Oponente ---');
         await this.delay(600);

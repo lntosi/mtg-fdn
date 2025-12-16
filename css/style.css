@@ -2494,7 +2494,8 @@ body {
     pointer-events: none;
 }
 
-#game-container.view-mode .card {
+#game-container.view-mode .card,
+#game-container.view-mode .graveyard {
     pointer-events: auto;
 }
 
