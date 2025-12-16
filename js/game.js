@@ -3062,10 +3062,12 @@ class GameState {
             c.mustBeBlocked = false;
         });
 
-        // Limpar modificadores temporários das criaturas do jogador também
-        // (buffs que duravam "até o fim do turno" do oponente)
+        // Limpar dano e modificadores temporários das criaturas do jogador também
+        // (MTG rule: dano é removido no cleanup de CADA turno, não apenas do próprio)
         this.player.battlefield.forEach(c => {
-            // Apenas limpar temporaryKeywords, não dano (será limpo no cleanup do jogador)
+            c.damage = 0;
+            c.powerModifier = 0;
+            c.toughnessModifier = 0;
             c.temporaryKeywords = [];
             c.mustBeBlocked = false;
         });
