@@ -2434,13 +2434,15 @@ class GameState {
                 break;
 
             case PHASES.CLEANUP:
-                // Limpar dano das criaturas e modificadores temporários
-                this.activePlayer.battlefield.forEach(c => {
-                    c.damage = 0;
-                    c.powerModifier = 0;
-                    c.toughnessModifier = 0;
-                    c.temporaryKeywords = [];
-                    c.mustBeBlocked = false; // Limpar flag de must be blocked
+                // Limpar dano das criaturas e modificadores temporários (AMBOS os jogadores)
+                [this.player, this.opponent].forEach(p => {
+                    p.battlefield.forEach(c => {
+                        c.damage = 0;
+                        c.powerModifier = 0;
+                        c.toughnessModifier = 0;
+                        c.temporaryKeywords = [];
+                        c.mustBeBlocked = false; // Limpar flag de must be blocked
+                    });
                 });
 
                 // Descartar até 7 cartas
