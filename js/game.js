@@ -3066,6 +3066,9 @@ class GameState {
     }
 
     async continueAfterBlocking() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         try {
             // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
             // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
@@ -3086,6 +3089,9 @@ class GameState {
             await this.delay(800);
             await this.resolveCombat();
             this.ui.render();
+
+            // Verificar se o jogo acabou após o combate
+            if (this.gameOver) return;
 
             // Delay maior para ver resultado do combate
             await this.delay(1200);
@@ -3108,6 +3114,9 @@ class GameState {
     }
 
     async finishAITurn() {
+        // Não continuar se o jogo acabou
+        if (this.gameOver) return;
+
         try {
             await this.delay(600);
 

@@ -922,12 +922,24 @@ body {
     box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6) !important;
 }
 
+/* Criatura com buff aura E atacando - combina borda verde + sombra vermelha externa */
+.card.has-buff-aura.attacking {
+    box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6), 0 0 25px 12px rgba(231, 76, 60, 0.8) !important;
+    animation: pulse-attack 0.8s infinite;
+}
+
 /* === EQUIPAMENTOS ANEXADOS === */
 
 /* Borda dourada/metálica para criaturas equipadas */
 .card.has-equipment {
     position: relative;
     box-shadow: 0 0 0 3px #daa520, 0 0 12px 3px rgba(218, 165, 32, 0.6) !important;
+}
+
+/* Criatura equipada E atacando - combina borda dourada + sombra vermelha externa */
+.card.has-equipment.attacking {
+    box-shadow: 0 0 0 3px #daa520, 0 0 12px 3px rgba(218, 165, 32, 0.6), 0 0 25px 12px rgba(231, 76, 60, 0.8) !important;
+    animation: pulse-attack 0.8s infinite;
 }
 
 /* Container para badges de equipamento */
