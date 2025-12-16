@@ -126,6 +126,22 @@ class TriggerManager {
     // ETB HELPER METHODS
     // ========================================
 
+    /**
+     * Reset card state when changing zones (MTG rule: cards forget their state)
+     * Called when cards move from graveyard to hand, battlefield to hand, etc.
+     */
+    _resetCardState(card) {
+        card.damage = 0;
+        card.powerModifier = 0;
+        card.toughnessModifier = 0;
+        card.temporaryKeywords = [];
+        card.tapped = false;
+        card.mustBeBlocked = false;
+        card.pendingResolution = false;
+        card.counters = null; // Counters are lost when changing zones
+        // Note: summoningSickness is set when entering battlefield, not here
+    }
+
     _createTreasureToken(controller, sourceName) {
         controller.battlefield.push({
             instanceId: `treasure_token_${Date.now()}`,
@@ -203,6 +219,7 @@ class TriggerManager {
             const index = controller.graveyard.indexOf(target);
             if (index !== -1) {
                 controller.graveyard.splice(index, 1);
+                this._resetCardState(target); // Reset damage, modifiers, etc.
                 controller.hand.push(target);
                 this.ui.log(`${card.name}: ${controller.name} recuperou ${target.name} do cemitério`);
                 this.ui.render();
@@ -311,13 +328,8 @@ class TriggerManager {
             const index = opponent.battlefield.indexOf(targetCreature);
             if (index !== -1) {
                 opponent.battlefield.splice(index, 1);
+                this._resetCardState(targetCreature); // Reset damage, modifiers, counters, etc.
                 opponent.hand.push(targetCreature);
-                // Limpar estados da criatura
-                targetCreature.tapped = false;
-                targetCreature.damage = 0;
-                targetCreature.powerModifier = 0;
-                targetCreature.toughnessModifier = 0;
-                targetCreature.counters = null;
                 this.ui.log(`${card.name} devolveu ${targetCreature.name} para a mão de ${opponent.name}`);
                 this.ui.render();
             }

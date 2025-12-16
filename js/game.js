@@ -317,15 +317,9 @@ class GameState {
         const aiName = this.getAvatarName(aiAvatar);
         this.opponent = this.createPlayer(aiName, aiDecks, startingLife, aiAvatar);
 
-        // Embaralhar decks
-        this.player.library = shuffleDeck(this.player.library);
-        this.opponent.library = shuffleDeck(this.opponent.library);
-
-        // Comprar mão inicial (7 cartas)
-        for (let i = 0; i < 7; i++) {
-            this.rules.drawCard(this.player);
-            this.rules.drawCard(this.opponent);
-        }
+        // Comprar mão inicial com hand smoothing (sorteia 2 mãos, escolhe a melhor)
+        this.drawSmoothedHand(this.player, 7);
+        this.drawSmoothedHand(this.opponent, 7);
 
         // Resetar mulligan
         this.mulliganCount = { player: 0, opponent: 0 };
@@ -385,15 +379,10 @@ class GameState {
                 return;
             }
 
-            // Devolver mão para o grimório e embaralhar
+            // Devolver mão para o grimório e comprar nova mão com hand smoothing
             this.player.library = [...this.player.library, ...this.player.hand];
             this.player.hand = [];
-            this.player.library = shuffleDeck(this.player.library);
-
-            // Comprar nova mão
-            for (let i = 0; i < 7; i++) {
-                this.rules.drawCard(this.player);
-            }
+            this.drawSmoothedHand(this.player, 7);
 
             this.ui.log(`Mulligan ${this.mulliganCount.player}! Comprou 7 cartas, manterá ${newHandSize}.`);
             this.ui.showMulliganPrompt();
@@ -479,6 +468,40 @@ class GameState {
             landsPlayedThisTurn: 0,
             avatar: avatar
         };
+    }
+
+    /**
+     * Hand Smoothing - similar ao MTG Arena
+     * Sorteia 2 mãos e escolhe a com melhor distribuição de terrenos
+     * Ideal: 2-4 terrenos em 7 cartas (closer to 3 is better)
+     */
+    drawSmoothedHand(player, handSize = 7) {
+        // Simular duas mãos possíveis
+        const simulateHand = () => {
+            const tempLibrary = shuffleDeck([...player.library, ...player.hand]);
+            const hand = tempLibrary.slice(0, handSize);
+            const library = tempLibrary.slice(handSize);
+            const landCount = hand.filter(c => c.type === 'land').length;
+            return { hand, library, landCount };
+        };
+
+        const sim1 = simulateHand();
+        const sim2 = simulateHand();
+
+        // Pontuação: quanto mais perto de 3 terrenos, melhor (0 = perfeito)
+        // Para mãos menores que 7, ajusta o ideal proporcionalmente
+        const idealLands = Math.round(handSize * 3 / 7);
+        const score1 = Math.abs(sim1.landCount - idealLands);
+        const score2 = Math.abs(sim2.landCount - idealLands);
+
+        // Escolhe a mão com melhor pontuação (menor distância do ideal)
+        const chosen = score1 <= score2 ? sim1 : sim2;
+
+        // Aplica a mão escolhida
+        player.hand = chosen.hand;
+        player.library = chosen.library;
+
+        return chosen.landCount;
     }
 
     isPlayerTurn() {
@@ -2544,6 +2567,7 @@ class GameState {
             this.blockerAssignments = this.ai.chooseBlockers(attackers, blockers);
 
             if (Object.keys(this.blockerAssignments).length > 0) {
+                window.soundManager.playBlock();
                 this.ui.log('Oponente declarou bloqueadores');
                 // Renderizar para mostrar as linhas de bloqueio
                 this.ui.render();

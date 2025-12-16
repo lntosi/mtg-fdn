@@ -718,6 +718,32 @@ body {
     z-index: 1;
 }
 
+/* Efeito de dano no avatar */
+.player-avatar.avatar-damage {
+    animation: avatar-shake 0.5s ease-in-out;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.8), inset 0 0 30px rgba(255, 0, 0, 0.4) !important;
+    border-color: #ff4444 !important;
+}
+
+/* Efeito de cura no avatar */
+.player-avatar.avatar-heal {
+    animation: avatar-glow 0.6s ease-in-out;
+    box-shadow: 0 0 25px rgba(50, 255, 50, 0.8), inset 0 0 20px rgba(50, 255, 50, 0.3) !important;
+    border-color: #44ff44 !important;
+}
+
+@keyframes avatar-shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes avatar-glow {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
 /* Nome centralizado abaixo */
 .player-info-stack .player-name {
     font-size: 0.9em;
@@ -1104,6 +1130,17 @@ body {
     background: linear-gradient(135deg, rgba(192, 57, 43, 0.95), rgba(231, 76, 60, 0.95));
     box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
     animation: damage-pulse 1.5s ease-in-out infinite;
+}
+
+.card-stats.attack-buffed {
+    background: linear-gradient(135deg, rgba(255, 69, 0, 0.95), rgba(255, 140, 0, 0.95));
+    box-shadow: 0 0 10px rgba(255, 140, 0, 0.8);
+    animation: attack-buff-glow 1s ease-in-out infinite;
+}
+
+@keyframes attack-buff-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 140, 0, 0.6); }
+    50% { box-shadow: 0 0 16px rgba(255, 69, 0, 0.9); }
 }
 
 @keyframes buff-glow {
@@ -1685,6 +1722,18 @@ body {
     background: linear-gradient(135deg, rgba(218, 165, 32, 0.8), rgba(184, 134, 11, 0.8));
     color: #FFF8DC;
     border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
+.status-badge.attack-buff {
+    background: linear-gradient(135deg, rgba(255, 69, 0, 0.8), rgba(178, 34, 34, 0.8));
+    color: #FFD700;
+    border: 1px solid rgba(255, 140, 0, 0.5);
+    animation: pulse-attack 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-attack {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 69, 0, 0.5); }
+    50% { box-shadow: 0 0 15px rgba(255, 69, 0, 0.8); }
 }
 
 /* Stats base vs atual no preview */

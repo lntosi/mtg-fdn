@@ -446,8 +446,18 @@ class GameUI {
         if (card.type === 'creature') {
             const basePower = card.power || 0;
             const baseToughness = card.toughness || 0;
-            const power = this.game.rules ? this.game.rules.getCreaturePower(card) : basePower;
-            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card) : baseToughness;
+
+            // Verificar se a criatura está atacando (para bônus como Goblin Oriflamme)
+            const isAttacking = this.selectedAttackers?.includes(card) ||
+                               this.game.currentAttackers?.includes(card) || false;
+
+            // Calcular stats com e sem bônus de ataque para detectar diferença
+            const power = this.game.rules ? this.game.rules.getCreaturePower(card, isAttacking) : basePower;
+            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card, isAttacking) : baseToughness;
+            const powerWithoutAttack = this.game.rules ? this.game.rules.getCreaturePower(card, false) : basePower;
+
+            // Detectar bônus específicos de ataque comparando stats
+            const hasAttackOnlyBonus = isAttacking && power > powerWithoutAttack;
             const damage = card.damage || 0;
             const effectiveToughness = toughness - damage;
 
@@ -604,6 +614,38 @@ class GameUI {
                 });
 
                 previewKeywords.appendChild(equipSection);
+            }
+
+            // Bônus de ataque - detectar comparando bônus com/sem isAttacking
+            const isAttacking = this.selectedAttackers?.includes(card) ||
+                               this.game.currentAttackers?.includes(card) || false;
+            if (isAttacking && this.game.rules) {
+                const bonusesAttacking = this.game.rules.getCreatureBonuses(card, true);
+                const bonusesNotAttacking = this.game.rules.getCreatureBonuses(card, false);
+
+                // Encontrar bônus que só aparecem quando atacando
+                const notAttackingNames = bonusesNotAttacking.sources.map(s => s.name);
+                const attackOnlyBonuses = bonusesAttacking.sources.filter(src =>
+                    !notAttackingNames.includes(src.name)
+                );
+
+                if (attackOnlyBonuses.length > 0) {
+                    const attackSection = document.createElement('div');
+                    attackSection.className = 'preview-status-section';
+
+                    attackOnlyBonuses.forEach(bonus => {
+                        const attackBadge = document.createElement('span');
+                        attackBadge.className = 'status-badge attack-buff';
+                        const bonusText = bonus.toughness > 0
+                            ? `+${bonus.power}/+${bonus.toughness}`
+                            : `+${bonus.power}/+0`;
+                        attackBadge.textContent = `⚔ ${bonus.name} (${bonusText})`;
+                        attackBadge.title = 'Bônus enquanto atacando';
+                        attackSection.appendChild(attackBadge);
+                    });
+
+                    previewKeywords.appendChild(attackSection);
+                }
             }
         }
 
@@ -1319,10 +1361,14 @@ class GameUI {
             const basePower = (card.power || 0);
             const baseToughness = (card.toughness || 0);
 
+            // Verificar se a criatura está atacando (para bônus como Goblin Oriflamme)
+            const isAttacking = this.selectedAttackers?.includes(card) ||
+                               this.game?.currentAttackers?.includes(card) || false;
+
             if (this.game && this.game.rules) {
-                power = this.game.rules.getCreaturePower(card);
-                toughness = this.game.rules.getCreatureToughness(card);
-                bonuses = this.game.rules.getCreatureBonuses(card);
+                power = this.game.rules.getCreaturePower(card, isAttacking);
+                toughness = this.game.rules.getCreatureToughness(card, isAttacking);
+                bonuses = this.game.rules.getCreatureBonuses(card, isAttacking);
             } else {
                 power = basePower + (card.powerModifier || 0);
                 toughness = baseToughness + (card.toughnessModifier || 0);
@@ -1337,17 +1383,43 @@ class GameUI {
             // Verificar se há bônus ativos
             const hasBonus = bonuses.sources.length > 0 || (card.powerModifier || 0) !== 0 || (card.toughnessModifier || 0) !== 0;
 
+            // Detectar bônus específicos de ataque comparando com/sem isAttacking
+            let hasAttackBonus = false;
+            if (isAttacking && this.game?.rules) {
+                const bonusesNotAttacking = this.game.rules.getCreatureBonuses(card, false);
+                const notAttackingNames = bonusesNotAttacking.sources.map(s => s.name);
+                hasAttackBonus = bonuses.sources.some(src => !notAttackingNames.includes(src.name));
+            }
+
             // Determinar classe do stats baseado em dano e bônus
             let statsClass = 'card-stats';
             if (isDamaged) {
                 statsClass += ' damaged';
+            } else if (hasAttackBonus) {
+                statsClass += ' attack-buffed';
             } else if (hasBonus) {
                 statsClass += ' buffed';
             }
 
             // Mostrar toughness efetiva (toughness - dano) quando danificado
             const displayToughness = isDamaged ? effectiveToughness : toughness;
-            html += `<div class="${statsClass}" title="${isDamaged ? `Dano: ${markedDamage} (${toughness} - ${markedDamage} = ${effectiveToughness})` : ''}">${power}/${displayToughness}</div>`;
+
+            // Construir tooltip informativo
+            let tooltip = '';
+            if (isDamaged) {
+                tooltip = `Dano: ${markedDamage} (${toughness} - ${markedDamage} = ${effectiveToughness})`;
+            } else if (hasAttackBonus) {
+                // Encontrar bônus que só aparecem quando atacando
+                const bonusesNotAttacking = this.game.rules.getCreatureBonuses(card, false);
+                const notAttackingNames = bonusesNotAttacking.sources.map(s => s.name);
+                const attackOnlyBonuses = bonuses.sources.filter(src => !notAttackingNames.includes(src.name));
+                const attackBonusSources = attackOnlyBonuses
+                    .map(src => `${src.name}: +${src.power}/+${src.toughness}`)
+                    .join(', ');
+                tooltip = `Bônus de ataque: ${attackBonusSources}`;
+            }
+
+            html += `<div class="${statsClass}" title="${tooltip}">${power}/${displayToughness}</div>`;
 
             // Mostrar indicador de dano separado se houver dano
             if (isDamaged) {
@@ -1392,20 +1464,39 @@ class GameUI {
         const currentPlayerLife = this.game.player.life;
         const currentOpponentLife = this.game.opponent.life;
 
+        const playerAvatarEl = document.getElementById('player-avatar');
+        const opponentAvatarEl = document.getElementById('opponent-avatar');
+
         if (currentPlayerLife < this.previousPlayerLife) {
             this.playerLife.classList.add('damage-taken');
-            setTimeout(() => this.playerLife.classList.remove('damage-taken'), 600);
+            playerAvatarEl?.classList.add('avatar-damage');
+            setTimeout(() => {
+                this.playerLife.classList.remove('damage-taken');
+                playerAvatarEl?.classList.remove('avatar-damage');
+            }, 600);
         } else if (currentPlayerLife > this.previousPlayerLife) {
             this.playerLife.classList.add('life-gained');
-            setTimeout(() => this.playerLife.classList.remove('life-gained'), 600);
+            playerAvatarEl?.classList.add('avatar-heal');
+            setTimeout(() => {
+                this.playerLife.classList.remove('life-gained');
+                playerAvatarEl?.classList.remove('avatar-heal');
+            }, 600);
         }
 
         if (currentOpponentLife < this.previousOpponentLife) {
             this.opponentLife.classList.add('damage-taken');
-            setTimeout(() => this.opponentLife.classList.remove('damage-taken'), 600);
+            opponentAvatarEl?.classList.add('avatar-damage');
+            setTimeout(() => {
+                this.opponentLife.classList.remove('damage-taken');
+                opponentAvatarEl?.classList.remove('avatar-damage');
+            }, 600);
         } else if (currentOpponentLife > this.previousOpponentLife) {
             this.opponentLife.classList.add('life-gained');
-            setTimeout(() => this.opponentLife.classList.remove('life-gained'), 600);
+            opponentAvatarEl?.classList.add('avatar-heal');
+            setTimeout(() => {
+                this.opponentLife.classList.remove('life-gained');
+                opponentAvatarEl?.classList.remove('avatar-heal');
+            }, 600);
         }
 
         this.previousPlayerLife = currentPlayerLife;
@@ -1762,6 +1853,9 @@ class GameUI {
             // Mostrar cartas da mais recente para a mais antiga
             [...graveyard].reverse().forEach(card => {
                 const cardEl = this.createCardElement(card, true);
+                // Adicionar eventos de hover para preview lateral
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
                 this.graveyardPopupCards.appendChild(cardEl);
             });
         }
