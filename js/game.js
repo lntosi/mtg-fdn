@@ -239,6 +239,11 @@ class GameState {
             this.ui.log(`Jogo restaurado - Turno ${this.turnNumber}`);
             this.ui.render();
 
+            // Iniciar música de fundo
+            if (window.soundManager) {
+                window.soundManager.playMusic();
+            }
+
             return true;
         } catch (e) {
             console.error('Erro ao restaurar jogo:', e);
