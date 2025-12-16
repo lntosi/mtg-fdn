@@ -805,22 +805,25 @@ class GameUI {
 
     updateStartButtonState() {
         const playerChecked = document.querySelectorAll('input[name="deck"]:checked');
-        const playerHas2 = playerChecked.length === 2;
+        const playerDeckCount = playerChecked.length;
+        const playerHasDecks = playerDeckCount >= 1 && playerDeckCount <= 2;
 
         const aiDeckMode = document.getElementById('ai-deck-mode')?.value || 'random-different';
 
         let aiReady = true;
         if (aiDeckMode === 'manual') {
             const aiChecked = document.querySelectorAll('input[name="ai-deck"]:checked');
-            aiReady = aiChecked.length === 2;
+            // IA deve ter a mesma quantidade de decks que o jogador
+            aiReady = aiChecked.length === playerDeckCount;
         }
 
-        this.btnStartGame.disabled = !(playerHas2 && aiReady);
+        this.btnStartGame.disabled = !(playerHasDecks && aiReady);
     }
 
     onStartGame() {
         const checked = document.querySelectorAll('input[name="deck"]:checked');
         const selectedDecks = Array.from(checked).map(cb => cb.value);
+        const deckCount = selectedDecks.length; // 1 ou 2 decks
 
         // Determinar decks da IA baseado no modo selecionado
         const allDecks = ['cats', 'goblins', 'vampires', 'elves', 'pirates'];
@@ -834,12 +837,12 @@ class GameUI {
         } else if (aiDeckMode === 'random-any') {
             // Aleatório de qualquer deck (pode repetir cores do jogador)
             const shuffled = [...allDecks].sort(() => Math.random() - 0.5);
-            aiDecks = shuffled.slice(0, 2);
+            aiDecks = shuffled.slice(0, deckCount); // Espelha quantidade do jogador
         } else {
             // random-different: Aleatório dos decks não selecionados pelo jogador
             const availableDecks = allDecks.filter(d => !selectedDecks.includes(d));
             const shuffled = availableDecks.sort(() => Math.random() - 0.5);
-            aiDecks = shuffled.slice(0, 2);
+            aiDecks = shuffled.slice(0, deckCount); // Espelha quantidade do jogador
         }
 
         // Obter vida inicial selecionada

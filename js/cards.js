@@ -138,6 +138,9 @@ const CARD_DATABASE = {
     }
 };
 
+// Contador global para garantir instanceIds únicos
+let globalInstanceCounter = 0;
+
 // Função para expandir cartas com qty > 1
 function expandDeck(deckKey) {
     const deck = CARD_DATABASE[deckKey];
@@ -148,7 +151,7 @@ function expandDeck(deckKey) {
         for (let i = 0; i < qty; i++) {
             expandedCards.push({
                 ...card,
-                instanceId: `${card.id}_${i}`,
+                instanceId: `${card.id}_${globalInstanceCounter++}`,
                 deckOrigin: deckKey
             });
         }
@@ -157,9 +160,13 @@ function expandDeck(deckKey) {
     return expandedCards;
 }
 
-// Função para criar um deck combinado de 2 jumpstarts
+// Função para criar um deck combinado de 1 ou 2 jumpstarts
 function createCombinedDeck(deck1Key, deck2Key) {
     const cards1 = expandDeck(deck1Key);
+    // Se deck2Key não foi fornecido, retorna apenas o primeiro deck
+    if (!deck2Key) {
+        return cards1;
+    }
     const cards2 = expandDeck(deck2Key);
     return [...cards1, ...cards2];
 }

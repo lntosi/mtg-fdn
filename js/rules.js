@@ -617,15 +617,19 @@ class RulesEngine {
                         blocker.damage = (blocker.damage || 0) + damageToBlocker;
                     }
 
-                    // Verificar se bloqueador morre
-                    if (attackerHasDeathtouch && damageToBlocker > 0) {
-                        results.creaturesDied.push(blocker);
-                    } else if (damageToBlocker >= blockerToughness) {
-                        results.creaturesDied.push(blocker);
+                    // Verificar se bloqueador morre (indestructible previne morte por dano - regra 702.12b)
+                    const blockerHasIndestructible = this.hasKeyword(blocker, 'indestructible', false);
+                    if (!blockerHasIndestructible) {
+                        if (attackerHasDeathtouch && damageToBlocker > 0) {
+                            results.creaturesDied.push(blocker);
+                        } else if (damageToBlocker >= blockerToughness) {
+                            results.creaturesDied.push(blocker);
+                        }
                     }
 
-                    // Deathtouch do bloqueador
-                    if (blockerHasDeathtouch && blockerPower > 0) {
+                    // Deathtouch do bloqueador (indestructible previne morte - regra 702.12b)
+                    const attackerHasIndestructible = this.hasKeyword(attacker, 'indestructible', true);
+                    if (blockerHasDeathtouch && blockerPower > 0 && !attackerHasIndestructible) {
                         // Só causa dano se não morreu na fase de first strike
                         if (!attackerHasFirstStrike || blockerHasFirstStrike || damageToBlocker < blockerToughness) {
                             results.creaturesDied.push(attacker);
@@ -663,9 +667,10 @@ class RulesEngine {
                     attacker.damage = (attacker.damage || 0) + damageToAttacker;
                 }
 
-                // Verificar se atacante morre
+                // Verificar se atacante morre (indestructible previne morte por dano - regra 702.12b)
                 const attackerToughness = this.getCreatureToughness(attacker);
-                if (damageToAttacker >= attackerToughness && !results.creaturesDied.includes(attacker)) {
+                const attackerIsIndestructible = this.hasKeyword(attacker, 'indestructible', true);
+                if (damageToAttacker >= attackerToughness && !results.creaturesDied.includes(attacker) && !attackerIsIndestructible) {
                     results.creaturesDied.push(attacker);
                 }
 

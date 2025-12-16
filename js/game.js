@@ -1759,9 +1759,25 @@ class GameState {
     async checkCreatureDeath(creature, owner) {
         const toughness = this.rules.getCreatureToughness(creature);
         const damage = creature.damage || 0;
+        const hasIndestructible = this.rules.hasKeyword(creature, 'indestructible', false);
 
-        if (toughness <= 0 || damage >= toughness) {
-            // Se marcado para exílio ao morrer (Elspeth's Smite), exila em vez de destruir
+        // Toughness <= 0: criatura morre mesmo com indestructible (regra 704.5f)
+        if (toughness <= 0) {
+            if (creature.exileOnDeath) {
+                this.exilePermanent(creature, owner);
+                this.ui.log(`${creature.name} foi exilado`);
+            } else {
+                await this.destroyPermanent(creature, owner);
+            }
+            return;
+        }
+
+        // Dano letal: criatura com indestructible sobrevive (regra 702.12b)
+        if (damage >= toughness) {
+            if (hasIndestructible) {
+                // Criatura sobrevive - indestructible previne destruição por dano
+                return;
+            }
             if (creature.exileOnDeath) {
                 this.exilePermanent(creature, owner);
                 this.ui.log(`${creature.name} foi exilado`);
