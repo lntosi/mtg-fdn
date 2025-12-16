@@ -1071,8 +1071,13 @@ class GameState {
             // Terrenos que precisam escolher cor ao entrar (Uncharted Haven)
             if (card.produces === 'any' && !card.chosenColor) {
                 const deckColors = this.rules.getPlayerDeckColors(player);
+                const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
 
-                if (deckColors.length > 0) {
+                if (deckColors.length === 1) {
+                    // Apenas uma cor no deck - auto-selecionar
+                    card.chosenColor = deckColors[0];
+                    this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
+                } else if (deckColors.length > 1) {
                     if (player === this.player) {
                         // Jogador escolhe a cor
                         const chosenColor = await this.ui.promptColorChoice({
@@ -1081,14 +1086,10 @@ class GameState {
                             colors: deckColors
                         });
                         card.chosenColor = chosenColor;
-
-                        const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
                         this.ui.log(`${card.name} produzirá mana ${colorNames[chosenColor]}`);
                     } else {
                         // IA escolhe a cor mais necessária
                         card.chosenColor = this.chooseColorForAI(player, deckColors);
-
-                        const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
                         this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
                     }
                 }
