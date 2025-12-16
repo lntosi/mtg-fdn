@@ -158,8 +158,9 @@ class GameState {
     }
 
     saveGame() {
-        // Não salvar se o jogo não começou
+        // Não salvar se o jogo não começou ou já acabou
         if (!this.player || !this.opponent) return;
+        if (this.gameOver) return;
 
         const state = {
             player: this.serializePlayer(this.player),
