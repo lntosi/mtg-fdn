@@ -1116,7 +1116,9 @@ class GameState {
                 }
 
                 // Pagar mana
-                this.rules.payMana(card, player);
+                const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+                this.rules.payMana(card, player, selectedLands);
+                if (player === this.player) this.ui.clearLandSelection();
                 window.soundManager.playMagic();
 
                 if (player === this.player) {
@@ -1153,7 +1155,9 @@ class GameState {
                 }
 
                 // Pagar mana antes de selecionar
-                this.rules.payMana(card, player);
+                const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+                this.rules.payMana(card, player, selectedLands);
+                if (player === this.player) this.ui.clearLandSelection();
                 window.soundManager.playMagic();
 
                 // PASSO 1: Escolher sua criatura
@@ -1216,7 +1220,9 @@ class GameState {
                 }
 
                 // Pagar mana antes de selecionar
-                this.rules.payMana(card, player);
+                const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+                this.rules.payMana(card, player, selectedLands);
+                if (player === this.player) this.ui.clearLandSelection();
                 window.soundManager.playMagic();
 
                 this.ui.promptForTarget(card, validTargets, async (target) => {
@@ -1235,7 +1241,9 @@ class GameState {
                 return true;
             } else {
                 // Sem alvo ou é IA
-                this.rules.payMana(card, player);
+                const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+                this.rules.payMana(card, player, selectedLands);
+                if (player === this.player) this.ui.clearLandSelection();
                 window.soundManager.playMagic();
 
                 if (needsTarget && player === this.opponent) {
@@ -1262,7 +1270,9 @@ class GameState {
         } else {
             // Permanentes (criaturas, encantamentos não-aura, artefatos)
             // NOVO: Colocar na pilha para permitir counterspells
-            this.rules.payMana(card, player);
+            const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+            this.rules.payMana(card, player, selectedLands);
+            if (player === this.player) this.ui.clearLandSelection();
 
             this.ui.log(`${player.name} conjurou ${card.name}`);
             window.soundManager?.playMagic();
@@ -1321,7 +1331,9 @@ class GameState {
         // Se é o jogador humano, pedir para selecionar alvo
         if (player === this.player) {
             // Pagar mana antes de selecionar alvo
-            this.rules.payMana(aura, player);
+            const selectedLands = this.ui.selectedLands;
+            this.rules.payMana(aura, player, selectedLands);
+            this.ui.clearLandSelection();
             window.soundManager.playMagic();
 
             this.ui.promptForTarget(aura, validTargets, (target) => {

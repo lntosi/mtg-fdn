@@ -348,8 +348,9 @@ class RulesEngine {
         return totalRemaining >= cost.generic;
     }
 
-    // Pagar mana (tapa terrenos automaticamente)
-    payMana(card, player) {
+    // Pagar mana (tapa terrenos automaticamente, ou usa pré-selecionados)
+    // selectedLands: array opcional de terrenos pré-selecionados pelo jogador
+    payMana(card, player, selectedLands = []) {
         const cost = this.parseCost(card.cost);
 
         // Tolarian Terror: custo reduzido por instant/sorcery no cemitério
@@ -360,7 +361,15 @@ class RulesEngine {
             cost.generic = Math.max(0, cost.generic - instantSorceryCount);
         }
 
-        const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
+        // Separar terrenos pré-selecionados dos demais
+        const selectedIds = new Set(selectedLands.map(l => l.instanceId));
+        const preSelected = player.battlefield.filter(c =>
+            c.type === 'land' && !c.tapped && selectedIds.has(c.instanceId)
+        );
+        const otherLands = player.battlefield.filter(c =>
+            c.type === 'land' && !c.tapped && !selectedIds.has(c.instanceId)
+        );
+
         const manaCreatures = player.battlefield.filter(c =>
             c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
         );
@@ -380,10 +389,20 @@ class RulesEngine {
                 needed -= fromFloating;
             }
 
-            // Usar terrenos da cor (incluindo Uncharted Haven com cor escolhida)
-            for (const land of lands) {
+            // 1. Usar terrenos PRÉ-SELECIONADOS da cor primeiro
+            for (const land of preSelected) {
                 if (needed <= 0) break;
-                // Terreno produz a cor diretamente OU é um Haven que escolheu essa cor
+                const producesColor = land.produces === color ||
+                    (land.produces === 'any' && land.chosenColor === color);
+                if (producesColor && !land.tapped) {
+                    land.tapped = true;
+                    needed--;
+                }
+            }
+
+            // 2. Usar outros terrenos da cor (auto-tap)
+            for (const land of otherLands) {
+                if (needed <= 0) break;
                 const producesColor = land.produces === color ||
                     (land.produces === 'any' && land.chosenColor === color);
                 if (producesColor && !land.tapped) {
@@ -402,7 +421,16 @@ class RulesEngine {
             }
 
             // Usar terrenos "any" que ainda não escolheram cor (fallback)
-            for (const land of lands) {
+            // Primeiro pré-selecionados
+            for (const land of preSelected) {
+                if (needed <= 0) break;
+                if (land.produces === 'any' && !land.chosenColor && !land.tapped) {
+                    land.tapped = true;
+                    needed--;
+                }
+            }
+            // Depois outros
+            for (const land of otherLands) {
                 if (needed <= 0) break;
                 if (land.produces === 'any' && !land.chosenColor && !land.tapped) {
                     land.tapped = true;
@@ -426,7 +454,17 @@ class RulesEngine {
             }
         }
 
-        for (const land of lands) {
+        // Usar terrenos pré-selecionados para genérico primeiro
+        for (const land of preSelected) {
+            if (genericNeeded <= 0) break;
+            if (!land.tapped) {
+                land.tapped = true;
+                genericNeeded--;
+            }
+        }
+
+        // Depois outros terrenos (auto-tap)
+        for (const land of otherLands) {
             if (genericNeeded <= 0) break;
             if (!land.tapped) {
                 land.tapped = true;

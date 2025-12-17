@@ -130,10 +130,15 @@ class SettingsManager {
     }
 
     bindEvents() {
-        // Tecla ESC para abrir/fechar configurações
+        // Tecla ESC para abrir/fechar configurações (ou limpar seleção de terrenos)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !this.isInputFocused()) {
                 e.preventDefault();
+                // Se há terrenos selecionados, limpar a seleção primeiro
+                if (window.game?.ui?.selectedLands?.length > 0) {
+                    window.game.ui.clearLandSelection();
+                    return;
+                }
                 this.toggleModal();
             }
         });

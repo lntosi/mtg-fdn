@@ -24,6 +24,7 @@ class GameUI {
         this.selectedAttackers = [];
         this.blockerAssignments = {};
         this.selectedBlocker = null; // Bloqueador selecionado aguardando escolha de atacante
+        this.selectedLands = []; // Terrenos pré-selecionados para pagamento de mana
         this.waitingForBlockers = false;
         this.waitingForTarget = false;
         this.pendingAura = null;
@@ -1167,6 +1168,15 @@ class GameUI {
 
             // Adicionar ao container apropriado
             if (card.type === 'land') {
+                // Seleção manual de terrenos para mana (apenas terrenos do jogador não tapados)
+                if (isPlayer && !card.tapped) {
+                    cardEl.classList.add('land-selectable');
+                    cardEl.addEventListener('click', () => this.toggleLandSelection(card));
+                }
+                // Marcar terreno como selecionado
+                if (this.selectedLands.some(l => l.instanceId === card.instanceId)) {
+                    cardEl.classList.add('land-selected');
+                }
                 landsContainer.appendChild(cardEl);
             } else if ((card.type === 'enchantment' && card.subtype !== 'Aura') || card.type === 'artifact') {
                 otherContainer.appendChild(cardEl);
@@ -2147,6 +2157,41 @@ class GameUI {
             this.selectedAttackers.push(card);
         }
         this.render();
+    }
+
+    // === Seleção Manual de Terrenos para Mana ===
+    toggleLandSelection(card) {
+        const index = this.selectedLands.findIndex(l => l.instanceId === card.instanceId);
+        if (index > -1) {
+            this.selectedLands.splice(index, 1);
+        } else {
+            this.selectedLands.push(card);
+        }
+        this.render();
+    }
+
+    clearLandSelection() {
+        if (this.selectedLands.length > 0) {
+            this.selectedLands = [];
+            this.render();
+        }
+    }
+
+    // Retorna o mana disponível dos terrenos selecionados
+    getSelectedLandsMana() {
+        const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
+        this.selectedLands.forEach(land => {
+            if (land.produces === 'any') {
+                if (land.chosenColor) {
+                    mana[land.chosenColor]++;
+                } else {
+                    mana.any++;
+                }
+            } else if (land.produces) {
+                mana[land.produces]++;
+            }
+        });
+        return mana;
     }
 
     selectBlocker(card) {
