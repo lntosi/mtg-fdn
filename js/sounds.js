@@ -11,15 +11,14 @@ class SoundManager {
         this.musicPlaying = false;
         this.loaded = false;
 
-        // Sons do jogo - arquivos locais
-        // Formatos suportados: .mp3, .ogg, .wav, .flac
+        // Sons do jogo - arquivos locais (OGG para menor tamanho)
         this.soundUrls = {
-            cardPlay: 'assets/sounds/card-play.wav',      // Carta jogada / magia conjurada
-            cardDraw: 'assets/sounds/card-draw.wav',      // Carta comprada
-            damage: 'assets/sounds/damage.flac',          // Som de combate (ataque/bloqueio/dano)
-            turnStart: 'assets/sounds/turn-start.wav',    // Início do turno do jogador
-            victory: 'assets/sounds/victory.wav',         // Vitória
-            defeat: 'assets/sounds/defeat.wav'            // Derrota
+            cardPlay: 'assets/sounds/card-play.ogg',      // Carta jogada / magia conjurada
+            cardDraw: 'assets/sounds/card-draw.ogg',      // Carta comprada
+            damage: 'assets/sounds/damage.ogg',           // Som de combate (ataque/bloqueio/dano)
+            turnStart: 'assets/sounds/turn-start.ogg',    // Início do turno do jogador
+            victory: 'assets/sounds/victory.ogg',         // Vitória
+            defeat: 'assets/sounds/defeat.ogg'            // Derrota
         };
 
         // Música de fundo
