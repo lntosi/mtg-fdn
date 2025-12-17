@@ -2543,9 +2543,6 @@ class GameState {
             this.saveStateSnapshot(`Atacou com ${attackerNames}`);
         }
 
-        // Som de ataque
-        window.soundManager.playAttack();
-
         this.currentAttackers = attackers;
 
         // Marcar que este jogador atacou neste turno (para Raid)
@@ -2612,7 +2609,6 @@ class GameState {
             this.blockerAssignments = this.ai.chooseBlockers(attackers, blockers);
 
             if (Object.keys(this.blockerAssignments).length > 0) {
-                window.soundManager.playBlock();
                 this.ui.log('Oponente declarou bloqueadores');
                 // Renderizar para mostrar as linhas de bloqueio
                 this.ui.render();
@@ -2662,8 +2658,6 @@ class GameState {
         this.blockerAssignments = assignments;
 
         if (Object.keys(assignments).length > 0) {
-            // Som de bloqueio
-            window.soundManager.playBlock();
             this.ui.log('Você declarou bloqueadores');
         } else {
             this.ui.log('Você não bloqueou');
@@ -2809,6 +2803,11 @@ class GameState {
                     );
                 }
             }
+        }
+
+        // Som de ataque (quando o combate é resolvido)
+        if (activeAttackers.length > 0) {
+            window.soundManager.playAttack();
         }
 
         const results = this.rules.resolveCombatDamage(
