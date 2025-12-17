@@ -448,8 +448,8 @@ class GameUI {
             const baseToughness = card.toughness || 0;
 
             // Verificar se a criatura está atacando (para bônus como Goblin Oriflamme)
-            const isAttacking = this.selectedAttackers?.includes(card) ||
-                               this.game.currentAttackers?.includes(card) || false;
+            const isAttacking = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
+                               this.game.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
 
             // Calcular stats com e sem bônus de ataque para detectar diferença
             const power = this.game.rules ? this.game.rules.getCreaturePower(card, isAttacking) : basePower;
@@ -539,8 +539,8 @@ class GameUI {
         // Keywords adicionais de efeitos permanentes (Auras, Lords, etc.) - excluindo temporárias
         if (card.type === 'creature' && this.game.rules) {
             // Verificar se a criatura está atacando (para keywords condicionais como Crossway Troublemakers)
-            const isAttackingForKeywords = this.selectedAttackers?.includes(card) ||
-                                           this.game.currentAttackers?.includes(card) || false;
+            const isAttackingForKeywords = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
+                                           this.game.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
             const allKeywords = this.game.rules.getCreatureKeywords(card, isAttackingForKeywords);
             const temporaryKws = card.temporaryKeywords || [];
             const additionalKeywords = allKeywords.filter(kw =>
@@ -620,8 +620,8 @@ class GameUI {
             }
 
             // Bônus de ataque - detectar comparando bônus com/sem isAttacking
-            const isAttacking = this.selectedAttackers?.includes(card) ||
-                               this.game.currentAttackers?.includes(card) || false;
+            const isAttacking = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
+                               this.game.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
             if (isAttacking && this.game.rules) {
                 const bonusesAttacking = this.game.rules.getCreatureBonuses(card, true);
                 const bonusesNotAttacking = this.game.rules.getCreatureBonuses(card, false);
@@ -1076,14 +1076,16 @@ class GameUI {
             }
 
             // Destacar atacantes (do jogador ou da IA) com animação
-            const isAttacking = this.selectedAttackers.includes(card) || this.game.currentAttackers.includes(card);
+            // Usar instanceId para comparação mais robusta (evita problemas de referência)
+            const isAttacking = this.selectedAttackers.some(a => a.instanceId === card.instanceId) ||
+                               this.game.currentAttackers.some(a => a.instanceId === card.instanceId);
             if (isAttacking) {
                 cardEl.classList.add('attacking');
                 cardEl.classList.add('attacking-animation');
             }
 
             // Destacar bloqueadores com animação
-            const isBlocking = Object.values(this.blockerAssignments).flat().includes(card);
+            const isBlocking = Object.values(this.blockerAssignments).flat().some(b => b.instanceId === card.instanceId);
             if (isBlocking) {
                 cardEl.classList.add('blocking');
                 cardEl.classList.add('blocking-animation');
@@ -1368,8 +1370,8 @@ class GameUI {
             const baseToughness = (card.toughness || 0);
 
             // Verificar se a criatura está atacando (para bônus como Goblin Oriflamme)
-            const isAttacking = this.selectedAttackers?.includes(card) ||
-                               this.game?.currentAttackers?.includes(card) || false;
+            const isAttacking = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
+                               this.game?.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
 
             if (this.game && this.game.rules) {
                 power = this.game.rules.getCreaturePower(card, isAttacking);
@@ -2155,12 +2157,12 @@ class GameUI {
         }
 
         // Verificar se já está bloqueando - se sim, remover do bloqueio
-        const alreadyBlocking = Object.values(this.blockerAssignments).flat().includes(card);
+        const alreadyBlocking = Object.values(this.blockerAssignments).flat().some(b => b.instanceId === card.instanceId);
         if (alreadyBlocking) {
             // Remover do bloqueio
             for (const attackerId in this.blockerAssignments) {
                 const blockers = this.blockerAssignments[attackerId];
-                const idx = blockers.indexOf(card);
+                const idx = blockers.findIndex(b => b.instanceId === card.instanceId);
                 if (idx > -1) {
                     blockers.splice(idx, 1);
                     if (blockers.length === 0) {
