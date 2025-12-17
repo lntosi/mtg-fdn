@@ -1987,6 +1987,8 @@ class GameState {
                 card.tapped = true;
                 opponent.life -= 1;
                 player.life += 1;
+                // Som de dano/perda de vida
+                window.soundManager?.playDamage();
                 // Marcar perda de vida
                 if (opponent === this.player) {
                     this.playerLostLifeThisTurn = true;

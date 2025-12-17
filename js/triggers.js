@@ -182,6 +182,8 @@ class TriggerManager {
     _handleVampireSpawnETB(controller, opponent) {
         opponent.life -= 2;
         controller.life += 2;
+        // Som de dano/perda de vida
+        window.soundManager?.playDamage();
         // Marcar que oponente perdeu vida neste turno
         if (opponent === this.player) {
             this.game.playerLostLifeThisTurn = true;
@@ -530,6 +532,11 @@ class TriggerManager {
             } else {
                 this.game.opponentLostLifeThisTurn = true;
             }
+        }
+
+        // Som de dano se alguma Bloodwitch disparou
+        if (bloodwitchTriggered) {
+            window.soundManager?.playDamage();
         }
 
         // Verificar fim de jogo após triggers de perda de vida
