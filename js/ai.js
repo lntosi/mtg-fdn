@@ -1,9 +1,61 @@
-// === Inteligência Artificial Simples ===
+// === Inteligência Artificial com Níveis de Dificuldade ===
+
+// Configurações de dificuldade da IA
+const AI_DIFFICULTY = {
+    aprendiz: {
+        name: 'Aprendiz',
+        description: 'IA fácil - comete erros, não usa habilidades ativadas',
+        attackWithZeroPower: true,      // Ataca mesmo com power 0 (erro)
+        useActivatedAbilities: false,   // Não usa habilidades ativadas
+        holdManaForInstants: false,     // Não guarda mana para respostas
+        evaluateTrades: false,          // Não avalia trades corretamente
+        aggressiveness: 0.9             // Muito agressivo (ataca mais)
+    },
+    mago: {
+        name: 'Mago',
+        description: 'IA equilibrada - joga de forma competente',
+        attackWithZeroPower: false,     // Não ataca com power 0
+        useActivatedAbilities: true,    // Usa habilidades quando sobra mana
+        holdManaForInstants: false,     // Ainda não guarda mana
+        evaluateTrades: true,           // Avalia trades básicos
+        aggressiveness: 0.6             // Equilibrado
+    },
+    planeswalker: {
+        name: 'Planeswalker',
+        description: 'IA difícil - joga de forma otimizada',
+        attackWithZeroPower: false,
+        useActivatedAbilities: true,    // Usa habilidades estrategicamente
+        holdManaForInstants: true,      // Guarda mana para respostas
+        evaluateTrades: true,
+        aggressiveness: 0.4             // Mais cauteloso, trades inteligentes
+    }
+};
+
+// Exportar constantes
+window.AI_DIFFICULTY = AI_DIFFICULTY;
 
 class AIPlayer {
-    constructor(gameState, rulesEngine) {
+    constructor(gameState, rulesEngine, difficulty = 'mago') {
         this.game = gameState;
         this.rules = rulesEngine;
+        this.setDifficulty(difficulty);
+    }
+
+    // Define o nível de dificuldade da IA
+    setDifficulty(level) {
+        if (AI_DIFFICULTY[level]) {
+            this.difficulty = AI_DIFFICULTY[level];
+            this.difficultyLevel = level;
+        } else {
+            console.warn(`Dificuldade '${level}' não encontrada, usando 'mago'`);
+            this.difficulty = AI_DIFFICULTY.mago;
+            this.difficultyLevel = 'mago';
+        }
+    }
+
+    // Retorna o nível de dificuldade atual
+    getDifficulty() {
+        return this.difficultyLevel;
     }
 
     // Executa a vez da IA
@@ -89,6 +141,65 @@ class AIPlayer {
                     playedSomething = true;
                 }
             }
+        }
+
+        // 3. Usar habilidades ativadas (Main Phase 2, quando sobra mana)
+        if (phase === 2 && this.difficulty.useActivatedAbilities) {
+            await this.useActivatedAbilities();
+        }
+    }
+
+    // Usa habilidades ativadas quando vale a pena
+    async useActivatedAbilities() {
+        const opponent = this.game.opponent;
+        const player = this.game.player;
+
+        // Encontrar criaturas com habilidades ativadas
+        const creaturesWithAbilities = opponent.battlefield.filter(card =>
+            card.type === 'creature' &&
+            this.game.canActivateAbility &&
+            this.game.canActivateAbility(card, opponent)
+        );
+
+        for (const creature of creaturesWithAbilities) {
+            // Verificar se ainda pode ativar (mana pode ter mudado)
+            if (!this.game.canActivateAbility(creature, opponent)) continue;
+
+            // Decidir se vale a pena ativar
+            const shouldActivate = this.shouldActivateAbility(creature, opponent, player);
+
+            if (shouldActivate) {
+                this.game.ui.log(`IA ativa habilidade de ${creature.name}`);
+                await this.delay(800);
+                await this.game.activateAbility(creature, opponent);
+                this.game.ui.render();
+                await this.delay(1000);
+            }
+        }
+    }
+
+    // Decide se vale a pena ativar uma habilidade
+    shouldActivateAbility(creature, controller, opponent) {
+        switch (creature.id) {
+            case 'vampire_neonate':
+                // Sempre vale ativar: drena 1 vida por 2 mana
+                // Melhor que atacar com 0 de power
+                return true;
+
+            case 'spectral_sailor':
+                // Comprar carta por 4 mana - só se tiver mana sobrando
+                const mana = this.rules.calculateAvailableMana(controller);
+                const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
+                return totalMana >= 4;
+
+            case 'goblin_smuggler':
+                // Tornar criatura inbloqueável - útil antes do combate
+                // Na Main Phase 2 não faz sentido
+                return false;
+
+            default:
+                // Por padrão, ativar se possível
+                return true;
         }
     }
 
@@ -211,6 +322,11 @@ class AIPlayer {
 
         possibleAttackers.forEach(attacker => {
             const attackerPower = this.rules.getCreaturePower(attacker);
+
+            // Modo Mago+: não atacar com criaturas de power 0 (não causa dano)
+            if (!this.difficulty.attackWithZeroPower && attackerPower <= 0) {
+                return; // Skip this attacker
+            }
             const attackerToughness = this.rules.getCreatureToughness(attacker);
 
             // Verificar se algum bloqueador pode matar esta criatura

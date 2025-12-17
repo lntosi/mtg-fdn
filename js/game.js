@@ -303,6 +303,10 @@ class GameState {
         this.playerName = options.playerName || 'Você';
         this.playerAvatar = options.playerAvatar || 'jace';
         this.playerFirst = options.playerFirst !== undefined ? options.playerFirst : true;
+        this.aiDifficulty = options.aiDifficulty || 'mago';
+
+        // Configurar dificuldade da IA
+        this.ai.setDifficulty(this.aiDifficulty);
 
         // Variáveis locais para uso no método
         const startingLife = this.startingLife;

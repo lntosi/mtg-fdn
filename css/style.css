@@ -3461,6 +3461,21 @@ body {
     color: #fff;
 }
 
+/* Difficulty description */
+.difficulty-description {
+    font-size: 0.8em;
+    color: #a0a0a0;
+    font-style: italic;
+    margin-top: 5px;
+    text-align: right;
+    width: 100%;
+}
+
+/* Wrap option-section for difficulty (needs description below) */
+.option-section:has(.difficulty-description) {
+    flex-wrap: wrap;
+}
+
 /* AI Deck Manual Selection */
 .ai-deck-options {
     padding: 10px;

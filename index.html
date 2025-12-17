@@ -229,6 +229,19 @@
                         <option value="40">40</option>
                     </select>
                 </div>
+
+                <!-- Dificuldade da IA -->
+                <div class="option-section">
+                    <label for="ai-difficulty">Dificuldade da IA:</label>
+                    <select id="ai-difficulty">
+                        <option value="aprendiz">🟢 Aprendiz (Fácil)</option>
+                        <option value="mago" selected>🟡 Mago (Normal)</option>
+                        <option value="planeswalker">🔴 Planeswalker (Difícil)</option>
+                    </select>
+                    <div class="difficulty-description" id="difficulty-description">
+                        IA equilibrada - joga de forma competente
+                    </div>
+                </div>
             </div>
 
             <button id="btn-start-game" disabled>Iniciar Jogo</button>

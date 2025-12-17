@@ -48,25 +48,26 @@ Ordem sugerida (do mais simples ao mais complexo):
 #### 2.1 Essencial
 - [x] **Sequenciamento de cartas condicionais**: IA segura cartas com ETBs condicionais (Bloodtithe Collector, Raid) para Main Phase 2
 - [ ] **Uso de remoções**: IA usar feitiços de remoção estrategicamente
-- [ ] **Avaliação de trades**: IA calcular melhor trocas de combate
-- [ ] **Timing de instants**: IA jogar instants no momento certo
-- [ ] **Criaturas com poder 0**: IA não deveria atacar com criaturas sem poder (ex: Vampire Neonate 0/3)
-- [ ] **Uso de habilidades ativadas**: IA deveria priorizar habilidades ativadas quando vantajosas (ex: Vampire Neonate drena 1 vida por 2 mana em vez de atacar com 0 dano)
+- [x] **Avaliação de trades**: IA calcular melhor trocas de combate (modo Mago+)
+- [ ] **Timing de instants**: IA jogar instants no momento certo (modo Planeswalker)
+- [x] **Criaturas com poder 0**: IA não ataca com criaturas sem poder (modo Mago+)
+- [x] **Uso de habilidades ativadas**: IA usa habilidades quando sobra mana (modo Mago+)
 
-#### 2.2 Níveis de Dificuldade
+#### 2.2 Níveis de Dificuldade ✅
 
 Sistema de dificuldade com 3 níveis que afetam o comportamento estratégico da IA:
 
-| Nível | Nome | Comportamento |
-|:-----:|------|---------------|
-| 🟢 | **Aprendiz** (Fácil) | Ataques subótimos, não bloqueia bem, não guarda mana para instants |
-| 🟡 | **Mago** (Normal) | Joga corretamente, decisões balanceadas |
-| 🔴 | **Planeswalker** (Difícil) | Bluffa, guarda remoção, faz trades inteligentes, antecipa jogadas |
+| Nível | Nome | Comportamento | Status |
+|:-----:|------|---------------|:------:|
+| 🟢 | **Aprendiz** (Fácil) | Ataques subótimos, não usa habilidades ativadas, não guarda mana | ✅ |
+| 🟡 | **Mago** (Normal) | Não ataca com power 0, usa habilidades ativadas, avalia trades | ✅ **Padrão** |
+| 🔴 | **Planeswalker** (Difícil) | Guarda mana para instants, trades inteligentes, joga otimizado | 🚧 |
 
-**Implementação sugerida:**
-- [ ] Seletor de dificuldade na tela inicial (após escolha de decks)
-- [ ] Classe `AIDifficulty` com estratégias por nível
-- [ ] Parâmetros ajustáveis: agressividade, avaliação de trades, uso de remoções
+**Implementação:**
+- [x] Seletor de dificuldade na tela inicial (após escolha de decks)
+- [x] Constantes `AI_DIFFICULTY` com parâmetros por nível
+- [x] Parâmetros: `attackWithZeroPower`, `useActivatedAbilities`, `evaluateTrades`, `holdManaForInstants`
+- [ ] Modo Planeswalker: refinamentos futuros
 
 #### 2.3 Desejável
 - [ ] **Velocidade configurável**: Ajustar velocidade das jogadas da IA
