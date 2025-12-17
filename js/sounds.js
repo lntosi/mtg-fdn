@@ -15,7 +15,8 @@ class SoundManager {
         this.soundUrls = {
             cardPlay: 'assets/sounds/card-play.ogg',      // Carta jogada / magia conjurada
             cardDraw: 'assets/sounds/card-draw.ogg',      // Carta comprada
-            damage: 'assets/sounds/damage.ogg',           // Som de combate (ataque/bloqueio/dano)
+            attack: 'assets/sounds/attack.ogg',           // Atacantes declarados
+            damage: 'assets/sounds/damage.ogg',           // Dano de combate
             turnStart: 'assets/sounds/turn-start.ogg',    // Início do turno do jogador
             victory: 'assets/sounds/victory.ogg',         // Vitória
             defeat: 'assets/sounds/defeat.ogg'            // Derrota
@@ -85,9 +86,9 @@ class SoundManager {
     // Sons específicos do jogo
     playCardPlay() { this.play('cardPlay'); }
     playCardDraw() { this.play('cardDraw'); }
-    playAttack() { this.play('damage'); }
-    playBlock() { this.play('damage', 400); }     // Delay após attack
-    playDamage() { this.play('damage', 600); }    // Delay após attack/block
+    playAttack() { this.play('attack'); }
+    playBlock() { /* removido - sem som de bloqueio */ }
+    playDamage() { this.play('damage'); }
     playMagic() { this.play('cardPlay'); }        // Usa mesmo som de cardPlay
     playTurnStart() { this.play('turnStart'); }
     playVictory() { this.play('victory'); }

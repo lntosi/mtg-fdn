@@ -5,7 +5,7 @@ class SettingsManager {
         // Valores padrão para todas as configurações
         this.defaults = {
             soundEnabled: true,
-            sfxVolume: 70,          // Volume dos efeitos sonoros (70%)
+            sfxVolume: 50,          // Volume dos efeitos sonoros (50%)
             musicVolume: 80,        // Volume da música de fundo (80%)
             logPanelEnabled: false, // Histórico desabilitado por padrão
             undoEnabled: false      // Undo desabilitado por padrão
