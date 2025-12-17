@@ -1999,14 +1999,25 @@ body {
 }
 
 /* === Animações de Combate === */
+/* Nota: Atacantes são virados (tapped), então a animação deve preservar a rotação */
 .card.attacking-animation {
     animation: attack-move 0.5s ease-out forwards;
+}
+
+.card.tapped.attacking-animation {
+    animation: attack-move-tapped 0.5s ease-out forwards;
 }
 
 @keyframes attack-move {
     0% { transform: translateY(0); }
     50% { transform: translateY(-30px) scale(1.1); }
     100% { transform: translateY(-15px); }
+}
+
+@keyframes attack-move-tapped {
+    0% { transform: rotate(90deg) translateY(0); }
+    50% { transform: rotate(90deg) translateY(-30px) scale(1.1); }
+    100% { transform: rotate(90deg) translateY(-15px); }
 }
 
 .card.blocking-animation {
