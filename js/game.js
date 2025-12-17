@@ -3431,10 +3431,26 @@ class GameState {
         this.phase = snapshot.phase;
         this.activePlayer = snapshot.activePlayerIsHuman ? this.player : this.opponent;
 
-        // Restaurar combate
-        this.currentAttackers = [...snapshot.currentAttackers];
-        this.blockerAssignments = JSON.parse(JSON.stringify(snapshot.blockerAssignments));
-        this.unblockableThisTurn = [...snapshot.unblockableThisTurn];
+        // Restaurar combate - precisamos encontrar as referências corretas no battlefield restaurado
+        const allBattlefieldCards = [...this.player.battlefield, ...this.opponent.battlefield];
+
+        this.currentAttackers = snapshot.currentAttackers.map(oldAttacker => {
+            // Encontrar a carta correspondente pelo instanceId
+            return allBattlefieldCards.find(c => c.instanceId === oldAttacker.instanceId) || oldAttacker;
+        });
+
+        // Restaurar blocker assignments com referências corretas
+        this.blockerAssignments = {};
+        for (const [attackerId, blockers] of Object.entries(snapshot.blockerAssignments)) {
+            this.blockerAssignments[attackerId] = blockers.map(oldBlocker => {
+                return allBattlefieldCards.find(c => c.instanceId === oldBlocker.instanceId) || oldBlocker;
+            });
+        }
+
+        this.unblockableThisTurn = snapshot.unblockableThisTurn.map(oldCard => {
+            return allBattlefieldCards.find(c => c.instanceId === oldCard.instanceId) || oldCard;
+        });
+
         this.attackedThisTurn = { ...snapshot.attackedThisTurn };
 
         // Restaurar estado de turno
