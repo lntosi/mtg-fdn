@@ -180,18 +180,9 @@ class TriggerManager {
     }
 
     _handleVampireSpawnETB(controller, opponent) {
-        opponent.life -= 2;
-        controller.life += 2;
-        // Som de dano/perda de vida
-        window.soundManager?.playDamage();
-        // Marcar que oponente perdeu vida neste turno
-        if (opponent === this.player) {
-            this.game.playerLostLifeThisTurn = true;
-        } else {
-            this.game.opponentLostLifeThisTurn = true;
-        }
+        this.game.loseLife(opponent, 2);
+        this.game.gainLife(controller, 2);
         this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
-        // Verificar fim de jogo após perda de vida
         this.game.checkGameOver();
     }
 
@@ -506,37 +497,19 @@ class TriggerManager {
         // IMPORTANTE: Exclui a própria criatura morrendo do loop (tratada separadamente abaixo)
         owner.battlefield.forEach(card => {
             if (card.id === 'vengeful_bloodwitch' && card !== creature) {
-                opponent.life -= 1;
-                owner.life += 1;
+                this.game.loseLife(opponent, 1);
+                this.game.gainLife(owner, 1);
                 this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
                 bloodwitchTriggered = true;
-
-                // Marcar que oponente perdeu vida neste turno (para outros triggers)
-                if (opponent === this.player) {
-                    this.game.playerLostLifeThisTurn = true;
-                } else {
-                    this.game.opponentLostLifeThisTurn = true;
-                }
             }
         });
 
         // Se a própria Bloodwitch morreu, ela também dispara uma vez (antes de ir pro cemitério)
         if (creature.id === 'vengeful_bloodwitch') {
-            opponent.life -= 1;
-            owner.life += 1;
+            this.game.loseLife(opponent, 1);
+            this.game.gainLife(owner, 1);
             this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
             bloodwitchTriggered = true;
-
-            if (opponent === this.player) {
-                this.game.playerLostLifeThisTurn = true;
-            } else {
-                this.game.opponentLostLifeThisTurn = true;
-            }
-        }
-
-        // Som de dano se alguma Bloodwitch disparou
-        if (bloodwitchTriggered) {
-            window.soundManager?.playDamage();
         }
 
         // Verificar fim de jogo após triggers de perda de vida
@@ -565,14 +538,14 @@ class TriggerManager {
                             noText: 'Não pagar'
                         });
                         if (shouldPay) {
-                            owner.life -= 2;
+                            this.game.loseLife(owner, 2, { silent: true }); // Custo, não dano
                             this.rules.drawCard(owner);
                             this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                         }
                     } else {
                         // IA sempre paga se tiver vida suficiente (> 4 para ser seguro)
                         if (owner.life > 4) {
-                            owner.life -= 2;
+                            this.game.loseLife(owner, 2, { silent: true }); // Custo, não dano
                             this.rules.drawCard(owner);
                             this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                         }
@@ -665,7 +638,7 @@ class TriggerManager {
                     card.powerModifier = (card.powerModifier || 0) + 1;
                     card.toughnessModifier = (card.toughnessModifier || 0) + 1;
                     // Ganhar 1 vida
-                    controller.life += 1;
+                    this.game.gainLife(controller, 1);
                     this.ui.log(`Leonin Vanguard: +1/+1 e ${controller.name} ganhou 1 vida`);
                     this.ui.render();
                 }

@@ -117,6 +117,43 @@ class GameState {
         }
     }
 
+    // === Métodos Centralizados de Vida ===
+
+    /**
+     * Faz um jogador perder vida (centraliza som e tracking)
+     * @param {Object} player - Jogador que perde vida
+     * @param {number} amount - Quantidade de vida a perder
+     * @param {Object} options - Opções adicionais
+     * @param {boolean} options.silent - Se true, não toca som (para custos de vida)
+     */
+    loseLife(player, amount, options = {}) {
+        if (amount <= 0) return;
+        player.life -= amount;
+
+        // Rastrear perda de vida para triggers
+        if (player === this.player) {
+            this.playerLostLifeThisTurn = true;
+        } else {
+            this.opponentLostLifeThisTurn = true;
+        }
+
+        // Som de dano (exceto para custos de vida)
+        if (!options.silent) {
+            window.soundManager?.playDamage();
+        }
+    }
+
+    /**
+     * Faz um jogador ganhar vida
+     * @param {Object} player - Jogador que ganha vida
+     * @param {number} amount - Quantidade de vida a ganhar
+     */
+    gainLife(player, amount) {
+        if (amount <= 0) return;
+        player.life += amount;
+        // Não toca som para ganho de vida (pode adicionar depois se quiser)
+    }
+
     init() {
         this.rules = new RulesEngine(this);
         this.ui = new GameUI(this);
@@ -1511,7 +1548,7 @@ class GameState {
             case 'moment_of_triumph':
                 target.powerModifier = (target.powerModifier || 0) + 2;
                 target.toughnessModifier = (target.toughnessModifier || 0) + 2;
-                caster.life += 2;
+                this.gainLife(caster, 2);
                 this.ui.log(`${target.name} ganhou +2/+2. ${caster.name} ganhou 2 vidas`);
                 break;
 
@@ -1543,7 +1580,7 @@ class GameState {
             case 'moment_of_craving':
                 target.powerModifier = (target.powerModifier || 0) - 2;
                 target.toughnessModifier = (target.toughnessModifier || 0) - 2;
-                caster.life += 2;
+                this.gainLife(caster, 2);
                 this.ui.log(`${target.name} recebeu -2/-2. ${caster.name} ganhou 2 vidas`);
                 await this.checkCreatureDeath(target, targetOwner);
                 break;
@@ -1985,18 +2022,9 @@ class GameState {
                 // 2, T: cada oponente perde 1 vida e você ganha 1 vida
                 this.payGenericMana(2, player);
                 card.tapped = true;
-                opponent.life -= 1;
-                player.life += 1;
-                // Som de dano/perda de vida
-                window.soundManager?.playDamage();
-                // Marcar perda de vida
-                if (opponent === this.player) {
-                    this.playerLostLifeThisTurn = true;
-                } else {
-                    this.opponentLostLifeThisTurn = true;
-                }
+                this.loseLife(opponent, 1);
+                this.gainLife(player, 1);
                 this.ui.log(`Vampire Neonate: ${opponent.name} perdeu 1 vida, ${player.name} ganhou 1 vida`);
-                // Verificar fim de jogo após perda de vida
                 this.checkGameOver();
                 break;
 
@@ -2835,24 +2863,15 @@ class GameState {
         });
 
         // Aplicar dano aos jogadores
-        defendingPlayer.life -= results.damageToPlayers.defender;
         if (results.damageToPlayers.defender > 0) {
-            // Som de dano
-            window.soundManager.playDamage();
-            // Rastrear perda de vida
-            if (defendingPlayer === this.player) {
-                this.playerLostLifeThisTurn = true;
-            } else {
-                this.opponentLostLifeThisTurn = true;
-            }
-            // Verificar fim de jogo imediatamente após dano de combate
+            this.loseLife(defendingPlayer, results.damageToPlayers.defender);
             this.checkGameOver();
             if (this.gameOver) return;
         }
 
-        // Aplicar vida ganha
-        attackingPlayer.life += results.lifeGained.attacker;
+        // Aplicar vida ganha (lifelink)
         if (results.lifeGained.attacker > 0) {
+            this.gainLife(attackingPlayer, results.lifeGained.attacker);
             this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas (lifelink)`);
         }
 
