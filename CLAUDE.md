@@ -40,7 +40,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `AIPlayer` - Decides which cards to play, attackers, blockers
 
 **Game Flow:**
-1. Player selects 2 decks → combined 40-card library
+1. Player selects 1-2 decks → 20 or 40-card library (AI mirrors player's deck count)
 2. Turn phases: Untap → Upkeep → Draw → Main1 → Combat → Main2 → End
 3. Combat: declareAttackers → promptForBlockers → resolveCombat
 4. AI turn executed via executeAITurn() → continueAfterBlocking() → finishAITurn()
@@ -449,8 +449,9 @@ All 140 tests must pass before committing.
 
 **Create Token:**
 ```javascript
+// Use globalInstanceCounter from cards.js for unique IDs
 controller.battlefield.push({
-    instanceId: `token_name_${Date.now()}`,
+    instanceId: `token_name_${globalInstanceCounter++}`,
     name: 'Token Name',
     type: 'creature',
     subtype: 'Type',
