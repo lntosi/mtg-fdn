@@ -232,7 +232,17 @@ Todos os 5 decks foram validados contra a API do Scryfall:
 #### Settings Modal Redesenhado
 - Layout em duas colunas (Som/Exibição/Debug | Priority Stops)
 - Modal arrastável pelo título
-- Botão "Resetar Padrão" (SFX 70%, Música 80%, Log OFF, Undo OFF)
+- Botão "Resetar Padrão" (SFX 50%, Música 80%, Log OFF, Undo OFF)
+
+#### Sistema de Som Simplificado
+- Consolidação de 9 para 6 efeitos sonoros (cardPlay, attack, damage, turnStart, victory, defeat)
+- Conversão para OGG (redução de 92% no tamanho - ~4.3MB → ~350KB)
+- Som de ataque toca na resolução do combate (não na declaração)
+- Métodos centralizados `loseLife()` e `gainLife()` garantem som consistente independente da fonte
+
+#### Correção de Animação de Ataque
+- Criaturas viradas (tapped) agora mantêm rotação durante animação de ataque
+- Keyframes separados para criaturas normais vs tapped
 
 ---
 
