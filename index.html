@@ -26,8 +26,11 @@
                         <div class="library-stack"></div>
                         <span class="library-count">0</span>
                     </div>
-                    <div class="graveyard" id="opponent-graveyard">
+                    <div class="graveyard" id="opponent-graveyard" title="Cemitério do Oponente">
                         <span class="graveyard-count">0</span>
+                    </div>
+                    <div class="exile-zone" id="opponent-exile" title="Exílio do Oponente">
+                        <span class="exile-count">0</span>
                     </div>
                 </div>
             </div>
@@ -87,8 +90,11 @@
                         <div class="library-stack"></div>
                         <span class="library-count">0</span>
                     </div>
-                    <div class="graveyard" id="player-graveyard">
+                    <div class="graveyard" id="player-graveyard" title="Seu Cemitério">
                         <span class="graveyard-count">0</span>
+                    </div>
+                    <div class="exile-zone" id="player-exile" title="Seu Exílio">
+                        <span class="exile-count">0</span>
                     </div>
                 </div>
             </div>
@@ -278,12 +284,6 @@
         </div>
     </div>
 
-    <!-- Popup de Cemitério -->
-    <div id="graveyard-popup" class="graveyard-popup hidden">
-        <div class="graveyard-popup-title">Cemitério</div>
-        <div class="graveyard-popup-cards"></div>
-    </div>
-
     <!-- Preview de Carta Ampliado -->
     <div id="card-preview" class="card-preview hidden">
         <div class="card-preview-image"></div>
@@ -385,6 +385,16 @@
             <p id="graveyard-modal-count">0 cartas</p>
             <div id="graveyard-modal-cards" class="graveyard-modal-cards"></div>
             <button id="btn-close-graveyard" class="btn-close-modal">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Exílio -->
+    <div id="exile-modal" class="modal hidden">
+        <div class="modal-content exile-modal-content">
+            <h2 id="exile-modal-title">Exílio</h2>
+            <p id="exile-modal-count">0 cartas</p>
+            <div id="exile-modal-cards" class="exile-modal-cards"></div>
+            <button id="btn-close-exile" class="btn-close-modal">Fechar</button>
         </div>
     </div>
 

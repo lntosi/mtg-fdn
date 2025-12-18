@@ -168,71 +168,72 @@ body {
     opacity: 1;
 }
 
-/* === Popup do Cemitério === */
-.graveyard-popup {
-    position: fixed;
-    background: rgba(20, 10, 25, 0.98);
-    border: 2px solid rgba(180, 100, 180, 0.6);
-    border-radius: 12px;
-    padding: 15px;
-    z-index: 10000;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    max-width: 500px;
-    max-height: 400px;
-    overflow: hidden;
-    pointer-events: none;
+/* === Zona de Exílio === */
+.exile-zone {
+    position: relative;
+    width: 70px;
+    height: 98px;
+    background: rgba(40, 20, 60, 0.6);
+    border-radius: 5px;
+    border: 2px dashed rgba(120, 80, 180, 0.4);
+    display: none; /* Oculto por padrão, mostrar quando houver cartas */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.graveyard-popup.hidden {
-    display: none;
-}
-
-.graveyard-popup-title {
-    color: #c0a0c0;
-    font-weight: bold;
-    font-size: 0.9em;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-bottom: 1px solid rgba(180, 100, 180, 0.3);
-    padding-bottom: 8px;
-}
-
-.graveyard-popup-cards {
+.exile-zone.has-cards {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    max-height: 330px;
-    overflow-y: auto;
-    padding-right: 5px;
 }
 
-.graveyard-popup-cards::-webkit-scrollbar {
-    width: 5px;
+.exile-zone::before {
+    content: '⊘';
+    font-size: 1.8em;
+    opacity: 0.6;
+    color: #a080c0;
 }
 
-.graveyard-popup-cards::-webkit-scrollbar-thumb {
-    background: rgba(180, 100, 180, 0.5);
-    border-radius: 3px;
-}
-
-.graveyard-popup .card {
-    width: 80px;
-    height: 112px;
-    flex-shrink: 0;
-    pointer-events: auto;
-}
-
-.graveyard-popup .card:hover {
-    transform: scale(2) translateY(-20px);
-    z-index: 10001 !important;
-}
-
-.graveyard-popup-empty {
-    color: rgba(150, 100, 150, 0.6);
-    font-style: italic;
-    padding: 20px;
+.exile-count {
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #6c3483, #8e44ad);
+    color: white;
+    font-size: 0.75em;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 10px;
+    min-width: 28px;
     text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.exile-zone:hover {
+    border-color: rgba(140, 100, 200, 0.7);
+    background: rgba(60, 30, 90, 0.7);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(140, 100, 200, 0.5);
+}
+
+.exile-top-card {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 3px;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6em;
+    color: rgba(160, 128, 192, 0.8);
+}
+
+.exile-zone:hover .exile-top-card {
+    opacity: 1;
 }
 
 /* Ajustar áreas dos jogadores */
@@ -2804,6 +2805,57 @@ body {
 .graveyard:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(180, 100, 180, 0.5);
+}
+
+/* === Modal de Exílio === */
+.exile-modal-content {
+    max-width: 800px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.exile-modal-content h2 {
+    margin-bottom: 5px;
+    color: #a080c0;
+}
+
+#exile-modal-count {
+    color: #9070b0;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.exile-modal-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(40, 20, 60, 0.3);
+    border-radius: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+    min-height: 150px;
+}
+
+.exile-modal-cards .card {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.exile-modal-cards .card:hover {
+    transform: scale(1.15);
+    z-index: 10;
+}
+
+.exile-modal-cards .exile-empty {
+    color: #9070b0;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 /* === Modal do Frenzied Goblin === */

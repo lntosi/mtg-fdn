@@ -160,150 +160,14 @@ class GameState {
         this.ai = new AIPlayer(this, this.rules);
         this.triggers = new TriggerManager(this);
 
-        // Aviso antes de sair da página durante combate
+        // Aviso antes de sair da página durante uma partida
         window.addEventListener('beforeunload', (e) => {
-            const inCombat = this.currentAttackers.length > 0 ||
-                           (this.phase && this.phase.includes('combat'));
-            if (inCombat) {
+            // Avisar se o jogo está em andamento
+            if (this.player && this.opponent && !this.gameOver) {
                 e.preventDefault();
-                e.returnValue = 'Você está no meio do combate. Sair vai perder o progresso.';
+                e.returnValue = 'Você está no meio de uma partida. Sair vai perder o progresso.';
             }
         });
-
-        // Tentar restaurar jogo salvo
-        if (this.hasSavedGame()) {
-            this.showRestorePrompt();
-        }
-    }
-
-    // === Sistema de Persistência ===
-
-    hasSavedGame() {
-        return localStorage.getItem('mtg_game_state') !== null;
-    }
-
-    showRestorePrompt() {
-        const saved = JSON.parse(localStorage.getItem('mtg_game_state'));
-        const turnInfo = `Turno ${saved.turnNumber}`;
-        const lifeInfo = `Você: ${saved.player.life} vida | Oponente: ${saved.opponent.life} vida`;
-
-        if (confirm(`Jogo salvo encontrado!\n${turnInfo}\n${lifeInfo}\n\nDeseja continuar?`)) {
-            this.restoreGame();
-        } else {
-            this.clearSavedGame();
-        }
-    }
-
-    saveGame() {
-        // Não salvar se o jogo não começou ou já acabou
-        if (!this.player || !this.opponent) return;
-        if (this.gameOver) return;
-
-        const state = {
-            player: this.serializePlayer(this.player),
-            opponent: this.serializePlayer(this.opponent),
-            activePlayerIsHuman: this.activePlayer === this.player,
-            phase: this.phase,
-            turnNumber: this.turnNumber,
-            playerDeckKeys: this.playerDeckKeys,
-            aiDeckKeys: this.aiDeckKeys,
-            timestamp: Date.now()
-        };
-
-        localStorage.setItem('mtg_game_state', JSON.stringify(state));
-    }
-
-    serializePlayer(player) {
-        return {
-            name: player.name,
-            life: player.life,
-            avatar: player.avatar,
-            library: player.library.map(c => this.serializeCard(c)),
-            hand: player.hand.map(c => this.serializeCard(c)),
-            battlefield: player.battlefield.map(c => this.serializeCard(c)),
-            graveyard: player.graveyard.map(c => this.serializeCard(c)),
-            landsPlayedThisTurn: player.landsPlayedThisTurn
-        };
-    }
-
-    serializeCard(card) {
-        return {
-            ...card,
-            // Garantir que propriedades de estado são salvas
-            tapped: card.tapped || false,
-            summoningSickness: card.summoningSickness || false,
-            damage: card.damage || 0,
-            powerModifier: card.powerModifier || 0,
-            toughnessModifier: card.toughnessModifier || 0
-        };
-    }
-
-    restoreGame() {
-        try {
-            const saved = JSON.parse(localStorage.getItem('mtg_game_state'));
-            if (!saved) return false;
-
-            // Restaurar jogadores
-            this.player = this.deserializePlayer(saved.player);
-            this.opponent = this.deserializePlayer(saved.opponent);
-
-            // Restaurar estado do jogo
-            this.activePlayer = saved.activePlayerIsHuman ? this.player : this.opponent;
-            this.phase = saved.phase;
-            this.turnNumber = saved.turnNumber;
-            this.playerDeckKeys = saved.playerDeckKeys;
-            this.aiDeckKeys = saved.aiDeckKeys;
-
-            // Limpar estado de combate (para evitar bugs)
-            this.currentAttackers = [];
-            this.blockerAssignments = {};
-
-            // Se estava no meio do turno da IA, voltar para main phase do jogador
-            if (!saved.activePlayerIsHuman) {
-                this.activePlayer = this.player;
-                this.phase = PHASES.MAIN1;
-            }
-
-            // Esconder modais de seleção
-            this.ui.playerCustomization.classList.add('hidden');
-            this.ui.deckSelection.classList.add('hidden');
-
-            // Configurar ícones de mana para mostrar apenas as cores dos decks do jogador
-            if (this.playerDeckKeys) {
-                this.ui.setupManaIconsForDecks(this.playerDeckKeys);
-            }
-
-            this.ui.log(`Jogo restaurado - Turno ${this.turnNumber}`);
-            this.ui.render();
-
-            // Iniciar música de fundo
-            if (window.soundManager) {
-                window.soundManager.playMusic();
-            }
-
-            return true;
-        } catch (e) {
-            console.error('Erro ao restaurar jogo:', e);
-            this.clearSavedGame();
-            return false;
-        }
-    }
-
-    deserializePlayer(data) {
-        return {
-            name: data.name,
-            life: data.life,
-            avatar: data.avatar,
-            library: data.library,
-            hand: data.hand,
-            battlefield: data.battlefield,
-            graveyard: data.graveyard,
-            landsPlayedThisTurn: data.landsPlayedThisTurn
-        };
-    }
-
-    clearSavedGame() {
-        localStorage.removeItem('mtg_game_state');
     }
 
     // Escolhe um avatar temático para a IA baseado nos decks dela
@@ -477,7 +341,6 @@ class GameState {
         this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
 
         this.ui.render();
-        this.saveGame();
 
         // Iniciar música de fundo
         if (window.soundManager) {
@@ -512,6 +375,7 @@ class GameState {
             hand: [],
             battlefield: [],
             graveyard: [],
+            exile: [],
             landsPlayedThisTurn: 0,
             avatar: avatar
         };
@@ -1244,7 +1108,6 @@ class GameState {
 
                     player.graveyard.push(card);
                     this.ui.render();
-                    this.saveGame();
                 });
                 return true;
             }
@@ -1277,7 +1140,6 @@ class GameState {
                     await this.resolveSpellWithTarget(card, player, target);
                     player.graveyard.push(card);
                     this.ui.render();
-                    this.saveGame();
                 });
                 return true;
             } else {
@@ -1326,7 +1188,6 @@ class GameState {
         }
 
         this.ui.render();
-        this.saveGame(); // Auto-save após jogar carta
 
         // Se jogador jogou instant durante janela de prioridade, completar a resposta
         if (wasWaitingForResponse) {
@@ -1407,7 +1268,6 @@ class GameState {
 
         this.ui.log(`${aura.name} foi anexado a ${target.name}`);
         this.ui.render();
-        this.saveGame();
     }
 
     // Verifica se feitiço precisa de alvo
@@ -1704,14 +1564,52 @@ class GameState {
         }
     }
 
-    // Exilar permanente (não vai pro cemitério)
+    // Exilar permanente (vai para a zona de exílio do dono)
     exilePermanent(permanent, owner) {
         const index = owner.battlefield.indexOf(permanent);
         if (index > -1) {
+            // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
+            if (permanent.type === 'creature') {
+                this.detachFromCreature(permanent, owner);
+            }
             owner.battlefield.splice(index, 1);
-            // Exílio - não adiciona ao cemitério
-            // Poderia ter uma zona de exílio se quiséssemos
+            // Adiciona à zona de exílio do dono
+            owner.exile.push(permanent);
         }
+    }
+
+    // Desanexa equipamentos e auras de uma criatura que está saindo do campo
+    // Equipamentos: ficam no campo, desanexados (regra 704.5n)
+    // Auras: vão pro cemitério (regra 704.5m)
+    detachFromCreature(creature, owner) {
+        const allPlayers = [this.player, this.opponent];
+
+        allPlayers.forEach(player => {
+            const toRemove = [];
+
+            player.battlefield.forEach(card => {
+                if (card.attachedTo === creature.instanceId) {
+                    if (card.subtype === 'Equipment') {
+                        // Equipamento fica no campo, apenas desanexa
+                        delete card.attachedTo;
+                        this.ui.log(`${card.name} foi desanexado`);
+                    } else if (card.subtype === 'Aura') {
+                        // Aura vai pro cemitério
+                        toRemove.push(card);
+                    }
+                }
+            });
+
+            // Remover auras e colocar no cemitério
+            toRemove.forEach(aura => {
+                const idx = player.battlefield.indexOf(aura);
+                if (idx > -1) {
+                    player.battlefield.splice(idx, 1);
+                    player.graveyard.push(aura);
+                    this.ui.log(`${aura.name} foi para o cemitério`);
+                }
+            });
+        });
     }
 
     // Resolve um counterspell - anula uma mágica na pilha
@@ -1740,7 +1638,6 @@ class GameState {
         caster.graveyard.push(counterCard);
         this.ui.renderStack();
         this.ui.render();
-        this.saveGame();
     }
 
     // Resolver feitiços sem alvo
@@ -1853,6 +1750,11 @@ class GameState {
             // Chamar death triggers ANTES de mover para o cemitério (criatura ainda "vê" o campo)
             if (permanent.type === 'creature' && this.triggers) {
                 await this.triggers.onCreatureDeath(permanent, owner);
+            }
+
+            // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
+            if (permanent.type === 'creature') {
+                this.detachFromCreature(permanent, owner);
             }
 
             owner.battlefield.splice(index, 1);
@@ -2309,7 +2211,6 @@ class GameState {
         }
 
         this.ui.render();
-        this.saveGame();
         return true;
     }
 
@@ -3212,7 +3113,6 @@ class GameState {
         window.soundManager.playTurnStart();
 
         this.ui.log(`--- Seu Turno ${this.turnNumber} ---`);
-        this.saveGame(); // Auto-save no início do turno do jogador
         await this.handlePhase();
         } catch (error) {
             console.error('Erro em finishAITurn:', error);
@@ -3265,9 +3165,6 @@ class GameState {
                 finalState: window.logManager.captureGameState()
             });
         }
-
-        // Limpar save ao fim do jogo
-        this.clearSavedGame();
 
         // Parar música de fundo e tocar som de vitória/derrota
         if (window.soundManager) {

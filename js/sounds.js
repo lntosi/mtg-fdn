@@ -10,6 +10,8 @@ class SoundManager {
         this.music = null;
         this.musicPlaying = false;
         this.loaded = false;
+        this.pendingMusicPlay = false;          // Aguardando interação para tocar
+        this.interactionListenerAdded = false;  // Listener de interação já adicionado
 
         // Sons do jogo - arquivos locais (OGG para menor tamanho)
         this.soundUrls = {
@@ -101,11 +103,39 @@ class SoundManager {
         this.music.volume = this.musicVolume;
         this.music.play().then(() => {
             this.musicPlaying = true;
+            this.pendingMusicPlay = false;
         }).catch(e => {
-            if (e.name !== 'NotAllowedError') {
+            if (e.name === 'NotAllowedError') {
+                // Navegador bloqueou autoplay - aguardar interação do usuário
+                this.pendingMusicPlay = true;
+                this.setupInteractionListener();
+            } else {
                 console.log('Erro ao tocar música:', e.message);
             }
         });
+    }
+
+    setupInteractionListener() {
+        if (this.interactionListenerAdded) return;
+        this.interactionListenerAdded = true;
+
+        const startMusicOnInteraction = () => {
+            if (this.pendingMusicPlay && this.enabled && !this.musicPlaying) {
+                this.music.play().then(() => {
+                    this.musicPlaying = true;
+                    this.pendingMusicPlay = false;
+                }).catch(() => {});
+            }
+            // Remover listeners após primeira interação
+            document.removeEventListener('click', startMusicOnInteraction);
+            document.removeEventListener('keydown', startMusicOnInteraction);
+            document.removeEventListener('touchstart', startMusicOnInteraction);
+            this.interactionListenerAdded = false;
+        };
+
+        document.addEventListener('click', startMusicOnInteraction, { once: true });
+        document.addEventListener('keydown', startMusicOnInteraction, { once: true });
+        document.addEventListener('touchstart', startMusicOnInteraction, { once: true });
     }
 
     stopMusic() {

@@ -52,6 +52,7 @@ class GameUI {
         this.playerMana = document.getElementById('player-mana');
         this.playerLibrary = document.getElementById('player-library');
         this.playerGraveyard = document.getElementById('player-graveyard');
+        this.playerExile = document.getElementById('player-exile');
 
         this.opponentHand = document.getElementById('opponent-hand');
         this.opponentCreatures = document.getElementById('opponent-creatures');
@@ -60,6 +61,7 @@ class GameUI {
         this.opponentLife = document.getElementById('opponent-life');
         this.opponentLibrary = document.getElementById('opponent-library');
         this.opponentGraveyard = document.getElementById('opponent-graveyard');
+        this.opponentExile = document.getElementById('opponent-exile');
 
         // Zona central
         this.phaseIndicator = document.getElementById('current-phase');
@@ -77,11 +79,6 @@ class GameUI {
         this.deckSelection = document.getElementById('deck-selection');
         this.btnStartGame = document.getElementById('btn-start-game');
         this.btnContinueToDecks = document.getElementById('btn-continue-to-decks');
-
-        // Popup do cemitério
-        this.graveyardPopup = document.getElementById('graveyard-popup');
-        this.graveyardPopupTitle = this.graveyardPopup.querySelector('.graveyard-popup-title');
-        this.graveyardPopupCards = this.graveyardPopup.querySelector('.graveyard-popup-cards');
 
         // Novos elementos de UI
         this.cardPreview = document.getElementById('card-preview');
@@ -193,15 +190,9 @@ class GameUI {
         this.playerGraveyard.addEventListener('click', () => this.showGraveyardModal('player'));
         this.opponentGraveyard.addEventListener('click', () => this.showGraveyardModal('opponent'));
 
-        // Hover no cemitério (popup rápido mantido como preview)
-        this.playerGraveyard.addEventListener('mouseenter', (e) => this.showGraveyardPopup(e, 'player'));
-        this.playerGraveyard.addEventListener('mouseleave', () => this.hideGraveyardPopup());
-        this.opponentGraveyard.addEventListener('mouseenter', (e) => this.showGraveyardPopup(e, 'opponent'));
-        this.opponentGraveyard.addEventListener('mouseleave', () => this.hideGraveyardPopup());
-
-        // Manter popup visível enquanto mouse está sobre ele
-        this.graveyardPopup.addEventListener('mouseenter', () => this.keepGraveyardPopup());
-        this.graveyardPopup.addEventListener('mouseleave', () => this.hideGraveyardPopup());
+        // Clique no exílio para abrir modal
+        this.playerExile.addEventListener('click', () => this.showExileModal('player'));
+        this.opponentExile.addEventListener('click', () => this.showExileModal('opponent'));
 
         // Botão de conceder
         const btnConcede = document.getElementById('btn-concede');
@@ -223,6 +214,12 @@ class GameUI {
         const btnCloseGraveyard = document.getElementById('btn-close-graveyard');
         if (btnCloseGraveyard) {
             btnCloseGraveyard.addEventListener('click', () => this.hideGraveyardModal());
+        }
+
+        // Fechar modal de exílio
+        const btnCloseExile = document.getElementById('btn-close-exile');
+        if (btnCloseExile) {
+            btnCloseExile.addEventListener('click', () => this.hideExileModal());
         }
     }
 
@@ -1638,18 +1635,54 @@ class GameUI {
         // Jogador
         const playerLibCount = this.playerLibrary.querySelector('.library-count');
         const playerGYCount = this.playerGraveyard.querySelector('.graveyard-count');
+        const playerExileCount = this.playerExile?.querySelector('.exile-count');
         if (playerLibCount) playerLibCount.textContent = this.game.player.library.length;
         if (playerGYCount) playerGYCount.textContent = this.game.player.graveyard.length;
+        if (playerExileCount) playerExileCount.textContent = this.game.player.exile?.length || 0;
 
         // Oponente
         const oppLibCount = this.opponentLibrary.querySelector('.library-count');
         const oppGYCount = this.opponentGraveyard.querySelector('.graveyard-count');
+        const oppExileCount = this.opponentExile?.querySelector('.exile-count');
         if (oppLibCount) oppLibCount.textContent = this.game.opponent.library.length;
         if (oppGYCount) oppGYCount.textContent = this.game.opponent.graveyard.length;
+        if (oppExileCount) oppExileCount.textContent = this.game.opponent.exile?.length || 0;
 
         // Mostrar topo do cemitério se houver cartas
         this.updateGraveyardTop(this.playerGraveyard, this.game.player.graveyard);
         this.updateGraveyardTop(this.opponentGraveyard, this.game.opponent.graveyard);
+
+        // Atualizar exílio (mostrar apenas se houver cartas + carta do topo)
+        this.updateExileTop(this.playerExile, this.game.player.exile);
+        this.updateExileTop(this.opponentExile, this.game.opponent.exile);
+    }
+
+    updateExileTop(exileEl, exileCards) {
+        if (!exileEl) return;
+
+        // Mostrar exílio apenas se houver cartas
+        if (exileCards && exileCards.length > 0) {
+            exileEl.classList.add('has-cards');
+        } else {
+            exileEl.classList.remove('has-cards');
+        }
+
+        // Remover carta anterior se existir
+        const existingCard = exileEl.querySelector('.exile-top-card');
+        if (existingCard) {
+            existingCard.remove();
+        }
+
+        if (exileCards && exileCards.length > 0) {
+            const topCard = exileCards[exileCards.length - 1];
+            const cardEl = document.createElement('div');
+            cardEl.className = 'exile-top-card';
+
+            // Carregar imagem da carta do topo (reutiliza loadGraveyardCardImage)
+            this.loadGraveyardCardImage(topCard, cardEl);
+
+            exileEl.appendChild(cardEl);
+        }
     }
 
     updateGraveyardTop(graveyardEl, graveyardCards) {
@@ -1876,77 +1909,6 @@ class GameUI {
         modal.classList.remove('hidden');
     }
 
-    // === Popup do Cemitério ===
-
-    showGraveyardPopup(event, owner) {
-        if (!this.game.player || !this.game.opponent) return;
-
-        const graveyard = owner === 'player' ? this.game.player.graveyard : this.game.opponent.graveyard;
-        const ownerName = owner === 'player' ? 'Seu Cemitério' : 'Cemitério do Oponente';
-
-        this.graveyardPopupTitle.textContent = `${ownerName} (${graveyard.length})`;
-        this.graveyardPopupCards.innerHTML = '';
-
-        if (graveyard.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.className = 'graveyard-popup-empty';
-            emptyMsg.textContent = 'Nenhuma carta no cemitério';
-            this.graveyardPopupCards.appendChild(emptyMsg);
-        } else {
-            // Mostrar cartas da mais recente para a mais antiga
-            [...graveyard].reverse().forEach(card => {
-                const cardEl = this.createCardElement(card, true);
-                // Adicionar eventos de hover para preview lateral
-                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
-                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
-                this.graveyardPopupCards.appendChild(cardEl);
-            });
-        }
-
-        // Posicionar popup
-        const rect = event.target.getBoundingClientRect();
-        const popupWidth = 400;
-        const popupHeight = 300;
-
-        let left = rect.left;
-        let top = owner === 'player' ? rect.top - popupHeight - 10 : rect.bottom + 10;
-
-        // Ajustar se sair da tela
-        if (left + popupWidth > window.innerWidth) {
-            left = window.innerWidth - popupWidth - 20;
-        }
-        if (top < 10) {
-            top = rect.bottom + 10;
-        }
-        if (top + popupHeight > window.innerHeight) {
-            top = rect.top - popupHeight - 10;
-        }
-
-        this.graveyardPopup.style.left = `${left}px`;
-        this.graveyardPopup.style.top = `${top}px`;
-        this.graveyardPopup.classList.remove('hidden');
-
-        // Cancelar timeout de esconder
-        if (this.graveyardPopupTimeout) {
-            clearTimeout(this.graveyardPopupTimeout);
-            this.graveyardPopupTimeout = null;
-        }
-    }
-
-    hideGraveyardPopup() {
-        // Pequeno delay para permitir mover o mouse para o popup
-        this.graveyardPopupTimeout = setTimeout(() => {
-            this.graveyardPopup.classList.add('hidden');
-        }, 150);
-    }
-
-    keepGraveyardPopup() {
-        if (this.graveyardPopupTimeout) {
-            clearTimeout(this.graveyardPopupTimeout);
-            this.graveyardPopupTimeout = null;
-        }
-    }
-
     // === Modal de Cemitério ===
 
     showGraveyardModal(owner) {
@@ -1982,14 +1944,56 @@ class GameUI {
             });
         }
 
-        // Esconder o popup hover se estiver visível
-        this.hideGraveyardPopup();
-
         modal.classList.remove('hidden');
     }
 
     hideGraveyardModal() {
         const modal = document.getElementById('graveyard-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // === Modal de Exílio ===
+
+    showExileModal(owner) {
+        if (!this.game.player || !this.game.opponent) return;
+
+        const modal = document.getElementById('exile-modal');
+        const title = document.getElementById('exile-modal-title');
+        const count = document.getElementById('exile-modal-count');
+        const cardsContainer = document.getElementById('exile-modal-cards');
+
+        if (!modal) return;
+
+        const exile = owner === 'player' ? this.game.player.exile : this.game.opponent.exile;
+        const ownerName = owner === 'player' ? 'Seu Exílio' : 'Exílio do Oponente';
+
+        title.textContent = ownerName;
+        count.textContent = `${exile.length} carta${exile.length !== 1 ? 's' : ''}`;
+
+        cardsContainer.innerHTML = '';
+
+        if (exile.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'exile-empty';
+            emptyMsg.textContent = 'Nenhuma carta no exílio';
+            cardsContainer.appendChild(emptyMsg);
+        } else {
+            // Mostrar cartas da mais recente para a mais antiga
+            [...exile].reverse().forEach(card => {
+                const cardEl = this.createCardElement(card, true);
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                cardsContainer.appendChild(cardEl);
+            });
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    hideExileModal() {
+        const modal = document.getElementById('exile-modal');
         if (modal) {
             modal.classList.add('hidden');
         }

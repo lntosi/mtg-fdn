@@ -19,18 +19,24 @@ Jogo offline de MTG usando os 5 decks Jumpstart do **Foundations Beginner Box**:
 ### Seleção de Avatar
 <img src="screenshots/avatar-selection.png" width="300">
 
+### Seleção de Decks
+<img src="screenshots/deck-selection.png" width="300">
+
 ### Tela de Mulligan
 <img src="screenshots/mulligan.png" width="400">
 
-### Gameplay
+### Campo de Batalha
 ![Gameplay](screenshots/gameplay.png)
+
+### Preview com Detalhes
+<img src="screenshots/card-preview.png" width="300">
 
 ## Como Jogar
 
 1. Abra `index.html` no navegador
 2. Personalize seu jogador (nome e avatar)
-3. Selecione 2 decks para formar seu baralho de 40 cartas
-4. A IA selecionará 2 decks dentre os que sobraram
+3. Selecione 1 ou 2 decks (20 ou 40 cartas)
+4. A IA selecionará a mesma quantidade de decks
 5. Vença reduzindo a vida do oponente a 0!
 
 ## Funcionalidades
@@ -55,14 +61,20 @@ Flying, Lifelink, Deathtouch, Trample, First Strike, Double Strike, Vigilance, H
 ### Interface
 - Imagens das cartas via Scryfall API
 - Avatares de planeswalkers (Jace, Chandra, Liliana, Gideon, Nissa, Ajani)
+- Seleção de decks com arquétipos (Aggro, Midrange, Ramp, Control)
 - Visualização de dano em criaturas
-- Histórico de partida
+- Zona de exílio inspecionável
+- Sistema de stack com prioridade
+- Menu de configurações (ESC)
+- Sistema de undo (opcional)
+- Histórico de partida exportável
 - Efeitos sonoros
 - Auto-save (persiste ao recarregar página)
 
 ### IA
 - Estratégia básica de jogo
 - Decisões de combate (atacar/bloquear)
+- Priorização inteligente de alvos para remoção
 - Delays visuais entre ações
 
 ## Tecnologias
@@ -85,6 +97,7 @@ mtg/
 │   ├── main.js             # Inicialização
 │   ├── game.js             # Estado e fluxo do jogo
 │   ├── rules.js            # Motor de regras MTG
+│   ├── triggers.js         # Triggers de cartas (ETB, death, combat)
 │   ├── ai.js               # Inteligência artificial
 │   ├── ui.js               # Interface e renderização
 │   ├── cards.js            # Base de dados das cartas
@@ -110,7 +123,7 @@ mtg/
 
 ## Testes Automatizados
 
-O projeto inclui 111 testes automatizados cobrindo:
+O projeto inclui 140 testes automatizados cobrindo:
 - Mecânicas de combate
 - Keywords e interações
 - Triggers de criaturas

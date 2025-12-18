@@ -577,18 +577,22 @@ class AIPlayer {
         const player = this.game.player;
         const opponent = this.game.opponent;
 
-        if (aura.id === 'pacifism') {
-            // Pacifism: colocar na criatura mais forte do oponente
+        // Auras de remoção/debuff: colocar na criatura mais forte do oponente
+        if (aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas') {
             const enemyCreatures = validTargets.filter(c =>
                 player.battlefield.includes(c)
             );
 
             if (enemyCreatures.length > 0) {
-                // Escolher a criatura com maior poder
+                // Escolher a criatura com maior poder (ou toughness como desempate)
                 return enemyCreatures.sort((a, b) => {
                     const aPower = this.rules.getCreaturePower(a);
                     const bPower = this.rules.getCreaturePower(b);
-                    return bPower - aPower;
+                    if (bPower !== aPower) return bPower - aPower;
+                    // Desempate por toughness
+                    const aToughness = this.rules.getCreatureToughness(a);
+                    const bToughness = this.rules.getCreatureToughness(b);
+                    return bToughness - aToughness;
                 })[0];
             }
         } else if (aura.id === 'untamed_hunger') {
