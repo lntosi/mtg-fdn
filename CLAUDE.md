@@ -38,10 +38,10 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `images.js` - ImageManager (Scryfall API for card images and avatars)
 
 **Key Classes:**
-- `GameState` - Central state: players, phase, turn number, combat state. Has persistence via localStorage (saveGame/restoreGame)
+- `GameState` - Central state: players, phase, turn number, combat state
 - `TriggerManager` - **All card triggers centralized here** (ETBs, death triggers, combat triggers)
 - `RulesEngine` - Validates plays, calculates mana, resolves combat damage
-- `GameUI` - Renders cards, handles clicks, manages graveyard popup
+- `GameUI` - Renders cards, handles clicks, manages graveyard/exile modals
 - `AIPlayer` - Decides which cards to play, attackers, blockers
 
 **Game Flow:**
@@ -51,8 +51,6 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 4. AI turn executed via executeAITurn() → continueAfterBlocking() → finishAITurn()
 
 **Card Images:** Fetched from Scryfall API via ImageManager with rate limiting and caching.
-
-**Persistence:** Game auto-saves to localStorage on key actions, restores on page reload.
 
 **Stack System:** Basic stack implementation for spells/abilities with priority passing:
 - `addToStack(item, controller)` - Add spell/ability to stack

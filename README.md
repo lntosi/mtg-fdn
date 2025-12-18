@@ -69,7 +69,6 @@ Flying, Lifelink, Deathtouch, Trample, First Strike, Double Strike, Vigilance, H
 - Sistema de undo (opcional)
 - Histórico de partida exportável
 - Efeitos sonoros
-- Auto-save (persiste ao recarregar página)
 
 ### IA
 - Estratégia básica de jogo
@@ -83,7 +82,7 @@ Flying, Lifelink, Deathtouch, Trample, First Strike, Double Strike, Vigilance, H
 - CSS3 com animações
 - HTML5
 - [Scryfall API](https://scryfall.com/) (imagens)
-- LocalStorage (persistência)
+- LocalStorage (configurações)
 - [Jest](https://jestjs.io/) (testes automatizados)
 
 ## Estrutura do Projeto

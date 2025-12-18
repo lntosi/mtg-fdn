@@ -224,9 +224,9 @@ $ npm test
  PASS  tests/triggers.test.js
 
 Test Suites: 6 passed, 6 total
-Tests:       134 passed, 134 total
+Tests:       140 passed, 140 total
 Snapshots:   0 total
-Time:        0.576 s
+Time:        0.2 s
 ```
 
 ---
