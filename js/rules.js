@@ -656,11 +656,13 @@ class RulesEngine {
                     }
 
                     // Verificar se bloqueador morre (indestructible previne morte por dano - regra 702.12b)
+                    // Usar dano ACUMULADO (inclui dano de spells anteriores como Elspeth's Smite)
+                    const blockerTotalDamage = blocker.damage || 0;
                     const blockerHasIndestructible = this.hasKeyword(blocker, 'indestructible', false);
                     if (!blockerHasIndestructible) {
                         if (attackerHasDeathtouch && damageToBlocker > 0) {
                             results.creaturesDied.push(blocker);
-                        } else if (damageToBlocker >= blockerToughness) {
+                        } else if (blockerTotalDamage >= blockerToughness) {
                             results.creaturesDied.push(blocker);
                         }
                     }
@@ -706,9 +708,11 @@ class RulesEngine {
                 }
 
                 // Verificar se atacante morre (indestructible previne morte por dano - regra 702.12b)
+                // Usar dano ACUMULADO (inclui dano de spells anteriores como Elspeth's Smite)
+                const attackerTotalDamage = attacker.damage || 0;
                 const attackerToughness = this.getCreatureToughness(attacker);
                 const attackerIsIndestructible = this.hasKeyword(attacker, 'indestructible', true);
-                if (damageToAttacker >= attackerToughness && !results.creaturesDied.includes(attacker) && !attackerIsIndestructible) {
+                if (attackerTotalDamage >= attackerToughness && !results.creaturesDied.includes(attacker) && !attackerIsIndestructible) {
                     results.creaturesDied.push(attacker);
                 }
 

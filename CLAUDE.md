@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Prefer robust solutions** - Centralize logic, reuse existing methods
 2. **Follow existing patterns** - Check how similar features are already implemented in the codebase
+3. **Never commit or push automatically** - Always wait for user to request commit. When asked, provide simplified commands:
+   ```bash
+   git add <files>
+   git commit -m "type: short description"
+   ```
 
 **Rules reference** (`docs/MagicCompRules 20251114.txt`): Consult only when implementing new game mechanics or fixing rules-related bugs. Not needed for UI, CSS, refactoring, or general code changes.
 

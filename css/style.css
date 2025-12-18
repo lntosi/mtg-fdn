@@ -1349,17 +1349,73 @@ body {
     accent-color: #9b59b6;
 }
 
-.deck-option input:checked + .deck-name {
+.deck-option input:checked + .deck-info .deck-name {
     color: #ffcc00;
 }
 
-.deck-option input:disabled + .deck-name {
+.deck-option input:disabled + .deck-info {
     opacity: 0.4;
+}
+
+/* Deck info container */
+.deck-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.deck-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .deck-name {
     font-size: 1.15em;
     color: #e0c0e0;
+}
+
+.deck-description {
+    font-size: 0.8em;
+    color: #a080a0;
+    font-style: italic;
+}
+
+/* Archetype badges */
+.deck-archetype {
+    font-size: 0.7em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Cores baseadas no mana do deck */
+.archetype-white {
+    background: linear-gradient(135deg, #d4c4a8, #f5e6c8);
+    color: #5c4d3a;
+}
+
+.archetype-red {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: #fff;
+}
+
+.archetype-black {
+    background: linear-gradient(135deg, #2c2c2c, #4a4a4a);
+    color: #ccc;
+}
+
+.archetype-green {
+    background: linear-gradient(135deg, #1e8449, #27ae60);
+    color: #fff;
+}
+
+.archetype-blue {
+    background: linear-gradient(135deg, #2471a3, #3498db);
+    color: #fff;
 }
 
 #btn-start-game {
@@ -3333,6 +3389,7 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
+    justify-items: center;
 }
 
 .avatar-option {
@@ -3345,6 +3402,7 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     border: 2px solid transparent;
+    min-width: 80px;
 }
 
 .avatar-option:hover {
@@ -3396,9 +3454,12 @@ body {
 }
 
 .avatar-name {
+    display: block;
     font-size: 0.85em;
     color: #c0a0c0;
     transition: color 0.2s;
+    text-align: center;
+    align-self: stretch;
 }
 
 .btn-continue {
