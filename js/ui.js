@@ -2041,7 +2041,7 @@ class GameUI {
         } else if (this.game.awaitingPlayerContinue) {
             // Arena-style: aguardando jogador clicar "Continuar"
             mainButtonEnabled = true;
-            mainButtonText = 'Continuar';
+            mainButtonText = 'Continue';
             mainButtonTitle = this.game.continueReason || 'Clique para continuar';
             mainButtonState = 'state-continue';
         } else if (hasStack && hasPriority) {
