@@ -2575,7 +2575,7 @@ class GameUI {
             title.textContent = 'Vitória!';
         } else {
             content.classList.add('defeat');
-            icon.textContent = '💀';
+            icon.textContent = '';
             title.textContent = 'Derrota';
         }
 

@@ -2402,20 +2402,12 @@ body {
 }
 
 /* Game Over - Victory */
-.game-over-content.victory .game-over-icon::before {
-    content: '\1F3C6';
-}
-
 .game-over-content.victory h2 {
     color: #f1c40f;
     text-shadow: 0 0 30px rgba(241, 196, 15, 0.6);
 }
 
 /* Game Over - Defeat */
-.game-over-content.defeat .game-over-icon::before {
-    content: '\1F480';
-}
-
 .game-over-content.defeat h2 {
     color: #e74c3c;
     text-shadow: 0 0 30px rgba(231, 76, 60, 0.6);
