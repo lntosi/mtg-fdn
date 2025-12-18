@@ -353,21 +353,6 @@ body {
     /* Ordem normal: lands em cima, criaturas embaixo (perto do centro/combate) */
 }
 
-#opponent-battlefield .zone-label {
-    bottom: auto;
-    top: 8px;
-}
-
-/* Labels das zonas */
-.zone-label {
-    position: absolute;
-    font-size: 0.7em;
-    color: rgba(200, 150, 200, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: bold;
-}
-
 .creatures {
     display: flex;
     gap: 10px;
@@ -1205,20 +1190,6 @@ body {
     50% { border-color: rgba(231, 76, 60, 0.9); }
 }
 
-.card-bonus {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    background: linear-gradient(135deg, rgba(241, 196, 15, 0.95), rgba(243, 156, 18, 0.95));
-    color: #000;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.75em;
-    font-weight: bold;
-    z-index: 6;
-    box-shadow: 0 0 6px rgba(241, 196, 15, 0.7);
-    cursor: help;
-}
 
 .card-text {
     font-size: 0.55em;
@@ -2064,17 +2035,6 @@ body {
 }
 
 /* === Efeitos Visuais de Dano === */
-.damage-flash {
-    animation: damage-flash-anim 0.5s ease-out;
-}
-
-@keyframes damage-flash-anim {
-    0% { filter: brightness(1); }
-    25% { filter: brightness(2) sepia(1) hue-rotate(-50deg); }
-    50% { filter: brightness(1.5) sepia(0.5) hue-rotate(-30deg); }
-    100% { filter: brightness(1); }
-}
-
 .life-total.damage-taken {
     animation: life-damage 0.6s ease-out;
 }
@@ -2552,23 +2512,6 @@ body {
     background: linear-gradient(135deg, #c0392b, #e74c3c);
     color: white;
     border: 2px solid #fff;
-}
-
-.counter.loyalty-counter {
-    background: linear-gradient(135deg, #2980b9, #3498db);
-    color: white;
-    border: 2px solid #fff;
-}
-
-/* Animação de contadores */
-.counter.new-counter {
-    animation: counter-pop 0.4s ease-out;
-}
-
-@keyframes counter-pop {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.4); }
-    100% { transform: scale(1); opacity: 1; }
 }
 
 /* === Modo de Visualização (após fim de jogo) === */
@@ -3632,23 +3575,6 @@ body {
     color: #ffcc00;
 }
 
-/* Legacy support */
-.starting-life-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-}
-
-.starting-life-section label {
-    color: #e0c0e0;
-    font-weight: bold;
-}
-
 #starting-life {
     padding: 8px 20px;
     font-size: 1em;
@@ -4191,18 +4117,6 @@ html {
     50% { box-shadow: 0 0 25px rgba(0, 191, 255, 1), 0 0 50px rgba(0, 191, 255, 0.6); }
 }
 
-/* Indicador de espera de resposta durante turno da IA */
-.waiting-for-response {
-    border: 2px solid #ffd700 !important;
-    animation: waitingPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes waitingPulse {
-    0%, 100% { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-    50% { border-color: #fff; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-}
-
-
 @keyframes priorityButtonPulse {
     0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
     50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
@@ -4399,38 +4313,6 @@ html {
     --divider-color: #b432a8;
 }
 
-/* === Botão de Engrenagem (Configurações) === */
-.btn-settings-gear {
-    width: 36px;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-    backdrop-filter: blur(4px);
-}
-
-.btn-settings-gear:hover {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: rgba(255, 255, 255, 0.9);
-    transform: rotate(45deg);
-}
-
-.btn-settings-gear:active {
-    transform: rotate(45deg) scale(0.95);
-}
-
-.btn-settings-gear svg {
-    width: 22px;
-    height: 22px;
-}
-
 /* === Modal de Configurações === */
 .settings-content {
     max-width: 720px;
@@ -4624,13 +4506,6 @@ html {
 }
 
 /* === Botões de Configuração === */
-.display-settings,
-.game-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
 .btn-setting {
     display: flex;
     align-items: center;
@@ -4775,20 +4650,6 @@ html {
 
 .toggle-switch-sm input:checked + .toggle-slider:before {
     transform: translateX(18px);
-}
-
-/* === Log Export Settings === */
-.log-export-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.settings-description {
-    color: #999;
-    font-size: 0.85em;
-    margin: 0;
-    line-height: 1.4;
 }
 
 .log-export-buttons {
