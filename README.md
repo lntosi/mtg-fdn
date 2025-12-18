@@ -2,8 +2,6 @@
 
 Um jogo de Magic: The Gathering para navegador, focado em aprendizado e prática contra IA.
 
-<img src="https://1000logos.net/wp-content/uploads/2022/10/Magic-The-Gathering-logo.png" width="300">
-
 ## Sobre
 
 Jogo offline de MTG usando os 5 decks Jumpstart do **Foundations Beginner Box**:
@@ -145,4 +143,8 @@ Veja [ROADMAP.md](ROADMAP.md) para o plano completo de desenvolvimento, incluind
 
 ---
 
-*Projeto pessoal para aprendizado. Magic: The Gathering é marca registrada da Wizards of the Coast.*
+## Disclaimer
+
+MTG Jumpstart Foundations is unofficial Fan Content permitted under the [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy). Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
+
+*Projeto pessoal para fins educacionais. Não comercial.*

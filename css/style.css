@@ -4802,3 +4802,27 @@ html {
 :-webkit-full-screen #opponent-hand {
     padding: 5px 20px;
 }
+
+/* === Fan Content Disclaimer === */
+.fan-content-disclaimer {
+    position: fixed;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65em;
+    color: rgba(150, 140, 160, 0.6);
+    text-align: center;
+    z-index: 1;
+    pointer-events: auto;
+    white-space: nowrap;
+}
+
+.fan-content-disclaimer a {
+    color: rgba(180, 160, 200, 0.7);
+    text-decoration: none;
+}
+
+.fan-content-disclaimer a:hover {
+    color: rgba(200, 180, 220, 0.9);
+    text-decoration: underline;
+}
