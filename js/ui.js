@@ -66,7 +66,6 @@ class GameUI {
         // Zona central
         this.phaseIndicator = document.getElementById('current-phase');
         this.turnIndicator = document.getElementById('turn-indicator');
-        this.messageLog = document.getElementById('message-log');
 
         // Botões
         this.btnMainAction = document.getElementById('btn-main-action');

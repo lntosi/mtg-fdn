@@ -553,18 +553,6 @@ body {
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
-#message-log {
-    max-width: 250px;
-    max-height: 50px;
-    overflow-y: auto;
-    font-size: 0.7em;
-    color: #a080a0;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 5px;
-    border: 1px solid rgba(180, 100, 180, 0.2);
-}
-
 /* === Stack (Pilha de Feitiços/Habilidades) === */
 #stack {
     display: flex;
@@ -3647,11 +3635,6 @@ html {
         padding: var(--spacing-sm);
     }
 
-    .life-display {
-        font-size: clamp(1.2em, 3vw, 1.8em);
-        min-width: clamp(40px, 6vw, 60px);
-    }
-
     #action-buttons button {
         padding: var(--spacing-sm) var(--spacing-md);
         font-size: clamp(0.7em, 1.5vw, 0.9em);
@@ -3678,10 +3661,6 @@ html {
     .player-info {
         flex-wrap: wrap;
         gap: 5px;
-    }
-
-    .mana-display {
-        font-size: 0.8em;
     }
 
     .library-zone {
