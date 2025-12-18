@@ -144,7 +144,6 @@ Itens que podem ou não ser implementados:
 - ✅ Morte por deck vazio
 - ✅ Contadores (+1/+1, -1/-1)
 - ✅ Visualização de dano em criaturas
-- ✅ Sistema de undo opcional
 
 ### UI/UX
 - ✅ Preview de carta ampliado
@@ -232,7 +231,7 @@ Todos os 5 decks foram validados contra a API do Scryfall:
 #### Settings Modal Redesenhado
 - Layout em duas colunas (Som/Exibição/Debug | Priority Stops)
 - Modal arrastável pelo título
-- Botão "Resetar Padrão" (SFX 50%, Música 80%, Log OFF, Undo OFF)
+- Botão "Resetar Padrão" (SFX 50%, Música 80%, Log OFF)
 
 #### Sistema de Som Simplificado
 - Consolidação de 9 para 6 efeitos sonoros (cardPlay, attack, damage, turnStart, victory, defeat)

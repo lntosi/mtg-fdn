@@ -7,8 +7,7 @@ class SettingsManager {
             soundEnabled: true,
             sfxVolume: 50,          // Volume dos efeitos sonoros (50%)
             musicVolume: 80,        // Volume da música de fundo (80%)
-            logPanelEnabled: false, // Histórico desabilitado por padrão
-            undoEnabled: false      // Undo desabilitado por padrão
+            logPanelEnabled: false  // Histórico desabilitado por padrão
         };
 
         // Valores padrão para priority stops
@@ -198,17 +197,6 @@ class SettingsManager {
             logPanelEnabled.checked = this.settings.logPanelEnabled;
             logPanelEnabled.addEventListener('change', (e) => {
                 this.setLogPanelEnabled(e.target.checked);
-            });
-        }
-
-        // Undo enabled/disabled
-        const undoEnabled = document.getElementById('undo-enabled');
-        if (undoEnabled) {
-            // Carregar estado atual do game se existir
-            const currentUndoSetting = this.settings.undoEnabled || false;
-            undoEnabled.checked = currentUndoSetting;
-            undoEnabled.addEventListener('change', (e) => {
-                this.setUndoEnabled(e.target.checked);
             });
         }
 
@@ -445,12 +433,6 @@ class SettingsManager {
             if (musicVolumeValue) musicVolumeValue.textContent = `${this.settings.musicVolume}%`;
         }
 
-        // Sincronizar undo
-        const undoEnabled = document.getElementById('undo-enabled');
-        if (undoEnabled) {
-            undoEnabled.checked = this.settings.undoEnabled || false;
-        }
-
         // Sincronizar priority stops
         this.syncPriorityStops();
     }
@@ -503,9 +485,6 @@ class SettingsManager {
         // Aplicar configurações de exibição
         this.setLogPanelEnabled(this.defaults.logPanelEnabled);
 
-        // Aplicar configuração de undo
-        this.setUndoEnabled(this.defaults.undoEnabled);
-
         // Resetar priority stops
         if (window.game) {
             window.game.priorityStops = JSON.parse(JSON.stringify(this.priorityStopsDefaults));
@@ -543,17 +522,6 @@ class SettingsManager {
             logPanel.classList.add('collapsed');
             gameContainer.classList.add('log-collapsed');
             if (btnShowLog) btnShowLog.classList.remove('hidden');
-        }
-    }
-
-    // === Undo ===
-    setUndoEnabled(enabled) {
-        this.settings.undoEnabled = enabled;
-        this.saveSettings();
-
-        // Atualizar o GameState se o jogo estiver em andamento
-        if (window.game) {
-            window.game.saveUndoSetting(enabled);
         }
     }
 

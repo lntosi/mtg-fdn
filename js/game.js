@@ -50,11 +50,6 @@ class GameState {
         this.gameOverReason = '';
         this.viewingBattlefield = false; // Modo de visualização após fim do jogo
 
-        // === Sistema de Undo ===
-        this.stateHistory = []; // Histórico de estados para undo
-        this.maxHistorySize = 20; // Máximo de estados salvos
-        this.undoEnabled = this.loadUndoSetting(); // Carrega preferência do usuário
-
         // === Controle de Sessão (para cancelar operações ao reiniciar) ===
         this.gameSessionId = 0; // Incrementado a cada startGame
         this.pendingTimeouts = []; // IDs de timeouts pendentes
@@ -936,11 +931,6 @@ class GameState {
         if (!this.rules.canPlayCard(card, player)) {
             this.ui.log(`Não pode jogar ${card.name} agora.`);
             return false;
-        }
-
-        // Salvar estado para undo (apenas ações do jogador)
-        if (player === this.player) {
-            this.saveStateSnapshot(`Jogou ${card.name}`);
         }
 
         // Se jogador jogou um instant durante janela de prioridade, completar a resposta
@@ -1890,11 +1880,6 @@ class GameState {
             return false;
         }
 
-        // Salvar estado para undo (apenas ações do jogador)
-        if (player === this.player) {
-            this.saveStateSnapshot(`Ativou ${card.name}`);
-        }
-
         const opponent = player === this.player ? this.opponent : this.player;
 
         switch (card.id) {
@@ -2443,14 +2428,6 @@ class GameState {
             return;
         }
 
-        // Salvar estado para undo (apenas ações do jogador)
-        if (attackingPlayer === this.player) {
-            const attackerNames = attackers.length <= 3
-                ? attackers.map(a => a.name).join(', ')
-                : `${attackers.length} criaturas`;
-            this.saveStateSnapshot(`Atacou com ${attackerNames}`);
-        }
-
         this.currentAttackers = attackers;
 
         // Marcar que este jogador atacou neste turno (para Raid)
@@ -2553,14 +2530,6 @@ class GameState {
             menaceValidation.invalidAttackers.forEach(attacker => {
                 delete assignments[attacker.instanceId];
             });
-        }
-
-        // Salvar estado para undo antes de confirmar bloqueadores
-        const blockerCount = Object.values(assignments).flat().length;
-        if (blockerCount > 0) {
-            this.saveStateSnapshot(`Bloqueou com ${blockerCount} criatura(s)`);
-        } else {
-            this.saveStateSnapshot('Não bloqueou');
         }
 
         this.blockerAssignments = assignments;
@@ -3216,209 +3185,6 @@ class GameState {
     cancelAllPendingTimeouts() {
         this.pendingTimeouts.forEach(id => clearTimeout(id));
         this.pendingTimeouts = [];
-    }
-
-    // === SISTEMA DE UNDO ===
-
-    // Carrega preferência de undo do localStorage
-    loadUndoSetting() {
-        try {
-            const settings = localStorage.getItem('mtg_settings');
-            if (settings) {
-                const parsed = JSON.parse(settings);
-                return parsed.undoEnabled === true;
-            }
-        } catch (e) {
-            console.log('Erro ao carregar configuração de undo:', e);
-        }
-        return false;
-    }
-
-    // Salva preferência de undo
-    saveUndoSetting(enabled) {
-        this.undoEnabled = enabled;
-        try {
-            const settings = localStorage.getItem('mtg_settings');
-            const parsed = settings ? JSON.parse(settings) : {};
-            parsed.undoEnabled = enabled;
-            localStorage.setItem('mtg_settings', JSON.stringify(parsed));
-        } catch (e) {
-            console.log('Erro ao salvar configuração de undo:', e);
-        }
-        // Atualizar visibilidade do botão
-        if (this.ui) {
-            this.ui.updateUndoButton();
-        }
-    }
-
-    // Salva um snapshot do estado atual no histórico
-    saveStateSnapshot(description = '') {
-        if (!this.undoEnabled) return;
-        if (!this.player || !this.opponent) return;
-
-        const snapshot = {
-            timestamp: Date.now(),
-            description: description,
-            turnNumber: this.turnNumber,
-            phase: this.phase,
-            activePlayerIsHuman: this.activePlayer === this.player,
-
-            // Estado dos jogadores
-            player: this.deepClonePlayer(this.player),
-            opponent: this.deepClonePlayer(this.opponent),
-
-            // Estado de combate
-            currentAttackers: [...this.currentAttackers],
-            blockerAssignments: JSON.parse(JSON.stringify(this.blockerAssignments)),
-            unblockableThisTurn: [...this.unblockableThisTurn],
-            attackedThisTurn: { ...this.attackedThisTurn },
-
-            // Estado de turno
-            opponentLostLifeThisTurn: this.opponentLostLifeThisTurn,
-            playerLostLifeThisTurn: this.playerLostLifeThisTurn,
-
-            // Stack e prioridade
-            stack: JSON.parse(JSON.stringify(this.stack)),
-            priorityPlayerIsHuman: this.priorityPlayer === this.player,
-
-            // Floating mana
-            floatingMana: JSON.parse(JSON.stringify(this.floatingMana))
-        };
-
-        this.stateHistory.push(snapshot);
-
-        // Limitar tamanho do histórico
-        if (this.stateHistory.length > this.maxHistorySize) {
-            this.stateHistory.shift();
-        }
-
-        console.log(`[UNDO] Estado salvo: "${description}" (${this.stateHistory.length} no histórico)`);
-    }
-
-    // Clone profundo de um jogador
-    deepClonePlayer(player) {
-        return {
-            name: player.name,
-            life: player.life,
-            avatar: player.avatar,
-            library: player.library.map(c => this.deepCloneCard(c)),
-            hand: player.hand.map(c => this.deepCloneCard(c)),
-            battlefield: player.battlefield.map(c => this.deepCloneCard(c)),
-            graveyard: player.graveyard.map(c => this.deepCloneCard(c)),
-            landsPlayedThisTurn: player.landsPlayedThisTurn
-        };
-    }
-
-    // Clone profundo de uma carta
-    deepCloneCard(card) {
-        const clone = { ...card };
-
-        // Clonar arrays
-        if (card.keywords) clone.keywords = [...card.keywords];
-        if (card.temporaryKeywords) clone.temporaryKeywords = [...card.temporaryKeywords];
-        if (card.attachedAuras) clone.attachedAuras = card.attachedAuras.map(a => ({ ...a }));
-        if (card.counters) clone.counters = { ...card.counters };
-
-        return clone;
-    }
-
-    // Restaura o estado anterior (undo)
-    undo() {
-        if (this.stateHistory.length === 0) {
-            console.log('[UNDO] Nenhum estado para desfazer');
-            return false;
-        }
-
-        const snapshot = this.stateHistory.pop();
-        console.log(`[UNDO] Restaurando: "${snapshot.description}"`);
-
-        // Restaurar estado dos jogadores
-        this.player = this.deepClonePlayer(snapshot.player);
-        this.opponent = this.deepClonePlayer(snapshot.opponent);
-
-        // Restaurar estado do jogo
-        this.turnNumber = snapshot.turnNumber;
-        this.phase = snapshot.phase;
-        this.activePlayer = snapshot.activePlayerIsHuman ? this.player : this.opponent;
-
-        // Restaurar combate - precisamos encontrar as referências corretas no battlefield restaurado
-        const allBattlefieldCards = [...this.player.battlefield, ...this.opponent.battlefield];
-
-        this.currentAttackers = snapshot.currentAttackers.map(oldAttacker => {
-            // Encontrar a carta correspondente pelo instanceId
-            return allBattlefieldCards.find(c => c.instanceId === oldAttacker.instanceId) || oldAttacker;
-        });
-
-        // Restaurar blocker assignments com referências corretas
-        this.blockerAssignments = {};
-        for (const [attackerId, blockers] of Object.entries(snapshot.blockerAssignments)) {
-            this.blockerAssignments[attackerId] = blockers.map(oldBlocker => {
-                return allBattlefieldCards.find(c => c.instanceId === oldBlocker.instanceId) || oldBlocker;
-            });
-        }
-
-        this.unblockableThisTurn = snapshot.unblockableThisTurn.map(oldCard => {
-            return allBattlefieldCards.find(c => c.instanceId === oldCard.instanceId) || oldCard;
-        });
-
-        this.attackedThisTurn = { ...snapshot.attackedThisTurn };
-
-        // Restaurar estado de turno
-        this.opponentLostLifeThisTurn = snapshot.opponentLostLifeThisTurn;
-        this.playerLostLifeThisTurn = snapshot.playerLostLifeThisTurn;
-
-        // Restaurar stack e prioridade
-        this.stack = JSON.parse(JSON.stringify(snapshot.stack));
-        this.priorityPlayer = snapshot.priorityPlayerIsHuman ? this.player : this.opponent;
-
-        // Restaurar floating mana
-        this.floatingMana = JSON.parse(JSON.stringify(snapshot.floatingMana));
-
-        // Limpar estados de UI
-        if (this.ui) {
-            this.ui.selectedCard = null;
-            this.ui.selectedAttackers = [];
-            this.ui.blockerAssignments = {};
-            this.ui.selectedBlocker = null;
-            this.ui.waitingForBlockers = false;
-            this.ui.waitingForTarget = false;
-        }
-
-        // Re-renderizar
-        if (this.ui) {
-            this.ui.log(`⟲ Desfeito: ${snapshot.description}`);
-            this.ui.render();
-        }
-
-        return true;
-    }
-
-    // Verifica se pode fazer undo
-    canUndo() {
-        return this.undoEnabled && this.stateHistory.length > 0;
-    }
-
-    // Retorna descrição do último estado
-    getLastUndoDescription() {
-        if (this.stateHistory.length === 0) return null;
-        return this.stateHistory[this.stateHistory.length - 1].description;
-    }
-
-    // Limpa o histórico de undo
-    clearUndoHistory() {
-        this.stateHistory = [];
-        console.log('[UNDO] Histórico limpo');
-    }
-
-    // Retorna o histórico para debug
-    getUndoHistory() {
-        return this.stateHistory.map((s, i) => ({
-            index: i,
-            description: s.description,
-            turn: s.turnNumber,
-            phase: s.phase,
-            timestamp: new Date(s.timestamp).toLocaleTimeString()
-        }));
     }
 }
 

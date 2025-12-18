@@ -81,7 +81,7 @@ Press ESC to open settings menu (two-column layout, draggable by title):
 
 **Left Column:**
 - **Sound**: Toggle on/off, SFX volume (default 70%), Music volume (default 80%)
-- **Display**: Log panel toggle, Undo toggle, Fullscreen button
+- **Display**: Log panel toggle, Fullscreen button
 - **Debug**: Export/Copy game log
 
 **Right Column:**
@@ -90,39 +90,10 @@ Press ESC to open settings menu (two-column layout, draggable by title):
   - Opponent Turn: Same options with different defaults
 
 **Footer:**
-- **Reset Defaults**: Restores all settings (SFX 70%, Music 80%, Log OFF, Undo OFF)
+- **Reset Defaults**: Restores all settings (SFX 70%, Music 80%, Log OFF)
 - **Restart/Concede**: Game control buttons
 
 Settings persist in localStorage.
-
-## Undo System
-
-The game has an optional undo system for learning/testing purposes:
-
-**Enabling Undo:**
-- Press ESC to open Settings menu
-- Toggle "Botão Desfazer (Undo)" on
-- A "⟲" button appears after "Pular Fase"
-
-**What can be undone:**
-- Playing cards (lands, creatures, spells)
-- Declaring attackers
-- Declaring blockers
-- Activating abilities
-
-**Limitations:**
-- Only player actions are saved (not AI actions)
-- Maximum 20 states in history
-- Undo clears UI selection states
-
-**Debug commands:**
-```javascript
-debug.enableUndo()    // Enable undo system
-debug.disableUndo()   // Disable undo system
-debug.undo()          // Undo last action
-debug.history()       // Show saved states
-debug.clearHistory()  // Clear undo history
-```
 
 ## Debug Mode
 
@@ -150,13 +121,6 @@ debug.state()                          // Show game state
 debug.battlefield()                    // List creatures
 debug.hand()                           // Show hand
 debug.help()                           // Show all commands
-
-// Undo
-debug.undo()                           // Undo last action
-debug.history()                        // Show saved states
-debug.enableUndo()                     // Enable undo system
-debug.disableUndo()                    // Disable undo system
-debug.clearHistory()                   // Clear undo history
 ```
 
 ## Avatars

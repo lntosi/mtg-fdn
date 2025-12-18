@@ -562,30 +562,6 @@ body {
     opacity: 1;
 }
 
-/* Botão de Undo */
-#btn-undo.btn-undo {
-    background: linear-gradient(135deg, #7f8c8d, #95a5a6);
-    color: white;
-    padding: 6px 12px !important;
-    font-size: 1.2em;
-    min-width: 40px;
-    border-radius: 6px;
-}
-
-#btn-undo.btn-undo:hover:not(:disabled) {
-    background: linear-gradient(135deg, #95a5a6, #bdc3c7);
-}
-
-#btn-undo.btn-undo:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-#btn-undo.btn-undo.hidden {
-    display: none;
-}
-
-
 #action-buttons button:not(:disabled):hover {
     transform: scale(1.05);
     filter: brightness(1.2);
@@ -4548,15 +4524,10 @@ html {
 }
 
 .sound-toggle,
-.undo-toggle,
 .log-toggle {
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.undo-toggle {
-    margin-bottom: 12px;
 }
 
 /* Toggle Switch */
@@ -4785,8 +4756,7 @@ html {
     gap: 20px;
 }
 
-.settings-row .log-toggle,
-.settings-row .undo-toggle {
+.settings-row .log-toggle {
     margin-bottom: 0;
 }
 

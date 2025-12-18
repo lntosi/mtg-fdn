@@ -53,13 +53,6 @@ class DebugMode {
 %cdebug.setupCombat()%c - Prepara cenário de combate básico
 %cdebug.fullMana()%c - Dá 10 de cada mana
 
-%c--- Undo ---%c
-%cdebug.undo()%c - Desfaz a última ação
-%cdebug.history()%c - Mostra histórico de estados salvos
-%cdebug.enableUndo()%c - Habilita o sistema de undo
-%cdebug.disableUndo()%c - Desabilita o sistema de undo
-%cdebug.clearHistory()%c - Limpa o histórico de undo
-
 `,
         'color: #f1c40f; font-weight: bold; font-size: 14px;',
         'color: #3498db;', 'color: #95a5a6;',
@@ -86,12 +79,6 @@ class DebugMode {
         'color: #3498db;', 'color: #95a5a6;',
         'color: #3498db;', 'color: #95a5a6;',
         'color: #e74c3c; font-weight: bold;', 'color: #95a5a6;',
-        'color: #3498db;', 'color: #95a5a6;',
-        'color: #3498db;', 'color: #95a5a6;',
-        'color: #e74c3c; font-weight: bold;', 'color: #95a5a6;',
-        'color: #3498db;', 'color: #95a5a6;',
-        'color: #3498db;', 'color: #95a5a6;',
-        'color: #3498db;', 'color: #95a5a6;',
         'color: #3498db;', 'color: #95a5a6;',
         'color: #3498db;', 'color: #95a5a6;'
         );
@@ -598,80 +585,6 @@ Jogador Ativo: ${g.activePlayer?.name || 'N/A'}
         console.log('%c[DEBUG] Cenário de combate preparado!', 'color: #2ecc71; font-weight: bold;');
         this.battlefield();
         return 'Pronto para combate';
-    }
-
-    // === UNDO ===
-
-    // Desfaz a última ação
-    undo() {
-        if (!this._checkGame()) return;
-
-        if (!this.game.undoEnabled) {
-            console.warn('[DEBUG] Undo está desabilitado. Habilite via Settings (M) ou debug.enableUndo()');
-            return false;
-        }
-
-        if (this.game.stateHistory.length === 0) {
-            console.warn('[DEBUG] Nenhuma ação para desfazer');
-            return false;
-        }
-
-        const result = this.game.undo();
-        if (result) {
-            console.log('%c[DEBUG] Undo executado com sucesso!', 'color: #9b59b6;');
-        }
-        return result;
-    }
-
-    // Mostra o histórico de estados salvos
-    history() {
-        if (!this._checkGame()) return;
-
-        if (!this.game.undoEnabled) {
-            console.warn('[DEBUG] Undo está desabilitado. Nenhum histórico disponível.');
-            return [];
-        }
-
-        const history = this.game.getUndoHistory();
-
-        if (history.length === 0) {
-            console.log('[DEBUG] Histórico vazio');
-            return [];
-        }
-
-        console.log('%c=== Histórico de Undo ===', 'color: #f1c40f; font-weight: bold;');
-        history.forEach((entry, i) => {
-            console.log(`  ${i}: [Turno ${entry.turn}] ${entry.description} (${entry.timestamp})`);
-        });
-
-        return history;
-    }
-
-    // Habilita o sistema de undo
-    enableUndo() {
-        if (!this._checkGame()) return;
-
-        this.game.saveUndoSetting(true);
-        console.log('%c[DEBUG] Undo habilitado!', 'color: #2ecc71;');
-        return true;
-    }
-
-    // Desabilita o sistema de undo
-    disableUndo() {
-        if (!this._checkGame()) return;
-
-        this.game.saveUndoSetting(false);
-        console.log('%c[DEBUG] Undo desabilitado', 'color: #e74c3c;');
-        return false;
-    }
-
-    // Limpa o histórico de undo
-    clearHistory() {
-        if (!this._checkGame()) return;
-
-        this.game.clearUndoHistory();
-        console.log('%c[DEBUG] Histórico de undo limpo', 'color: #e74c3c;');
-        return true;
     }
 }
 
