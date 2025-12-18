@@ -2091,20 +2091,20 @@ class GameUI {
     getNextPhaseName() {
         const phase = this.game.phase;
         const shortNames = {
-            [PHASES.UNTAP]: 'Manutenção',
-            [PHASES.UPKEEP]: 'Compra',
+            [PHASES.UNTAP]: 'Upkeep',
+            [PHASES.UPKEEP]: 'Draw',
             [PHASES.DRAW]: 'Main 1',
-            [PHASES.MAIN1]: 'Combate',
-            [PHASES.COMBAT_BEGIN]: 'Atacantes',
-            [PHASES.DECLARE_ATTACKERS]: 'Bloqueadores',
-            [PHASES.DECLARE_BLOCKERS]: 'Dano',
-            [PHASES.COMBAT_DAMAGE]: 'Fim Combate',
+            [PHASES.MAIN1]: 'Combat',
+            [PHASES.COMBAT_BEGIN]: 'Attackers',
+            [PHASES.DECLARE_ATTACKERS]: 'Blockers',
+            [PHASES.DECLARE_BLOCKERS]: 'Damage',
+            [PHASES.COMBAT_DAMAGE]: 'End Combat',
             [PHASES.COMBAT_END]: 'Main 2',
-            [PHASES.MAIN2]: 'Fim do Turno',
-            [PHASES.END]: 'Limpeza',
-            [PHASES.CLEANUP]: 'Próx. Turno'
+            [PHASES.MAIN2]: 'End Step',
+            [PHASES.END]: 'Cleanup',
+            [PHASES.CLEANUP]: 'Next Turn'
         };
-        return shortNames[phase] || 'Próxima';
+        return shortNames[phase] || 'Next';
     }
 
     onMainActionClick() {

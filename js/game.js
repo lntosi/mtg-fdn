@@ -786,9 +786,9 @@ class GameState {
     logPriorityPass(phase, auto = false) {
         const phaseNames = {
             upkeep: 'Upkeep',
-            beginCombat: 'Início do Combate',
-            afterAttackers: 'Após Atacantes',
-            afterBlockers: 'Após Bloqueadores',
+            beginCombat: 'Beginning of Combat',
+            afterAttackers: 'After Attackers',
+            afterBlockers: 'After Blockers',
             endStep: 'End Step'
         };
 
@@ -2276,11 +2276,11 @@ class GameState {
             [PHASES.UPKEEP]: 'Upkeep',
             [PHASES.DRAW]: 'Draw',
             [PHASES.MAIN1]: 'Main 1',
-            [PHASES.COMBAT_BEGIN]: 'Início do Combate',
-            [PHASES.DECLARE_ATTACKERS]: 'Declarar Atacantes',
-            [PHASES.DECLARE_BLOCKERS]: 'Declarar Bloqueadores',
-            [PHASES.COMBAT_DAMAGE]: 'Dano de Combate',
-            [PHASES.COMBAT_END]: 'Fim do Combate',
+            [PHASES.COMBAT_BEGIN]: 'Beginning of Combat',
+            [PHASES.DECLARE_ATTACKERS]: 'Declare Attackers',
+            [PHASES.DECLARE_BLOCKERS]: 'Declare Blockers',
+            [PHASES.COMBAT_DAMAGE]: 'Combat Damage',
+            [PHASES.COMBAT_END]: 'End of Combat',
             [PHASES.MAIN2]: 'Main 2',
             [PHASES.END]: 'End Step',
             [PHASES.CLEANUP]: 'Cleanup'
@@ -2851,7 +2851,7 @@ class GameState {
 
         // Untap
         this.phase = PHASES.UNTAP;
-        this.ui.log('Fase: Desvirar');
+        this.ui.log('Fase: Untap');
         this.rules.untapAll(this.opponent);
         this.opponent.landsPlayedThisTurn = 0;
         this.rules.removeSummoningSickness(this.opponent);
@@ -2860,7 +2860,7 @@ class GameState {
 
         // Draw
         this.phase = PHASES.DRAW;
-        this.ui.log('Fase: Comprar');
+        this.ui.log('Fase: Draw');
         // Regra 103.7a: o jogador que começa pula a compra do primeiro turno
         if (this.turnNumber > 1) {
             const drawn = this.rules.drawCard(this.opponent);
@@ -2884,7 +2884,7 @@ class GameState {
 
         // Início do combate - janela de prioridade
         this.phase = PHASES.COMBAT_BEGIN;
-        this.ui.log('Fase: Início do Combate');
+        this.ui.log('Fase: Beginning of Combat');
         this.ui.render();
 
         // Arena-style: aguardar jogador clicar "Continuar" no início do combate
