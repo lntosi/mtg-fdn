@@ -84,17 +84,17 @@ class TriggerManager {
             this._handleRaidDraw(controller);
         }
 
-        // --- CARD-SPECIFIC ETBs ---
-
-        // Prideful Parent - criar token Cat
-        if (card.id === 'prideful_parent') {
+        // ETB Cat Token (Prideful Parent, etc.)
+        if (card.keywords?.includes('etb_cat_token')) {
             this._createCatToken(controller);
         }
 
-        // Vampire Spawn - drenar 2 vida
-        if (card.id === 'vampire_spawn') {
-            this._handleVampireSpawnETB(controller, opponent);
+        // ETB Drain 2 (Vampire Spawn, etc.)
+        if (card.keywords?.includes('etb_drain_2')) {
+            this._handleDrain2ETB(controller, opponent);
         }
+
+        // --- CARD-SPECIFIC ETBs ---
 
         // Dwynen's Elite - criar token Elf se controla outro
         if (card.id === 'dwynenss_elite') {
@@ -114,6 +114,13 @@ class TriggerManager {
         // Volley Veteran - dano igual ao número de Goblins
         if (card.id === 'volley_veteran') {
             await this._handleVolleyVeteranETB(card, controller, opponent);
+        }
+
+        // --- LAND ETBs ---
+
+        // Uncharted Haven - escolher cor ao entrar
+        if (card.type === 'land' && card.produces === 'any' && !card.chosenColor) {
+            await this._handleUnchartedHavenETB(card, controller);
         }
 
         // --- TRIGGER PARA OUTRAS CRIATURAS ---
@@ -179,7 +186,7 @@ class TriggerManager {
         });
     }
 
-    _handleVampireSpawnETB(controller, opponent) {
+    _handleDrain2ETB(controller, opponent) {
         this.game.loseLife(opponent, 2);
         this.game.gainLife(controller, 2);
         this.ui.log(`${opponent.name} perdeu 2 vidas, ${controller.name} ganhou 2 vidas`);
@@ -430,6 +437,37 @@ class TriggerManager {
         if (this.game.attackedThisTurn?.[controllerKey]) {
             this.rules.drawCard(controller);
             this.ui.log(`Raid: ${controller.name} comprou uma carta`);
+        }
+    }
+
+    /**
+     * Uncharted Haven - escolher cor de mana ao entrar em campo
+     * @param {Object} card - O terreno Uncharted Haven
+     * @param {Object} controller - Jogador que controla o terreno
+     */
+    async _handleUnchartedHavenETB(card, controller) {
+        const deckColors = this.rules.getPlayerDeckColors(controller);
+        const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
+
+        if (deckColors.length === 1) {
+            // Apenas uma cor no deck - auto-selecionar
+            card.chosenColor = deckColors[0];
+            this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
+        } else if (deckColors.length > 1) {
+            if (controller === this.player) {
+                // Jogador escolhe a cor
+                const chosenColor = await this.ui.promptColorChoice({
+                    title: `${card.name}`,
+                    description: 'Escolha a cor de mana que este terreno produzirá:',
+                    colors: deckColors
+                });
+                card.chosenColor = chosenColor;
+                this.ui.log(`${card.name} produzirá mana ${colorNames[chosenColor]}`);
+            } else {
+                // IA escolhe a cor mais necessária
+                card.chosenColor = this.game.chooseColorForAI(controller, deckColors);
+                this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
+            }
         }
     }
 

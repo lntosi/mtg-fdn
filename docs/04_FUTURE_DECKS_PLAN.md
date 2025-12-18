@@ -434,11 +434,14 @@ async promptDistributeCounters(creatures, totalCounters) {
 ## Checklist por Deck
 
 ### Template de Implementação
+
+> **IMPORTANTE**: Para cada carta individual, siga o fluxo detalhado em `CLAUDE.md` → "Adding Individual Cards - Complete Checklist"
+
 Para cada deck, seguir este checklist:
 
 ```
-[ ] 1. Pesquisar todas as cartas no Scryfall
-[ ] 2. Adicionar definições em cards.js
+[ ] 1. Pesquisar todas as cartas no Scryfall (API ou web)
+[ ] 2. Adicionar definições em cards.js (seguir estrutura por tipo de carta)
 [ ] 3. Identificar mecânicas novas necessárias
 [ ] 4. Implementar mecânicas novas (se houver)
 [ ] 5. Implementar ETB triggers em triggers.js
@@ -450,9 +453,22 @@ Para cada deck, seguir este checklist:
 [ ] 11. Adicionar targeting validation em rules.js
 [ ] 12. Atualizar IA para usar novas cartas
 [ ] 13. Escrever testes
-[ ] 14. Testar manualmente
-[ ] 15. Atualizar CARD_VALIDATION.md
+[ ] 14. Testar manualmente (`npm test`)
+[ ] 15. Verificar consistência arquitetural (keywords vs card.id)
+[ ] 16. Atualizar CARD_VALIDATION.md
+[ ] 17. Atualizar CLAUDE.md (novos keywords se criados)
 ```
+
+### Regras de Consistência Arquitetural
+
+Antes de considerar um deck completo, verificar:
+
+| Verificação | Padrão Correto | Padrão Errado |
+|-------------|----------------|---------------|
+| ETB simples e reutilizável | `keywords: ["etb_draw"]` | `if (card.id === 'helpful_hunter')` |
+| ETB complexo com targeting | `if (card.id === '...')` | OK neste caso |
+| Localização de triggers | Todos em `triggers.js` | Inline em `game.js` |
+| Lord effects | `rules.js: calculateBonuses()` | Qualquer outro arquivo |
 
 ---
 

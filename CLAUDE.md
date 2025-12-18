@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Prefer robust solutions** - Centralize logic, reuse existing methods
 2. **Follow existing patterns** - Check how similar features are already implemented in the codebase
-3. **Never commit or push automatically** - Always wait for user to request commit. When asked, provide simplified commands:
+3. **Check for architectural inconsistencies** - When implementing or debugging cards, verify:
+   - ETB effects are in `triggers.js`, not inline in `game.js`
+   - Similar effects use keywords (e.g., `etb_cat_token`) instead of `card.id` checks
+   - Code is in the correct file according to the Architecture section below
+4. **Never commit or push automatically** - Always wait for user to request commit. When asked, provide simplified commands:
    ```bash
    git add <files>
    git commit -m "type: short description"
@@ -195,6 +199,8 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 - **etb_draw**: Draw a card when enters battlefield
 - **etb_bounce**: Return target creature to owner's hand
 - **etb_counter_two**: Put +1/+1 counter on up to two other creatures (Felidar Savior)
+- **etb_cat_token**: Create a 1/1 Cat creature token (Prideful Parent)
+- **etb_drain_2**: Opponent loses 2 life, you gain 2 life (Vampire Spawn)
 - **etb_treasure**: Create a Treasure token
 - **goblin_lord**, **elf_lord**, **pirate_lord**: Other creatures of that type get +1/+1
 - **flying_when_attacking**: Has flying only while attacking
@@ -244,6 +250,261 @@ When adding new instants, update `rules.js` → `hasValidTargets()` to ensure:
 - Removal spells check for opponent creatures
 - Prevents priority window appearing when no valid targets exist
 
+## Adding Individual Cards - Complete Checklist
+
+This is the authoritative guide for implementing any new card. Follow this checklist step-by-step.
+
+### Step 0: Fetch Official Card Data from Scryfall
+
+**ALWAYS start here.** Never implement a card without verifying against Scryfall.
+
+```bash
+# Via API (preferred - returns JSON)
+curl "https://api.scryfall.com/cards/named?fuzzy=Card+Name"
+
+# Via Web (for visual reference)
+https://scryfall.com/search?q=name:"Card Name" set:fdn
+```
+
+**Data to extract:**
+| Field | Scryfall JSON | cards.js field |
+|-------|---------------|----------------|
+| Name | `name` | `name` |
+| Mana cost | `mana_cost` | `cost` (e.g., "{2}{W}" → "2W") |
+| CMC | `cmc` | `cmc` |
+| Type line | `type_line` | `type` + `subtype` |
+| Power/Toughness | `power`, `toughness` | `power`, `toughness` |
+| Oracle text | `oracle_text` | `text` (can translate) |
+| Keywords | `keywords[]` | `keywords[]` |
+
+### Step 1: Define Card in `cards.js`
+
+**Required fields by card type:**
+
+```javascript
+// CREATURE
+{
+  id: "card_name",           // snake_case, unique
+  name: "Card Name",         // Exact Scryfall name
+  type: "creature",
+  subtype: "Human Soldier",  // From type_line after "—"
+  cost: "2W",                // Mana cost without braces
+  cmc: 3,                    // Converted mana cost
+  power: 2,
+  toughness: 3,
+  keywords: ["flying"],      // Combat keywords only
+  text: "Card text...",      // Portuguese or English
+  qty: 1                     // Copies in deck
+}
+
+// INSTANT / SORCERY
+{
+  id: "spell_name",
+  name: "Spell Name",
+  type: "instant",           // or "sorcery"
+  cost: "1R",
+  cmc: 2,
+  text: "Spell effect...",
+  qty: 1
+}
+
+// ENCHANTMENT (Aura)
+{
+  id: "aura_name",
+  name: "Aura Name",
+  type: "enchantment",
+  subtype: "Aura",
+  cost: "1W",
+  cmc: 2,
+  keywords: ["enchant"],     // Required for auras
+  text: "Enchant creature...",
+  qty: 1
+}
+
+// ARTIFACT (Equipment)
+{
+  id: "equipment_name",
+  name: "Equipment Name",
+  type: "artifact",
+  subtype: "Equipment",
+  cost: "2",
+  cmc: 2,
+  keywords: ["equipment"],   // Required for equipment
+  text: "Equipped creature...",
+  qty: 1
+}
+
+// LAND
+{
+  id: "basic_land",
+  name: "Plains",
+  type: "land",
+  produces: "W",             // Single color
+  qty: 8
+}
+// OR for special lands:
+{
+  id: "special_land",
+  name: "Uncharted Haven",
+  type: "land",
+  produces: "any",           // Triggers color choice ETB
+  enters_tapped: true,
+  qty: 1
+}
+```
+
+### Step 2: Classify Card Abilities and Route to Correct File
+
+Use this decision tree to determine where to implement each ability:
+
+```
+Card has ability?
+│
+├─ STATIC ABILITY (always active while on battlefield)
+│   ├─ Lord bonus (+1/+1 to type)     → rules.js: calculateBonuses()
+│   ├─ Global keyword (all X have Y)  → rules.js: getCreatureKeywords()
+│   ├─ Conditional keyword (if X)     → rules.js: getCreatureKeywords()
+│   └─ Cost reduction                 → rules.js: hasEnoughMana()
+│
+├─ TRIGGERED ABILITY (when event happens)
+│   ├─ ETB (enters battlefield)       → triggers.js: resolveETB()
+│   ├─ Death (when dies)              → triggers.js: onCreatureDeath()
+│   ├─ Combat begin                   → triggers.js: onBeginCombat()
+│   ├─ Attack declared                → triggers.js: onDeclareAttackers()
+│   ├─ End step                       → triggers.js: onEndStep()
+│   ├─ Spell cast                     → triggers.js: onSpellCast()
+│   └─ Lifegain (future)              → triggers.js: onLifeGain()
+│
+├─ ACTIVATED ABILITY ({cost}: effect)
+│   ├─ Tap for mana                   → Use keyword: tap_for_mana
+│   └─ Other activated                → game.js: canActivateAbility() + activateAbility()
+│
+└─ SPELL EFFECT (instant/sorcery)
+    ├─ Needs target                   → game.js: resolveSpellWithTarget()
+    ├─ No target                      → game.js: resolveSpell()
+    └─ Target validation              → rules.js: hasValidTargets()
+```
+
+### Step 3: Implementation by Ability Type
+
+#### 3A. Simple Combat Keywords
+Just add to `keywords` array in cards.js. No code needed.
+
+Supported: `flying`, `lifelink`, `deathtouch`, `trample`, `first_strike`, `double_strike`, `vigilance`, `haste`, `reach`, `menace`, `flash`, `ward`, `hexproof`, `indestructible`
+
+#### 3B. ETB Triggers → `triggers.js`
+
+**Prefer keywords for reusable effects:**
+```javascript
+// In cards.js - add keyword
+keywords: ["flying", "etb_draw"]
+
+// In triggers.js - resolveETB() method
+if (card.keywords?.includes('etb_draw')) {
+    this.rules.drawCard(controller);
+    this.ui.log(`${card.name}: ${controller.name} comprou uma carta`);
+}
+```
+
+**Use card.id only for complex/unique effects:**
+```javascript
+// Complex ETB with targeting (Bigfin Bouncer)
+if (card.id === 'bigfin_bouncer') {
+    await this._handleBigfinBouncerETB(card, controller, opponent);
+}
+```
+
+#### 3C. Death Triggers → `triggers.js`
+
+```javascript
+// In triggers.js - onCreatureDeath() method
+onCreatureDeath(deadCard, owner) {
+    // Check all permanents that care about deaths
+    const allPlayers = [this.player, this.opponent];
+    allPlayers.forEach(player => {
+        player.battlefield.forEach(card => {
+            if (card.id === 'vengeful_bloodwitch') {
+                // Drain 1 when any creature dies
+            }
+        });
+    });
+}
+```
+
+#### 3D. Static Effects (Lords, Conditionals) → `rules.js`
+
+```javascript
+// In rules.js - calculateBonuses()
+if (card.id === 'elvish_archdruid') {
+    owner.battlefield.forEach(c => {
+        if (c !== card && c.subtype?.includes('Elf')) {
+            c.lordBonus = (c.lordBonus || 0) + 1;
+        }
+    });
+}
+
+// In rules.js - getCreatureKeywords() for conditional keywords
+if (creature.id === 'kargan_dragonrider') {
+    if (controller.battlefield.some(c => c.subtype?.includes('Dragon'))) {
+        keywords.push('flying');
+    }
+}
+```
+
+#### 3E. Activated Abilities → `game.js`
+
+```javascript
+// In game.js - canActivateAbility()
+case 'spectral_sailor':
+    const mana = this.rules.calculateAvailableMana(player);
+    return mana.U >= 1 && (mana.U + mana.any) >= 4 && !card.tapped;
+
+// In game.js - activateAbility()
+case 'spectral_sailor':
+    this.payColoredMana({ U: 1 }, player);
+    this.payGenericMana(3, player);
+    this.rules.drawCard(player);
+    this.ui.log(`${card.name}: ${player.name} comprou uma carta`);
+    break;
+```
+
+#### 3F. Instant/Sorcery Spells → `game.js` + `rules.js`
+
+```javascript
+// In rules.js - hasValidTargets() - REQUIRED for instants with targets
+case 'moment_of_craving':
+    return opponent.battlefield.some(c => c.type === 'creature');
+
+// In game.js - resolveSpellWithTarget() or resolveSpell()
+case 'moment_of_craving':
+    target.toughnessModifier = (target.toughnessModifier || 0) - 2;
+    target.powerModifier = (target.powerModifier || 0) - 2;
+    caster.life += 2;
+    this.ui.log(`${card.name}: -2/-2 em ${target.name}, ${caster.name} ganhou 2 vidas`);
+    break;
+```
+
+### Step 4: Verify Implementation
+
+Run through this checklist:
+
+- [ ] **Scryfall verified**: Card data matches official oracle text
+- [ ] **cards.js complete**: All required fields present
+- [ ] **Keywords correct**: Combat keywords in array, internal keywords if needed
+- [ ] **Trigger location**: ETB/death/combat in triggers.js, NOT in game.js
+- [ ] **Keyword pattern**: Reusable effects use keywords, not card.id
+- [ ] **Target validation**: Instants have `hasValidTargets()` entry if needed
+- [ ] **AI support**: AI can use the card (check `ai.js` if special handling needed)
+- [ ] **Tests pass**: `npm test` shows all 140+ tests passing
+
+### Step 5: Update Documentation
+
+After implementing, update:
+- [ ] `docs/03_CARD_VALIDATION.md` - Add card to deck table with ✓ status
+- [ ] `CLAUDE.md` - Add new keywords to Internal Keywords list if created
+
+---
+
 ## Adding New Decks - Complete Guide
 
 This guide ensures consistent implementation when adding new decks.
@@ -251,7 +512,7 @@ This guide ensures consistent implementation when adding new decks.
 ### Workflow Overview
 
 ```
-1. cards.js     → Define all cards
+1. cards.js     → Define all cards (follow individual card checklist above)
 2. triggers.js  → Add ETBs, combat triggers, end-of-turn triggers
 3. game.js      → Add activated abilities (if any)
 4. rules.js     → Add instant targeting validation (if any)
@@ -416,6 +677,35 @@ npm test
 ```
 
 All 140 tests must pass before committing.
+
+### Step 6: Check for Architectural Inconsistencies
+
+Before finishing, verify consistency across the codebase:
+
+| Check | Correct Pattern | Wrong Pattern |
+|-------|-----------------|---------------|
+| ETB location | `triggers.js` → `resolveETB()` | Inline in `game.js` |
+| Reusable effects | `keywords: ["etb_cat_token"]` | `if (card.id === 'prideful_parent')` |
+| Land ETBs | Call `triggers.resolveETB(card, player)` | Handle directly in `game.js` |
+| Combat triggers | `triggers.js` → `onBeginCombat()` | Inline in combat flow |
+
+**Why this matters:**
+- **Reutilização**: Keywords permitem que novas cartas usem efeitos existentes sem modificar código
+- **Previsibilidade**: Ao ler `cards.js`, deve-se entender o comportamento da carta pelos keywords
+- **Manutenção**: Menos lugares para modificar = menos bugs
+
+**Common mistakes to avoid:**
+```javascript
+// ❌ WRONG - card-specific check for reusable effect
+if (card.id === 'prideful_parent') {
+    this._createCatToken(controller);
+}
+
+// ✅ CORRECT - keyword-based check
+if (card.keywords?.includes('etb_cat_token')) {
+    this._createCatToken(controller);
+}
+```
 
 ---
 

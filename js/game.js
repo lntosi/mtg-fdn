@@ -978,32 +978,8 @@ class GameState {
                 card.tapped = true;
             }
 
-            // Terrenos que precisam escolher cor ao entrar (Uncharted Haven)
-            if (card.produces === 'any' && !card.chosenColor) {
-                const deckColors = this.rules.getPlayerDeckColors(player);
-                const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
-
-                if (deckColors.length === 1) {
-                    // Apenas uma cor no deck - auto-selecionar
-                    card.chosenColor = deckColors[0];
-                    this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
-                } else if (deckColors.length > 1) {
-                    if (player === this.player) {
-                        // Jogador escolhe a cor
-                        const chosenColor = await this.ui.promptColorChoice({
-                            title: `${card.name}`,
-                            description: 'Escolha a cor de mana que este terreno produzirá:',
-                            colors: deckColors
-                        });
-                        card.chosenColor = chosenColor;
-                        this.ui.log(`${card.name} produzirá mana ${colorNames[chosenColor]}`);
-                    } else {
-                        // IA escolhe a cor mais necessária
-                        card.chosenColor = this.chooseColorForAI(player, deckColors);
-                        this.ui.log(`${card.name} produzirá mana ${colorNames[card.chosenColor]}`);
-                    }
-                }
-            }
+            // ETB de terrenos (Uncharted Haven, etc.) - delegado ao TriggerManager
+            await this.triggers.resolveETB(card, player);
 
             this.ui.log(`${player.name} jogou ${card.name}`);
         } else if (card.type === 'instant' || card.type === 'sorcery') {
