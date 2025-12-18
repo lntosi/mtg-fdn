@@ -254,11 +254,6 @@ class GameState {
         // Configurar ícones de mana para mostrar apenas as cores dos decks do jogador
         this.ui.setupManaIconsForDecks(playerDecks);
 
-        // Inicializar modo debug
-        if (window.debug) {
-            window.debug.init(this);
-        }
-
         // Mostrar opção de mulligan
         this.ui.showMulliganPrompt();
     }

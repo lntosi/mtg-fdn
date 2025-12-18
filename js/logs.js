@@ -400,22 +400,3 @@ class LogManager {
 
 // Instância global
 window.logManager = new LogManager();
-
-// Debug helper
-if (window.debug) {
-    window.debug.exportLog = () => {
-        const filename = window.logManager.download('txt');
-        console.log(`Log exportado: ${filename}`);
-    };
-    window.debug.exportLogJSON = () => {
-        const filename = window.logManager.download('json');
-        console.log(`Log JSON exportado: ${filename}`);
-    };
-    window.debug.copyLog = async () => {
-        const success = await window.logManager.copyToClipboard();
-        console.log(success ? 'Log copiado para clipboard!' : 'Erro ao copiar log');
-    };
-    window.debug.showLog = () => {
-        console.log(window.logManager.export());
-    };
-}
