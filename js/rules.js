@@ -513,9 +513,8 @@ class RulesEngine {
         // Vampire Interloper não pode bloquear
         if (blocker.id === 'vampire_interloper') return false;
 
-        // Verificar se criatura não pode bloquear este atacante (Frenzied Goblin, Goblin Smuggler)
-        // Só verifica se attacker foi passado
-        if (attacker && this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(attacker.instanceId)) {
+        // Verificar se criatura não pode bloquear neste turno (Frenzied Goblin, Goblin Smuggler)
+        if (this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(blocker.instanceId)) {
             return false;
         }
 
@@ -622,8 +621,8 @@ class RulesEngine {
                     const blockerToughness = this.getCreatureToughness(blocker);
 
                     // Keywords do bloqueador (não está atacando, então isAttacking = false)
-                    const blockerHasFirstStrike = this.hasKeyword(blocker, 'first_strike', false) ||
-                        this.hasKeyword(blocker, 'double_strike', false);
+                    const blockerHasDoubleStrike = this.hasKeyword(blocker, 'double_strike', false);
+                    const blockerHasFirstStrike = this.hasKeyword(blocker, 'first_strike', false) || blockerHasDoubleStrike;
                     const blockerHasDeathtouch = this.hasKeyword(blocker, 'deathtouch', false);
 
                     // Obter dano atribuído a este bloqueador
@@ -637,8 +636,9 @@ class RulesEngine {
                         // Bloqueador morre na fase de first strike, não causa dano
                         damageFromBlocker = 0;
                     } else {
-                        damageFromBlocker = blockerPower;
-                        damageToAttacker += blockerPower;
+                        // Double Strike: bloqueador causa dano em ambas as fases (first strike + regular)
+                        damageFromBlocker = blockerHasDoubleStrike ? blockerPower * 2 : blockerPower;
+                        damageToAttacker += damageFromBlocker;
                     }
 
                     // Registrar combate entre criaturas
@@ -730,12 +730,36 @@ class RulesEngine {
     getCreatureBonuses(creature, isAttacking = false) {
         const bonuses = { power: 0, toughness: 0, sources: [] };
 
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+
+        // Verificar se a criatura está no campo de batalha
+        // Lords só afetam criaturas no campo, não na mão
+        const isOnBattlefield = allBattlefields.includes(creature);
+        if (!isOnBattlefield) {
+            // Criatura não está no campo - só aplicar counters (que são persistentes no objeto)
+            if (creature.counters && creature.counters.plusOnePlusOne) {
+                const count = creature.counters.plusOnePlusOne;
+                bonuses.power += count;
+                bonuses.toughness += count;
+                if (count > 0) {
+                    bonuses.sources.push({ name: `${count}x +1/+1 counters`, power: count, toughness: count });
+                }
+            }
+            if (creature.counters && creature.counters.minusOneMinusOne) {
+                const count = creature.counters.minusOneMinusOne;
+                bonuses.power -= count;
+                bonuses.toughness -= count;
+                if (count > 0) {
+                    bonuses.sources.push({ name: `${count}x -1/-1 counters`, power: -count, toughness: -count });
+                }
+            }
+            return bonuses;
+        }
+
         // Encontrar o controlador da criatura
         const controller = this.game.player.battlefield.includes(creature)
             ? this.game.player
             : this.game.opponent;
-
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
 
         // === ENCANTAMENTOS GLOBAIS DO CONTROLADOR ===
         controller.battlefield.forEach(card => {

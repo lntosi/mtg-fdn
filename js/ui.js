@@ -1047,8 +1047,9 @@ class GameUI {
                 cardEl.classList.add('tapped');
             }
 
-            // Indicador de Summoning Sickness
-            if (card.type === 'creature' && card.summoningSickness) {
+            // Indicador de Summoning Sickness (não mostrar se tem haste)
+            const hasHaste = card.keywords?.includes('haste') || card.temporaryKeywords?.includes('haste');
+            if (card.type === 'creature' && card.summoningSickness && !hasHaste) {
                 cardEl.classList.add('summoning-sick');
             }
 
