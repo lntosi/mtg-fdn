@@ -1,6 +1,30 @@
 # MTG Jumpstart Foundations
 
-Um jogo de Magic: The Gathering para navegador, focado em aprendizado e prática contra IA.
+> **⚠️ Legal Notice / Aviso Legal**
+>
+> This is an **unofficial, non-commercial fan project** created solely for **educational and personal learning purposes**. It is not intended for distribution as a product or game.
+>
+> **MTG Jumpstart Foundations** is unofficial Fan Content permitted under the [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy). Not approved/endorsed by Wizards of the Coast. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
+>
+> Magic: The Gathering®, including card names, mana symbols, and game mechanics, are trademarks of Wizards of the Coast LLC. All card images are fetched from [Scryfall](https://scryfall.com/), a third-party API, and are property of their respective owners.
+>
+> **This repository contains source code only** — it is a programming exercise to learn JavaScript, game state management, and AI decision-making. If Wizards of the Coast requests removal, I will comply immediately.
+
+---
+
+Um projeto educacional para aprender desenvolvimento de jogos, implementando mecânicas de Magic: The Gathering em JavaScript puro.
+
+## Propósito Educacional
+
+Este projeto foi criado para:
+- 📚 **Aprender JavaScript** — manipulação de DOM, classes ES6+, async/await
+- 🎮 **Estudar game design** — máquinas de estado, sistemas de turnos, IA básica
+- 🧪 **Praticar TDD** — 140+ testes automatizados com Jest
+- 🃏 **Entender MTG** — regras, interações de cartas, sistema de prioridade
+
+**Não é um produto para distribuição.** É código-fonte para estudo.
+
+---
 
 ## Sobre
 
@@ -155,8 +179,4 @@ Veja [ROADMAP.md](ROADMAP.md) para o plano completo de desenvolvimento, incluind
 
 ---
 
-## Disclaimer
-
-MTG Jumpstart Foundations is unofficial Fan Content permitted under the [Fan Content Policy](https://company.wizards.com/en/legal/fancontentpolicy). Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
-
-*Projeto pessoal para fins educacionais. Não comercial.*
+*See full legal notice at the top of this document.*
