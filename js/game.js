@@ -2710,8 +2710,6 @@ class GameState {
         // Aplicar dano aos jogadores
         if (results.damageToPlayers.defender > 0) {
             this.loseLife(defendingPlayer, results.damageToPlayers.defender);
-            this.checkGameOver();
-            if (this.gameOver) return;
         }
 
         // Aplicar vida ganha (lifelink)
@@ -2720,7 +2718,7 @@ class GameState {
             this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas (lifelink)`);
         }
 
-        // Remover criaturas mortas
+        // Remover criaturas mortas (processar mesmo se jogo acabou para estado consistente)
         for (const creature of results.creaturesDied) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
             await this.destroyPermanent(creature, owner);
@@ -2735,6 +2733,10 @@ class GameState {
                 this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
             }
         }
+
+        // Verificar fim de jogo após processar todas as mortes
+        this.checkGameOver();
+        if (this.gameOver) return;
 
         // Limpar linhas de combate após criaturas morrerem (evita linhas órfãs)
         this.blockerAssignments = {};
