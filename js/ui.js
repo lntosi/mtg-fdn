@@ -949,29 +949,32 @@ class GameUI {
                 // Destacar carta sendo conjurada (aguardando seleção de alvo)
                 if (card.pendingCast) {
                     cardEl.classList.add('pending-cast');
-                }
+                    // Permitir clicar para cancelar a seleção
+                    cardEl.style.cursor = 'pointer';
+                    cardEl.title = 'Clique para cancelar';
+                    cardEl.addEventListener('click', () => this.cancelPendingCast(card));
+                } else {
+                    // Verificar se pode jogar
+                    // Instants podem ser jogados fora do turno do jogador (durante combate do oponente, etc)
+                    const canPlay = this.game.rules.canPlayCard(card, player);
+                    const isInstant = card.type === 'instant';
+                    const isPlayerTurn = this.game.isPlayerTurn();
 
-                // Verificar se pode jogar
-                // Instants podem ser jogados fora do turno do jogador (durante combate do oponente, etc)
-                const canPlay = this.game.rules.canPlayCard(card, player);
-                const isInstant = card.type === 'instant';
-                const isPlayerTurn = this.game.isPlayerTurn();
+                    // Pode jogar se: (é seu turno E pode jogar) OU (é instant E pode jogar)
+                    // Instants podem ser jogados a qualquer momento, inclusive durante fase de bloqueio
+                    const canPlayNow = canPlay && (isPlayerTurn || isInstant);
 
-                // Pode jogar se: (é seu turno E pode jogar) OU (é instant E pode jogar)
-                // Instants podem ser jogados a qualquer momento, inclusive durante fase de bloqueio
-                const canPlayNow = canPlay && (isPlayerTurn || isInstant);
-
-                // Não pode clicar em carta que está pendingCast (aguardando alvo)
-                if (canPlayNow && !card.pendingCast) {
-                    cardEl.classList.add('playable');
-                    if (isPlayerTurn) {
-                        cardEl.classList.add('draggable');
-                        // Drag and Drop apenas no seu turno
-                        cardEl.draggable = true;
-                        cardEl.addEventListener('dragstart', (e) => this.onDragStart(e, card, player));
-                        cardEl.addEventListener('dragend', (e) => this.onDragEnd(e));
+                    if (canPlayNow) {
+                        cardEl.classList.add('playable');
+                        if (isPlayerTurn) {
+                            cardEl.classList.add('draggable');
+                            // Drag and Drop apenas no seu turno
+                            cardEl.draggable = true;
+                            cardEl.addEventListener('dragstart', (e) => this.onDragStart(e, card, player));
+                            cardEl.addEventListener('dragend', (e) => this.onDragEnd(e));
+                        }
+                        cardEl.addEventListener('click', () => this.onCardClick(card, player));
                     }
-                    cardEl.addEventListener('click', () => this.onCardClick(card, player));
                 }
             }
 
@@ -1084,11 +1087,38 @@ class GameUI {
             cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
             cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
 
-            // Destacar alvos válidos para Auras
+            // Destacar alvos válidos para seleção de alvo (Auras, Spells com alvo)
             if (this.waitingForTarget && this.validTargets.includes(card)) {
                 cardEl.classList.add('valid-target');
-                cardEl.addEventListener('click', () => this.selectTarget(card));
                 cardEl.style.cursor = 'crosshair';
+
+                // Verificar se há auras anexadas que também são alvos válidos
+                const validAuras = card.type === 'creature' ? this.getValidAttachedAuras(card) : [];
+
+                if (validAuras.length > 0) {
+                    // Mostrar menu contextual para escolher entre criatura e auras
+                    cardEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.showTargetChoiceMenu(card, validAuras, e);
+                    });
+                } else {
+                    // Selecionar diretamente
+                    cardEl.addEventListener('click', () => this.selectTarget(card));
+                }
+            }
+            // Criatura própria com aura inimiga anexada que é alvo válido
+            // Ex: Sua criatura com Pacifism do oponente - clicar abre menu para exilar a aura
+            else if (this.waitingForTarget && isPlayer && card.type === 'creature') {
+                const validAuras = this.getValidAttachedAuras(card);
+                if (validAuras.length > 0) {
+                    cardEl.classList.add('valid-target');
+                    cardEl.style.cursor = 'crosshair';
+                    cardEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Mostrar menu apenas com as auras (criatura própria não é alvo)
+                        this.showAuraOnlyMenu(card, validAuras, e);
+                    });
+                }
             }
             // Se há bloqueador selecionado e esta é uma criatura atacante do oponente, permitir clicar
             else if (!isPlayer && this.selectedBlocker && isAttacking && card.type === 'creature') {
@@ -1702,6 +1732,9 @@ class GameUI {
     selectTarget(target) {
         if (!this.waitingForTarget || !this.pendingAura) return;
 
+        // Fechar menu contextual se existir
+        this.closeTargetChoiceMenu();
+
         const aura = this.pendingAura;
         const callback = this.targetCallback;
 
@@ -1717,6 +1750,165 @@ class GameUI {
         }
     }
 
+    /**
+     * Mostra menu contextual para escolher entre criatura e auras anexadas
+     * @param {Object} creature - A criatura clicada
+     * @param {Array} validAuras - Auras anexadas que são alvos válidos
+     * @param {MouseEvent} event - Evento de clique para posicionar o menu
+     */
+    showTargetChoiceMenu(creature, validAuras, event) {
+        // Fechar menu anterior se existir
+        this.closeTargetChoiceMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'target-choice-menu';
+        menu.id = 'target-choice-menu';
+
+        // Título
+        const title = document.createElement('div');
+        title.className = 'target-choice-title';
+        title.textContent = 'Exilar qual?';
+        menu.appendChild(title);
+
+        // Opção: Criatura
+        const creatureOption = document.createElement('div');
+        creatureOption.className = 'target-choice-option';
+        creatureOption.innerHTML = `<span class="option-icon">⚔️</span> ${creature.name}`;
+        creatureOption.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.selectTarget(creature);
+        });
+        menu.appendChild(creatureOption);
+
+        // Opções: Auras
+        validAuras.forEach(aura => {
+            const auraOption = document.createElement('div');
+            auraOption.className = 'target-choice-option target-choice-aura';
+            auraOption.innerHTML = `<span class="option-icon">✨</span> ${aura.name} <span class="option-type">(Aura)</span>`;
+            auraOption.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectTarget(aura);
+            });
+            menu.appendChild(auraOption);
+        });
+
+        // Posicionar menu próximo ao clique
+        document.body.appendChild(menu);
+
+        // Ajustar posição para não sair da tela
+        const rect = menu.getBoundingClientRect();
+        let left = event.clientX;
+        let top = event.clientY;
+
+        if (left + rect.width > window.innerWidth) {
+            left = window.innerWidth - rect.width - 10;
+        }
+        if (top + rect.height > window.innerHeight) {
+            top = window.innerHeight - rect.height - 10;
+        }
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+
+        // Fechar ao clicar fora
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                this.closeTargetChoiceMenu();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        // Pequeno delay para evitar fechar imediatamente
+        setTimeout(() => {
+            document.addEventListener('click', closeHandler);
+        }, 10);
+    }
+
+    closeTargetChoiceMenu() {
+        const existingMenu = document.getElementById('target-choice-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+        }
+    }
+
+    /**
+     * Mostra menu contextual apenas com auras (quando a criatura não é alvo válido)
+     * Ex: Exilar Pacifism da sua própria criatura
+     * @param {Object} creature - A criatura que tem as auras anexadas
+     * @param {Array} validAuras - Auras anexadas que são alvos válidos
+     * @param {MouseEvent} event - Evento de clique para posicionar o menu
+     */
+    showAuraOnlyMenu(creature, validAuras, event) {
+        // Fechar menu anterior se existir
+        this.closeTargetChoiceMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'target-choice-menu';
+        menu.id = 'target-choice-menu';
+
+        // Título
+        const title = document.createElement('div');
+        title.className = 'target-choice-title';
+        title.textContent = `Exilar de ${creature.name}:`;
+        menu.appendChild(title);
+
+        // Opções: apenas Auras
+        validAuras.forEach(aura => {
+            const auraOption = document.createElement('div');
+            auraOption.className = 'target-choice-option target-choice-aura';
+            auraOption.innerHTML = `<span class="option-icon">✨</span> ${aura.name} <span class="option-type">(Aura)</span>`;
+            auraOption.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectTarget(aura);
+            });
+            menu.appendChild(auraOption);
+        });
+
+        // Posicionar menu próximo ao clique
+        document.body.appendChild(menu);
+
+        // Ajustar posição para não sair da tela
+        const rect = menu.getBoundingClientRect();
+        let left = event.clientX;
+        let top = event.clientY;
+
+        if (left + rect.width > window.innerWidth) {
+            left = window.innerWidth - rect.width - 10;
+        }
+        if (top + rect.height > window.innerHeight) {
+            top = window.innerHeight - rect.height - 10;
+        }
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+
+        // Fechar ao clicar fora
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                this.closeTargetChoiceMenu();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => {
+            document.addEventListener('click', closeHandler);
+        }, 10);
+    }
+
+    /**
+     * Verifica se há auras anexadas a uma criatura que também são alvos válidos
+     * @param {Object} creature - A criatura para verificar
+     * @returns {Array} - Lista de auras que são alvos válidos
+     */
+    getValidAttachedAuras(creature) {
+        if (!this.validTargets || !creature.instanceId) return [];
+
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.filter(card =>
+            card.subtype === 'Aura' &&
+            card.attachedTo === creature.instanceId &&
+            this.validTargets.includes(card)
+        );
+    }
+
     cancelTargeting() {
         if (this.waitingForTarget && this.pendingAura) {
             // Limpar marcação de pendingCast (carta já está na mão)
@@ -1729,6 +1921,27 @@ class GameUI {
         this.validTargets = [];
         this.targetCallback = null;
         this.render();
+    }
+
+    /**
+     * Cancela a seleção de alvo de uma carta específica
+     * Chamado quando o jogador clica na carta que está pendingCast
+     * @param {Object} card - A carta para cancelar
+     */
+    cancelPendingCast(card) {
+        // Verificar se esta carta é realmente a pendente
+        if (this.pendingAura && this.pendingAura.instanceId === card.instanceId) {
+            this.cancelTargeting();
+        } else if (card.pendingCast) {
+            // Fallback: limpar pendingCast mesmo que não seja a pendingAura
+            delete card.pendingCast;
+            this.waitingForTarget = false;
+            this.pendingAura = null;
+            this.validTargets = [];
+            this.targetCallback = null;
+            this.log(`Seleção de alvo cancelada`);
+            this.render();
+        }
     }
 
     // === Sistema de Scry ===
@@ -2326,7 +2539,7 @@ class GameUI {
 
         stackEl.classList.remove('empty');
 
-        // Renderizar itens da pilha (do topo para a base)
+        // Renderizar itens da pilha (do topo para a base) - formato compacto
         const stackItems = [...this.game.stack].reverse();
         stackItems.forEach((stackItem, index) => {
             const itemEl = document.createElement('div');
@@ -2337,29 +2550,21 @@ class GameUI {
             }
 
             const item = stackItem.item;
-            const controllerName = stackItem.controller === this.game.player ? 'Você' : 'Oponente';
+            const isOpponent = stackItem.controller !== this.game.player;
+            const cardName = item.name || 'Habilidade';
 
-            let itemHtml = `
-                <div class="stack-item-name">${item.name || 'Habilidade'}</div>
-                <div class="stack-item-controller">${controllerName}</div>
-            `;
+            // Formato compacto: "Nome (Opp)" ou apenas "Nome" se for do jogador
+            let displayName = isOpponent ? `${cardName} <span class="stack-opp">(Opp)</span>` : cardName;
+
+            let itemHtml = `<div class="stack-item-name">${displayName}</div>`;
 
             if (stackItem.target) {
-                itemHtml += `<div class="stack-item-target">Alvo: ${stackItem.target.name}</div>`;
+                itemHtml += `<div class="stack-item-target">→ ${stackItem.target.name}</div>`;
             }
 
             itemEl.innerHTML = itemHtml;
             stackEl.appendChild(itemEl);
         });
-
-        // Mostrar indicador de prioridade
-        const priorityEl = document.createElement('div');
-        priorityEl.className = 'stack-priority';
-        const priorityText = this.game.priorityPlayer === this.game.player
-            ? 'Sua prioridade'
-            : 'Prioridade do oponente';
-        priorityEl.textContent = priorityText;
-        stackEl.appendChild(priorityEl);
 
         // Update the badge and dropdown
         this.updateStackBadge();
@@ -3213,19 +3418,15 @@ class GameUI {
             // Configurar conteúdo
             reasonEl.textContent = reason;
 
-            // Renderizar instants disponíveis
+            // Renderizar instants disponíveis (sempre há instants quando este popup é mostrado)
             instantsContainer.innerHTML = '';
-            if (playableInstants && playableInstants.length > 0) {
-                playableInstants.forEach(card => {
-                    const cardEl = this.createCardElement(card, true);
-                    cardEl.classList.add('priority-instant-card');
-                    cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
-                    cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
-                    instantsContainer.appendChild(cardEl);
-                });
-            } else {
-                instantsContainer.innerHTML = '<p class="no-instants">Nenhum instant disponível</p>';
-            }
+            playableInstants.forEach(card => {
+                const cardEl = this.createCardElement(card, true);
+                cardEl.classList.add('priority-instant-card');
+                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
+                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                instantsContainer.appendChild(cardEl);
+            });
 
             // Handlers dos botões
             const cleanup = () => {

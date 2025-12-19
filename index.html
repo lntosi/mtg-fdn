@@ -43,21 +43,6 @@
             <div class="creatures" id="opponent-creatures"></div>
         </div>
 
-        <!-- Zona Central: Controles (compacta) -->
-        <div id="middle-zone">
-            <div id="phase-indicator">
-                <span id="turn-indicator">T1</span>
-                <span class="phase-separator">•</span>
-                <span id="current-phase">Início</span>
-            </div>
-            <div id="action-buttons">
-                <button id="btn-main-action" class="btn-main-action" disabled>OK</button>
-                <button id="btn-next-phase" class="btn-secondary" disabled title="Pular Fase">▶</button>
-                <button id="btn-end-turn" class="btn-secondary" disabled title="Encerrar Turno">▶▶</button>
-            </div>
-            <div id="stack"></div>
-        </div>
-
         <!-- Battlefield do Jogador -->
         <div class="battlefield" id="player-battlefield">
             <div class="creatures" id="player-creatures"></div>
@@ -85,6 +70,22 @@
             <div class="hand" id="player-hand"></div>
             <div class="library-zone">
                 <div class="library-zone-row">
+                    <!-- Controles de jogo -->
+                    <div id="middle-zone">
+                        <div id="phase-indicator">
+                            <span id="turn-indicator">T1</span>
+                            <span class="phase-separator">•</span>
+                            <span id="current-phase">Início</span>
+                        </div>
+                        <div id="action-buttons">
+                            <button id="btn-main-action" class="btn-main-action" disabled>OK</button>
+                            <div class="secondary-buttons-row">
+                                <button id="btn-next-phase" class="btn-secondary" disabled title="Pular Fase">▶</button>
+                                <button id="btn-end-turn" class="btn-secondary" disabled title="Encerrar Turno">▶▶</button>
+                            </div>
+                        </div>
+                        <div id="stack"></div>
+                    </div>
                     <div class="library" id="player-library">
                         <div class="library-stack"></div>
                         <span class="library-count">0</span>

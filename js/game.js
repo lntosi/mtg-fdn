@@ -803,24 +803,27 @@ class GameState {
 
     /**
      * Oferece uma janela de prioridade ao jogador para responder
-     * Auto-pass inteligente: só mostra se o jogador tiver instants jogáveis
+     * Popup só aparece se houver instants jogáveis
+     * Habilidades ativadas são indicadas visualmente nas cartas (sem popup)
      * @param {string} reason - Razão da janela (ex: "IA lançou Lightning Bolt")
      * @param {Object} options - Opções adicionais
      * @returns {Promise<string>} - 'pass' ou 'respond'
      */
     async offerPriorityWindow(reason, options = {}) {
-        // Auto-pass se o jogador não tiver respostas disponíveis
-        if (!this.playerHasResponses()) {
+        const playableInstants = this.getPlayableInstants();
+
+        // Se não há instants jogáveis, não mostrar popup
+        // Habilidades ativadas são indicadas visualmente nas cartas
+        if (playableInstants.length === 0) {
             return 'pass';
         }
 
-        // Mostrar janela de prioridade
+        // Mostrar janela de prioridade apenas com instants
         this.waitingForPriorityResponse = true;
         this.priorityWindowReason = reason;
         this.priorityPlayer = this.player;
 
-        // Mostrar UI de resposta
-        const response = await this.ui.showPriorityWindow(reason, this.getPlayableInstants());
+        const response = await this.ui.showPriorityWindow(reason, playableInstants);
 
         this.waitingForPriorityResponse = false;
         this.priorityWindowReason = null;
@@ -2779,6 +2782,9 @@ class GameState {
             return;
         }
 
+        // Cancelar qualquer seleção de alvo pendente
+        this.ui.cancelTargeting();
+
         this.ui.log('Pulando para End Step...');
         this.phase = PHASES.END;
         await this.handlePhase();
@@ -2839,6 +2845,9 @@ class GameState {
     async _executeAITurnInternal() {
         // Não continuar se o jogo acabou
         if (this.gameOver) return;
+
+        // Cancelar qualquer seleção de alvo pendente do jogador
+        this.ui.cancelTargeting();
 
         // Indicar início do turno da IA
         this.ui.log('--- Turno do Oponente ---');
