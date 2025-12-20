@@ -570,6 +570,15 @@ class GameUI {
             });
         }
 
+        // Unblockable neste turno (Goblin Smuggler, Frenzied Goblin, etc.)
+        if (card.type === 'creature' && this.game?.unblockableThisTurn?.includes(card.instanceId)) {
+            const badge = document.createElement('span');
+            badge.className = 'keyword-badge keyword-temporary';
+            badge.textContent = "can't be blocked";
+            badge.title = 'Não pode ser bloqueada neste turno';
+            previewKeywords.appendChild(badge);
+        }
+
         // Auras/Encantamentos anexados
         if (card.type === 'creature' && this.game) {
             const attachedAuras = this.getAttachedAuras(card);
