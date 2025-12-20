@@ -2795,6 +2795,19 @@ body {
     margin-bottom: 15px;
 }
 
+.mana-cost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.85em;
+    vertical-align: middle;
+    margin: 0 3px;
+}
+
 .mana-cost-R {
     display: inline-flex;
     align-items: center;
@@ -2805,9 +2818,11 @@ body {
     background: linear-gradient(135deg, #922b21, #e74c3c);
     color: #fff;
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.85em;
     vertical-align: middle;
     margin: 0 3px;
+    border: 2px solid #ec7063;
+    box-shadow: 0 0 6px rgba(231, 76, 60, 0.5);
 }
 
 .frenzied-goblin-creatures {
