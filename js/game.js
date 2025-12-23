@@ -18,8 +18,10 @@ class GameState {
         // Rastrear perda de vida para triggers (Bloodtithe Collector, Stromkirk Bloodthief, etc.)
         this.opponentLostLifeThisTurn = false;
         this.playerLostLifeThisTurn = false;
-        // Criaturas que não podem ser bloqueadas neste turno (Frenzied Goblin, Goblin Smuggler)
-        this.unblockableThisTurn = [];
+        // Criaturas que não podem BLOQUEAR neste turno (Frenzied Goblin)
+        this.cantBlockThisTurn = [];
+        // Criaturas que não podem SER BLOQUEADAS neste turno (Goblin Smuggler)
+        this.cantBeBlockedThisTurn = [];
         // Rastrear se atacou neste turno (para Raid - Storm Fleet Spy, Skyship Buccaneer)
         this.attackedThisTurn = { player: false, opponent: false };
 
@@ -1918,7 +1920,7 @@ class GameState {
                     }
 
                     if (smugglerTarget) {
-                        this.unblockableThisTurn.push(smugglerTarget.instanceId);
+                        this.cantBeBlockedThisTurn.push(smugglerTarget.instanceId);
                         this.ui.log(`Goblin Smuggler: ${smugglerTarget.name} não pode ser bloqueado neste turno`);
                         this.ui.render();
                     }
@@ -2298,7 +2300,8 @@ class GameState {
                     this.playerLostLifeThisTurn = false;
                     this.attackedThisTurn.opponent = false;
                 }
-                this.unblockableThisTurn = [];
+                this.cantBlockThisTurn = [];
+                this.cantBeBlockedThisTurn = [];
                 await this.nextPhase();
                 break;
 

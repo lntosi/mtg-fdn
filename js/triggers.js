@@ -752,7 +752,7 @@ class TriggerManager {
             const shouldPay = await this.ui.promptFrenziedGoblin(potentialBlockers);
             if (shouldPay?.target) {
                 this.game.payColoredMana({ R: 1 }, attackingPlayer);
-                this.game.unblockableThisTurn.push(shouldPay.target.instanceId);
+                this.game.cantBlockThisTurn.push(shouldPay.target.instanceId);
                 this.ui.log(`Frenzied Goblin: ${shouldPay.target.name} não pode bloquear neste turno`);
             }
         } else {
@@ -761,7 +761,7 @@ class TriggerManager {
             )[0];
             if (target) {
                 this.game.payColoredMana({ R: 1 }, attackingPlayer);
-                this.game.unblockableThisTurn.push(target.instanceId);
+                this.game.cantBlockThisTurn.push(target.instanceId);
                 this.ui.log(`Frenzied Goblin: ${target.name} não pode bloquear neste turno`);
             }
         }

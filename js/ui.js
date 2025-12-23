@@ -570,8 +570,8 @@ class GameUI {
             });
         }
 
-        // Unblockable neste turno (Goblin Smuggler, Frenzied Goblin, etc.)
-        if (card.type === 'creature' && this.game?.unblockableThisTurn?.includes(card.instanceId)) {
+        // Unblockable neste turno (Goblin Smuggler)
+        if (card.type === 'creature' && this.game?.cantBeBlockedThisTurn?.includes(card.instanceId)) {
             const badge = document.createElement('span');
             badge.className = 'keyword-badge keyword-temporary';
             badge.textContent = "can't be blocked";

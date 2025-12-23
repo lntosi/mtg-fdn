@@ -513,8 +513,13 @@ class RulesEngine {
         // Vampire Interloper não pode bloquear
         if (blocker.id === 'vampire_interloper') return false;
 
-        // Verificar se criatura não pode bloquear neste turno (Frenzied Goblin, Goblin Smuggler)
-        if (this.game.unblockableThisTurn && this.game.unblockableThisTurn.includes(blocker.instanceId)) {
+        // Verificar se o BLOQUEADOR não pode bloquear neste turno (Frenzied Goblin)
+        if (this.game.cantBlockThisTurn && this.game.cantBlockThisTurn.includes(blocker.instanceId)) {
+            return false;
+        }
+
+        // Verificar se o ATACANTE não pode ser bloqueado neste turno (Goblin Smuggler)
+        if (attacker && this.game.cantBeBlockedThisTurn && this.game.cantBeBlockedThisTurn.includes(attacker.instanceId)) {
             return false;
         }
 
