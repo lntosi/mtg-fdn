@@ -2246,8 +2246,8 @@ class GameUI {
                 mainButtonTitle = 'Confirmar atacantes';
                 mainButtonState = 'state-combat';
             } else if (this.game.phase === PHASES.DECLARE_ATTACKERS) {
-                mainButtonText = 'To Combat';
-                mainButtonTitle = 'Ir ao combate sem atacar';
+                mainButtonText = 'Skip Attack';
+                mainButtonTitle = 'Pular fase de ataque';
                 mainButtonState = 'state-advance';
             } else {
                 mainButtonText = `→ ${nextPhaseName}`;
