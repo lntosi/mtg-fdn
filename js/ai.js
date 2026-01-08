@@ -121,6 +121,7 @@ class AIPlayer {
         while (playedSomething) {
             playedSomething = false;
 
+            // Primeiro: cartas jogáveis com mana normal
             let playableCards = opponent.hand
                 .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
                 .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
@@ -128,6 +129,42 @@ class AIPlayer {
             // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
             if (phase === 1) {
                 playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
+            }
+
+            // Se não tem cartas jogáveis com mana normal, verificar se pode usar Treasures
+            if (playableCards.length === 0) {
+                const treasures = this.getTreasureTokens(opponent);
+                if (treasures.length > 0) {
+                    // Encontrar cartas que poderiam ser jogadas COM treasures
+                    let potentialCards = opponent.hand
+                        .filter(card => card.type !== 'land' && !this.rules.canPlayCard(card, opponent))
+                        .filter(card => {
+                            const result = this.canPayWithTreasures(card, opponent);
+                            return result.canPay && result.treasuresNeeded > 0;
+                        })
+                        .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+                    if (phase === 1) {
+                        potentialCards = potentialCards.filter(card => !this.shouldHoldForMainPhase2(card));
+                    }
+
+                    if (potentialCards.length > 0) {
+                        const cardToPlay = this.chooseBestCard(potentialCards);
+                        if (cardToPlay) {
+                            const treasureInfo = this.canPayWithTreasures(cardToPlay, opponent);
+                            // Sacrificar treasures necessários
+                            await this.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
+                            // Agora a carta deve ser jogável
+                            if (this.rules.canPlayCard(cardToPlay, opponent)) {
+                                await this.delay(600);
+                                await this.game.playCard(cardToPlay, opponent);
+                                this.game.ui.render();
+                                await this.delay(1200);
+                                playedSomething = true;
+                            }
+                        }
+                    }
+                }
             }
 
             if (playableCards.length > 0) {
@@ -149,29 +186,143 @@ class AIPlayer {
         }
     }
 
+    /**
+     * Retorna os Treasure Tokens disponíveis para a IA
+     */
+    getTreasureTokens(player) {
+        return player.battlefield.filter(card =>
+            card.keywords?.includes('sacrifice_for_mana')
+        );
+    }
+
+    /**
+     * Calcula mana disponível incluindo Treasure Tokens
+     */
+    calculateManaWithTreasures(player) {
+        const baseMana = this.rules.calculateAvailableMana(player);
+        const treasureCount = this.getTreasureTokens(player).length;
+
+        return {
+            ...baseMana,
+            treasures: treasureCount,
+            total: Object.values(baseMana).reduce((a, b) => a + b, 0) + treasureCount
+        };
+    }
+
+    /**
+     * Verifica se a IA pode pagar o custo de uma carta usando Treasures se necessário
+     * @returns {Object} { canPay: boolean, treasuresNeeded: number, colorsNeeded: string[] }
+     */
+    canPayWithTreasures(card, player) {
+        const baseMana = this.rules.calculateAvailableMana(player);
+        const treasures = this.getTreasureTokens(player);
+        const cost = this.rules.parseCost(card.cost);
+
+        // Primeiro verificar se já pode pagar sem treasures
+        if (this.rules.canPayCost(cost, baseMana)) {
+            return { canPay: true, treasuresNeeded: 0, colorsNeeded: [] };
+        }
+
+        if (treasures.length === 0) {
+            return { canPay: false, treasuresNeeded: 0, colorsNeeded: [] };
+        }
+
+        // Simular pagamento com treasures
+        let remainingMana = { ...baseMana };
+        let treasuresNeeded = 0;
+        let colorsNeeded = [];
+
+        // Pagar custos coloridos primeiro
+        for (const color in cost.colored) {
+            const needed = cost.colored[color];
+            if (remainingMana[color] >= needed) {
+                remainingMana[color] -= needed;
+            } else {
+                // Precisa de treasures para cobrir a diferença
+                const shortfall = needed - remainingMana[color];
+                if (treasuresNeeded + shortfall <= treasures.length) {
+                    for (let i = 0; i < shortfall; i++) {
+                        colorsNeeded.push(color);
+                    }
+                    treasuresNeeded += shortfall;
+                    remainingMana[color] = 0;
+                } else {
+                    return { canPay: false, treasuresNeeded: 0, colorsNeeded: [] };
+                }
+            }
+        }
+
+        // Pagar custo genérico
+        let totalRemaining = Object.values(remainingMana).reduce((a, b) => a + b, 0);
+        if (totalRemaining < cost.generic) {
+            const genericShortfall = cost.generic - totalRemaining;
+            if (treasuresNeeded + genericShortfall <= treasures.length) {
+                // Para custo genérico, usamos a cor do deck
+                const deckColors = this.rules.getPlayerDeckColors(player);
+                const preferredColor = deckColors[0] || 'U';
+                for (let i = 0; i < genericShortfall; i++) {
+                    colorsNeeded.push(preferredColor);
+                }
+                treasuresNeeded += genericShortfall;
+            } else {
+                return { canPay: false, treasuresNeeded: 0, colorsNeeded: [] };
+            }
+        }
+
+        return { canPay: true, treasuresNeeded, colorsNeeded };
+    }
+
+    /**
+     * Sacrifica Treasures necessários para pagar uma carta
+     */
+    async useTreasuresForCard(player, treasuresNeeded, colorsNeeded) {
+        const treasures = this.getTreasureTokens(player);
+
+        for (let i = 0; i < treasuresNeeded && i < treasures.length; i++) {
+            const treasure = treasures[i];
+            const color = colorsNeeded[i] || 'U';
+
+            // Adicionar mana flutuante
+            const playerKey = player === this.game.player ? 'player' : 'opponent';
+            this.game.floatingMana[playerKey][color] += 1;
+
+            // Remover treasure do battlefield
+            const tokenIndex = player.battlefield.findIndex(c => c.instanceId === treasure.instanceId);
+            if (tokenIndex !== -1) {
+                player.battlefield.splice(tokenIndex, 1);
+            }
+
+            const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
+            this.game.ui.log(`IA sacrifica Treasure: +1 mana ${colorNames[color]}`);
+        }
+
+        this.game.ui.render();
+        await this.delay(500);
+    }
+
     // Usa habilidades ativadas quando vale a pena
     async useActivatedAbilities() {
         const opponent = this.game.opponent;
         const player = this.game.player;
 
-        // Encontrar criaturas com habilidades ativadas
-        const creaturesWithAbilities = opponent.battlefield.filter(card =>
-            card.type === 'creature' &&
+        // Encontrar permanentes com habilidades ativadas (criaturas E artefatos)
+        const permanentsWithAbilities = opponent.battlefield.filter(card =>
+            (card.type === 'creature' || card.type === 'artifact') &&
             this.game.canActivateAbility &&
             this.game.canActivateAbility(card, opponent)
         );
 
-        for (const creature of creaturesWithAbilities) {
+        for (const permanent of permanentsWithAbilities) {
             // Verificar se ainda pode ativar (mana pode ter mudado)
-            if (!this.game.canActivateAbility(creature, opponent)) continue;
+            if (!this.game.canActivateAbility(permanent, opponent)) continue;
 
             // Decidir se vale a pena ativar
-            const shouldActivate = this.shouldActivateAbility(creature, opponent, player);
+            const shouldActivate = this.shouldActivateAbility(permanent, opponent, player);
 
             if (shouldActivate) {
-                this.game.ui.log(`IA ativa habilidade de ${creature.name}`);
+                this.game.ui.log(`IA ativa habilidade de ${permanent.name}`);
                 await this.delay(800);
-                await this.game.activateAbility(creature, opponent);
+                await this.game.activateAbility(permanent, opponent);
                 this.game.ui.render();
                 await this.delay(1000);
             }
@@ -179,8 +330,13 @@ class AIPlayer {
     }
 
     // Decide se vale a pena ativar uma habilidade
-    shouldActivateAbility(creature, controller, opponent) {
-        switch (creature.id) {
+    shouldActivateAbility(permanent, controller, opponent) {
+        // Treasure tokens: NÃO sacrificar automaticamente, guardar para jogar cartas
+        if (permanent.keywords?.includes('sacrifice_for_mana')) {
+            return false;
+        }
+
+        switch (permanent.id) {
             case 'vampire_neonate':
                 // Sempre vale ativar: drena 1 vida por 2 mana
                 // Melhor que atacar com 0 de power
