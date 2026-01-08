@@ -3613,10 +3613,14 @@ class GameUI {
         const handCards = this.playerHand.querySelectorAll('.card');
         handCards.forEach(cardEl => {
             if (highlight) {
-                // Verificar se é um instant jogável
+                // Verificar se é um instant OU carta com flash jogável
                 const card = this.findCardByElement(cardEl);
-                if (card && card.type === 'instant' && this.game.rules.canCastInstant(card, this.game.player)) {
-                    cardEl.classList.add('instant-highlight');
+                if (card) {
+                    const hasFlash = card.keywords?.includes('flash');
+                    const isInstantSpeed = card.type === 'instant' || hasFlash;
+                    if (isInstantSpeed && this.game.rules.canCastInstant(card, this.game.player)) {
+                        cardEl.classList.add('instant-highlight');
+                    }
                 }
             } else {
                 cardEl.classList.remove('instant-highlight');

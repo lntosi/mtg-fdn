@@ -937,8 +937,10 @@ class GameState {
             return false;
         }
 
-        // Se jogador jogou um instant durante janela de prioridade, completar a resposta
-        const wasWaitingForResponse = this.isWaitingForPriorityResponse() && player === this.player && card.type === 'instant';
+        // Se jogador jogou um instant ou flash durante janela de prioridade, completar a resposta
+        const hasFlash = card.keywords?.includes('flash');
+        const isInstantSpeed = card.type === 'instant' || hasFlash;
+        const wasWaitingForResponse = this.isWaitingForPriorityResponse() && player === this.player && isInstantSpeed;
 
         // Verificar se é feitiço/aura que precisa de seleção de alvo pelo jogador
         // Nesses casos, a carta fica na mão (marcada como pendingCast) até o alvo ser selecionado
