@@ -1667,14 +1667,21 @@ class GameState {
      */
     handleDraw(player, amount) {
         for (let i = 0; i < amount; i++) {
-            this.rules.drawCard(player);
+            const drawn = this.rules.drawCard(player);
+            if (drawn) {
+                if (player === this.player) {
+                    this.ui.log(`Você comprou: ${drawn.name}`);
+                } else {
+                    this.ui.log(`${player.name} comprou uma carta`);
+                }
+            }
         }
     }
 
     // Resolver feitiços sem alvo (agora async para suportar keywords como scry)
     async resolveSpell(card, caster) {
         // === PROCESSAR KEYWORDS GENÉRICAS PRIMEIRO ===
-        if (card.keywords) {
+        if (card.keywords && card.keywords.length > 0) {
             // Scry N (ex: scry_1, scry_2)
             const scryKeyword = card.keywords.find(k => k.startsWith('scry_'));
             if (scryKeyword) {
