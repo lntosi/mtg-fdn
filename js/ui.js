@@ -26,6 +26,7 @@ class GameUI {
         this.selectedBlocker = null; // Bloqueador selecionado aguardando escolha de atacante
         this.selectedLands = []; // Terrenos pré-selecionados para pagamento de mana
         this.waitingForBlockers = false;
+        this.combatLinesTimeout = null; // Timeout para desenhar linhas de combate
         this.waitingForTarget = false;
         this.pendingAura = null;
         this.validTargets = [];
@@ -936,9 +937,15 @@ class GameUI {
         const hasPlayerBlockers = this.waitingForBlockers;
         const hasAIBlockers = this.game.blockerAssignments && Object.keys(this.game.blockerAssignments).length > 0;
 
+        // Cancelar timeout anterior para evitar redesenhar linhas após limpeza
+        if (this.combatLinesTimeout) {
+            clearTimeout(this.combatLinesTimeout);
+            this.combatLinesTimeout = null;
+        }
+
         if (hasPlayerBlockers || hasAIBlockers) {
             // Pequeno delay para garantir que os elementos foram renderizados
-            setTimeout(() => this.drawCombatLines(), 50);
+            this.combatLinesTimeout = setTimeout(() => this.drawCombatLines(), 50);
         } else {
             this.clearCombatLines();
         }
@@ -3313,6 +3320,12 @@ class GameUI {
     }
 
     clearCombatLines() {
+        // Cancelar timeout pendente para evitar redesenhar linhas
+        if (this.combatLinesTimeout) {
+            clearTimeout(this.combatLinesTimeout);
+            this.combatLinesTimeout = null;
+        }
+
         const svg = document.getElementById('combat-lines-overlay');
         if (svg) {
             svg.innerHTML = '';

@@ -128,7 +128,7 @@ const CARD_DATABASE = {
             { id: "tolarian_terror", name: "Tolarian Terror", type: "creature", subtype: "Serpent", cost: "6U", cmc: 7, power: 5, toughness: 5, keywords: ["ward"], text: "Esta mágica custa 1 a menos para cada card de mágica instantânea e feitiço em seu cemitério. Proteção 2.", qty: 1 },
 
             // Feitiços e Encantamentos (4)
-            { id: "opt", name: "Opt", type: "instant", cost: "U", cmc: 1, text: "Vidência 1. Compre uma carta.", keywords: ["scry", "draw"], qty: 1 },
+            { id: "opt", name: "Opt", type: "instant", cost: "U", cmc: 1, text: "Vidência 1. Compre uma carta.", keywords: ["scry_1", "draw_1"], qty: 1 },
             { id: "cancel", name: "Cancel", type: "instant", cost: "1UU", cmc: 3, text: "Anule a mágica alvo.", keywords: ["counterspell"], qty: 1 },
             { id: "eaten_by_piranhas", name: "Eaten by Piranhas", type: "enchantment", subtype: "Aura", cost: "1U", cmc: 2, keywords: ["flash", "enchant"], text: "Lampejo. Encantar criatura. Criatura encantada perde todas as habilidades e é uma criatura preta Esqueleto com poder e resistência base 1/1.", qty: 1 },
 

@@ -144,7 +144,9 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 - **equipment**: Artifact that attaches to creatures
 - **enchant**: Aura that attaches to creatures
 - **raid**, **raid_draw**: Effects that trigger if attacked this turn
-- **scry**: Look at top card(s) and choose to keep or bottom
+- **scry_N**: Look at top N cards and choose to keep or bottom (e.g., `scry_1`, `scry_2`)
+- **draw_N**: Draw N cards when spell resolves (e.g., `draw_1`, `draw_2`)
+- **sacrifice_for_mana**: Can sacrifice for mana of any color (Treasure Token)
 
 ### Keyword Display System (Preview Panel)
 
@@ -723,4 +725,280 @@ if (controller === this.player) {
         this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
     )[0];
 }
+```
+
+---
+
+## Common Pitfalls and Lessons Learned
+
+This section documents bugs encountered during development and their fixes. Review before implementing new features.
+
+### Critical: Library Array Convention
+
+**The library array uses the END as the top of the deck.**
+
+```javascript
+// ✅ CORRECT - drawCard() uses pop() from the END
+const card = player.library.pop();  // Draws from top
+
+// ✅ CORRECT - Put card on bottom
+player.library.unshift(card);  // Bottom of library
+
+// ✅ CORRECT - Look at top card
+const topCard = player.library[player.library.length - 1];
+
+// ❌ WRONG - These assume index 0 is top
+player.library.shift();  // This removes from BOTTOM
+player.library.push(card);  // This adds to TOP (if trying to put on bottom)
+player.library[0];  // This is the BOTTOM card
+```
+
+**Bug Example (Opt/Scry):** Scry was putting card on bottom using `push()` but player still drew it because `drawCard()` uses `pop()` - both operated on the same end.
+
+### Counterspell Handling
+
+**Counterspells must be excluded from `needsPlayerTargeting` logic.**
+
+```javascript
+// ✅ CORRECT - In game.js playCard()
+const isCounterspell = this.isCounterspell(card);
+const needsPlayerTargeting = player === this.player && !isCounterspell && (
+    ((card.type === 'instant' || card.type === 'sorcery') && this.spellNeedsTarget(card)) ||
+    (card.type === 'enchantment' && card.subtype === 'Aura')
+);
+```
+
+**Bug:** Cancel counterspell stayed in hand after use because `spellNeedsTarget()` returned true, causing the card to not be moved to graveyard.
+
+### Flash Creatures in Priority Windows
+
+**Flash creatures must appear as valid plays during priority windows.**
+
+In `getValidInstantPlays()` in game.js:
+```javascript
+// Check for flash creatures
+player.hand.forEach(card => {
+    if (card.type === 'creature' && card.keywords?.includes('flash')) {
+        if (this.rules.hasEnoughMana(card, player)) {
+            validPlays.push(card);
+        }
+    }
+});
+```
+
+**Bug:** Flash creatures like Spectral Sailor didn't appear in priority window because only instants were being checked.
+
+### Combat State Cleanup
+
+**Dead creatures must be filtered from combat arrays after damage resolution.**
+
+```javascript
+// In resolveCombatDamage(), after processing damage:
+this.currentAttackers = this.currentAttackers.filter(attacker =>
+    this.player.battlefield.includes(attacker) ||
+    this.opponent.battlefield.includes(attacker)
+);
+this.ui.selectedAttackers = [];
+this.blockerAssignments = {};
+this.ui.render();
+```
+
+**Bug:** Purple combat rectangles remained on screen because dead creatures were still referenced in `currentAttackers` array.
+
+### Aura Effects Must Be Applied
+
+**Adding an aura keyword isn't enough - effects must be implemented in `applyAuraEffects()`.**
+
+```javascript
+// In rules.js - applyAuraEffects()
+case 'eaten_by_piranhas':
+    // Base creature becomes 0/1
+    creature.powerModifier = (creature.powerModifier || 0) - creature.power;
+    creature.toughnessModifier = (creature.toughnessModifier || 0) - (creature.toughness - 1);
+    // Remove all abilities
+    creature.abilitiesRemoved = true;
+    break;
+```
+
+**Bug:** Eaten by Piranhas was attached but didn't apply its "base 0/1, loses abilities" effect.
+
+### Treasure Token Mana
+
+**Treasure tokens need both the keyword AND proper mana production setup.**
+
+```javascript
+// Token definition must include:
+{
+    instanceId: `treasure_token_${globalInstanceCounter++}`,
+    name: 'Treasure Token',
+    type: 'artifact',
+    subtype: 'Treasure',
+    keywords: ['sacrifice_for_mana'],
+    produces: 'any',  // Critical for mana calculation
+    canSacrificeForMana: true
+}
+```
+
+**Bug:** Treasure tokens weren't contributing to available mana because `produces: 'any'` was missing.
+
+### Spell Keyword Processing Order
+
+**Generic keywords (scry, draw) should be processed BEFORE card-specific switch.**
+
+```javascript
+async resolveSpell(card, caster) {
+    // === PROCESS GENERIC KEYWORDS FIRST ===
+    if (card.keywords) {
+        const scryKeyword = card.keywords.find(k => k.startsWith('scry_'));
+        if (scryKeyword) {
+            const amount = parseInt(scryKeyword.split('_')[1]) || 1;
+            await this.handleScry(caster, amount);
+        }
+        const drawKeyword = card.keywords.find(k => k.startsWith('draw_'));
+        if (drawKeyword) {
+            const amount = parseInt(drawKeyword.split('_')[1]) || 1;
+            this.handleDraw(caster, amount);
+        }
+    }
+
+    // === CARD-SPECIFIC EFFECTS (if any beyond keywords) ===
+    switch (card.id) {
+        // Only for cards that need additional logic beyond keywords
+    }
+}
+```
+
+**Lesson:** Using `scry_1` and `draw_1` keywords instead of card-specific code (`case 'opt':`) makes the code reusable for future cards with similar effects.
+
+### Target Validation for Instants
+
+**Every instant that targets must have a `hasValidTargets()` entry.**
+
+```javascript
+// In rules.js - hasValidTargets()
+hasValidTargets(card, player, gameState) {
+    const opponent = player === gameState.player ? gameState.opponent : gameState.player;
+
+    switch (card.id) {
+        // Buff spells - need own creatures
+        case 'moment_of_triumph':
+        case 'snakeskin_veil':
+            return player.battlefield.some(c => c.type === 'creature');
+
+        // Removal - need opponent creatures
+        case 'moment_of_craving':
+        case 'heros_downfall':
+            return opponent.battlefield.some(c => c.type === 'creature');
+
+        // Conditional targeting
+        case 'volley':
+            return opponent.battlefield.some(c =>
+                c.type === 'creature' &&
+                this.getCreatureKeywords(c, opponent).includes('flying')
+            );
+
+        default:
+            return true;
+    }
+}
+```
+
+**Bug:** Priority windows appeared when player had no valid targets, wasting time and confusing players.
+
+### Death Trigger Duplication
+
+**Avoid triggering death effects multiple times for the same death.**
+
+```javascript
+// Track processed deaths
+if (deadCard._deathProcessed) return;
+deadCard._deathProcessed = true;
+
+// Process death triggers...
+```
+
+**Bug:** Vengeful Bloodwitch triggered twice when a creature died - once from the death check and once from cleanup.
+
+### Async/Await in Spell Resolution
+
+**Spells with UI prompts (scry, targeting) must use async/await.**
+
+```javascript
+// Function must be async
+async resolveSpell(card, caster) {
+    // Scry requires user input
+    await this.handleScry(caster, 1);
+    // Continue after user makes choice
+    this.handleDraw(caster, 1);
+}
+
+// Callers must await
+await this.resolveSpell(card, caster);
+```
+
+**Bug:** Card was drawn before scry completed because `handleScry()` wasn't awaited.
+
+---
+
+## Quick Reference: File Responsibilities
+
+| File | What Goes Here | What Does NOT Go Here |
+|------|----------------|----------------------|
+| `cards.js` | Card definitions, keywords | Game logic, triggers |
+| `triggers.js` | ETBs, death triggers, combat triggers, end-step triggers | Spell resolution, combat damage |
+| `game.js` | Game flow, spell resolution, activated abilities, combat flow | Static effects, mana calculation |
+| `rules.js` | Mana calculation, damage calculation, keyword checks, lord bonuses, hasValidTargets | Triggers, game state changes |
+| `ai.js` | AI decisions for playing cards, attacking, blocking | Rule enforcement |
+| `ui.js` | DOM rendering, event handlers, modals, prompts | Game logic |
+
+---
+
+## Testing Checklist
+
+Before committing any card/deck changes:
+
+```bash
+# 1. Run all unit tests
+npm test
+
+# 2. Validate cards against Scryfall (if adding new cards)
+node tools/validate-cards.js
+
+# 3. Check for cards without tests
+node tools/validate-cards.js --missing
+
+# 4. Manual testing - minimum scenarios:
+#    - Play the card normally
+#    - Let AI play the card
+#    - Test all targeting scenarios
+#    - Test with stack interactions (if instant)
+#    - Test cleanup at end of turn (if temporary effects)
+```
+
+---
+
+## Debug Commands Reference
+
+Open browser console (F12) during a game:
+
+```javascript
+// Quick setup for testing
+debug.setupCombat()           // Creates combat scenario
+debug.fullMana()              // Gives 10 of each mana
+debug.addToBattlefield("Card Name")  // Add creature to your field
+
+// Card management
+debug.draw("Card")            // Draw specific card from your deck
+debug.drawAny("Card")         // Draw from any deck
+debug.addToHand("Card", "opponent")  // Add to opponent's hand
+
+// Game state
+debug.state()                 // Full game state
+debug.battlefield("both")     // All creatures
+debug.setLife(5, "opponent")  // Set opponent to 5 life
+debug.setPhase("MAIN1")       // Jump to phase
+
+// Helpers
+debug.help()                  // List all commands
+debug.listCards("pirates")    // List cards in deck
 ```

@@ -486,7 +486,7 @@ class GameState {
             }
             await this.resolveSpellWithTarget(card, caster, stackItem.target);
         } else {
-            this.resolveSpell(card, caster);
+            await this.resolveSpell(card, caster);
         }
 
         caster.graveyard.push(card);
@@ -535,8 +535,8 @@ class GameState {
                 return;
             }
 
-            // Anexar aura ao alvo
-            card.attachedTo = stackItem.target;
+            // Anexar aura ao alvo (usar instanceId para consistência)
+            card.attachedTo = stackItem.target.instanceId;
             if (!stackItem.target.attachedAuras) stackItem.target.attachedAuras = [];
             stackItem.target.attachedAuras.push(card);
             // Auras ainda não estão no battlefield (não passaram por addToStack com preview)
@@ -749,12 +749,16 @@ class GameState {
     // === SISTEMA DE JANELA DE PRIORIDADE ===
 
     /**
-     * Verifica se o jogador tem instants jogáveis na mão com mana suficiente
-     * @returns {Array} Lista de instants jogáveis
+     * Verifica se o jogador tem instants ou cartas com flash jogáveis na mão com mana suficiente
+     * @returns {Array} Lista de instants/flash jogáveis
      */
     getPlayableInstants() {
-        const instants = this.player.hand.filter(card => card.type === 'instant');
-        return instants.filter(card => this.rules.canCastInstant(card, this.player));
+        // Incluir instants E cartas com flash (criaturas, artefatos, auras)
+        const instantSpeedCards = this.player.hand.filter(card => {
+            const hasFlash = card.keywords?.includes('flash');
+            return card.type === 'instant' || hasFlash;
+        });
+        return instantSpeedCards.filter(card => this.rules.canCastInstant(card, this.player));
     }
 
     /**
@@ -938,7 +942,9 @@ class GameState {
 
         // Verificar se é feitiço/aura que precisa de seleção de alvo pelo jogador
         // Nesses casos, a carta fica na mão (marcada como pendingCast) até o alvo ser selecionado
-        const needsPlayerTargeting = player === this.player && (
+        // NOTA: Counterspells são excluídos pois alvejam a stack (tratamento especial em promptForStackTarget)
+        const isCounterspell = this.isCounterspell(card);
+        const needsPlayerTargeting = player === this.player && !isCounterspell && (
             ((card.type === 'instant' || card.type === 'sorcery') && this.spellNeedsTarget(card)) ||
             (card.type === 'enchantment' && card.subtype === 'Aura')
         );
@@ -975,9 +981,9 @@ class GameState {
         } else if (card.type === 'instant' || card.type === 'sorcery') {
             // Verificar se é um counterspell (caso especial - mira na stack)
             if (this.isCounterspell(card)) {
-                // Counterspell precisa de uma mágica na stack
+                // Counterspell precisa de uma mágica na stack (qualquer tipo exceto land)
                 const spellsOnStack = this.stack.filter(s =>
-                    s.item.type === 'instant' || s.item.type === 'sorcery'
+                    s.item.type !== 'land' && s.controller !== player
                 );
 
                 if (spellsOnStack.length === 0) {
@@ -1123,7 +1129,7 @@ class GameState {
                         await this.resolveSpellWithTarget(card, player, target);
                     }
                 } else {
-                    this.resolveSpell(card, player);
+                    await this.resolveSpell(card, player);
                 }
 
                 player.graveyard.push(card);
@@ -1606,8 +1612,85 @@ class GameState {
         this.ui.render();
     }
 
-    // Resolver feitiços sem alvo
-    resolveSpell(card, caster) {
+    // === HANDLERS GENÉRICOS DE KEYWORDS PARA SPELLS ===
+
+    /**
+     * Handler genérico para Scry N
+     * Convenção: fim do array = topo do grimório (drawCard usa pop())
+     * @param {Object} player - Jogador que está fazendo scry
+     * @param {number} amount - Quantidade de cartas para ver (1, 2, etc.)
+     * @returns {Promise<void>}
+     */
+    async handleScry(player, amount) {
+        if (player.library.length === 0) return;
+
+        // Por enquanto, implementa apenas Scry 1
+        // Scry 2+ precisaria de UI para ordenar múltiplas cartas
+        if (amount >= 1) {
+            const topCard = player.library[player.library.length - 1];
+
+            if (player === this.player) {
+                // Jogador humano: mostrar prompt
+                return new Promise((resolve) => {
+                    this.ui.promptScry(topCard, (keepOnTop) => {
+                        if (!keepOnTop) {
+                            // Mover para o fundo (início do array)
+                            player.library.pop();
+                            player.library.unshift(topCard);
+                            this.ui.log(`Você colocou ${topCard.name} no fundo do grimório`);
+                        } else {
+                            this.ui.log(`Você manteve ${topCard.name} no topo do grimório`);
+                        }
+                        this.ui.render();
+                        resolve();
+                    });
+                });
+            } else {
+                // IA: decisão baseada em qualidade da carta
+                // Manter lands e cartas de custo baixo no topo, enviar cartas caras para baixo
+                const isGoodCard = topCard.type === 'land' || (topCard.cmc && topCard.cmc <= 3);
+                const keepOnTop = isGoodCard || Math.random() > 0.4;
+
+                if (!keepOnTop) {
+                    player.library.pop();
+                    player.library.unshift(topCard);
+                }
+                this.ui.log(`${player.name} fez vidência`);
+            }
+        }
+    }
+
+    /**
+     * Handler genérico para Draw N
+     * @param {Object} player - Jogador que vai comprar
+     * @param {number} amount - Quantidade de cartas para comprar
+     */
+    handleDraw(player, amount) {
+        for (let i = 0; i < amount; i++) {
+            this.rules.drawCard(player);
+        }
+    }
+
+    // Resolver feitiços sem alvo (agora async para suportar keywords como scry)
+    async resolveSpell(card, caster) {
+        // === PROCESSAR KEYWORDS GENÉRICAS PRIMEIRO ===
+        if (card.keywords) {
+            // Scry N (ex: scry_1, scry_2)
+            const scryKeyword = card.keywords.find(k => k.startsWith('scry_'));
+            if (scryKeyword) {
+                const amount = parseInt(scryKeyword.split('_')[1]) || 1;
+                await this.handleScry(caster, amount);
+            }
+
+            // Draw N (ex: draw_1, draw_2)
+            const drawKeyword = card.keywords.find(k => k.startsWith('draw_'));
+            if (drawKeyword) {
+                const amount = parseInt(drawKeyword.split('_')[1]) || 1;
+                this.handleDraw(caster, amount);
+            }
+        }
+
+        // === EFEITOS ESPECÍFICOS DE CARTAS ===
         switch (card.id) {
             case 'dragon_fodder':
                 // Criar 2 tokens goblin
@@ -1637,42 +1720,11 @@ class GameState {
                 this.ui.log(`Todas as criaturas ganharam +3/+3 e devem ser bloqueadas!`);
                 break;
 
-            case 'opt':
-                // Scry 1, então compra
-                // Simplificado: olhar o topo e escolher manter ou mandar para baixo
-                if (caster.library.length > 0) {
-                    const topCard = caster.library[0];
-                    if (caster === this.player) {
-                        // Jogador pode ver e escolher
-                        this.ui.promptScry(topCard, (keepOnTop) => {
-                            if (!keepOnTop) {
-                                // Mover para o fundo
-                                caster.library.shift();
-                                caster.library.push(topCard);
-                                this.ui.log(`Você colocou ${topCard.name} no fundo do grimório`);
-                            } else {
-                                this.ui.log(`Você manteve ${topCard.name} no topo do grimório`);
-                            }
-                            // Depois do scry, compra
-                            this.rules.drawCard(caster);
-                            this.ui.render();
-                        });
-                        return; // Aguarda o scry terminar
-                    } else {
-                        // IA decide aleatoriamente (simplificado)
-                        const keepOnTop = Math.random() > 0.5;
-                        if (!keepOnTop) {
-                            caster.library.shift();
-                            caster.library.push(topCard);
-                        }
-                        this.rules.drawCard(caster);
-                        this.ui.log(`${caster.name} olhou o topo e comprou uma carta`);
-                    }
-                }
-                break;
+            // Opt agora é totalmente handled por keywords (scry_1, draw_1)
+            // Não precisa mais de case específico!
 
             default:
-                // Feitiço genérico
+                // Feitiço genérico ou já processado por keywords
                 break;
         }
     }
@@ -1776,6 +1828,11 @@ class GameState {
 
     // Verifica se uma carta tem habilidade ativada e pode usá-la
     canActivateAbility(card, player) {
+        // Treasure tokens podem ser sacrificados a qualquer momento (não requer tap)
+        if (card.keywords?.includes('sacrifice_for_mana')) {
+            return true; // Sempre pode sacrificar tesouro para mana
+        }
+
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
         const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin'];
         if (!noTapAbilities.includes(card.id)) {
@@ -1881,6 +1938,38 @@ class GameState {
         }
 
         const opponent = player === this.player ? this.opponent : this.player;
+
+        // Treasure Token: sacrificar para adicionar mana de qualquer cor
+        if (card.keywords?.includes('sacrifice_for_mana')) {
+            const playerKey = player === this.player ? 'player' : 'opponent';
+            let chosenColor;
+
+            if (player === this.player) {
+                // Jogador humano escolhe a cor
+                chosenColor = await this.ui.promptColorChoice({
+                    title: 'Treasure Token',
+                    description: 'Escolha a cor de mana a adicionar:',
+                    colors: ['W', 'U', 'B', 'R', 'G']
+                });
+            } else {
+                // IA escolhe a cor mais necessária para o deck
+                chosenColor = this.chooseColorForAI(player, ['W', 'U', 'B', 'R', 'G']);
+            }
+
+            // Adicionar mana flutuante
+            this.floatingMana[playerKey][chosenColor] += 1;
+
+            // Sacrificar o token (remover do battlefield)
+            const tokenIndex = player.battlefield.findIndex(c => c.instanceId === card.instanceId);
+            if (tokenIndex !== -1) {
+                player.battlefield.splice(tokenIndex, 1);
+            }
+
+            const colorNames = { W: 'branco', U: 'azul', B: 'preto', R: 'vermelho', G: 'verde' };
+            this.ui.log(`${card.name} sacrificado: +1 mana ${colorNames[chosenColor]}`);
+            this.ui.render();
+            return true;
+        }
 
         switch (card.id) {
             case 'vampire_neonate':
@@ -2745,6 +2834,15 @@ class GameState {
         this.blockerAssignments = {};
         this.ui.blockerAssignments = {};
         this.ui.clearCombatLines();
+
+        // Limpar currentAttackers aqui também (além de COMBAT_END) para evitar ghosts visuais
+        // Filtrar apenas atacantes que ainda estão vivos no battlefield
+        this.currentAttackers = this.currentAttackers.filter(attacker =>
+            this.player.battlefield.includes(attacker) || this.opponent.battlefield.includes(attacker)
+        );
+
+        // Limpar seleção de atacantes da UI
+        this.ui.selectedAttackers = [];
 
         this.ui.render();
         } catch (error) {
