@@ -298,11 +298,12 @@ class GameState {
         this.ui.log(`Você colocou ${cardsToBottom} carta(s) no fundo do grimório.`);
 
         // Mover cartas selecionadas para o fundo do grimório na ordem selecionada
+        // unshift adiciona ao INÍCIO do array = fundo do grimório (pop compra do FINAL = topo)
         cardInstances.forEach(instanceId => {
             const cardIndex = this.player.hand.findIndex(c => c.instanceId === instanceId);
             if (cardIndex !== -1) {
                 const card = this.player.hand.splice(cardIndex, 1)[0];
-                this.player.library.push(card);
+                this.player.library.unshift(card);
             }
         });
 
