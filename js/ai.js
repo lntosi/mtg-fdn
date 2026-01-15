@@ -97,6 +97,35 @@ class AIPlayer {
         return false;
     }
 
+    /**
+     * Verifica se uma aura tem alvos válidos para a IA jogar
+     * @param {Object} card - Carta aura a verificar
+     * @returns {boolean} true se a aura pode ser jogada com benefício
+     */
+    hasValidAuraTargets(card) {
+        if (card.type !== 'enchantment' || card.subtype !== 'Aura') {
+            return true; // Não é aura, não aplicável
+        }
+
+        const player = this.game.player;
+        const opponent = this.game.opponent;
+
+        // Auras negativas: precisa de criaturas inimigas
+        if (card.id === 'pacifism' || card.id === 'eaten_by_piranhas') {
+            return player.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Auras positivas: precisa de criaturas próprias
+        if (card.id === 'untamed_hunger') {
+            return opponent.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Outras auras: verificar se há qualquer criatura
+        const allCreatures = [...player.battlefield, ...opponent.battlefield]
+            .filter(c => c.type === 'creature');
+        return allCreatures.length > 0;
+    }
+
     // Fase principal: jogar terrenos e criaturas
     // phase: 1 = Main Phase 1, 2 = Main Phase 2
     async playMainPhase(phase = 1) {
@@ -121,9 +150,10 @@ class AIPlayer {
         while (playedSomething) {
             playedSomething = false;
 
-            // Primeiro: cartas jogáveis com mana normal
+            // Cartas jogáveis com mana normal
             let playableCards = opponent.hand
                 .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
+                .filter(card => this.hasValidAuraTargets(card))
                 .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
 
             // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
@@ -131,50 +161,67 @@ class AIPlayer {
                 playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
             }
 
-            // Se não tem cartas jogáveis com mana normal, verificar se pode usar Treasures
-            if (playableCards.length === 0) {
-                const treasures = this.getTreasureTokens(opponent);
-                if (treasures.length > 0) {
-                    // Encontrar cartas que poderiam ser jogadas COM treasures
-                    let potentialCards = opponent.hand
-                        .filter(card => card.type !== 'land' && !this.rules.canPlayCard(card, opponent))
-                        .filter(card => {
-                            const result = this.canPayWithTreasures(card, opponent);
-                            return result.canPay && result.treasuresNeeded > 0;
-                        })
-                        .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+            // Verificar se pode jogar algo MELHOR usando Treasures
+            const treasures = this.getTreasureTokens(opponent);
+            let bestTreasureCard = null;
+            let treasureInfo = null;
 
-                    if (phase === 1) {
-                        potentialCards = potentialCards.filter(card => !this.shouldHoldForMainPhase2(card));
-                    }
+            if (treasures.length > 0) {
+                // Encontrar cartas que precisam de Treasures para serem jogadas
+                let potentialCards = opponent.hand
+                    .filter(card => card.type !== 'land')
+                    .filter(card => {
+                        const result = this.canPayWithTreasures(card, opponent);
+                        return result.canPay && result.treasuresNeeded > 0;
+                    })
+                    .filter(card => this.hasValidAuraTargets(card))
+                    .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
 
-                    if (potentialCards.length > 0) {
-                        const cardToPlay = this.chooseBestCard(potentialCards);
-                        if (cardToPlay) {
-                            const treasureInfo = this.canPayWithTreasures(cardToPlay, opponent);
-                            // Sacrificar treasures necessários
-                            await this.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
-                            // Agora a carta deve ser jogável
-                            if (this.rules.canPlayCard(cardToPlay, opponent)) {
-                                await this.delay(600);
-                                await this.game.playCard(cardToPlay, opponent);
-                                this.game.ui.render();
-                                await this.delay(1200);
-                                playedSomething = true;
-                            }
-                        }
+                if (phase === 1) {
+                    potentialCards = potentialCards.filter(card => !this.shouldHoldForMainPhase2(card));
+                }
+
+                if (potentialCards.length > 0) {
+                    bestTreasureCard = this.chooseBestCard(potentialCards);
+                    if (bestTreasureCard) {
+                        treasureInfo = this.canPayWithTreasures(bestTreasureCard, opponent);
                     }
                 }
             }
 
-            if (playableCards.length > 0) {
-                const cardToPlay = this.chooseBestCard(playableCards);
-                if (cardToPlay) {
-                    // Delay antes de jogar a carta para dar tempo de ver
+            // Decidir: jogar com mana normal ou usar Treasures para carta melhor?
+            const bestNormalCard = playableCards.length > 0 ? this.chooseBestCard(playableCards) : null;
+            let cardToPlay = null;
+            let useTreasures = false;
+
+            if (bestTreasureCard && bestNormalCard) {
+                // Comparar: se a carta com Treasure tem CMC maior, vale usar Treasures
+                const treasureCmc = bestTreasureCard.cmc || 0;
+                const normalCmc = bestNormalCard.cmc || 0;
+                if (treasureCmc > normalCmc) {
+                    cardToPlay = bestTreasureCard;
+                    useTreasures = true;
+                } else {
+                    cardToPlay = bestNormalCard;
+                }
+            } else if (bestTreasureCard) {
+                cardToPlay = bestTreasureCard;
+                useTreasures = true;
+            } else if (bestNormalCard) {
+                cardToPlay = bestNormalCard;
+            }
+
+            if (cardToPlay) {
+                if (useTreasures && treasureInfo) {
+                    // Sacrificar treasures necessários
+                    await this.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
+                }
+                // Verificar se pode jogar após usar treasures (se aplicável)
+                if (this.rules.canPlayCard(cardToPlay, opponent)) {
                     await this.delay(600);
                     await this.game.playCard(cardToPlay, opponent);
                     this.game.ui.render();
-                    await this.delay(1200); // Delay maior para ver a carta jogada
+                    await this.delay(1200);
                     playedSomething = true;
                 }
             }
@@ -402,6 +449,7 @@ class AIPlayer {
         // 3. Cartas jogáveis (do mais caro pro mais barato)
         const playableNonLands = opponent.hand
             .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
+            .filter(card => this.hasValidAuraTargets(card))
             .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
 
         // Adicionar cartas na ordem de prioridade
@@ -751,6 +799,8 @@ class AIPlayer {
                     return bToughness - aToughness;
                 })[0];
             }
+            // Não há criaturas inimigas - não jogar aura negativa em si mesmo
+            return null;
         } else if (aura.id === 'untamed_hunger') {
             // Untamed Hunger: colocar na nossa melhor criatura
             const ourCreatures = validTargets.filter(c =>

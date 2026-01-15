@@ -327,6 +327,8 @@ class TriggerManager {
         const bounceCreature = (targetCreature) => {
             const index = opponent.battlefield.indexOf(targetCreature);
             if (index !== -1) {
+                // Desanexar auras e equipamentos (auras vão pro cemitério - regra 704.5m)
+                this.game.detachFromCreature(targetCreature, opponent);
                 opponent.battlefield.splice(index, 1);
                 this._resetCardState(targetCreature); // Reset damage, modifiers, counters, etc.
                 opponent.hand.push(targetCreature);

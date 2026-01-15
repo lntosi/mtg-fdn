@@ -850,10 +850,10 @@ class RulesEngine {
     }
 
     getCreaturePower(creature, isAttacking = false) {
-        // Eaten by Piranhas: base power/toughness vira 1/1, mas counters e outros bônus ainda aplicam
+        // Eaten by Piranhas: base power/toughness vira 0/1, mas counters e outros bônus ainda aplicam
         let power;
         if (this.isAffectedByEatenByPiranhas(creature)) {
-            power = 1; // Base 1/1
+            power = 0; // Base 0/1
         } else {
             power = creature.power || 0;
         }
@@ -869,10 +869,10 @@ class RulesEngine {
     }
 
     getCreatureToughness(creature, isAttacking = false) {
-        // Eaten by Piranhas: base power/toughness vira 1/1, mas counters e outros bônus ainda aplicam
+        // Eaten by Piranhas: base power/toughness vira 0/1, mas counters e outros bônus ainda aplicam
         let toughness;
         if (this.isAffectedByEatenByPiranhas(creature)) {
-            toughness = 1; // Base 1/1
+            toughness = 1; // Base 0/1
         } else {
             toughness = creature.toughness || 0;
         }
