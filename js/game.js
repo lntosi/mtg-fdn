@@ -1158,6 +1158,9 @@ class GameState {
             // Adicionar à pilha
             const stackItem = this.addToStack(card, player);
 
+            // Trigger para "whenever you cast a spell" (Brineborn Cutthroat, etc)
+            this.triggers.onSpellCast(player);
+
             // Oferecer janela de resposta ao oponente
             await this.offerResponseToOpponent(player);
         }
