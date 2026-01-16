@@ -971,14 +971,15 @@ class GameUI {
                     cardEl.addEventListener('click', () => this.cancelPendingCast(card));
                 } else {
                     // Verificar se pode jogar
-                    // Instants podem ser jogados fora do turno do jogador (durante combate do oponente, etc)
+                    // Instants e cartas com flash podem ser jogados fora do turno do jogador
                     const canPlay = this.game.rules.canPlayCard(card, player);
-                    const isInstant = card.type === 'instant';
+                    const hasFlash = card.keywords && card.keywords.includes('flash');
+                    const isInstantSpeed = card.type === 'instant' || hasFlash;
                     const isPlayerTurn = this.game.isPlayerTurn();
 
-                    // Pode jogar se: (é seu turno E pode jogar) OU (é instant E pode jogar)
-                    // Instants podem ser jogados a qualquer momento, inclusive durante fase de bloqueio
-                    const canPlayNow = canPlay && (isPlayerTurn || isInstant);
+                    // Pode jogar se: (é seu turno E pode jogar) OU (é instant speed E pode jogar)
+                    // Instants e flash podem ser jogados a qualquer momento com prioridade
+                    const canPlayNow = canPlay && (isPlayerTurn || isInstantSpeed);
 
                     if (canPlayNow) {
                         cardEl.classList.add('playable');
