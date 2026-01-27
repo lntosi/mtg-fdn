@@ -1,6 +1,11 @@
 # MTG Jumpstart Foundations
 
-> **⚠️ Legal Notice / Aviso Legal**
+![Tests](https://img.shields.io/badge/tests-140%2B%20passing-brightgreen)
+![JavaScript](https://img.shields.io/badge/vanilla-JavaScript-yellow)
+![No Dependencies](https://img.shields.io/badge/runtime-zero%20dependencies-blue)
+![Decks](https://img.shields.io/badge/decks-10%2F10%20implemented-brightgreen)
+
+> **Legal Notice / Aviso Legal**
 >
 > This is an **unofficial, non-commercial fan project** created solely for **educational and personal learning purposes**. It is not intended for distribution as a product or game.
 >
@@ -28,86 +33,111 @@ Este projeto foi criado para:
 
 ## Sobre
 
-Jogo offline de MTG usando os 5 decks Jumpstart do **Foundations Beginner Box**:
+Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
+
+**Status atual: 10 de 10 decks implementados** ✅
 
 | Deck | Cor | Estratégia | Carta Destaque |
 |------|:---:|------------|----------------|
-| **Cats** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="18" height="18"> | Criaturas com lifelink e tokens | <a href="https://scryfall.com/card/ddg/7/leonin-skyhunter"><img src="https://cards.scryfall.io/art_crop/front/1/5/15d6476c-1944-48e8-9af6-6db78edd58e5.jpg?1562899585" width="80"></a> |
-| **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="18" height="18"> | Agressivo com haste e dano direto | <a href="https://scryfall.com/card/fdn/543/raging-redcap"><img src="https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg?1730490661" width="80"></a> |
-| **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="18" height="18"> | Dreno de vida e flying | <a href="https://scryfall.com/card/mid/125/vampire-interloper"><img src="https://cards.scryfall.io/art_crop/front/c/3/c3e2ea59-36f1-4e95-bfe8-7008b085194f.jpg?1634350330" width="80"></a> |
-| **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="18" height="18"> | Ramp de mana e criaturas grandes | <a href="https://scryfall.com/card/fdn/219/elvish-archdruid"><img src="https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg?1730489413" width="80"></a> |
-| **Pirates** | <img src="https://svgs.scryfall.io/card-symbols/U.svg" width="18" height="18"> | Controle com flash, counterspell e bounce | <a href="https://scryfall.com/card/fdn/164/spectral-sailor"><img src="https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg?1730489213" width="80"></a> |
+| **Cats** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="18" height="18"> | Lifelink e tokens | <a href="https://scryfall.com/card/fdn/21/prideful-parent"><img src="https://cards.scryfall.io/art_crop/front/b/7/b742117a-8a72-43b9-b05d-274829d138a2.jpg" width="80"></a> |
+| **Goblins** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="18" height="18"> | Haste e dano direto | <a href="https://scryfall.com/card/fdn/543/raging-redcap"><img src="https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg" width="80"></a> |
+| **Vampires** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="18" height="18"> | Dreno de vida e flying | <a href="https://scryfall.com/card/fdn/584/crossway-troublemakers"><img src="https://cards.scryfall.io/art_crop/front/9/5/95ef4f86-9b96-4181-9442-44adce180984.jpg" width="80"></a> |
+| **Elves** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="18" height="18"> | Ramp e criaturas grandes | <a href="https://scryfall.com/card/fdn/219/elvish-archdruid"><img src="https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg" width="80"></a> |
+| **Pirates** | <img src="https://svgs.scryfall.io/card-symbols/U.svg" width="18" height="18"> | Flash, counter e bounce | <a href="https://scryfall.com/card/fdn/164/spectral-sailor"><img src="https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg" width="80"></a> |
+| **Healing** | <img src="https://svgs.scryfall.io/card-symbols/W.svg" width="18" height="18"> | Lifegain triggers | <a href="https://scryfall.com/card/fdn/135/ajanis-pridemate"><img src="https://cards.scryfall.io/art_crop/front/2/2/222c1a68-e34c-4103-b1be-17d4ceaef6ce.jpg" width="80"></a> |
+| **Inferno** | <img src="https://svgs.scryfall.io/card-symbols/R.svg" width="18" height="18"> | Dragons | <a href="https://scryfall.com/card/fdn/549/terror-of-mount-velus"><img src="https://cards.scryfall.io/art_crop/front/3/9/3959a6c7-d615-4524-b94d-65f4164a2656.jpg" width="80"></a> |
+| **Undead** | <img src="https://svgs.scryfall.io/card-symbols/B.svg" width="18" height="18"> | Graveyard recursion | <a href="https://scryfall.com/card/m19/90/death-baron"><img src="https://cards.scryfall.io/art_crop/front/3/4/34a27142-cf45-4164-9e10-373e5c8bf7c6.jpg" width="80"></a> |
+| **Primal** | <img src="https://svgs.scryfall.io/card-symbols/G.svg" width="18" height="18"> | Criaturas grandes e counters | <a href="https://scryfall.com/card/fdn/551/aggressive-mammoth"><img src="https://cards.scryfall.io/art_crop/front/7/7/7724b978-999b-4654-96f3-58e28aa7cb34.jpg" width="80"></a> |
+| **Wizards** | <img src="https://svgs.scryfall.io/card-symbols/U.svg" width="18" height="18"> | Draw e sinergias de spell | <a href="https://scryfall.com/card/fdn/80/erudite-wizard"><img src="https://cards.scryfall.io/art_crop/front/9/2/9273c417-0fcd-4273-b24e-afff76336d0c.jpg" width="80"></a> |
 
 ## Screenshots
 
-### Seleção de Avatar
-<img src="screenshots/avatar-selection.png" width="300">
-
-### Seleção de Decks
-<img src="screenshots/deck-selection.png" width="300">
-
-### Tela de Mulligan
-<img src="screenshots/mulligan.png" width="400">
+<table>
+<tr>
+<td align="center"><strong>Seleção de Avatar</strong><br><img src="screenshots/avatar-selection.png" width="250"></td>
+<td align="center"><strong>Seleção de Decks</strong><br><img src="screenshots/deck-selection.png" width="250"></td>
+<td align="center"><strong>Mulligan</strong><br><img src="screenshots/mulligan.png" width="250"></td>
+</tr>
+</table>
 
 ### Campo de Batalha
 ![Gameplay](screenshots/gameplay.png)
 
-### Preview com Detalhes
-<img src="screenshots/card-preview.png" width="300">
+<table>
+<tr>
+<td align="center"><strong>Preview de Carta</strong><br><img src="screenshots/card-preview.png" width="280"></td>
+</tr>
+</table>
 
 ## Como Jogar
 
 1. Abra `index.html` no navegador
 2. Personalize seu jogador (nome e avatar)
 3. Selecione 1 ou 2 decks (20 ou 40 cartas)
-4. A IA selecionará a mesma quantidade de decks
-5. Vença reduzindo a vida do oponente a 0!
+4. Escolha a dificuldade da IA
+5. A IA selecionará a mesma quantidade de decks
+6. Vença reduzindo a vida do oponente a 0!
 
 ## Funcionalidades
 
 ### Regras Implementadas
 - Fases de turno completas (Untap, Upkeep, Draw, Main, Combat, End)
-- Sistema de mana e pagamento de custos
-- Combate com atacantes e bloqueadores
-- Dano de combate e dano direto
+- Sistema de mana colorido com pagamento automático
+- Combate com atacantes e bloqueadores múltiplos
+- London Mulligan (compra 7, escolhe cartas para o fundo)
+- Descarte para 7 cartas no fim do turno
+- Morte por deck vazio (mill)
 
 ### Keywords
-Flying, Lifelink, Deathtouch, Trample, First Strike, Double Strike, Vigilance, Haste, Reach, Menace, Flash, Ward
+`Flying` `Lifelink` `Deathtouch` `Trample` `First Strike` `Double Strike` `Vigilance` `Haste` `Reach` `Menace` `Flash` `Ward` `Hexproof` `Indestructible`
 
-### Habilidades de Criaturas
-- **Lords**: Elvish Archdruid (+1/+1 para Elfos), Dropkick Bomber (+1/+1 para Goblins), Corsair Captain (+1/+1 para Piratas)
-- **Triggers ETB**: Beast-Kin Ranger, Vampire Spawn, Dwynen's Elite, Bigfin Bouncer (bounce), Corsair Captain (treasure)
-- **Triggers de Combate**: Battle-Rattle Shaman, Leonin Vanguard
-- **Raid**: Storm Fleet Spy, Skyship Buccaneer (compra carta se atacou neste turno)
-- **Counterspell**: Cancel (anula mágicas na stack)
-- **Scry**: Opt (ver topo do grimório)
+### Mecânicas Avançadas
+- **Stack e Prioridade**: Sistema completo com janelas de resposta
+- **Priority Stops**: Configuráveis estilo MTG Arena (Upkeep, Combat, End Step)
+- **Counterspells**: Cancel, Essence Scatter (creature-only)
+- **Equipment**: Pirate's Cutlass com ETB attach e Equip ativado
+- **Auras**: Pacifism, Untamed Hunger, Eaten by Piranhas, Starlight Snare
+- **Contadores**: +1/+1 e -1/-1 com visualização
+- **Ward**: Proteção com custo de mana
+- **Scry**: Opt com visualização da carta
+- **Raid**: Triggers condicionais ao atacar
+- **Lords**: Elfos, Goblins, Piratas, Zombies/Skeletons (Death Baron)
+- **Lifegain Triggers**: Ajani's Pridemate, Twinblade Paladin
+- **Draw Triggers**: Clinquant Skymage, Erudite Wizard, Mischievous Mystic
+- **Graveyard Recursion**: Gravedigger, Rot Hulk, Rise Again
+- **Dragon Synergy**: Custo reduzido, haste condicional
+- **Fight**: Bite Down (one-sided fight)
+- **Kicker**: Into the Roil com efeito adicional
+- **Must Be Blocked**: Joraga Invocation força bloqueio
 
 ### Interface
 - Imagens das cartas via Scryfall API
 - Avatares de planeswalkers (Jace, Chandra, Liliana, Gideon, Nissa, Ajani)
-- Seleção de decks com arquétipos (Aggro, Midrange, Ramp, Control)
-- Visualização de dano em criaturas
-- Zona de exílio inspecionável
-- Sistema de stack com prioridade
-- Menu de configurações (ESC)
-- Sistema de undo (opcional)
+- Preview ampliado com stats calculados (base → buffs → dano)
+- Visualização de dano em criaturas (badges e stats vermelhos)
+- Linhas de conexão atacante-bloqueador
+- Stack badge com hover dropdown
+- Menu de configurações (tecla ESC)
+- 3 temas visuais
+- Efeitos sonoros e música de fundo (volumes independentes)
 - Histórico de partida exportável
-- Efeitos sonoros
+- Modo tela cheia
 
-### IA
-- Estratégia básica de jogo
-- Decisões de combate (atacar/bloquear)
-- Priorização inteligente de alvos para remoção
-- Delays visuais entre ações
+### IA com 3 Níveis de Dificuldade
+| Nível | Comportamento |
+|-------|---------------|
+| 🟢 **Aprendiz** | Ataques subótimos, não usa habilidades ativadas |
+| 🟡 **Mago** | Avalia trades, usa habilidades, não ataca com power 0 |
+| 🔴 **Planeswalker** | Guarda mana para instants, joga otimizado |
 
 ## Tecnologias
 
-- Vanilla JavaScript (ES6+)
-- CSS3 com animações
-- HTML5
-- [Scryfall API](https://scryfall.com/) (imagens)
-- LocalStorage (configurações)
-- [Jest](https://jestjs.io/) (testes automatizados)
+- **Vanilla JavaScript** (ES6+) — zero dependências em runtime
+- **CSS3** com animações e transições
+- **HTML5**
+- **[Scryfall API](https://scryfall.com/)** para imagens
+- **LocalStorage** para configurações
+- **[Jest](https://jestjs.io/)** para testes automatizados
 
 ## Estrutura do Projeto
 
@@ -124,32 +154,28 @@ mtg/
 │   ├── ai.js               # Inteligência artificial
 │   ├── ui.js               # Interface e renderização
 │   ├── cards.js            # Base de dados das cartas
-│   ├── sounds.js           # Efeitos sonoros (Pixabay)
+│   ├── sounds.js           # Efeitos sonoros
 │   └── images.js           # Imagens das cartas (Scryfall API)
-├── tests/
-│   ├── helpers/
-│   │   ├── gameFactory.js  # Factory functions para testes
-│   │   └── rulesEngine.js  # Motor de regras simplificado
-│   ├── combat.test.js      # Testes de combate
-│   ├── triggers.test.js    # Testes de triggers
-│   ├── spells.test.js      # Testes de feitiços
-│   ├── keywords.test.js    # Testes de keywords
-│   └── lords.test.js       # Testes de lords
+├── tests/                  # Testes automatizados (Jest)
 ├── tools/
 │   └── validate-cards.js   # Validação de cartas via Scryfall
+├── docs/
+│   ├── ROADMAP.md          # Plano de desenvolvimento
+│   ├── 01_TESTING.md       # Guia de testes
+│   ├── 02_DEBUG.md         # Comandos de debug
+│   ├── 03_CARD_VALIDATION.md # Status das cartas
+│   └── 04_FUTURE_DECKS_PLAN.md # Plano para novos decks
 ├── screenshots/            # Screenshots da aplicação
 ├── package.json            # Configuração npm e Jest
-├── CLAUDE.md               # Guia para Claude Code
-├── ROADMAP.md              # Plano de desenvolvimento
-└── TESTING.md              # Guia de testes automatizados
+└── CLAUDE.md               # Guia para Claude Code
 ```
 
 ## Testes Automatizados
 
-O projeto inclui 140 testes automatizados cobrindo:
-- Mecânicas de combate
+O projeto inclui **140+ testes** cobrindo:
+- Mecânicas de combate (first strike, trample, deathtouch)
 - Keywords e interações
-- Triggers de criaturas
+- Triggers de criaturas (ETB, death, combat)
 - Habilidades de lords
 - Feitiços e efeitos
 
@@ -161,20 +187,22 @@ npm install
 npm test
 ```
 
-Veja [TESTING.md](TESTING.md) para mais detalhes.
+Veja [docs/01_TESTING.md](docs/01_TESTING.md) para mais detalhes.
 
 ## Roadmap
 
-Veja [ROADMAP.md](ROADMAP.md) para o plano completo de desenvolvimento, incluindo:
-- Efeitos de cartas pendentes
-- Melhorias de UI/UX
-- Melhorias de IA
-- Novos conteúdos planejados
+Veja [docs/ROADMAP.md](docs/ROADMAP.md) para o plano completo de desenvolvimento.
+
+**Próximos passos:**
+- Refinamentos de IA (timing de instants)
+- Responsividade mobile
+- Novos modos de jogo
 
 ## Créditos
 
 - Imagens: [Scryfall](https://scryfall.com/)
 - Sons: [Pixabay](https://pixabay.com/)
+- Símbolos de mana: [Mana font](https://mana.andrewgioia.com/)
 - Inspirado no projeto [Forge](https://github.com/Card-Forge/forge)
 
 ---
