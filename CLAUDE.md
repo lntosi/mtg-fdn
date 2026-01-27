@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using 5 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves, Pirates).
+MTG Jumpstart Foundations - A browser-based Magic: The Gathering game for learning purposes. Single-player vs AI using all 10 Jumpstart decks from the Foundations Beginner Box (Cats, Goblins, Vampires, Elves, Pirates, Healing, Inferno, Undead, Primal, Wizards).
 
 ## Running the Game
 
@@ -37,7 +37,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `rules.js` - MTG rules engine: phases, mana payment, combat damage, keywords
 - `ai.js` - AI opponent logic for playing cards and combat decisions
 - `ui.js` - DOM manipulation, rendering, event handling (GameUI class)
-- `cards.js` - Card database (CARD_DATABASE) with all 5 decks
+- `cards.js` - Card database (CARD_DATABASE) with all 10 decks
 - `sounds.js` - SoundManager (Pixabay audio)
 - `images.js` - ImageManager (Scryfall API for card images and avatars)
 
@@ -147,6 +147,19 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 - **scry_N**: Look at top N cards and choose to keep or bottom (e.g., `scry_1`, `scry_2`)
 - **draw_N**: Draw N cards when spell resolves (e.g., `draw_1`, `draw_2`)
 - **sacrifice_for_mana**: Can sacrifice for mana of any color (Treasure Token)
+- **enters_tapped**: Creature enters the battlefield tapped (Diregraf Ghoul)
+- **etb_discard_opponent**: Opponent discards a card on ETB (Virus Beetle)
+- **etb_return_zombie**: Return Zombie or Skeleton from graveyard to hand (Gravedigger variant)
+- **etb_return_creature**: Return target creature from graveyard to hand (Gravedigger)
+- **etb_return_zombie_battlefield**: Return Zombie/Skeleton from graveyard to battlefield (Rot Hulk)
+- **zombie_skeleton_lord**: Gives +1/+1 and deathtouch to Zombies and Skeletons (Death Baron)
+- **dragon_cost_reduction**: Dragons cost {1} less (Dragonlord's Servant)
+- **wizard_discount**: Instants and sorceries cost {1} less (Goblin Electromancer)
+- **draw_counter**: Gets +1/+1 counter when drawing second card each turn (Clinquant Skymage)
+- **second_draw_faerie**: Creates 1/1 Faerie token on second draw each turn (Mischievous Mystic)
+- **counterspell_creature**: Only counters creature spells (Essence Scatter)
+- **lifegain_counter**: Gets +1/+1 counter when you gain life (Ajani's Pridemate)
+- **double_strike_above_starting**: Has double strike if life >= starting life (Twinblade Paladin)
 
 ### Keyword Display System (Preview Panel)
 
@@ -649,30 +662,36 @@ if (card.keywords?.includes('etb_cat_token')) {
 
 ### Deck-Specific Implementation Notes
 
-#### Healing (W) - Lifegain Triggers
-- Create `onLifeGain(player, amount)` in triggers.js
-- Call from game.js wherever `player.life +=` occurs
-- Ajani's Pridemate: +1/+1 counter on lifegain
-- Twinblade Paladin: conditional double strike (check in rules.js)
+All 10 decks are now fully implemented. Below are key mechanics for each of the 5 newer decks:
 
-#### Primal (G) - Fight Mechanic
-- Create `fight(creature1, creature2)` in triggers.js
-- Bite Down spell: target own creature fights target opponent creature
-- Needs two-target selection UI
+#### Healing (W) - Lifegain Triggers ✅
+- `onLifeGain(player, amount)` in triggers.js handles lifegain triggers
+- Ajani's Pridemate: +1/+1 counter on lifegain (lifegain_counter keyword)
+- Twinblade Paladin: conditional double strike when life >= starting life
 
-#### Inferno (R) - Dragon Synergies
-- Cost reduction: modify `rules.js` mana calculation for Dragons
-- Dragonlord's Servant: Dragons cost 1 less
+#### Primal (G) - Fight Mechanic ✅
+- Bite Down: One-sided fight (your creature deals damage to target)
+- Giant Growth, Snakeskin Veil: Combat tricks with targeting
+- Aggressive Mammoth: Gives all creatures trample
 
-#### Wizards (U) - Kicker
-- Add `kicked` property to spell resolution
-- Kicker cost: additional mana for extra effect
-- Into the Roil: bounce + draw if kicked
+#### Inferno (R) - Dragon Synergies ✅
+- Dragonlord's Servant: Dragons cost {1} less (dragon_cost_reduction)
+- Kargan Dragonrider: Gets flying when you control a Dragon
+- Terror of Mount Velus: Double strike dragon finisher
 
-#### Undead (B) - Graveyard Recursion
-- Reassembling Skeleton: activated ability from graveyard
-- Need to check graveyard in `canActivateAbility()`
-- Sacrifice costs: UI prompt to choose creature to sacrifice
+#### Wizards (U) - Draw Triggers & Kicker ✅
+- Clinquant Skymage: +1/+1 counter on second draw (draw_counter)
+- Mischievous Mystic: Creates Faerie on second draw (second_draw_faerie)
+- Into the Roil: Kicker for additional draw
+- Essence Scatter: Counterspell creatures only (counterspell_creature)
+- Goblin Electromancer: Instants/sorceries cost {1} less (wizard_discount)
+
+#### Undead (B) - Graveyard Recursion ✅
+- Gravedigger: Return creature from graveyard to hand (etb_return_creature)
+- Rot Hulk: Return Zombie/Skeleton to battlefield (etb_return_zombie_battlefield)
+- Death Baron: Lord for Zombies and Skeletons with deathtouch (zombie_skeleton_lord)
+- Rise Again: Sorcery to reanimate creatures
+- Diregraf Ghoul: Enters tapped (enters_tapped keyword)
 
 ---
 
