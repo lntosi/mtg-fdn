@@ -135,6 +135,160 @@ const CARD_DATABASE = {
             // Equipamento (1)
             { id: "pirates_cutlass", name: "Pirate's Cutlass", type: "artifact", subtype: "Equipment", cost: "3", cmc: 3, text: "Quando este Equipamento entra, anexe-o ao Pirata alvo que você controla. Criatura equipada recebe +2/+1. Equipar 2.", keywords: ["equipment", "etb_equip_pirate"], qty: 1 }
         ]
+    },
+
+    // ==================== HEALING (Branco) ====================
+    healing: {
+        name: "Healing",
+        color: "white",
+        cards: [
+            // Terrenos (7)
+            { id: "healing_plains_1", name: "Plains", type: "land", subtype: "basic", produces: "W", qty: 7 },
+            // Terreno especial (1)
+            { id: "healing_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+
+            // Criaturas (10)
+            { id: "hinterland_sanctifier", name: "Hinterland Sanctifier", type: "creature", subtype: "Rabbit Cleric", cost: "W", cmc: 1, power: 1, toughness: 2, text: "Sempre que outra criatura entra sob seu controle, você ganha 1 vida.", keywords: ["creature_etb_lifegain"], qty: 1 },
+            { id: "bishops_soldier", name: "Bishop's Soldier", type: "creature", subtype: "Vampire Soldier", cost: "1W", cmc: 2, power: 2, toughness: 2, keywords: ["lifelink"], qty: 1 },
+            { id: "ajanis_pridemate", name: "Ajani's Pridemate", type: "creature", subtype: "Cat Soldier", cost: "1W", cmc: 2, power: 2, toughness: 2, text: "Sempre que você ganhar vida, coloque um contador +1/+1 nesta criatura.", keywords: ["lifegain_counter"], qty: 1 },
+            { id: "dazzling_angel", name: "Dazzling Angel", type: "creature", subtype: "Angel", cost: "2W", cmc: 3, power: 2, toughness: 3, keywords: ["flying", "creature_etb_lifegain"], text: "Voar. Sempre que outra criatura entra sob seu controle, você ganha 1 vida.", qty: 1 },
+            { id: "inspiring_overseer", name: "Inspiring Overseer", type: "creature", subtype: "Angel Cleric", cost: "2W", cmc: 3, power: 2, toughness: 1, keywords: ["flying", "etb_draw", "etb_gain_life_1"], text: "Voar. Quando esta criatura entra, você ganha 1 vida e compra uma carta.", qty: 1 },
+            { id: "twinblade_paladin", name: "Twinblade Paladin", type: "creature", subtype: "Human Knight", cost: "3W", cmc: 4, power: 3, toughness: 3, text: "Sempre que você ganhar vida, coloque um contador +1/+1 nesta criatura. Enquanto você tiver 25 ou mais pontos de vida, esta criatura tem golpe duplo.", keywords: ["lifegain_counter"], qty: 1 },
+            { id: "herald_of_faith", name: "Herald of Faith", type: "creature", subtype: "Angel", cost: "3WW", cmc: 5, power: 4, toughness: 3, keywords: ["flying", "attack_gain_life_2"], text: "Voar. Sempre que esta criatura atacar, você ganha 2 vidas.", qty: 1 },
+            { id: "ancestor_dragon", name: "Ancestor Dragon", type: "creature", subtype: "Dragon", cost: "4WW", cmc: 6, power: 5, toughness: 6, keywords: ["flying", "mass_attack_lifegain"], text: "Voar. Sempre que uma ou mais criaturas que você controla atacarem, você ganha 1 vida para cada criatura atacante.", qty: 1 },
+
+            // Instants (2)
+            { id: "adamant_will", name: "Adamant Will", type: "instant", cost: "1W", cmc: 2, text: "Criatura alvo ganha +2/+2 e indestrutível até o fim do turno.", qty: 1 },
+            { id: "deadly_riposte", name: "Deadly Riposte", type: "instant", cost: "1W", cmc: 2, text: "Deadly Riposte causa 3 de dano a criatura virada alvo e você ganha 2 vidas.", qty: 1 },
+
+            // Enchantment (1)
+            { id: "prayer_of_binding", name: "Prayer of Binding", type: "enchantment", cost: "3W", cmc: 4, keywords: ["flash"], text: "Lampejo. Quando este encantamento entra, exile permanente alvo que não seja terreno que um oponente controla até que este encantamento deixe o campo de batalha. Você ganha 2 vidas.", qty: 1 },
+
+            // Equipment (1)
+            { id: "quick_draw_katana", name: "Quick-Draw Katana", type: "artifact", subtype: "Equipment", cost: "2", cmc: 2, keywords: ["equipment"], text: "Durante seu turno, criatura equipada ganha +2/+0 e tem iniciativa. Equipar 2.", qty: 1 }
+        ]
+    },
+
+    // ==================== INFERNO (Vermelho) ====================
+    inferno: {
+        name: "Inferno",
+        color: "red",
+        cards: [
+            // Terrenos (7)
+            { id: "inferno_mountain_1", name: "Mountain", type: "land", subtype: "basic", produces: "R", qty: 7 },
+            // Terreno especial (1)
+            { id: "inferno_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+
+            // Criaturas (8)
+            { id: "dragonlords_servant", name: "Dragonlord's Servant", type: "creature", subtype: "Goblin Shaman", cost: "1R", cmc: 2, power: 1, toughness: 3, text: "Mágicas de Dragão que você conjura custam {1} a menos.", keywords: ["dragon_cost_reduction"], qty: 1 },
+            { id: "kargan_dragonrider", name: "Kargan Dragonrider", type: "creature", subtype: "Human Warrior", cost: "1R", cmc: 2, power: 2, toughness: 2, text: "Enquanto você controlar um Dragão, esta criatura tem voar.", qty: 1 },
+            { id: "firespitter_whelp", name: "Firespitter Whelp", type: "creature", subtype: "Dragon", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["flying", "spellcast_damage"], text: "Voar. Sempre que você conjurar uma mágica que não seja de criatura ou de Dragão, esta criatura causa 1 de dano a cada oponente.", qty: 1 },
+            { id: "skyraker_giant", name: "Skyraker Giant", type: "creature", subtype: "Giant", cost: "2RR", cmc: 4, power: 4, toughness: 3, keywords: ["reach"], qty: 1 },
+            { id: "fire_elemental", name: "Fire Elemental", type: "creature", subtype: "Elemental", cost: "3RR", cmc: 5, power: 5, toughness: 4, qty: 1 },
+            { id: "rapacious_dragon", name: "Rapacious Dragon", type: "creature", subtype: "Dragon", cost: "4R", cmc: 5, power: 3, toughness: 3, keywords: ["flying", "etb_treasure_two"], text: "Voar. Quando esta criatura entra, crie dois tokens de Tesouro.", qty: 1 },
+            { id: "terror_of_mount_velus", name: "Terror of Mount Velus", type: "creature", subtype: "Dragon", cost: "5RR", cmc: 7, power: 5, toughness: 5, keywords: ["flying", "double_strike", "etb_double_strike_all"], text: "Voar. Golpe duplo. Quando esta criatura entra, criaturas que você controla ganham golpe duplo até o fim do turno.", qty: 1 },
+
+            // Instants (2)
+            { id: "scorching_dragonfire", name: "Scorching Dragonfire", type: "instant", cost: "1R", cmc: 2, text: "Scorching Dragonfire causa 3 de dano à criatura ou planeswalker alvo. Se essa criatura ou planeswalker morrer neste turno, exile-a em vez disso.", keywords: ["exile_if_dies"], qty: 1 },
+            { id: "fiery_annihilation", name: "Fiery Annihilation", type: "instant", cost: "2R", cmc: 3, text: "Fiery Annihilation causa 5 de dano à criatura alvo. Exile até um Equipamento alvo anexado àquela criatura. Se a criatura morrer neste turno, exile-a.", keywords: ["exile_if_dies"], qty: 1 },
+
+            // Sorcery (1)
+            { id: "seize_the_spoils", name: "Seize the Spoils", type: "sorcery", cost: "2R", cmc: 3, text: "Como custo adicional para conjurar esta mágica, descarte um card. Compre dois cards e crie um token de Tesouro.", keywords: ["discard_cost"], qty: 1 },
+
+            // Artifact (1)
+            { id: "carnelian_orb", name: "Carnelian Orb of Dragonkind", type: "artifact", cost: "2R", cmc: 3, text: "{T}: Adicione {R}. Se esse mana for gasto em uma mágica de criatura Dragão, ela ganha ímpeto até o fim do turno.", keywords: ["tap_for_mana", "dragon_haste_source"], produces: "R", qty: 1 }
+        ]
+    },
+
+    // ==================== PRIMAL (Verde) ====================
+    primal: {
+        name: "Primal",
+        color: "green",
+        cards: [
+            // Terrenos (7)
+            { id: "primal_forest_1", name: "Forest", type: "land", subtype: "basic", produces: "G", qty: 7 },
+            // Terreno especial (1)
+            { id: "primal_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+
+            // Criaturas (8)
+            { id: "mild_mannered_librarian", name: "Mild-Mannered Librarian", type: "creature", subtype: "Human", cost: "G", cmc: 1, power: 1, toughness: 1, text: "{3}{G}: Esta criatura se torna um Lobisomem. Coloque dois contadores +1/+1 nela e compre um card. Ative apenas uma vez.", qty: 1 },
+            { id: "bear_cub", name: "Bear Cub", type: "creature", subtype: "Bear", cost: "1G", cmc: 2, power: 2, toughness: 2, qty: 1 },
+            { id: "druid_of_the_cowl", name: "Druid of the Cowl", type: "creature", subtype: "Elf Druid", cost: "1G", cmc: 2, power: 1, toughness: 3, text: "{T}: Adicione {G}.", keywords: ["tap_for_mana"], produces: "G", qty: 1 },
+            { id: "wildwood_scourge", name: "Wildwood Scourge", type: "creature", subtype: "Hydra", cost: "1G", cmc: 2, power: 1, toughness: 1, text: "Sempre que um ou mais contadores +1/+1 forem colocados em outra criatura não-Hidra que você controla, coloque um contador +1/+1 nesta criatura.", keywords: ["counter_synergy"], qty: 1 },
+            { id: "thrashing_brontodon", name: "Thrashing Brontodon", type: "creature", subtype: "Dinosaur", cost: "1GG", cmc: 3, power: 3, toughness: 4, text: "{1}, Sacrifique esta criatura: Destrua artefato ou encantamento alvo.", qty: 1 },
+            { id: "magnigoth_sentry", name: "Magnigoth Sentry", type: "creature", subtype: "Treefolk", cost: "3G", cmc: 4, power: 4, toughness: 4, keywords: ["reach"], qty: 1 },
+            { id: "aggressive_mammoth", name: "Aggressive Mammoth", type: "creature", subtype: "Elephant", cost: "3GGG", cmc: 6, power: 8, toughness: 8, keywords: ["trample", "trample_lord"], text: "Atropelar. Outras criaturas que você controla têm atropelar.", qty: 1 },
+
+            // Instants (2)
+            { id: "giant_growth", name: "Giant Growth", type: "instant", cost: "G", cmc: 1, text: "Criatura alvo ganha +3/+3 até o fim do turno.", qty: 1 },
+            { id: "bite_down", name: "Bite Down", type: "instant", cost: "1G", cmc: 2, text: "Criatura alvo que você controla causa dano igual ao seu poder a criatura ou planeswalker alvo que você não controla.", qty: 1 },
+
+            // Sorcery (1)
+            { id: "biogenic_upgrade", name: "Biogenic Upgrade", type: "sorcery", cost: "4GG", cmc: 6, text: "Distribua três contadores +1/+1 entre uma, duas ou três criaturas alvo, depois dobre o número de contadores +1/+1 em cada uma dessas criaturas.", qty: 1 },
+
+            // Enchantment (1)
+            { id: "new_horizons", name: "New Horizons", type: "enchantment", subtype: "Aura", cost: "2G", cmc: 3, keywords: ["enchant"], text: "Encantar terreno. Quando este encantamento entra, coloque um contador +1/+1 em criatura alvo que você controla. Terreno encantado tem '{T}: Adicione dois manas de uma mesma cor.'", qty: 1 }
+        ]
+    },
+
+    // ==================== WIZARDS (Azul) ====================
+    wizards: {
+        name: "Wizards",
+        color: "blue",
+        cards: [
+            // Terrenos (7)
+            { id: "wizards_island_1", name: "Island", type: "land", subtype: "basic", produces: "U", qty: 7 },
+            // Terreno especial (1)
+            { id: "wizards_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
+
+            // Criaturas (7)
+            { id: "burrog_befuddler", name: "Burrog Befuddler", type: "creature", subtype: "Frog Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flash", "etb_debuff"], text: "Lampejo. Quando esta criatura entra, criatura alvo que um oponente controla recebe -1/-0 até o fim do turno.", qty: 1 },
+            { id: "mischievous_mystic", name: "Mischievous Mystic", type: "creature", subtype: "Human Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flying", "second_draw_faerie"], text: "Voar. Sempre que você comprar seu segundo card em um turno, crie um token de criatura Fadinha 1/1 azul com voar.", qty: 1 },
+            { id: "mystic_archaeologist", name: "Mystic Archaeologist", type: "creature", subtype: "Human Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, text: "{3}{U}{U}: Compre dois cards.", qty: 1 },
+            { id: "exclusion_mage", name: "Exclusion Mage", type: "creature", subtype: "Human Wizard", cost: "2U", cmc: 3, power: 2, toughness: 2, keywords: ["etb_bounce"], text: "Quando esta criatura entra, devolva criatura alvo que um oponente controla para a mão de seu dono.", qty: 1 },
+            { id: "erudite_wizard", name: "Erudite Wizard", type: "creature", subtype: "Human Wizard", cost: "2U", cmc: 3, power: 2, toughness: 3, keywords: ["second_draw_counter"], text: "Sempre que você comprar seu segundo card em um turno, coloque um contador +1/+1 nesta criatura.", qty: 1 },
+            { id: "clinquant_skymage", name: "Clinquant Skymage", type: "creature", subtype: "Bird Wizard", cost: "3U", cmc: 4, power: 1, toughness: 1, keywords: ["flying", "draw_counter"], text: "Voar. Sempre que você comprar um card, coloque um contador +1/+1 nesta criatura.", qty: 1 },
+            { id: "icewind_elemental", name: "Icewind Elemental", type: "creature", subtype: "Elemental", cost: "4U", cmc: 5, power: 3, toughness: 4, keywords: ["flying", "etb_loot"], text: "Voar. Quando esta criatura entra, compre um card, depois descarte um card.", qty: 1 },
+
+            // Instants (4)
+            { id: "fleeting_distraction", name: "Fleeting Distraction", type: "instant", cost: "U", cmc: 1, text: "Criatura alvo recebe -1/-0 até o fim do turno. Compre um card.", qty: 1 },
+            { id: "essence_scatter", name: "Essence Scatter", type: "instant", cost: "1U", cmc: 2, keywords: ["counterspell_creature"], text: "Anule a mágica de criatura alvo.", qty: 1 },
+            { id: "into_the_roil", name: "Into the Roil", type: "instant", cost: "1U", cmc: 2, keywords: ["kicker"], kickerCost: "1U", text: "Encostar {1}{U}. Devolva a permanente alvo que não seja terreno para a mão de seu dono. Se esta mágica foi encostada, compre um card.", qty: 1 },
+            { id: "quick_study", name: "Quick Study", type: "instant", cost: "2U", cmc: 3, keywords: ["draw_2"], text: "Compre dois cards.", qty: 1 },
+
+            // Sorcery (1)
+            { id: "arcane_epiphany", name: "Arcane Epiphany", type: "instant", cost: "3UU", cmc: 5, keywords: ["wizard_discount", "draw_3"], text: "Esta mágica custa {1} a menos se você controlar um Mago. Compre três cards.", qty: 1 },
+
+            // Enchantment (1)
+            { id: "starlight_snare", name: "Starlight Snare", type: "enchantment", subtype: "Aura", cost: "2U", cmc: 3, keywords: ["enchant", "freeze_aura"], text: "Encantar criatura. Quando esta Aura entra, vire a criatura encantada. Criatura encantada não desvira durante a etapa de desvirar de seu controlador.", qty: 1 }
+        ]
+    },
+
+    // ========== UNDEAD DECK (Black - Graveyard Recursion) ==========
+    undead: {
+        name: "Undead",
+        color: "black",
+        cards: [
+            // Terrenos (8)
+            { id: "swamp", name: "Swamp", type: "land", produces: "B", qty: 8 },
+
+            // Criaturas (9)
+            { id: "diregraf_ghoul", name: "Diregraf Ghoul", type: "creature", subtype: "Zombie", cost: "B", cmc: 1, power: 2, toughness: 2, keywords: ["enters_tapped"], text: "Diregraf Ghoul entra em jogo virado.", qty: 2 },
+            { id: "walking_corpse", name: "Walking Corpse", type: "creature", subtype: "Zombie", cost: "1B", cmc: 2, power: 2, toughness: 2, text: "", qty: 2 },
+            { id: "virus_beetle", name: "Virus Beetle", type: "creature", subtype: "Insect", cost: "1B", cmc: 2, power: 1, toughness: 1, keywords: ["etb_discard_opponent"], text: "Quando Virus Beetle entra em jogo, cada oponente descarta um card.", qty: 1 },
+            { id: "reassembling_skeleton", name: "Reassembling Skeleton", type: "creature", subtype: "Skeleton Warrior", cost: "1B", cmc: 2, power: 1, toughness: 1, keywords: ["graveyard_return"], text: "{1}{B}: Devolva este card do seu cemitério para o campo de batalha virado.", qty: 1 },
+            { id: "death_baron", name: "Death Baron", type: "creature", subtype: "Zombie Wizard", cost: "1BB", cmc: 3, power: 2, toughness: 2, keywords: ["zombie_skeleton_lord", "zombie_skeleton_deathtouch"], text: "Skeletons e outros Zombies que você controla recebem +1/+1 e têm toque mortífero.", qty: 1 },
+            { id: "ghoulraiser", name: "Ghoulraiser", type: "creature", subtype: "Zombie", cost: "1BB", cmc: 3, power: 2, toughness: 2, keywords: ["etb_return_zombie"], text: "Quando Ghoulraiser entra em jogo, devolva um card de Zombie aleatório do seu cemitério para sua mão.", qty: 1 },
+            { id: "gravedigger", name: "Gravedigger", type: "creature", subtype: "Zombie", cost: "3B", cmc: 4, power: 2, toughness: 2, keywords: ["etb_return_creature"], text: "Quando Gravedigger entra em jogo, você pode devolver um card de criatura alvo do seu cemitério para sua mão.", qty: 1 },
+            { id: "rot_hulk", name: "Rot Hulk", type: "creature", subtype: "Zombie", cost: "5BB", cmc: 7, power: 5, toughness: 5, keywords: ["menace", "etb_return_zombie_battlefield"], text: "Ameaçar. Quando Rot Hulk entra em jogo, devolva um card de Zombie alvo do seu cemitério para o campo de batalha.", qty: 1 },
+
+            // Instants (1)
+            { id: "murder", name: "Murder", type: "instant", cost: "1BB", cmc: 3, text: "Destrua a criatura alvo.", qty: 1 },
+
+            // Sorceries (2)
+            { id: "mind_rot", name: "Mind Rot", type: "sorcery", cost: "2B", cmc: 3, text: "O jogador alvo descarta dois cards.", qty: 1 },
+            { id: "rise_again", name: "Rise Again", type: "sorcery", cost: "4B", cmc: 5, keywords: ["return_creature_battlefield"], text: "Devolva a criatura alvo do seu cemitério para o campo de batalha.", qty: 1 }
+        ]
     }
 };
 

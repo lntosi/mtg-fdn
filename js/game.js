@@ -148,7 +148,10 @@ class GameState {
     gainLife(player, amount) {
         if (amount <= 0) return;
         player.life += amount;
-        // Não toca som para ganho de vida (pode adicionar depois se quiser)
+        // Trigger lifegain effects (Ajani's Pridemate, Twinblade Paladin, etc.)
+        if (this.triggers) {
+            this.triggers.onLifeGain(player, amount);
+        }
     }
 
     init() {
@@ -175,7 +178,12 @@ class GameState {
             goblins: 'chandra', // Chandra combina com vermelho/goblins
             vampires: 'liliana', // Liliana combina com preto/vampiros
             elves: 'nissa',     // Nissa combina com verde/elfos
-            pirates: 'jace'     // Jace combina com azul/piratas
+            pirates: 'jace',    // Jace combina com azul/piratas
+            healing: 'gideon',  // Gideon é branco/proteção
+            inferno: 'chandra', // Chandra é vermelho/dragões
+            primal: 'nissa',    // Nissa é verde/natureza
+            wizards: 'jace',    // Jace é azul/magos
+            undead: 'liliana'   // Liliana é preto/mortos-vivos
         };
 
         // Retorna o avatar do primeiro deck
@@ -514,6 +522,22 @@ class GameState {
 
         // Remover flag de pendingResolution (criatura já está no battlefield desde addToStack)
         delete card.pendingResolution;
+
+        // Enters tapped (Diregraf Ghoul, etc.)
+        if (card.keywords?.includes('enters_tapped')) {
+            card.tapped = true;
+        }
+
+        // Carnelian Orb of Dragonkind: se Dragão e o Orb foi usado (está virado), ganha haste
+        if (card.subtype?.includes('Dragon')) {
+            const tappedOrb = controller.battlefield.find(c =>
+                c.id === 'carnelian_orb' && c.tapped
+            );
+            if (tappedOrb) {
+                card.hasHasteFromOrb = true;
+                this.ui.log(`${card.name} ganha ímpeto (Carnelian Orb of Dragonkind)`);
+            }
+        }
 
         // Trigger de entrada (delegado ao TriggerManager)
         await this.triggers.resolveETB(card, controller);
@@ -985,8 +1009,9 @@ class GameState {
             // Verificar se é um counterspell (caso especial - mira na stack)
             if (this.isCounterspell(card)) {
                 // Counterspell precisa de uma mágica na stack (qualquer tipo exceto land)
+                // Also filter by what this specific counterspell can target
                 const spellsOnStack = this.stack.filter(s =>
-                    s.item.type !== 'land' && s.controller !== player
+                    s.item.type !== 'land' && s.controller !== player && this.canCounterTarget(card, s)
                 );
 
                 if (spellsOnStack.length === 0) {
@@ -1012,7 +1037,7 @@ class GameState {
                     this.resolveCounterspell(card, player, target);
                 }
 
-                this.triggers.onSpellCast(player);
+                this.triggers.onSpellCast(player, card);
                 return true;
             }
 
@@ -1087,6 +1112,66 @@ class GameState {
                 return true;
             }
 
+            // Bite Down - sua criatura causa dano igual ao poder dela a criatura do oponente
+            if (card.id === 'bite_down' && player === this.player) {
+                const ownCreatures = player.battlefield.filter(c => c.type === 'creature');
+                const opponent = this.opponent;
+                const opponentCreatures = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && this.rules.canBeTargetedBy(c, player)
+                );
+
+                if (ownCreatures.length === 0 || opponentCreatures.length === 0) {
+                    this.ui.log(`Não há alvos válidos para ${card.name}`);
+                    delete card.pendingCast;
+                    return false;
+                }
+
+                // Pagar mana antes de selecionar
+                const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
+                this.rules.payMana(card, player, selectedLands);
+                if (player === this.player) this.ui.clearLandSelection();
+                window.soundManager.playMagic();
+
+                // PASSO 1: Escolher sua criatura
+                const ownTarget = await this.ui.promptTriggerTarget({
+                    title: 'Bite Down - Sua Criatura',
+                    description: 'Escolha sua criatura para causar dano:',
+                    validTargets: ownCreatures,
+                    canSkip: false
+                });
+
+                if (!ownTarget) {
+                    const handIndex = player.hand.indexOf(card);
+                    if (handIndex > -1) player.hand.splice(handIndex, 1);
+                    delete card.pendingCast;
+                    player.graveyard.push(card);
+                    return true;
+                }
+
+                // PASSO 2: Escolher criatura do oponente
+                this.ui.promptForTarget(card, opponentCreatures, async (enemyTarget) => {
+                    const handIndex = player.hand.indexOf(card);
+                    if (handIndex > -1) player.hand.splice(handIndex, 1);
+                    delete card.pendingCast;
+
+                    // Sua criatura causa dano igual ao seu poder
+                    const damage = this.rules.getCreaturePower(ownTarget);
+                    enemyTarget.damage = (enemyTarget.damage || 0) + damage;
+                    this.ui.log(`${ownTarget.name} causou ${damage} de dano a ${enemyTarget.name}`);
+
+                    // Deathtouch check
+                    const hasDeathtouch = this.rules.hasKeyword(ownTarget, 'deathtouch', false);
+                    if (hasDeathtouch && damage > 0) {
+                        enemyTarget.markedForDeath = true;
+                    }
+
+                    await this.checkCreatureDeath(enemyTarget, opponent);
+                    player.graveyard.push(card);
+                    this.ui.render();
+                });
+                return true;
+            }
+
             if (needsTarget && player === this.player) {
                 // Jogador precisa selecionar alvo
                 const validTargets = this.getValidSpellTargets(card, player);
@@ -1138,8 +1223,8 @@ class GameState {
                 player.graveyard.push(card);
                 this.ui.log(`${player.name} conjurou ${card.name}`);
 
-                // Brineborn Cutthroat - trigger quando lança mágica no turno do oponente
-                this.triggers.onSpellCast(player);
+                // Brineborn Cutthroat / Firespitter Whelp - trigger quando lança mágica
+                this.triggers.onSpellCast(player, card);
             }
         } else if (card.type === 'enchantment' && card.subtype === 'Aura') {
             // Auras precisam de um alvo
@@ -1158,8 +1243,8 @@ class GameState {
             // Adicionar à pilha
             const stackItem = this.addToStack(card, player);
 
-            // Trigger para "whenever you cast a spell" (Brineborn Cutthroat, etc)
-            this.triggers.onSpellCast(player);
+            // Trigger para "whenever you cast a spell" (Brineborn Cutthroat, Firespitter Whelp, etc)
+            this.triggers.onSpellCast(player, card);
 
             // Oferecer janela de resposta ao oponente
             await this.offerResponseToOpponent(player);
@@ -1267,7 +1352,20 @@ class GameState {
 
     // Verifica se feitiço é um counterspell (mira na stack)
     isCounterspell(card) {
-        return card.keywords && card.keywords.includes('counterspell');
+        return card.keywords && (
+            card.keywords.includes('counterspell') ||
+            card.keywords.includes('counterspell_creature')
+        );
+    }
+
+    // Check if a counterspell can target a specific stack item
+    canCounterTarget(counterCard, stackTarget) {
+        // Essence Scatter can only counter creature spells
+        if (counterCard.keywords?.includes('counterspell_creature')) {
+            return stackTarget.item.type === 'creature';
+        }
+        // Regular counterspells can counter any spell
+        return true;
     }
 
     // Retorna alvos válidos para um feitiço
@@ -1281,6 +1379,7 @@ class GameState {
             case 'kindled_fury':
             case 'snakeskin_veil':
             case 'offer_immortality':
+            case 'adamant_will':
                 targets = caster.battlefield.filter(c => c.type === 'creature');
                 break;
 
@@ -1288,9 +1387,17 @@ class GameState {
             case 'moment_of_craving':
             case 'heros_downfall':
             case 'incinerating_blast':
+            case 'murder':
                 // Filtrar criaturas que podem ser alvo (não têm hexproof)
                 targets = opponent.battlefield.filter(c =>
                     c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
+                );
+                break;
+
+            case 'deadly_riposte':
+                // Só criaturas viradas do oponente
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && c.tapped && this.rules.canBeTargetedBy(c, caster)
                 );
                 break;
 
@@ -1414,6 +1521,56 @@ class GameState {
                 this.ui.log(`${target.name} ganhou toque mortífero e indestrutível`);
                 break;
 
+            case 'adamant_will':
+                // +2/+2 e indestructible até o fim do turno
+                target.powerModifier = (target.powerModifier || 0) + 2;
+                target.toughnessModifier = (target.toughnessModifier || 0) + 2;
+                if (!target.temporaryKeywords) target.temporaryKeywords = [];
+                target.temporaryKeywords.push('indestructible');
+                this.ui.log(`${target.name} ganhou +2/+2 e indestrutível`);
+                break;
+
+            case 'giant_growth':
+                // +3/+3 até o fim do turno
+                target.powerModifier = (target.powerModifier || 0) + 3;
+                target.toughnessModifier = (target.toughnessModifier || 0) + 3;
+                this.ui.log(`${target.name} ganhou +3/+3`);
+                break;
+
+            case 'fleeting_distraction':
+                // -1/-0, draw a card
+                target.powerModifier = (target.powerModifier || 0) - 1;
+                this.rules.drawCard(caster);
+                this.ui.log(`${target.name} recebeu -1/-0. ${caster.name} comprou um card`);
+                break;
+
+            case 'into_the_roil':
+                // Bounce nonland permanent, if kicked draw a card
+                const roilOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
+                const roilIdx = roilOwner.battlefield.indexOf(target);
+                if (roilIdx > -1) {
+                    if (target.type === 'creature') {
+                        this.detachFromCreature(target, roilOwner);
+                    }
+                    roilOwner.battlefield.splice(roilIdx, 1);
+                    // Reset card state
+                    target.damage = 0;
+                    target.powerModifier = 0;
+                    target.toughnessModifier = 0;
+                    target.temporaryKeywords = [];
+                    target.tapped = false;
+                    target.counters = null;
+                    roilOwner.hand.push(target);
+                    this.ui.log(`${target.name} devolvido para a mão de ${roilOwner.name}`);
+
+                    // Check if kicked
+                    if (card.kicked) {
+                        this.rules.drawCard(caster);
+                        this.ui.log(`Into the Roil foi encostado: ${caster.name} comprou um card`);
+                    }
+                }
+                break;
+
             // === DANO ===
             case 'moment_of_craving':
                 target.powerModifier = (target.powerModifier || 0) - 2;
@@ -1426,6 +1583,14 @@ class GameState {
             case 'volley':
                 target.damage = (target.damage || 0) + 3;
                 this.ui.log(`Volley causou 3 de dano a ${target.name}`);
+                await this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            case 'deadly_riposte':
+                // 3 dano a criatura virada + ganhar 2 vidas
+                target.damage = (target.damage || 0) + 3;
+                this.gainLife(caster, 2);
+                this.ui.log(`Deadly Riposte causou 3 de dano a ${target.name}. ${caster.name} ganhou 2 vidas`);
                 await this.checkCreatureDeath(target, targetOwner);
                 break;
 
@@ -1477,6 +1642,7 @@ class GameState {
 
             // === REMOÇÃO ===
             case 'heros_downfall':
+            case 'murder':
                 await this.destroyPermanent(target, targetOwner);
                 this.ui.log(`${target.name} foi destruído`);
                 break;
@@ -1535,6 +1701,40 @@ class GameState {
             case 'broken_wings':
                 await this.destroyPermanent(target, targetOwner);
                 this.ui.log(`${target.name} foi destruído`);
+                break;
+
+            // === INFERNO DECK SPELLS ===
+            case 'scorching_dragonfire':
+                // 3 dano a criatura. Se morrer neste turno, exila em vez de ir pro cemitério
+                target.damage = (target.damage || 0) + 3;
+                target.exileOnDeath = true;
+                this.ui.log(`Scorching Dragonfire causou 3 de dano a ${target.name}`);
+                await this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            case 'fiery_annihilation':
+                // 5 dano a criatura. Se morrer neste turno, exila em vez de ir pro cemitério
+                target.damage = (target.damage || 0) + 5;
+                target.exileOnDeath = true;
+                this.ui.log(`Fiery Annihilation causou 5 de dano a ${target.name}`);
+                // Também pode exilar um equipamento anexado (up to one)
+                const attachedEquipments = caster === this.player
+                    ? targetOwner.battlefield.filter(c =>
+                        c.subtype === 'Equipment' && c.attachedTo === target.instanceId)
+                    : [];
+                if (attachedEquipments.length > 0 && caster === this.player) {
+                    const exileEquip = await this.ui.promptYesNo({
+                        title: 'Fiery Annihilation',
+                        description: `Exilar ${attachedEquipments[0].name} anexado a ${target.name}?`,
+                        yesText: 'Exilar equipamento',
+                        noText: 'Não'
+                    });
+                    if (exileEquip) {
+                        this.exilePermanent(attachedEquipments[0], targetOwner);
+                        this.ui.log(`${attachedEquipments[0].name} foi exilado`);
+                    }
+                }
+                await this.checkCreatureDeath(target, targetOwner);
                 break;
 
             default:
@@ -1733,8 +1933,138 @@ class GameState {
                 this.ui.log(`Todas as criaturas ganharam +3/+3 e devem ser bloqueadas!`);
                 break;
 
+            case 'biogenic_upgrade':
+                // Biogenic Upgrade - distribute 3 +1/+1 counters, then double
+                const ownCreatures = caster.battlefield.filter(c => c.type === 'creature');
+                if (ownCreatures.length > 0) {
+                    let targetCreature;
+                    if (caster === this.player) {
+                        targetCreature = await this.ui.promptTriggerTarget({
+                            title: 'Biogenic Upgrade',
+                            description: 'Escolha uma criatura para receber +1/+1 counters (3 + dobrados):',
+                            validTargets: ownCreatures,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA escolhe criatura com menos counters ou maior poder
+                        targetCreature = ownCreatures.sort((a, b) =>
+                            (a.counters?.plusOnePlusOne || 0) - (b.counters?.plusOnePlusOne || 0)
+                        )[0];
+                    }
+                    if (targetCreature) {
+                        // Add 3 counters
+                        if (!targetCreature.counters) targetCreature.counters = {};
+                        targetCreature.counters.plusOnePlusOne = (targetCreature.counters.plusOnePlusOne || 0) + 3;
+                        this.ui.log(`${targetCreature.name} recebeu 3 contadores +1/+1`);
+
+                        // Double the counters
+                        targetCreature.counters.plusOnePlusOne *= 2;
+                        this.ui.log(`Contadores em ${targetCreature.name} dobrados para ${targetCreature.counters.plusOnePlusOne}`);
+
+                        // Trigger counter synergy (Wildwood Scourge)
+                        if (this.triggers) {
+                            this.triggers.onCounterPlaced(targetCreature, caster, 3);
+                        }
+                    }
+                }
+                break;
+
+            case 'seize_the_spoils':
+                // Seize the Spoils - discard a card, draw 2, create treasure
+                // Note: The discard is technically an additional cost (should happen during cast)
+                // For simplicity, we handle it during resolution
+                if (caster.hand.length > 0) {
+                    let discardedCard;
+                    if (caster === this.player) {
+                        discardedCard = await this.ui.promptTriggerTarget({
+                            title: 'Seize the Spoils - Descarte',
+                            description: 'Escolha uma carta para descartar:',
+                            validTargets: caster.hand,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA descarta a carta de menor valor
+                        discardedCard = caster.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
+                    }
+                    if (discardedCard) {
+                        const idx = caster.hand.indexOf(discardedCard);
+                        if (idx > -1) {
+                            caster.hand.splice(idx, 1);
+                            caster.graveyard.push(discardedCard);
+                            this.ui.log(`${caster.name} descartou ${discardedCard.name}`);
+                        }
+                    }
+                }
+                this.rules.drawCard(caster);
+                this.rules.drawCard(caster);
+                this.triggers._createTreasureToken(caster, 'Seize the Spoils');
+                this.ui.log(`${caster.name} comprou 2 cartas e criou um token de Tesouro`);
+                break;
+
             // Opt agora é totalmente handled por keywords (scry_1, draw_1)
             // Não precisa mais de case específico!
+
+            // === UNDEAD DECK SORCERIES ===
+
+            case 'mind_rot':
+                // Mind Rot - target opponent discards 2 cards
+                const opponent = caster === this.player ? this.opponent : this.player;
+                const discardCount = Math.min(2, opponent.hand.length);
+
+                for (let i = 0; i < discardCount; i++) {
+                    let discardTarget;
+                    if (opponent === this.player) {
+                        // Human player chooses
+                        discardTarget = await this.ui.promptTriggerTarget({
+                            title: 'Mind Rot - Descarte',
+                            description: `Escolha um card para descartar (${i + 1}/${discardCount}):`,
+                            validTargets: opponent.hand,
+                            canSkip: false
+                        });
+                    } else {
+                        // AI discards lowest CMC
+                        discardTarget = opponent.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
+                    }
+                    if (discardTarget) {
+                        const idx = opponent.hand.indexOf(discardTarget);
+                        if (idx > -1) {
+                            opponent.hand.splice(idx, 1);
+                            opponent.graveyard.push(discardTarget);
+                            this.ui.log(`${opponent.name} descartou ${discardTarget.name}`);
+                        }
+                    }
+                }
+                break;
+
+            case 'rise_again':
+                // Rise Again - return target creature from your graveyard to battlefield
+                const creaturesInGY = caster.graveyard.filter(c => c.type === 'creature');
+                if (creaturesInGY.length > 0) {
+                    let targetCreature;
+                    if (caster === this.player) {
+                        targetCreature = await this.ui.promptTriggerTarget({
+                            title: 'Rise Again - Reanimar',
+                            description: 'Escolha uma criatura para reanimar:',
+                            validTargets: creaturesInGY,
+                            canSkip: false
+                        });
+                    } else {
+                        // AI picks highest CMC creature
+                        targetCreature = creaturesInGY.sort((a, b) => (b.cmc || 0) - (a.cmc || 0))[0];
+                    }
+                    if (targetCreature) {
+                        const idx = caster.graveyard.indexOf(targetCreature);
+                        if (idx > -1) {
+                            caster.graveyard.splice(idx, 1);
+                            this.triggers._resetCardState(targetCreature);
+                            targetCreature.summoningSickness = true;
+                            caster.battlefield.push(targetCreature);
+                            this.ui.log(`${targetCreature.name} voltou do cemitério para o campo de batalha`);
+                            await this.triggers.resolveETB(targetCreature, caster);
+                        }
+                    }
+                }
+                break;
 
             default:
                 // Feitiço genérico ou já processado por keywords
@@ -1937,6 +2267,28 @@ class GameState {
                     c.type === 'creature' && c.instanceId !== card.attachedTo
                 );
                 return equipTotalMana >= 2 && hasValidTarget;
+
+            case 'thrashing_brontodon':
+                // {1}, Sacrifice: Destroy target artifact or enchantment
+                const brontoOpponent = player === this.player ? this.opponent : this.player;
+                const brontoTargets = brontoOpponent.battlefield.filter(c =>
+                    c.type === 'artifact' || c.type === 'enchantment'
+                );
+                const brontoMana = Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0);
+                return brontoMana >= 1 && brontoTargets.length > 0;
+
+            case 'mild_mannered_librarian':
+                // {3}{G}: Transform, +2 counters, draw a card (activate only once)
+                if (card.transformed) return false; // Already transformed
+                const librarianMana = this.rules.calculateAvailableMana(player);
+                const librarianTotal = Object.values(librarianMana).reduce((a,b) => a+b, 0);
+                return librarianMana.G >= 1 && librarianTotal >= 4;
+
+            case 'mystic_archaeologist':
+                // {3}{U}{U}: Draw two cards
+                const archaeologistMana = this.rules.calculateAvailableMana(player);
+                const archaeologistTotal = Object.values(archaeologistMana).reduce((a,b) => a+b, 0);
+                return archaeologistMana.U >= 2 && archaeologistTotal >= 5;
 
             default:
                 return false;
@@ -2270,6 +2622,75 @@ class GameState {
                     )[0];
                     attachToCreature(target);
                 }
+                break;
+
+            case 'thrashing_brontodon':
+                // {1}, Sacrifice: Destroy target artifact or enchantment
+                const brontoValidTargets = opponent.battlefield.filter(c =>
+                    c.type === 'artifact' || c.type === 'enchantment'
+                );
+
+                if (brontoValidTargets.length === 0) {
+                    this.ui.log('Não há artefatos ou encantamentos para destruir');
+                    return false;
+                }
+
+                let brontoTarget;
+                if (player === this.player) {
+                    brontoTarget = await this.ui.promptTriggerTarget({
+                        title: 'Thrashing Brontodon',
+                        description: 'Escolha um artefato ou encantamento para destruir:',
+                        validTargets: brontoValidTargets,
+                        canSkip: true
+                    });
+                    if (!brontoTarget) {
+                        return false; // Cancelou
+                    }
+                } else {
+                    // IA prioriza equipamentos anexados, depois outros
+                    const attached = brontoValidTargets.filter(c => c.attachedTo);
+                    brontoTarget = attached.length > 0 ? attached[0] : brontoValidTargets[0];
+                }
+
+                // Pagar custo e sacrificar o Brontodon
+                this.payGenericMana(1, player);
+                await this.destroyPermanent(card, player);
+
+                // Destruir o alvo
+                const brontoTargetOwner = this.player.battlefield.includes(brontoTarget) ? this.player : this.opponent;
+                await this.destroyPermanent(brontoTarget, brontoTargetOwner);
+                this.ui.log(`Thrashing Brontodon destruiu ${brontoTarget.name}`);
+                break;
+
+            case 'mild_mannered_librarian':
+                // {3}{G}: Transform, +2 counters, draw a card (activate only once)
+                this.payColoredMana({ generic: 3, G: 1 }, player);
+
+                // Transform (mark as transformed, change subtype)
+                card.transformed = true;
+                card.subtype = 'Werewolf';
+
+                // Add 2 +1/+1 counters
+                if (!card.counters) card.counters = {};
+                card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 2;
+
+                // Draw a card
+                this.rules.drawCard(player);
+
+                // Trigger counter synergy
+                if (this.triggers) {
+                    this.triggers.onCounterPlaced(card, player, 2);
+                }
+
+                this.ui.log(`Mild-Mannered Librarian se transformou em Werewolf, ganhou 2 contadores +1/+1, ${player.name} comprou uma carta`);
+                break;
+
+            case 'mystic_archaeologist':
+                // {3}{U}{U}: Draw two cards
+                this.payColoredMana({ generic: 3, U: 2 }, player);
+                this.rules.drawCard(player);
+                this.rules.drawCard(player);
+                this.ui.log(`Mystic Archaeologist: ${player.name} comprou 2 cartas`);
                 break;
         }
 

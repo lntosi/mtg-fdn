@@ -152,130 +152,213 @@
     <div id="deck-selection" class="modal hidden">
         <div class="modal-content deck-selection-content">
             <h2>Escolha seus Decks</h2>
-            <p>Selecione 1 ou 2 decks para formar seu baralho:</p>
+            <p class="deck-selection-subtitle">Selecione 1 ou 2 decks para formar seu baralho</p>
 
-            <div id="deck-options">
-                <label class="deck-option">
+            <!-- Grid de Decks Visual -->
+            <div id="deck-options" class="deck-grid">
+                <label class="deck-card" data-deck="cats" data-color="white">
                     <input type="checkbox" name="deck" value="cats">
-                    <div class="deck-info">
-                        <div class="deck-header">
-                            <span class="deck-name">Cats <i class="ms ms-w ms-cost"></i></span>
-                            <span class="deck-archetype archetype-white">Aggro</span>
-                        </div>
-                        <span class="deck-description">Criaturas eficientes com lifelink. Ataque rápido e sustentado.</span>
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/6/1/616d54a1-33f7-47c9-852f-4f3a07309f27.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Cats <i class="ms ms-w ms-cost"></i></span>
+                        <span class="deck-card-archetype">Aggro</span>
                     </div>
+                    <div class="deck-card-description">Lifelink e tokens</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
                 </label>
-                <label class="deck-option">
+
+                <label class="deck-card" data-deck="goblins" data-color="red">
                     <input type="checkbox" name="deck" value="goblins">
-                    <div class="deck-info">
-                        <div class="deck-header">
-                            <span class="deck-name">Goblins <i class="ms ms-r ms-cost"></i></span>
-                            <span class="deck-archetype archetype-red">Aggro</span>
-                        </div>
-                        <span class="deck-description">Velocidade máxima! Haste, dano direto, vença rápido.</span>
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Goblins <i class="ms ms-r ms-cost"></i></span>
+                        <span class="deck-card-archetype">Aggro</span>
                     </div>
+                    <div class="deck-card-description">Haste e dano direto</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
                 </label>
-                <label class="deck-option">
+
+                <label class="deck-card" data-deck="vampires" data-color="black">
                     <input type="checkbox" name="deck" value="vampires">
-                    <div class="deck-info">
-                        <div class="deck-header">
-                            <span class="deck-name">Vampires <i class="ms ms-b ms-cost"></i></span>
-                            <span class="deck-archetype archetype-black">Midrange</span>
-                        </div>
-                        <span class="deck-description">Dreno de vida e evasão. Desgaste o oponente aos poucos.</span>
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/5/95ef4f86-9b96-4181-9442-44adce180984.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Vampires <i class="ms ms-b ms-cost"></i></span>
+                        <span class="deck-card-archetype">Midrange</span>
                     </div>
+                    <div class="deck-card-description">Dreno de vida</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
                 </label>
-                <label class="deck-option">
+
+                <label class="deck-card" data-deck="elves" data-color="green">
                     <input type="checkbox" name="deck" value="elves">
-                    <div class="deck-info">
-                        <div class="deck-header">
-                            <span class="deck-name">Elves <i class="ms ms-g ms-cost"></i></span>
-                            <span class="deck-archetype archetype-green">Ramp</span>
-                        </div>
-                        <span class="deck-description">Acelere seu mana e jogue criaturas grandes antes do oponente.</span>
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Elves <i class="ms ms-g ms-cost"></i></span>
+                        <span class="deck-card-archetype">Ramp</span>
                     </div>
+                    <div class="deck-card-description">Mana e criaturas grandes</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
                 </label>
-                <label class="deck-option">
+
+                <label class="deck-card" data-deck="pirates" data-color="blue">
                     <input type="checkbox" name="deck" value="pirates">
-                    <div class="deck-info">
-                        <div class="deck-header">
-                            <span class="deck-name">Pirates <i class="ms ms-u ms-cost"></i></span>
-                            <span class="deck-archetype archetype-blue">Control</span>
-                        </div>
-                        <span class="deck-description">Controle o jogo com counterspells, bounce e criaturas com flash.</span>
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Pirates <i class="ms ms-u ms-cost"></i></span>
+                        <span class="deck-card-archetype">Control</span>
                     </div>
+                    <div class="deck-card-description">Flash e counterspells</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                </label>
+
+                <label class="deck-card" data-deck="healing" data-color="white">
+                    <input type="checkbox" name="deck" value="healing">
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/2/2/222c1a68-e34c-4103-b1be-17d4ceaef6ce.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Healing <i class="ms ms-w ms-cost"></i></span>
+                        <span class="deck-card-archetype">Lifegain</span>
+                    </div>
+                    <div class="deck-card-description">Ganho de vida e counters</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                </label>
+
+                <label class="deck-card" data-deck="inferno" data-color="red">
+                    <input type="checkbox" name="deck" value="inferno">
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/9/3959a6c7-d615-4524-b94d-65f4164a2656.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Inferno <i class="ms ms-r ms-cost"></i></span>
+                        <span class="deck-card-archetype">Dragons</span>
+                    </div>
+                    <div class="deck-card-description">Dragões e dano pesado</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                </label>
+
+                <label class="deck-card" data-deck="primal" data-color="green">
+                    <input type="checkbox" name="deck" value="primal">
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/7/7/7724b978-999b-4654-96f3-58e28aa7cb34.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Primal <i class="ms ms-g ms-cost"></i></span>
+                        <span class="deck-card-archetype">Ramp</span>
+                    </div>
+                    <div class="deck-card-description">Criaturas grandes e counters</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                </label>
+
+                <label class="deck-card" data-deck="wizards" data-color="blue">
+                    <input type="checkbox" name="deck" value="wizards">
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/1/5/15af84a2-005b-4d97-aab5-5c97ddb834a5.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Wizards <i class="ms ms-u ms-cost"></i></span>
+                        <span class="deck-card-archetype">Draw</span>
+                    </div>
+                    <div class="deck-card-description">Compra e sinergias de mágica</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                </label>
+
+                <label class="deck-card" data-deck="undead" data-color="black">
+                    <input type="checkbox" name="deck" value="undead">
+                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/5/5/5561c43d-d455-4711-9a68-c3556a7f5f13.jpg')"></div>
+                    <div class="deck-card-overlay">
+                        <span class="deck-card-name">Undead <i class="ms ms-b ms-cost"></i></span>
+                        <span class="deck-card-archetype">Recursion</span>
+                    </div>
+                    <div class="deck-card-description">Zombies e recursão do cemitério</div>
+                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
                 </label>
             </div>
 
+            <!-- Opções de Jogo em Grid -->
             <div class="game-options">
-                <!-- Decks da IA -->
-                <div class="option-section">
-                    <label for="ai-deck-mode">Decks da IA:</label>
-                    <select id="ai-deck-mode">
-                        <option value="random-different">Aleatório (cores diferentes)</option>
-                        <option value="random-any">Aleatório (qualquer cor)</option>
-                        <option value="manual">Escolher manualmente</option>
-                    </select>
+                <div class="game-options-row">
+                    <!-- Decks da IA -->
+                    <div class="option-section">
+                        <label for="ai-deck-mode">Decks da IA:</label>
+                        <select id="ai-deck-mode">
+                            <option value="random-different">Aleatório (cores diferentes)</option>
+                            <option value="random-any">Aleatório (qualquer cor)</option>
+                            <option value="manual">Escolher manualmente</option>
+                        </select>
+                    </div>
+
+                    <!-- Dificuldade da IA -->
+                    <div class="option-section">
+                        <label for="ai-difficulty">Dificuldade:</label>
+                        <select id="ai-difficulty">
+                            <option value="aprendiz">🟢 Aprendiz</option>
+                            <option value="mago" selected>🟡 Mago</option>
+                            <option value="planeswalker">🔴 Planeswalker</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="difficulty-description" id="difficulty-description">IA equilibrada - joga de forma competente</div>
 
                 <!-- Seleção manual de decks da IA (escondido por padrão) -->
                 <div id="ai-deck-options" class="ai-deck-options hidden">
                     <p class="ai-deck-label">Selecione a mesma quantidade de decks para a IA:</p>
                     <div class="ai-deck-checkboxes">
-                        <label class="deck-option-small">
+                        <label class="deck-option-small" data-color="white">
                             <input type="checkbox" name="ai-deck" value="cats">
                             <span>Cats</span>
                         </label>
-                        <label class="deck-option-small">
+                        <label class="deck-option-small" data-color="red">
                             <input type="checkbox" name="ai-deck" value="goblins">
                             <span>Goblins</span>
                         </label>
-                        <label class="deck-option-small">
+                        <label class="deck-option-small" data-color="black">
                             <input type="checkbox" name="ai-deck" value="vampires">
                             <span>Vampires</span>
                         </label>
-                        <label class="deck-option-small">
+                        <label class="deck-option-small" data-color="green">
                             <input type="checkbox" name="ai-deck" value="elves">
                             <span>Elves</span>
                         </label>
-                        <label class="deck-option-small">
+                        <label class="deck-option-small" data-color="blue">
                             <input type="checkbox" name="ai-deck" value="pirates">
                             <span>Pirates</span>
+                        </label>
+                        <label class="deck-option-small" data-color="white">
+                            <input type="checkbox" name="ai-deck" value="healing">
+                            <span>Healing</span>
+                        </label>
+                        <label class="deck-option-small" data-color="red">
+                            <input type="checkbox" name="ai-deck" value="inferno">
+                            <span>Inferno</span>
+                        </label>
+                        <label class="deck-option-small" data-color="green">
+                            <input type="checkbox" name="ai-deck" value="primal">
+                            <span>Primal</span>
+                        </label>
+                        <label class="deck-option-small" data-color="blue">
+                            <input type="checkbox" name="ai-deck" value="wizards">
+                            <span>Wizards</span>
+                        </label>
+                        <label class="deck-option-small" data-color="black">
+                            <input type="checkbox" name="ai-deck" value="undead">
+                            <span>Undead</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Quem começa -->
-                <div class="option-section">
-                    <label for="starting-player">Quem começa:</label>
-                    <select id="starting-player">
-                        <option value="random">Aleatório (coin flip)</option>
-                        <option value="player">Jogador primeiro</option>
-                        <option value="ai">IA primeiro</option>
-                    </select>
-                </div>
+                <div class="game-options-row">
+                    <!-- Quem começa -->
+                    <div class="option-section">
+                        <label for="starting-player">Quem começa:</label>
+                        <select id="starting-player">
+                            <option value="random">Aleatório</option>
+                            <option value="player">Jogador</option>
+                            <option value="ai">IA</option>
+                        </select>
+                    </div>
 
-                <!-- Vida Inicial -->
-                <div class="option-section">
-                    <label for="starting-life">Vida Inicial:</label>
-                    <select id="starting-life">
-                        <option value="10">10</option>
-                        <option value="20" selected>20 (Padrão)</option>
-                        <option value="30">30</option>
-                        <option value="40">40</option>
-                    </select>
-                </div>
-
-                <!-- Dificuldade da IA -->
-                <div class="option-section">
-                    <label for="ai-difficulty">Dificuldade da IA:</label>
-                    <select id="ai-difficulty">
-                        <option value="aprendiz">🟢 Aprendiz (Fácil)</option>
-                        <option value="mago" selected>🟡 Mago (Normal)</option>
-                        <option value="planeswalker">🔴 Planeswalker (Difícil)</option>
-                    </select>
-                    <div class="difficulty-description" id="difficulty-description">
-                        IA equilibrada - joga de forma competente
+                    <!-- Vida Inicial -->
+                    <div class="option-section">
+                        <label for="starting-life">Vida Inicial:</label>
+                        <select id="starting-life">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="30">30</option>
+                            <option value="40">40</option>
+                        </select>
                     </div>
                 </div>
             </div>

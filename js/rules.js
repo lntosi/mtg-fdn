@@ -164,17 +164,25 @@ class RulesEngine {
         }
 
         // Buffs que miram suas próprias criaturas
-        const selfTargetBuffs = ['moment_of_triumph', 'kindled_fury', 'snakeskin_veil', 'offer_immortality'];
+        const selfTargetBuffs = ['moment_of_triumph', 'kindled_fury', 'snakeskin_veil', 'offer_immortality', 'adamant_will', 'giant_growth'];
         if (selfTargetBuffs.includes(card.id)) {
             const hasOwnCreatures = player.battlefield.some(c => c.type === 'creature');
             return hasOwnCreatures;
         }
 
         // Remoção que mira criaturas do oponente
-        const opponentTargetRemoval = ['moment_of_craving', 'heros_downfall', 'incinerating_blast'];
+        const opponentTargetRemoval = ['moment_of_craving', 'heros_downfall', 'incinerating_blast', 'scorching_dragonfire', 'fiery_annihilation', 'murder'];
         if (opponentTargetRemoval.includes(card.id)) {
             const hasOpponentCreatures = opponent.battlefield.some(c => c.type === 'creature');
             return hasOpponentCreatures;
+        }
+
+        // Deadly Riposte - só criaturas viradas do oponente
+        if (card.id === 'deadly_riposte') {
+            const hasTappedCreatures = opponent.battlefield.some(c =>
+                c.type === 'creature' && c.tapped
+            );
+            return hasTappedCreatures;
         }
 
         // Volley - só criaturas com flying do oponente
@@ -201,6 +209,37 @@ class RulesEngine {
             return hasOwnCreature && hasOpponentCreature;
         }
 
+        // Bite Down - precisa de criatura sua E criatura do oponente
+        if (card.id === 'bite_down') {
+            const hasOwnCreature = player.battlefield.some(c => c.type === 'creature');
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            return hasOwnCreature && hasOpponentCreature;
+        }
+
+        // Biogenic Upgrade - precisa de criatura sua
+        if (card.id === 'biogenic_upgrade') {
+            return player.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Fleeting Distraction - mira criatura (qualquer)
+        if (card.id === 'fleeting_distraction') {
+            return opponent.battlefield.some(c => c.type === 'creature') ||
+                   player.battlefield.some(c => c.type === 'creature');
+        }
+
+        // Into the Roil - mira permanente não-terreno
+        if (card.id === 'into_the_roil') {
+            const allPermanents = [...opponent.battlefield, ...player.battlefield];
+            return allPermanents.some(c => c.type !== 'land');
+        }
+
+        // Essence Scatter - counter creature spell only
+        if (card.id === 'essence_scatter' || card.keywords?.includes('counterspell_creature')) {
+            return this.game.stack.some(item =>
+                item.controller !== player && item.item.type === 'creature'
+            );
+        }
+
         // Counterspells - precisam de spell do oponente na stack
         if (card.keywords && card.keywords.includes('counterspell')) {
             // Verificar se há spells do oponente na pilha
@@ -214,6 +253,24 @@ class RulesEngine {
             return this.game.stack.some(item =>
                 item.controller !== player && item.item.type !== 'land'
             );
+        }
+
+        // Seize the Spoils - precisa de uma carta na mão para descartar
+        if (card.id === 'seize_the_spoils') {
+            // The card itself will be in hand when cast, so we need at least 2 cards
+            // (the spell + one to discard). But since playCard removes the card first,
+            // we check if there's at least 1 card remaining.
+            return player.hand.length >= 2; // Including the spell itself
+        }
+
+        // Rise Again - precisa de criatura no cemitério
+        if (card.id === 'rise_again') {
+            return player.graveyard.some(c => c.type === 'creature');
+        }
+
+        // Mind Rot - oponente precisa ter cards na mão
+        if (card.id === 'mind_rot') {
+            return opponent.hand.length > 0;
         }
 
         // Para outros instants, assumir que sempre há alvos válidos
@@ -232,6 +289,26 @@ class RulesEngine {
                 c.type === 'instant' || c.type === 'sorcery'
             ).length;
             cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        }
+
+        // Dragonlord's Servant: Dragon spells cost {1} less
+        if (card.subtype?.includes('Dragon') && card.type === 'creature') {
+            const servantCount = player.battlefield.filter(c =>
+                c.id === 'dragonlords_servant'
+            ).length;
+            if (servantCount > 0) {
+                cost.generic = Math.max(0, cost.generic - servantCount);
+            }
+        }
+
+        // Arcane Epiphany: costs {1} less if you control a Wizard
+        if (card.keywords?.includes('wizard_discount')) {
+            const hasWizard = player.battlefield.some(c =>
+                c.type === 'creature' && c.subtype?.includes('Wizard')
+            );
+            if (hasWizard) {
+                cost.generic = Math.max(0, cost.generic - 1);
+            }
         }
 
         return this.canPayCost(cost, availableMana);
@@ -359,6 +436,26 @@ class RulesEngine {
                 c.type === 'instant' || c.type === 'sorcery'
             ).length;
             cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        }
+
+        // Dragonlord's Servant: Dragon spells cost {1} less
+        if (card.subtype?.includes('Dragon') && card.type === 'creature') {
+            const servantCount = player.battlefield.filter(c =>
+                c.id === 'dragonlords_servant'
+            ).length;
+            if (servantCount > 0) {
+                cost.generic = Math.max(0, cost.generic - servantCount);
+            }
+        }
+
+        // Arcane Epiphany: costs {1} less if you control a Wizard
+        if (card.keywords?.includes('wizard_discount')) {
+            const hasWizard = player.battlefield.some(c =>
+                c.type === 'creature' && c.subtype?.includes('Wizard')
+            );
+            if (hasWizard) {
+                cost.generic = Math.max(0, cost.generic - 1);
+            }
         }
 
         // Separar terrenos pré-selecionados dos demais
@@ -798,6 +895,14 @@ class RulesEngine {
                 bonuses.sources.push({ name: 'Corsair Captain', power: 1, toughness: 1 });
             }
 
+            // Death Baron: outros Zombies e Skeletons têm +1/+1
+            if (card.id === 'death_baron' && card !== creature &&
+                creature.subtype && (creature.subtype.includes('Zombie') || creature.subtype.includes('Skeleton'))) {
+                bonuses.power += 1;
+                bonuses.toughness += 1;
+                bonuses.sources.push({ name: 'Death Baron', power: 1, toughness: 1 });
+            }
+
             // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
             // (isso é tratado em getCreatureKeywords)
         });
@@ -810,6 +915,11 @@ class RulesEngine {
                     bonuses.power += 2;
                     bonuses.toughness += 1;
                     bonuses.sources.push({ name: "Pirate's Cutlass", power: 2, toughness: 1 });
+                }
+                // Quick-Draw Katana: +2/+0 durante seu turno
+                if (card.id === 'quick_draw_katana' && this.game.activePlayer === owner) {
+                    bonuses.power += 2;
+                    bonuses.sources.push({ name: 'Quick-Draw Katana', power: 2, toughness: 0 });
                 }
             }
         });
@@ -941,6 +1051,16 @@ class RulesEngine {
             }
         }
 
+        // Death Baron: outros Zombies e Skeletons têm deathtouch
+        if (creature.subtype && (creature.subtype.includes('Zombie') || creature.subtype.includes('Skeleton'))) {
+            const deathBaronFound = controller.battlefield.find(c =>
+                c.id === 'death_baron' && c !== creature
+            );
+            if (deathBaronFound) {
+                if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
+            }
+        }
+
         // Kitesail Corsair: tem voar enquanto ataca
         if (isAttacking && creature.keywords && creature.keywords.includes('flying_when_attacking')) {
             if (!keywords.includes('flying')) keywords.push('flying');
@@ -955,12 +1075,57 @@ class RulesEngine {
             }
         });
 
+        // Twinblade Paladin: tem double strike se vida >= 25
+        if (creature.id === 'twinblade_paladin') {
+            if (controller.life >= 25 && !keywords.includes('double_strike')) {
+                keywords.push('double_strike');
+            }
+        }
+
+        // Kargan Dragonrider: tem flying se controla um Dragão
+        if (creature.id === 'kargan_dragonrider') {
+            const hasDragon = controller.battlefield.some(c =>
+                c.type === 'creature' && c.subtype?.includes('Dragon')
+            );
+            if (hasDragon && !keywords.includes('flying')) {
+                keywords.push('flying');
+            }
+        }
+
+        // Carnelian Orb of Dragonkind: Dragões ganham haste (se marcado)
+        if (creature.subtype?.includes('Dragon') && creature.hasHasteFromOrb) {
+            if (!keywords.includes('haste')) {
+                keywords.push('haste');
+            }
+        }
+
+        // Quick-Draw Katana: dá first strike durante seu turno
+        allBattlefields.forEach(card => {
+            if (card.subtype === 'Equipment' && card.attachedTo === creature.instanceId) {
+                if (card.id === 'quick_draw_katana') {
+                    // Só funciona no turno do controlador
+                    if (this.game.activePlayer === controller && !keywords.includes('first_strike')) {
+                        keywords.push('first_strike');
+                    }
+                }
+            }
+        });
+
         // Eaten by Piranhas: criatura perde todas as habilidades
         allBattlefields.forEach(card => {
             if (card.subtype === 'Aura' && card.attachedTo === creature.instanceId) {
                 if (card.id === 'eaten_by_piranhas') {
                     // Remove todas as keywords
                     keywords.length = 0;
+                }
+            }
+        });
+
+        // Aggressive Mammoth (trample_lord): outras criaturas têm trample
+        controller.battlefield.forEach(card => {
+            if (card.keywords?.includes('trample_lord') && card !== creature) {
+                if (!keywords.includes('trample')) {
+                    keywords.push('trample');
                 }
             }
         });
@@ -1078,6 +1243,11 @@ class RulesEngine {
             // Som de comprar carta
             if (window.soundManager) {
                 window.soundManager.playCardDraw();
+            }
+
+            // Trigger draw effects (Clinquant Skymage, Erudite Wizard, Mischievous Mystic)
+            if (this.game.triggers) {
+                this.game.triggers.onCardDrawn(player);
             }
 
             return card;
