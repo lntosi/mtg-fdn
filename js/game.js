@@ -1336,10 +1336,17 @@ class GameState {
     // Verifica se feitiço precisa de alvo
     spellNeedsTarget(card) {
         const targetedSpells = [
-            'moment_of_triumph', 'moment_of_craving', 'heros_downfall',
-            'elspeths_smite', 'angelic_edict', 'kindled_fury',
-            'volley', 'incinerating_blast', 'broken_wings', 'felling_blow',
-            'snakeskin_veil', 'offer_immortality'
+            // Buffs (alvo: própria criatura)
+            'moment_of_triumph', 'kindled_fury', 'snakeskin_veil',
+            'offer_immortality', 'adamant_will', 'giant_growth',
+            // Remoção (alvo: criatura do oponente)
+            'moment_of_craving', 'heros_downfall', 'elspeths_smite',
+            'angelic_edict', 'volley', 'incinerating_blast', 'broken_wings',
+            'scorching_dragonfire', 'fiery_annihilation', 'murder',
+            // Dois alvos
+            'felling_blow', 'bite_down',
+            // Bounce/outros
+            'fleeting_distraction', 'into_the_roil'
         ];
 
         // Counterspells têm alvo especial (na stack)
@@ -2256,6 +2263,7 @@ class GameState {
                 return spectralMana.U >= 1 && spectralTotalMana >= 4;
 
             case 'pirates_cutlass':
+            case 'quick_draw_katana':
                 // Equip 2: só pode ser ativado como sorcery (main phase, seu turno)
                 const isMainPhase = this.phase === PHASES.MAIN1 || this.phase === PHASES.MAIN2;
                 const isPlayerTurn = this.activePlayer === player;
@@ -2621,6 +2629,57 @@ class GameState {
                         this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
                     )[0];
                     attachToCreature(target);
+                }
+                break;
+
+            case 'quick_draw_katana':
+                // Equip 2: anexar a outra criatura
+                const katanaTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.attachedTo
+                );
+
+                if (katanaTargets.length === 0) {
+                    this.ui.log(`Não há criaturas válidas para equipar`);
+                    return false;
+                }
+
+                const attachKatana = (target) => {
+                    this.payGenericMana(2, player);
+                    const oldTarget = card.attachedTo;
+                    card.attachedTo = target.instanceId;
+
+                    if (oldTarget) {
+                        const oldCreature = player.battlefield.find(c => c.instanceId === oldTarget);
+                        if (oldCreature) {
+                            this.ui.log(`Quick-Draw Katana movida de ${oldCreature.name} para ${target.name}`);
+                        } else {
+                            this.ui.log(`Quick-Draw Katana equipada em ${target.name}`);
+                        }
+                    } else {
+                        this.ui.log(`Quick-Draw Katana equipada em ${target.name}`);
+                    }
+                    this.ui.render();
+                };
+
+                if (player === this.player) {
+                    // Jogador escolhe criatura alvo
+                    const katanaSelected = await this.ui.promptTriggerTarget({
+                        title: `Quick-Draw Katana - Equipar`,
+                        description: 'Escolha uma criatura para equipar (custo: 2 mana):',
+                        validTargets: katanaTargets,
+                        canSkip: true
+                    });
+                    if (katanaSelected) {
+                        attachKatana(katanaSelected);
+                    } else {
+                        return false; // Cancelou
+                    }
+                } else {
+                    // IA escolhe a criatura mais forte
+                    const katanaAITarget = katanaTargets.sort((a, b) =>
+                        this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                    )[0];
+                    attachKatana(katanaAITarget);
                 }
                 break;
 
