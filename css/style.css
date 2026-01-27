@@ -1279,104 +1279,215 @@ body {
     color: #c0a0c0;
 }
 
-#deck-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 30px;
+/* === Deck Selection Grid === */
+.deck-selection-subtitle {
+    color: #a090a0;
+    margin-bottom: 20px;
+    font-size: 0.95em;
 }
 
-.deck-option {
+#deck-options.deck-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* Visual Deck Card */
+.deck-card {
+    position: relative;
     display: flex;
+    flex-direction: column;
+    width: 100%;
+    aspect-ratio: 3/4;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid rgba(80, 60, 80, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.deck-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.deck-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Card Art Background */
+.deck-card-art {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    transition: transform 0.3s ease;
+}
+
+.deck-card:hover .deck-card-art {
+    transform: scale(1.05);
+}
+
+/* Gradient overlay for text readability */
+.deck-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 30px 10px 10px;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    background: rgba(100, 50, 100, 0.2);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 2px solid transparent;
-}
-
-.deck-option:hover {
-    background: rgba(150, 80, 150, 0.3);
-    border-color: rgba(180, 100, 180, 0.5);
-}
-
-.deck-option input {
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
-    accent-color: #9b59b6;
-}
-
-.deck-option input:checked + .deck-info .deck-name {
-    color: #ffcc00;
-}
-
-.deck-option input:disabled + .deck-info {
-    opacity: 0.4;
-}
-
-/* Deck info container */
-.deck-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     gap: 4px;
 }
 
-.deck-header {
+.deck-card-name {
+    font-size: 1em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
 }
 
-.deck-name {
-    font-size: 1.15em;
-    color: #e0c0e0;
+.deck-card-name .ms {
+    font-size: 0.9em;
 }
 
-.deck-description {
-    font-size: 0.8em;
-    color: #a080a0;
-    font-style: italic;
-}
-
-/* Archetype badges */
-.deck-archetype {
-    font-size: 0.7em;
+.deck-card-archetype {
+    font-size: 0.65em;
     padding: 2px 8px;
     border-radius: 10px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-/* Cores baseadas no mana do deck */
-.archetype-white {
-    background: linear-gradient(135deg, #d4c4a8, #f5e6c8);
-    color: #5c4d3a;
-}
-
-.archetype-red {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-    color: #fff;
-}
-
-.archetype-black {
-    background: linear-gradient(135deg, #2c2c2c, #4a4a4a);
+    background: rgba(255,255,255,0.15);
     color: #ccc;
 }
 
-.archetype-green {
-    background: linear-gradient(135deg, #1e8449, #27ae60);
+.deck-card-description {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.7em;
     color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    background: rgba(0,0,0,0.5);
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
-.archetype-blue {
-    background: linear-gradient(135deg, #2471a3, #3498db);
-    color: #fff;
+.deck-card:hover .deck-card-description {
+    opacity: 1;
+}
+
+/* Check indicator */
+.deck-card-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+.deck-card-check .ms {
+    color: #4ade80;
+    font-size: 1.1em;
+}
+
+/* Selected state */
+.deck-card input:checked ~ .deck-card-check {
+    opacity: 1;
+    transform: scale(1);
+    background: rgba(74, 222, 128, 0.3);
+    border-color: #4ade80;
+}
+
+/* Color-coded borders when selected */
+.deck-card[data-color="white"] input:checked ~ .deck-card-art {
+    box-shadow: inset 0 0 0 1000px rgba(245, 230, 200, 0.1);
+}
+.deck-card[data-color="white"] input:checked ~ * {
+    --deck-glow: #f5e6c8;
+}
+
+.deck-card[data-color="red"] input:checked ~ * {
+    --deck-glow: #e74c3c;
+}
+
+.deck-card[data-color="black"] input:checked ~ * {
+    --deck-glow: #9b59b6;
+}
+
+.deck-card[data-color="green"] input:checked ~ * {
+    --deck-glow: #27ae60;
+}
+
+.deck-card[data-color="blue"] input:checked ~ * {
+    --deck-glow: #3498db;
+}
+
+.deck-card input:checked ~ .deck-card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(var(--deck-glow-rgb, 0,0,0),0.3) 100%);
+}
+
+/* Glow effect when selected */
+.deck-card:has(input:checked) {
+    border-color: var(--deck-glow, #ffcc00);
+    box-shadow: 0 0 20px var(--deck-glow, rgba(255,204,0,0.5)), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.deck-card[data-color="white"]:has(input:checked) {
+    border-color: #f5e6c8;
+    box-shadow: 0 0 20px rgba(245,230,200,0.6), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.deck-card[data-color="red"]:has(input:checked) {
+    border-color: #e74c3c;
+    box-shadow: 0 0 20px rgba(231,76,60,0.6), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.deck-card[data-color="black"]:has(input:checked) {
+    border-color: #9b59b6;
+    box-shadow: 0 0 20px rgba(155,89,182,0.6), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.deck-card[data-color="green"]:has(input:checked) {
+    border-color: #27ae60;
+    box-shadow: 0 0 20px rgba(39,174,96,0.6), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+.deck-card[data-color="blue"]:has(input:checked) {
+    border-color: #3498db;
+    box-shadow: 0 0 20px rgba(52,152,219,0.6), 0 8px 25px rgba(0,0,0,0.5);
+}
+
+/* Disabled state */
+.deck-card:has(input:disabled) {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(0.5);
 }
 
 #btn-start-game {
@@ -3447,42 +3558,54 @@ body {
 
 /* === Opções de Jogo (Deck Selection) === */
 .deck-selection-content {
-    max-width: 500px;
+    max-width: 750px;
+    width: 95vw;
+}
+
+.deck-selection-content h2 {
+    margin-bottom: 5px;
 }
 
 .game-options {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin: 20px 0;
+    margin: 15px 0;
     padding: 15px;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 8px;
 }
 
+.game-options-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
 .option-section {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 15px;
+    gap: 10px;
 }
 
 .option-section label {
-    color: #e0c0e0;
+    color: #c0a0c0;
     font-weight: bold;
-    font-size: 0.95em;
+    font-size: 0.85em;
+    white-space: nowrap;
 }
 
 .option-section select {
-    padding: 8px 15px;
-    font-size: 0.9em;
+    padding: 6px 12px;
+    font-size: 0.85em;
     background: rgba(0, 0, 0, 0.4);
     border: 2px solid rgba(180, 100, 180, 0.4);
     border-radius: 6px;
     color: #fff;
     cursor: pointer;
     outline: none;
-    min-width: 200px;
+    min-width: 150px;
 }
 
 .option-section select:focus {
@@ -3495,26 +3618,19 @@ body {
 }
 
 /* Difficulty description */
-.difficulty-description {
-    font-size: 0.8em;
-    color: #a0a0a0;
+.game-options .difficulty-description {
+    font-size: 0.75em;
+    color: #908090;
     font-style: italic;
-    margin-top: 5px;
-    text-align: right;
-    width: 100%;
-}
-
-/* Wrap option-section for difficulty (needs description below) */
-.option-section:has(.difficulty-description) {
-    flex-wrap: wrap;
+    text-align: center;
+    margin-top: -5px;
 }
 
 /* AI Deck Manual Selection */
 .ai-deck-options {
-    padding: 10px;
+    padding: 12px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
-    margin-top: -5px;
 }
 
 .ai-deck-options.hidden {
@@ -3523,27 +3639,29 @@ body {
 
 .ai-deck-label {
     color: #c0a0c0;
-    font-size: 0.85em;
-    margin-bottom: 8px;
+    font-size: 0.8em;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 .ai-deck-checkboxes {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
     justify-content: center;
 }
 
 .deck-option-small {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
+    gap: 6px;
+    padding: 8px 14px;
     background: rgba(100, 50, 100, 0.2);
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
     font-size: 0.85em;
+    border: 2px solid transparent;
 }
 
 .deck-option-small:hover {
@@ -3563,6 +3681,33 @@ body {
 
 .deck-option-small input:checked + span {
     color: #ffcc00;
+    font-weight: bold;
+}
+
+/* Color indicators for AI deck selection */
+.deck-option-small[data-color="white"]:has(input:checked) {
+    border-color: #f5e6c8;
+    background: rgba(245, 230, 200, 0.15);
+}
+
+.deck-option-small[data-color="red"]:has(input:checked) {
+    border-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.15);
+}
+
+.deck-option-small[data-color="black"]:has(input:checked) {
+    border-color: #9b59b6;
+    background: rgba(155, 89, 182, 0.15);
+}
+
+.deck-option-small[data-color="green"]:has(input:checked) {
+    border-color: #27ae60;
+    background: rgba(39, 174, 96, 0.15);
+}
+
+.deck-option-small[data-color="blue"]:has(input:checked) {
+    border-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
 }
 
 #starting-life {

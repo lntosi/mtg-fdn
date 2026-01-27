@@ -168,6 +168,7 @@ Itens que podem ou não ser implementados:
 - ✅ Preview aprimorado com display de dano/buffs (base → atual → efetivo)
 - ✅ Aura badges no preview de criaturas encantadas
 - ✅ Priority stops configuráveis (estilo Arena)
+- ✅ Seleção de decks visual em grid com arte das cartas
 
 ### Técnico
 - ✅ Testes unitários (Jest) - 140 testes
@@ -245,4 +246,22 @@ Todos os 5 decks foram validados contra a API do Scryfall:
 
 ---
 
-*Última atualização: Dezembro 2025*
+## Atualizações Recentes (Janeiro 2026)
+
+### Redesign da Seleção de Decks
+- **Nova UI visual em grid**: Cards com arte representativa de cada deck
+- Layout 5 colunas com seleção visual (bordas coloridas por cor de mana)
+- Hover revela descrição do deck
+- Checkmark animado quando selecionado
+- Pronto para escalar para 10 decks
+
+### README.md Atualizado
+- Badges de status (testes, zero dependencies, progresso)
+- Tabela completa com 10 decks (5 implementados, 5 pendentes)
+- Screenshots em layout de tabela
+- Seção de funcionalidades expandida
+- Links corrigidos para pasta `docs/`
+
+---
+
+*Última atualização: Janeiro 2026*
