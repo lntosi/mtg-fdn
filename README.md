@@ -1,6 +1,6 @@
 # MTG Jumpstart Foundations
 
-![Tests](https://img.shields.io/badge/tests-140%2B%20passing-brightgreen)
+[![Tests](https://github.com/lntosi/mtg/actions/workflows/tests.yml/badge.svg)](https://github.com/lntosi/mtg/actions/workflows/tests.yml)
 ![JavaScript](https://img.shields.io/badge/vanilla-JavaScript-yellow)
 ![No Dependencies](https://img.shields.io/badge/runtime-zero%20dependencies-blue)
 ![Decks](https://img.shields.io/badge/decks-10%2F10%20implemented-brightgreen)

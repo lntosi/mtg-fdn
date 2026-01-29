@@ -2593,6 +2593,13 @@ class GameState {
                 }
 
                 const attachToCreature = (target) => {
+                    // Verificar se a criatura ainda está no campo de batalha
+                    const targetStillExists = player.battlefield.some(c => c.instanceId === target.instanceId);
+                    if (!targetStillExists) {
+                        this.ui.log(`[ERRO] Pirate's Cutlass: criatura ${target.name} (${target.instanceId}) não está mais no campo`);
+                        return false;
+                    }
+
                     this.payGenericMana(2, player);
                     const oldTarget = card.attachedTo;
                     card.attachedTo = target.instanceId;
@@ -2608,6 +2615,7 @@ class GameState {
                         this.ui.log(`Pirate's Cutlass equipado em ${target.name}`);
                     }
                     this.ui.render();
+                    return true;
                 };
 
                 if (player === this.player) {
@@ -2619,7 +2627,8 @@ class GameState {
                         canSkip: true
                     });
                     if (selected) {
-                        attachToCreature(selected);
+                        const success = attachToCreature(selected);
+                        if (!success) return false;
                     } else {
                         return false; // Cancelou
                     }
@@ -2644,6 +2653,13 @@ class GameState {
                 }
 
                 const attachKatana = (target) => {
+                    // Verificar se a criatura ainda está no campo de batalha
+                    const targetStillExists = player.battlefield.some(c => c.instanceId === target.instanceId);
+                    if (!targetStillExists) {
+                        this.ui.log(`[ERRO] Quick-Draw Katana: criatura ${target.name} (${target.instanceId}) não está mais no campo`);
+                        return false;
+                    }
+
                     this.payGenericMana(2, player);
                     const oldTarget = card.attachedTo;
                     card.attachedTo = target.instanceId;
@@ -2659,6 +2675,7 @@ class GameState {
                         this.ui.log(`Quick-Draw Katana equipada em ${target.name}`);
                     }
                     this.ui.render();
+                    return true;
                 };
 
                 if (player === this.player) {
@@ -2670,7 +2687,8 @@ class GameState {
                         canSkip: true
                     });
                     if (katanaSelected) {
-                        attachKatana(katanaSelected);
+                        const success = attachKatana(katanaSelected);
+                        if (!success) return false;
                     } else {
                         return false; // Cancelou
                     }

@@ -917,7 +917,7 @@ class RulesEngine {
                     bonuses.sources.push({ name: "Pirate's Cutlass", power: 2, toughness: 1 });
                 }
                 // Quick-Draw Katana: +2/+0 durante seu turno
-                if (card.id === 'quick_draw_katana' && this.game.activePlayer === owner) {
+                if (card.id === 'quick_draw_katana' && this.game.activePlayer === controller) {
                     bonuses.power += 2;
                     bonuses.sources.push({ name: 'Quick-Draw Katana', power: 2, toughness: 0 });
                 }
