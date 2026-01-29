@@ -6,7 +6,7 @@ Este documento mapeia o desenvolvimento do jogo.
 
 ## Status Atual
 
-**5 de 10 decks implementados (50%)**
+**10 de 10 decks implementados (100%)** ✅
 
 | Deck | Cor | Status |
 |------|:---:|:------:|
@@ -15,11 +15,11 @@ Este documento mapeia o desenvolvimento do jogo.
 | Vampires | B | ✅ |
 | Elves | G | ✅ |
 | Pirates | U | ✅ |
-| Healing | W | ⬚ |
-| Primal | G | ⬚ |
-| Inferno | R | ⬚ |
-| Wizards | U | ⬚ |
-| Undead | B | ⬚ |
+| Healing | W | ✅ |
+| Primal | G | ✅ |
+| Inferno | R | ✅ |
+| Wizards | U | ✅ |
+| Undead | B | ✅ |
 
 **Funcionalidades principais**: Todas implementadas (mulligan, stack, prioridade, contadores, etc.)
 
@@ -27,23 +27,13 @@ Este documento mapeia o desenvolvimento do jogo.
 
 ## Próximos Passos
 
-### 1. Decks Restantes (Prioridade Principal)
+### 1. Decks ✅ COMPLETO
 
-Para implementação dos 5 decks restantes, consulte o plano detalhado em [`04_FUTURE_DECKS_PLAN.md`](04_FUTURE_DECKS_PLAN.md).
-
-Ordem sugerida (do mais simples ao mais complexo):
-
-| Ordem | Deck | Mecânica Nova | Esforço |
-|:-----:|------|---------------|:-------:|
-| 1 | Healing (W) | Lifegain triggers | ⭐⭐ |
-| 2 | Inferno (R) | Dragon cost reduction | ⭐⭐ |
-| 3 | Primal (G) | Fight | ⭐⭐⭐ |
-| 4 | Wizards (U) | Kicker | ⭐⭐⭐ |
-| 5 | Undead (B) | Graveyard recursion | ⭐⭐⭐⭐ |
+Todos os 10 decks do Foundations Beginner Box estão implementados. O plano original está em [`04_FUTURE_DECKS_PLAN.md`](04_FUTURE_DECKS_PLAN.md) para referência histórica.
 
 ---
 
-### 2. Melhorias de IA
+### 2. Melhorias de IA (Prioridade Principal)
 
 #### 2.1 Essencial
 - [x] **Sequenciamento de cartas condicionais**: IA segura cartas com ETBs condicionais (Bloodtithe Collector, Raid) para Main Phase 2
@@ -72,6 +62,16 @@ Sistema de dificuldade com 3 níveis que afetam o comportamento estratégico da 
 #### 2.3 Desejável
 - [ ] **Velocidade configurável**: Ajustar velocidade das jogadas da IA
 - [ ] **Personalidade por deck**: IA agressiva (Goblins) vs controladora (Pirates)
+
+#### 2.4 Plano de Melhorias Detalhado
+
+Para o plano completo de melhorias do sistema de dificuldade da IA, consulte [`05_AI_DIFFICULTY_PLAN.md`](05_AI_DIFFICULTY_PLAN.md).
+
+**Status atual:**
+- Parâmetros implementados: 2/5 (40%)
+- Parâmetros pendentes: `holdManaForInstants`, `evaluateTrades`, `aggressiveness`
+
+O plano detalha 6 fases de implementação com código de exemplo e comportamentos esperados por nível de dificuldade.
 
 ---
 
@@ -127,12 +127,17 @@ Itens que podem ou não ser implementados:
 <details>
 <summary>Clique para expandir - Funcionalidades já implementadas</summary>
 
-### Decks Completos (5/10)
+### Decks Completos (10/10) ✅
 - ✅ Cats (W) - Lifegain, Tokens, Lords
 - ✅ Goblins (R) - Aggro, Lords, Haste
 - ✅ Vampires (B) - Drain, Flying, Death triggers
 - ✅ Elves (G) - Ramp, Lords, Mana dorks
 - ✅ Pirates (U) - Flash, Raid, Counterspell, Bounce, Scry, Equipment, Ward
+- ✅ Healing (W) - Lifegain triggers, Pridemate, Twinblade Paladin
+- ✅ Primal (G) - Fight, Giant Growth, Trample lords
+- ✅ Inferno (R) - Dragons, Cost reduction, Haste synergy
+- ✅ Wizards (U) - Draw triggers, Kicker, Spell discount
+- ✅ Undead (B) - Graveyard recursion, Zombie/Skeleton lords
 
 ### Gameplay
 - ✅ Sistema de seleção de alvo genérico
