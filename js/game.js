@@ -1342,7 +1342,7 @@ class GameState {
             // Remoção (alvo: criatura do oponente)
             'moment_of_craving', 'heros_downfall', 'elspeths_smite',
             'angelic_edict', 'volley', 'incinerating_blast', 'broken_wings',
-            'scorching_dragonfire', 'fiery_annihilation', 'murder',
+            'scorching_dragonfire', 'fiery_annihilation', 'murder', 'deadly_riposte',
             // Dois alvos
             'felling_blow', 'bite_down',
             // Bounce/outros
