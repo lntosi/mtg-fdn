@@ -496,23 +496,8 @@ class AIPlayer {
         this.game.ui.log('Oponente declarando atacantes...');
         await this.delay(600);
 
-        chosenAttackers.forEach(attacker => {
-            if (!attacker.keywords || !attacker.keywords.includes('vigilance')) {
-                attacker.tapped = true;
-            }
-        });
-
-        const attackerNames = chosenAttackers.map(a => a.name).join(', ');
-        this.game.ui.log(`Oponente ataca com: ${attackerNames}`);
-        this.game.currentAttackers = chosenAttackers;
-        this.game.ui.render();
-
-        // Delay maior para ver as criaturas atacando
-        await this.delay(1200);
-
-        // Pedir ao jogador para bloquear
-        this.game.phase = window.PHASES.DECLARE_BLOCKERS;
-        this.game.ui.promptForBlockers(chosenAttackers);
+        // Usar declareAttackers para garantir que triggers disparem (Herald of Faith, Ancestor Dragon, etc.)
+        await this.game.declareAttackers(chosenAttackers, this.game.opponent);
     }
 
     // Escolhe quais criaturas vão atacar
