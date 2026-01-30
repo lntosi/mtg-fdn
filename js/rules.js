@@ -593,6 +593,10 @@ class RulesEngine {
 
     // Verifica se criatura tem Pacifism (ou efeito similar)
     hasPacifism(creature) {
+        // Otimização: se não há efeitos Pacifism em jogo, retorna false imediatamente
+        if (this.game?.activeEffects?.pacifism === 0) {
+            return false;
+        }
         if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
             return false;
         }
@@ -1013,6 +1017,10 @@ class RulesEngine {
 
     // Verifica se uma criatura está afetada por Eaten by Piranhas
     isAffectedByEatenByPiranhas(creature) {
+        // Otimização: se não há efeitos de remoção de habilidades em jogo, retorna false imediatamente
+        if (this.game?.activeEffects?.abilityRemoval === 0) {
+            return false;
+        }
         // Verificar se o jogo já começou
         if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
             return false;
