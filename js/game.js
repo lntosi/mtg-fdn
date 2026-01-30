@@ -52,6 +52,14 @@ class GameState {
         this.gameOverReason = '';
         this.viewingBattlefield = false; // Modo de visualização após fim do jogo
 
+        // === Flags de Otimização para Efeitos Especiais ===
+        // Evita verificações desnecessárias quando não há cartas com esses efeitos em jogo
+        this.activeEffects = {
+            abilityRemoval: 0,  // Eaten by Piranhas, Turn to Frog, etc.
+            pacifism: 0,        // Pacifism, Arrest, etc.
+            // Futuras expansões: hexproof_auras, protection_effects, etc.
+        };
+
         // === Controle de Sessão (para cancelar operações ao reiniciar) ===
         this.gameSessionId = 0; // Incrementado a cada startGame
         this.pendingTimeouts = []; // IDs de timeouts pendentes
@@ -1329,8 +1337,37 @@ class GameState {
         aura.controlledBy = controller === this.player ? 'player' : 'opponent';
         controller.battlefield.push(aura);
 
+        // Registrar efeitos especiais para otimização
+        this.registerSpecialEffect(aura);
+
         this.ui.log(`${aura.name} foi anexado a ${target.name}`);
         this.ui.render();
+    }
+
+    // Registra efeitos especiais quando uma carta entra no campo
+    registerSpecialEffect(card) {
+        if (!this.activeEffects) return;
+
+        // Cartas que removem habilidades
+        if (card.id === 'eaten_by_piranhas') {
+            this.activeEffects.abilityRemoval++;
+        }
+        // Cartas com efeito Pacifism (impede ataque/bloqueio)
+        if (card.id === 'pacifism') {
+            this.activeEffects.pacifism++;
+        }
+    }
+
+    // Remove registro de efeitos especiais quando uma carta sai do campo
+    unregisterSpecialEffect(card) {
+        if (!this.activeEffects) return;
+
+        if (card.id === 'eaten_by_piranhas') {
+            this.activeEffects.abilityRemoval = Math.max(0, this.activeEffects.abilityRemoval - 1);
+        }
+        if (card.id === 'pacifism') {
+            this.activeEffects.pacifism = Math.max(0, this.activeEffects.pacifism - 1);
+        }
     }
 
     // Verifica se feitiço precisa de alvo
@@ -1758,6 +1795,8 @@ class GameState {
                 this.detachFromCreature(permanent, owner);
             }
             owner.battlefield.splice(index, 1);
+            // Desregistrar efeitos especiais
+            this.unregisterSpecialEffect(permanent);
             // Adiciona à zona de exílio do dono
             owner.exile.push(permanent);
         }
@@ -1791,6 +1830,8 @@ class GameState {
                 if (idx > -1) {
                     player.battlefield.splice(idx, 1);
                     player.graveyard.push(aura);
+                    // Desregistrar efeitos especiais
+                    this.unregisterSpecialEffect(aura);
                     this.ui.log(`${aura.name} foi para o cemitério`);
                 }
             });
@@ -2126,6 +2167,8 @@ class GameState {
             }
 
             owner.battlefield.splice(index, 1);
+            // Desregistrar efeitos especiais
+            this.unregisterSpecialEffect(permanent);
             owner.graveyard.push(permanent);
         }
     }

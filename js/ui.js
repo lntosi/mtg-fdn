@@ -155,6 +155,33 @@ class GameUI {
             cb.addEventListener('change', () => this.onDeckSelectionChange());
         });
 
+        // Botões "Ver Cartas" nos decks
+        const viewCardsButtons = document.querySelectorAll('.deck-view-cards-btn');
+        viewCardsButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const deckKey = btn.dataset.deck;
+                this.showDeckPreviewModal(deckKey);
+            });
+        });
+
+        // Fechar modal de preview do deck
+        const deckPreviewClose = document.querySelector('.deck-preview-close');
+        if (deckPreviewClose) {
+            deckPreviewClose.addEventListener('click', () => this.hideDeckPreviewModal());
+        }
+
+        // Fechar modal clicando fora
+        const deckPreviewModal = document.getElementById('deck-preview-modal');
+        if (deckPreviewModal) {
+            deckPreviewModal.addEventListener('click', (e) => {
+                if (e.target === deckPreviewModal) {
+                    this.hideDeckPreviewModal();
+                }
+            });
+        }
+
         // Modo de seleção de decks da IA
         const aiDeckMode = document.getElementById('ai-deck-mode');
         if (aiDeckMode) {
@@ -437,8 +464,11 @@ class GameUI {
         const previewStats = this.cardPreview.querySelector('.card-preview-stats');
         const previewKeywords = this.cardPreview.querySelector('.card-preview-keywords');
 
-        previewName.textContent = card.name;
-        previewType.textContent = `${card.type}${card.subtype ? ' — ' + card.subtype : ''}`;
+        // Verificar se os elementos existem
+        if (!previewName || !previewType) return;
+
+        previewName.textContent = card.name || '';
+        previewType.textContent = `${card.type || ''}${card.subtype ? ' — ' + card.subtype : ''}`;
         previewText.textContent = card.text || '';
 
         if (card.type === 'creature') {
@@ -447,12 +477,12 @@ class GameUI {
 
             // Verificar se a criatura está atacando (para bônus como Goblin Oriflamme)
             const isAttacking = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
-                               this.game.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
+                               this.game?.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
 
             // Calcular stats com e sem bônus de ataque para detectar diferença
-            const power = this.game.rules ? this.game.rules.getCreaturePower(card, isAttacking) : basePower;
-            const toughness = this.game.rules ? this.game.rules.getCreatureToughness(card, isAttacking) : baseToughness;
-            const powerWithoutAttack = this.game.rules ? this.game.rules.getCreaturePower(card, false) : basePower;
+            const power = this.game?.rules ? this.game.rules.getCreaturePower(card, isAttacking) : basePower;
+            const toughness = this.game?.rules ? this.game.rules.getCreatureToughness(card, isAttacking) : baseToughness;
+            const powerWithoutAttack = this.game?.rules ? this.game.rules.getCreaturePower(card, false) : basePower;
 
             // Detectar bônus específicos de ataque comparando stats
             const hasAttackOnlyBonus = isAttacking && power > powerWithoutAttack;
@@ -535,10 +565,10 @@ class GameUI {
         }
 
         // Keywords adicionais de efeitos permanentes (Auras, Lords, etc.) - excluindo temporárias
-        if (card.type === 'creature' && this.game.rules) {
+        if (card.type === 'creature' && this.game?.rules) {
             // Verificar se a criatura está atacando (para keywords condicionais como Crossway Troublemakers)
             const isAttackingForKeywords = this.selectedAttackers?.some(a => a.instanceId === card.instanceId) ||
-                                           this.game.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
+                                           this.game?.currentAttackers?.some(a => a.instanceId === card.instanceId) || false;
             const allKeywords = this.game.rules.getCreatureKeywords(card, isAttackingForKeywords);
             const temporaryKws = card.temporaryKeywords || [];
             const additionalKeywords = allKeywords.filter(kw =>
@@ -581,7 +611,7 @@ class GameUI {
         }
 
         // Auras/Encantamentos anexados
-        if (card.type === 'creature' && this.game) {
+        if (card.type === 'creature' && this.game?.player) {
             const attachedAuras = this.getAttachedAuras(card);
             if (attachedAuras.length > 0) {
                 // Adicionar seção de status
@@ -689,6 +719,11 @@ class GameUI {
 
     async loadPreviewImage(card, element) {
         try {
+            if (!window.imageManager || !card?.name) {
+                element.style.backgroundImage = '';
+                return;
+            }
+
             let imageUrl;
 
             // Verificar se é um token e usar API de busca de tokens
@@ -704,6 +739,7 @@ class GameUI {
                 element.style.backgroundImage = '';
             }
         } catch (e) {
+            console.warn('Failed to load preview image for:', card?.name, e);
             element.style.backgroundImage = '';
         }
     }
@@ -2107,6 +2143,125 @@ class GameUI {
         if (modal) {
             modal.classList.add('hidden');
         }
+    }
+
+    // === Modal de Preview do Deck ===
+
+    showDeckPreviewModal(deckKey) {
+        const modal = document.getElementById('deck-preview-modal');
+        const title = document.getElementById('deck-preview-title');
+        const cardsContainer = document.getElementById('deck-preview-cards');
+
+        if (!modal || !CARD_DATABASE[deckKey]) return;
+
+        const deck = CARD_DATABASE[deckKey];
+        title.textContent = `${deck.name} - Cartas do Deck`;
+
+        cardsContainer.innerHTML = '';
+
+        // Agrupar cartas por tipo para melhor visualização
+        const cardsByType = {
+            creature: [],
+            instant: [],
+            sorcery: [],
+            enchantment: [],
+            artifact: [],
+            land: []
+        };
+
+        deck.cards.forEach(card => {
+            const type = card.type || 'other';
+            if (cardsByType[type]) {
+                cardsByType[type].push(card);
+            }
+        });
+
+        // Ordem de exibição dos tipos
+        const typeOrder = ['creature', 'instant', 'sorcery', 'enchantment', 'artifact', 'land'];
+
+        typeOrder.forEach(type => {
+            cardsByType[type].forEach(card => {
+                const cardEl = this.createDeckPreviewCard(card);
+                cardsContainer.appendChild(cardEl);
+            });
+        });
+
+        modal.classList.remove('hidden');
+    }
+
+    createDeckPreviewCard(card) {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'deck-preview-card';
+
+        // Quantidade (badge no canto)
+        const qty = card.qty || 1;
+        if (qty > 1) {
+            const qtyBadge = document.createElement('div');
+            qtyBadge.className = 'deck-preview-card-qty';
+            qtyBadge.textContent = `×${qty}`;
+            cardEl.appendChild(qtyBadge);
+        }
+
+        // Imagem da carta (usando Scryfall) - mostra a carta completa
+        const imageDiv = document.createElement('img');
+        imageDiv.className = 'deck-preview-card-image';
+        imageDiv.alt = card.name;
+
+        // Placeholder enquanto carrega
+        imageDiv.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 680"><rect fill="%231a1520" width="488" height="680"/></svg>';
+
+        // Buscar imagem do Scryfall
+        if (window.imageManager) {
+            window.imageManager.getCardImageUrl(card.name).then(url => {
+                if (url) {
+                    imageDiv.src = url;
+                }
+            });
+        }
+        cardEl.appendChild(imageDiv);
+
+        // Hover para mostrar preview lateral (cria cópia com instanceId para o preview funcionar)
+        const cardForPreview = { ...card, instanceId: `preview_${card.id}` };
+        cardEl.addEventListener('mouseenter', () => this.showCardPreview(cardForPreview));
+        cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+
+        return cardEl;
+    }
+
+    hideDeckPreviewModal() {
+        const modal = document.getElementById('deck-preview-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    formatManaCost(cost) {
+        if (!cost) return '';
+
+        const manaIcons = {
+            'W': '<i class="ms ms-w ms-cost"></i>',
+            'U': '<i class="ms ms-u ms-cost"></i>',
+            'B': '<i class="ms ms-b ms-cost"></i>',
+            'R': '<i class="ms ms-r ms-cost"></i>',
+            'G': '<i class="ms ms-g ms-cost"></i>',
+            '0': '<i class="ms ms-0 ms-cost"></i>',
+            '1': '<i class="ms ms-1 ms-cost"></i>',
+            '2': '<i class="ms ms-2 ms-cost"></i>',
+            '3': '<i class="ms ms-3 ms-cost"></i>',
+            '4': '<i class="ms ms-4 ms-cost"></i>',
+            '5': '<i class="ms ms-5 ms-cost"></i>',
+            '6': '<i class="ms ms-6 ms-cost"></i>',
+            '7': '<i class="ms ms-7 ms-cost"></i>',
+            '8': '<i class="ms ms-8 ms-cost"></i>',
+            '9': '<i class="ms ms-9 ms-cost"></i>',
+            'X': '<i class="ms ms-x ms-cost"></i>'
+        };
+
+        let result = '';
+        for (const char of cost.toUpperCase()) {
+            result += manaIcons[char] || char;
+        }
+        return result;
     }
 
     // === Modal de Exílio ===
