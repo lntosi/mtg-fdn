@@ -156,115 +156,145 @@
 
             <!-- Grid de Decks Visual -->
             <div id="deck-options" class="deck-grid">
-                <label class="deck-card" data-deck="cats" data-color="white">
-                    <input type="checkbox" name="deck" value="cats">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/b/7/b742117a-8a72-43b9-b05d-274829d138a2.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Cats <i class="ms ms-w ms-cost"></i></span>
-                        <span class="deck-card-archetype">Aggro</span>
-                    </div>
-                    <div class="deck-card-description">Lifelink e tokens</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="cats" data-color="white">
+                        <input type="checkbox" name="deck" value="cats">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/b/7/b742117a-8a72-43b9-b05d-274829d138a2.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Cats <i class="ms ms-w ms-cost"></i></span>
+                            <span class="deck-card-archetype">Aggro</span>
+                        </div>
+                        <div class="deck-card-description">Lifelink e tokens</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="cats">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="goblins" data-color="red">
-                    <input type="checkbox" name="deck" value="goblins">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Goblins <i class="ms ms-r ms-cost"></i></span>
-                        <span class="deck-card-archetype">Aggro</span>
-                    </div>
-                    <div class="deck-card-description">Haste e dano direto</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="goblins" data-color="red">
+                        <input type="checkbox" name="deck" value="goblins">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/6/9627b0a7-bda9-44df-81c9-aa70cc976331.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Goblins <i class="ms ms-r ms-cost"></i></span>
+                            <span class="deck-card-archetype">Aggro</span>
+                        </div>
+                        <div class="deck-card-description">Haste e dano direto</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="goblins">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="vampires" data-color="black">
-                    <input type="checkbox" name="deck" value="vampires">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/5/95ef4f86-9b96-4181-9442-44adce180984.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Vampires <i class="ms ms-b ms-cost"></i></span>
-                        <span class="deck-card-archetype">Midrange</span>
-                    </div>
-                    <div class="deck-card-description">Dreno de vida</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="vampires" data-color="black">
+                        <input type="checkbox" name="deck" value="vampires">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/5/95ef4f86-9b96-4181-9442-44adce180984.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Vampires <i class="ms ms-b ms-cost"></i></span>
+                            <span class="deck-card-archetype">Midrange</span>
+                        </div>
+                        <div class="deck-card-description">Dreno de vida</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="vampires">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="elves" data-color="green">
-                    <input type="checkbox" name="deck" value="elves">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Elves <i class="ms ms-g ms-cost"></i></span>
-                        <span class="deck-card-archetype">Ramp</span>
-                    </div>
-                    <div class="deck-card-description">Mana e criaturas grandes</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="elves" data-color="green">
+                        <input type="checkbox" name="deck" value="elves">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/4/341da856-7414-403b-b2e3-4bebd58a5aa4.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Elves <i class="ms ms-g ms-cost"></i></span>
+                            <span class="deck-card-archetype">Ramp</span>
+                        </div>
+                        <div class="deck-card-description">Mana e criaturas grandes</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="elves">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="pirates" data-color="blue">
-                    <input type="checkbox" name="deck" value="pirates">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Pirates <i class="ms ms-u ms-cost"></i></span>
-                        <span class="deck-card-archetype">Control</span>
-                    </div>
-                    <div class="deck-card-description">Flash e counterspells</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="pirates" data-color="blue">
+                        <input type="checkbox" name="deck" value="pirates">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/0/3/03a49535-c5f3-4a6f-b333-7ac7bffdc9ae.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Pirates <i class="ms ms-u ms-cost"></i></span>
+                            <span class="deck-card-archetype">Control</span>
+                        </div>
+                        <div class="deck-card-description">Flash e counterspells</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="pirates">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="healing" data-color="white">
-                    <input type="checkbox" name="deck" value="healing">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/2/2/222c1a68-e34c-4103-b1be-17d4ceaef6ce.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Healing <i class="ms ms-w ms-cost"></i></span>
-                        <span class="deck-card-archetype">Lifegain</span>
-                    </div>
-                    <div class="deck-card-description">Ganho de vida e counters</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="healing" data-color="white">
+                        <input type="checkbox" name="deck" value="healing">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/2/2/222c1a68-e34c-4103-b1be-17d4ceaef6ce.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Healing <i class="ms ms-w ms-cost"></i></span>
+                            <span class="deck-card-archetype">Lifegain</span>
+                        </div>
+                        <div class="deck-card-description">Ganho de vida e counters</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="healing">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="inferno" data-color="red">
-                    <input type="checkbox" name="deck" value="inferno">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/9/3959a6c7-d615-4524-b94d-65f4164a2656.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Inferno <i class="ms ms-r ms-cost"></i></span>
-                        <span class="deck-card-archetype">Dragons</span>
-                    </div>
-                    <div class="deck-card-description">Dragões e dano pesado</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="inferno" data-color="red">
+                        <input type="checkbox" name="deck" value="inferno">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/9/3959a6c7-d615-4524-b94d-65f4164a2656.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Inferno <i class="ms ms-r ms-cost"></i></span>
+                            <span class="deck-card-archetype">Dragons</span>
+                        </div>
+                        <div class="deck-card-description">Dragões e dano pesado</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="inferno">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="undead" data-color="black">
-                    <input type="checkbox" name="deck" value="undead">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/4/34a27142-cf45-4164-9e10-373e5c8bf7c6.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Undead <i class="ms ms-b ms-cost"></i></span>
-                        <span class="deck-card-archetype">Recursion</span>
-                    </div>
-                    <div class="deck-card-description">Zombies e recursão do cemitério</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="undead" data-color="black">
+                        <input type="checkbox" name="deck" value="undead">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/3/4/34a27142-cf45-4164-9e10-373e5c8bf7c6.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Undead <i class="ms ms-b ms-cost"></i></span>
+                            <span class="deck-card-archetype">Recursion</span>
+                        </div>
+                        <div class="deck-card-description">Zombies e recursão do cemitério</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="undead">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="primal" data-color="green">
-                    <input type="checkbox" name="deck" value="primal">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/7/7/7724b978-999b-4654-96f3-58e28aa7cb34.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Primal <i class="ms ms-g ms-cost"></i></span>
-                        <span class="deck-card-archetype">Ramp</span>
-                    </div>
-                    <div class="deck-card-description">Criaturas grandes e counters</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="primal" data-color="green">
+                        <input type="checkbox" name="deck" value="primal">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/7/7/7724b978-999b-4654-96f3-58e28aa7cb34.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Primal <i class="ms ms-g ms-cost"></i></span>
+                            <span class="deck-card-archetype">Ramp</span>
+                        </div>
+                        <div class="deck-card-description">Criaturas grandes e counters</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="primal">Ver Cartas</button>
+                </div>
 
-                <label class="deck-card" data-deck="wizards" data-color="blue">
-                    <input type="checkbox" name="deck" value="wizards">
-                    <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/2/9273c417-0fcd-4273-b24e-afff76336d0c.jpg')"></div>
-                    <div class="deck-card-overlay">
-                        <span class="deck-card-name">Wizards <i class="ms ms-u ms-cost"></i></span>
-                        <span class="deck-card-archetype">Draw</span>
-                    </div>
-                    <div class="deck-card-description">Compra e sinergias de mágica</div>
-                    <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
-                </label>
+                <div class="deck-card-wrapper">
+                    <label class="deck-card" data-deck="wizards" data-color="blue">
+                        <input type="checkbox" name="deck" value="wizards">
+                        <div class="deck-card-art" style="background-image: url('https://cards.scryfall.io/art_crop/front/9/2/9273c417-0fcd-4273-b24e-afff76336d0c.jpg')"></div>
+                        <div class="deck-card-overlay">
+                            <span class="deck-card-name">Wizards <i class="ms ms-u ms-cost"></i></span>
+                            <span class="deck-card-archetype">Draw</span>
+                        </div>
+                        <div class="deck-card-description">Compra e sinergias de mágica</div>
+                        <div class="deck-card-check"><i class="ms ms-ability-activated"></i></div>
+                    </label>
+                    <button type="button" class="deck-view-cards-btn" data-deck="wizards">Ver Cartas</button>
+                </div>
             </div>
 
             <!-- Opções de Jogo em Grid -->
@@ -588,6 +618,19 @@
         <div class="priority-indicator-content">
             <span class="priority-indicator-icon">⚡</span>
             <span class="priority-indicator-text">Você pode responder!</span>
+        </div>
+    </div>
+
+    <!-- Modal de Visualização de Cartas do Deck -->
+    <div id="deck-preview-modal" class="modal hidden">
+        <div class="modal-content deck-preview-content">
+            <div class="deck-preview-header">
+                <h2 id="deck-preview-title">Cartas do Deck</h2>
+                <button type="button" class="deck-preview-close">&times;</button>
+            </div>
+            <div id="deck-preview-cards" class="deck-preview-cards">
+                <!-- Cards will be rendered here -->
+            </div>
         </div>
     </div>
 

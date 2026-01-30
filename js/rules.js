@@ -593,6 +593,9 @@ class RulesEngine {
 
     // Verifica se criatura tem Pacifism (ou efeito similar)
     hasPacifism(creature) {
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return false;
+        }
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
         return allBattlefields.some(card =>
             card.id === 'pacifism' && card.attachedTo === creature.instanceId
@@ -832,6 +835,17 @@ class RulesEngine {
     getCreatureBonuses(creature, isAttacking = false) {
         const bonuses = { power: 0, toughness: 0, sources: [] };
 
+        // Verificar se o jogo já começou
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            // Retornar apenas counters se disponíveis
+            if (creature.counters?.plusOnePlusOne) {
+                const count = creature.counters.plusOnePlusOne;
+                bonuses.power += count;
+                bonuses.toughness += count;
+            }
+            return bonuses;
+        }
+
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
 
         // Verificar se a criatura está no campo de batalha
@@ -999,6 +1013,10 @@ class RulesEngine {
 
     // Verifica se uma criatura está afetada por Eaten by Piranhas
     isAffectedByEatenByPiranhas(creature) {
+        // Verificar se o jogo já começou
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return false;
+        }
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
         return allBattlefields.some(card =>
             card.id === 'eaten_by_piranhas' &&
@@ -1032,6 +1050,11 @@ class RulesEngine {
     // Retorna keywords adicionais de uma criatura (de efeitos)
     getCreatureKeywords(creature, isAttacking = false) {
         const keywords = [...(creature.keywords || [])];
+
+        // Verificar se o jogo já começou
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return keywords;
+        }
 
         const controller = this.game.player.battlefield.includes(creature)
             ? this.game.player
@@ -1168,6 +1191,10 @@ class RulesEngine {
      * @returns {boolean} true se pode ser alvo
      */
     canBeTargetedBy(creature, caster) {
+        // Verificar se o jogo já começou
+        if (!this.game?.player?.battlefield) {
+            return true;
+        }
         // Verificar quem controla a criatura
         const creatureController = this.game.player.battlefield.includes(creature)
             ? this.game.player
