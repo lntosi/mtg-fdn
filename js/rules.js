@@ -292,7 +292,9 @@ class RulesEngine {
         }
 
         // Dragonlord's Servant: Dragon spells cost {1} less
-        if (card.subtype?.includes('Dragon') && card.type === 'creature') {
+        // Otimização: só verifica se há cartas de cost reduction em jogo
+        if (this.game?.activeEffects?.costReduction > 0 &&
+            card.subtype?.includes('Dragon') && card.type === 'creature') {
             const servantCount = player.battlefield.filter(c =>
                 c.id === 'dragonlords_servant'
             ).length;
@@ -439,7 +441,9 @@ class RulesEngine {
         }
 
         // Dragonlord's Servant: Dragon spells cost {1} less
-        if (card.subtype?.includes('Dragon') && card.type === 'creature') {
+        // Otimização: só verifica se há cartas de cost reduction em jogo
+        if (this.game?.activeEffects?.costReduction > 0 &&
+            card.subtype?.includes('Dragon') && card.type === 'creature') {
             const servantCount = player.battlefield.filter(c =>
                 c.id === 'dragonlords_servant'
             ).length;

@@ -1,5 +1,16 @@
 // === Estado e Lógica Principal do Jogo ===
 
+// Mapeamento centralizado de cartas com efeitos especiais
+// Usado para otimização: evita verificações custosas quando não há cartas com esses efeitos em jogo
+const SPECIAL_EFFECT_CARDS = {
+    // Cartas que removem habilidades de criaturas
+    abilityRemoval: ['eaten_by_piranhas'],
+    // Cartas que impedem ataque/bloqueio (estilo Pacifism)
+    pacifism: ['pacifism'],
+    // Cartas que reduzem custo de outras cartas
+    costReduction: ['dragonlords_servant', 'goblin_electromancer'],
+};
+
 class GameState {
     constructor() {
         this.player = null;
@@ -54,10 +65,12 @@ class GameState {
 
         // === Flags de Otimização para Efeitos Especiais ===
         // Evita verificações desnecessárias quando não há cartas com esses efeitos em jogo
+        // Contadores são gerenciados por registerSpecialEffect/unregisterSpecialEffect
+        // Mapeamento de cartas está em SPECIAL_EFFECT_CARDS (topo do arquivo)
         this.activeEffects = {
             abilityRemoval: 0,  // Eaten by Piranhas, Turn to Frog, etc.
             pacifism: 0,        // Pacifism, Arrest, etc.
-            // Futuras expansões: hexproof_auras, protection_effects, etc.
+            costReduction: 0,   // Dragonlord's Servant, Goblin Electromancer, etc.
         };
 
         // === Controle de Sessão (para cancelar operações ao reiniciar) ===
@@ -547,6 +560,9 @@ class GameState {
             }
         }
 
+        // Registrar efeitos especiais para otimização
+        this.registerSpecialEffect(card);
+
         // Trigger de entrada (delegado ao TriggerManager)
         await this.triggers.resolveETB(card, controller);
 
@@ -574,9 +590,13 @@ class GameState {
             stackItem.target.attachedAuras.push(card);
             // Auras ainda não estão no battlefield (não passaram por addToStack com preview)
             controller.battlefield.push(card);
+            // Registrar efeitos especiais para otimização
+            this.registerSpecialEffect(card);
         } else {
             // Para não-Auras, remover flag de pendingResolution (já está no battlefield)
             delete card.pendingResolution;
+            // Registrar efeitos especiais para otimização (artefatos, encantamentos não-aura)
+            this.registerSpecialEffect(card);
         }
 
         // Trigger de entrada
@@ -1345,16 +1365,14 @@ class GameState {
     }
 
     // Registra efeitos especiais quando uma carta entra no campo
+    // Usa o mapeamento SPECIAL_EFFECT_CARDS definido no topo do arquivo
     registerSpecialEffect(card) {
         if (!this.activeEffects) return;
 
-        // Cartas que removem habilidades
-        if (card.id === 'eaten_by_piranhas') {
-            this.activeEffects.abilityRemoval++;
-        }
-        // Cartas com efeito Pacifism (impede ataque/bloqueio)
-        if (card.id === 'pacifism') {
-            this.activeEffects.pacifism++;
+        for (const [effect, cardIds] of Object.entries(SPECIAL_EFFECT_CARDS)) {
+            if (cardIds.includes(card.id)) {
+                this.activeEffects[effect]++;
+            }
         }
     }
 
@@ -1362,11 +1380,10 @@ class GameState {
     unregisterSpecialEffect(card) {
         if (!this.activeEffects) return;
 
-        if (card.id === 'eaten_by_piranhas') {
-            this.activeEffects.abilityRemoval = Math.max(0, this.activeEffects.abilityRemoval - 1);
-        }
-        if (card.id === 'pacifism') {
-            this.activeEffects.pacifism = Math.max(0, this.activeEffects.pacifism - 1);
+        for (const [effect, cardIds] of Object.entries(SPECIAL_EFFECT_CARDS)) {
+            if (cardIds.includes(card.id)) {
+                this.activeEffects[effect] = Math.max(0, this.activeEffects[effect] - 1);
+            }
         }
     }
 
