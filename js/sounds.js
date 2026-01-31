@@ -7,7 +7,13 @@ class SoundManager {
         this.sfxVolume = 0.5;      // Volume dos efeitos sonoros
         this.musicVolume = 0.3;    // Volume da música de fundo
         this.sounds = {};
-        this.music = null;
+
+        // Sistema de crossfade para música (dois players alternados)
+        this.musicPlayers = [null, null];
+        this.activePlayer = 0;     // Índice do player ativo (0 ou 1)
+        this.crossfadeTime = 2.0;  // Segundos de crossfade
+        this.crossfadeInterval = null;
+
         this.musicPlaying = false;
         this.loaded = false;
         this.pendingMusicPlay = false;          // Aguardando interação para tocar
@@ -43,15 +49,16 @@ class SoundManager {
             });
         }
 
-        // Carregar música de fundo
-        this.music = new Audio();
-        this.music.src = this.musicUrl;
-        this.music.volume = this.musicVolume;
-        this.music.loop = true;
-        this.music.preload = 'auto';
-        this.music.addEventListener('error', () => {
-            console.warn(`Música não encontrada: ${this.musicUrl}`);
-        });
+        // Criar dois players de música para crossfade seamless
+        for (let i = 0; i < 2; i++) {
+            this.musicPlayers[i] = new Audio();
+            this.musicPlayers[i].src = this.musicUrl;
+            this.musicPlayers[i].volume = 0;
+            this.musicPlayers[i].preload = 'auto';
+            this.musicPlayers[i].addEventListener('error', () => {
+                console.warn(`Música não encontrada: ${this.musicUrl}`);
+            });
+        }
 
         this.loaded = true;
     }
@@ -95,15 +102,21 @@ class SoundManager {
     playVictory() { this.play('victory'); }
     playDefeat() { this.play('defeat'); }
 
-    // === MÚSICA DE FUNDO ===
+    // === MÚSICA DE FUNDO (Sistema de Crossfade) ===
 
     playMusic() {
-        if (!this.enabled || !this.music || this.musicPlaying) return;
+        if (!this.enabled || this.musicPlaying) return;
 
-        this.music.volume = this.musicVolume;
-        this.music.play().then(() => {
+        const player = this.musicPlayers[this.activePlayer];
+        if (!player) return;
+
+        player.currentTime = 0;
+        player.volume = this.musicVolume;
+
+        player.play().then(() => {
             this.musicPlaying = true;
             this.pendingMusicPlay = false;
+            this._setupCrossfadeLoop();
         }).catch(e => {
             if (e.name === 'NotAllowedError') {
                 // Navegador bloqueou autoplay - aguardar interação do usuário
@@ -115,16 +128,87 @@ class SoundManager {
         });
     }
 
+    /**
+     * Configura o loop de crossfade - monitora o player ativo e inicia
+     * o crossfade quando está próximo do fim
+     */
+    _setupCrossfadeLoop() {
+        // Limpar interval anterior se existir
+        if (this.crossfadeInterval) {
+            clearInterval(this.crossfadeInterval);
+        }
+
+        this.crossfadeInterval = setInterval(() => {
+            if (!this.musicPlaying) return;
+
+            const currentPlayer = this.musicPlayers[this.activePlayer];
+            if (!currentPlayer) return;
+
+            const timeRemaining = currentPlayer.duration - currentPlayer.currentTime;
+
+            // Iniciar crossfade quando faltar crossfadeTime segundos
+            if (timeRemaining <= this.crossfadeTime && timeRemaining > 0) {
+                this._startCrossfade();
+            }
+        }, 100); // Verificar a cada 100ms
+    }
+
+    /**
+     * Inicia o crossfade entre os dois players
+     */
+    _startCrossfade() {
+        const fadingOut = this.activePlayer;
+        const fadingIn = 1 - this.activePlayer;
+
+        const outPlayer = this.musicPlayers[fadingOut];
+        const inPlayer = this.musicPlayers[fadingIn];
+
+        if (!outPlayer || !inPlayer) return;
+
+        // Preparar o próximo player
+        inPlayer.currentTime = 0;
+        inPlayer.volume = 0;
+
+        // Iniciar o próximo player
+        inPlayer.play().catch(() => {});
+
+        // Trocar o player ativo
+        this.activePlayer = fadingIn;
+
+        // Executar o crossfade gradual
+        const fadeSteps = 20;
+        const fadeInterval = (this.crossfadeTime * 1000) / fadeSteps;
+        let step = 0;
+
+        const fadeTimer = setInterval(() => {
+            step++;
+            const progress = step / fadeSteps;
+
+            // Fade out do player atual
+            outPlayer.volume = Math.max(0, this.musicVolume * (1 - progress));
+
+            // Fade in do próximo player
+            inPlayer.volume = Math.min(this.musicVolume, this.musicVolume * progress);
+
+            if (step >= fadeSteps) {
+                clearInterval(fadeTimer);
+                // Parar completamente o player que terminou o fade out
+                outPlayer.pause();
+                outPlayer.currentTime = 0;
+                outPlayer.volume = 0;
+                // Garantir volume final correto
+                inPlayer.volume = this.musicVolume;
+            }
+        }, fadeInterval);
+    }
+
     setupInteractionListener() {
         if (this.interactionListenerAdded) return;
         this.interactionListenerAdded = true;
 
         const startMusicOnInteraction = () => {
             if (this.pendingMusicPlay && this.enabled && !this.musicPlaying) {
-                this.music.play().then(() => {
-                    this.musicPlaying = true;
-                    this.pendingMusicPlay = false;
-                }).catch(() => {});
+                this.playMusic();
             }
             // Remover listeners após primeira interação
             document.removeEventListener('click', startMusicOnInteraction);
@@ -139,24 +223,51 @@ class SoundManager {
     }
 
     stopMusic() {
-        if (this.music) {
-            this.music.pause();
-            this.music.currentTime = 0;
-            this.musicPlaying = false;
+        // Limpar interval de crossfade
+        if (this.crossfadeInterval) {
+            clearInterval(this.crossfadeInterval);
+            this.crossfadeInterval = null;
         }
+
+        // Parar ambos os players
+        this.musicPlayers.forEach(player => {
+            if (player) {
+                player.pause();
+                player.currentTime = 0;
+                player.volume = 0;
+            }
+        });
+
+        this.musicPlaying = false;
+        this.activePlayer = 0;
     }
 
     pauseMusic() {
-        if (this.music && this.musicPlaying) {
-            this.music.pause();
-            this.musicPlaying = false;
+        if (!this.musicPlaying) return;
+
+        // Pausar o player ativo
+        const player = this.musicPlayers[this.activePlayer];
+        if (player) {
+            player.pause();
         }
+
+        // Limpar interval de crossfade
+        if (this.crossfadeInterval) {
+            clearInterval(this.crossfadeInterval);
+            this.crossfadeInterval = null;
+        }
+
+        this.musicPlaying = false;
     }
 
     resumeMusic() {
-        if (this.music && !this.musicPlaying && this.enabled) {
-            this.music.play().then(() => {
+        if (this.musicPlaying || !this.enabled) return;
+
+        const player = this.musicPlayers[this.activePlayer];
+        if (player) {
+            player.play().then(() => {
                 this.musicPlaying = true;
+                this._setupCrossfadeLoop();
             }).catch(() => {});
         }
     }
@@ -172,8 +283,10 @@ class SoundManager {
 
     setMusicVolume(vol) {
         this.musicVolume = Math.max(0, Math.min(1, vol));
-        if (this.music) {
-            this.music.volume = this.musicVolume;
+        // Atualizar volume do player ativo
+        const activePlayer = this.musicPlayers[this.activePlayer];
+        if (activePlayer && this.musicPlaying) {
+            activePlayer.volume = this.musicVolume;
         }
     }
 
