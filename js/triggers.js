@@ -3,6 +3,7 @@
  *
  * Este módulo centraliza:
  * - ETB (enters-the-battlefield) effects
+ * - LTB (leaves-the-battlefield) effects
  * - Death triggers
  * - Combat triggers (attack/block)
  * - End of turn triggers
@@ -384,6 +385,9 @@ class TriggerManager {
                 // Desanexar auras e equipamentos (auras vão pro cemitério - regra 704.5m)
                 this.game.detachFromCreature(targetCreature, opponent);
                 opponent.battlefield.splice(index, 1);
+                // Desregistrar efeitos especiais e trigger LTB
+                this.game.unregisterSpecialEffect(targetCreature);
+                this.onLeaveBattlefield(targetCreature, opponent);
                 this._resetCardState(targetCreature); // Reset damage, modifiers, counters, etc.
                 opponent.hand.push(targetCreature);
                 this.ui.log(`${card.name} devolveu ${targetCreature.name} para a mão de ${opponent.name}`);
@@ -769,10 +773,18 @@ class TriggerManager {
             // Remover do campo de batalha
             const index = opponent.battlefield.indexOf(target);
             if (index !== -1) {
+                // Se for criatura, desanexar equipamentos e auras
+                if (target.type === 'creature') {
+                    this.game.detachFromCreature(target, opponent);
+                }
                 opponent.battlefield.splice(index, 1);
+                // Desregistrar efeitos especiais
+                this.game.unregisterSpecialEffect(target);
                 // Exilar (salvar referência para possível retorno futuro)
                 if (!this.game.exile) this.game.exile = [];
                 target.exiledBy = card.instanceId;
+                // Salvar dono original para saber para quem retornar
+                target.ownerId = opponent === this.player ? 'player' : 'opponent';
                 this.game.exile.push(target);
                 this.ui.log(`Prayer of Binding exilou ${target.name}`);
             }
@@ -1259,6 +1271,81 @@ class TriggerManager {
                 this.ui.log(`Frenzied Goblin: ${target.name} não pode bloquear neste turno`);
             }
         }
+    }
+
+    // ========================================
+    // LEAVES THE BATTLEFIELD TRIGGERS
+    // ========================================
+
+    /**
+     * Chamado quando um permanente deixa o campo de batalha
+     * Lida com efeitos "until this leaves the battlefield" (ex: Prayer of Binding)
+     * @param {Object} card - Carta que saiu do campo
+     * @param {Object} owner - Dono da carta
+     */
+    onLeaveBattlefield(card, owner) {
+        // Verificar se há cartas exiladas por este permanente
+        if (!this.game.exile || this.game.exile.length === 0) return;
+
+        const toReturn = this.game.exile.filter(exiled => exiled.exiledBy === card.instanceId);
+
+        if (toReturn.length === 0) return;
+
+        toReturn.forEach(exiledCard => {
+            // Remover da zona de exílio
+            const exileIndex = this.game.exile.indexOf(exiledCard);
+            if (exileIndex > -1) {
+                this.game.exile.splice(exileIndex, 1);
+            }
+
+            // Limpar a referência de exílio
+            delete exiledCard.exiledBy;
+
+            // Determinar o dono original da carta exilada
+            // A carta volta para o dono, não para quem a exilou
+            const cardOwner = this._findCardOwner(exiledCard);
+
+            if (cardOwner) {
+                // Retornar ao campo de batalha
+                cardOwner.battlefield.push(exiledCard);
+
+                // Se for criatura, entra com summoning sickness
+                if (exiledCard.type === 'creature') {
+                    exiledCard.summoningSickness = true;
+                }
+
+                this.ui.log(`${exiledCard.name} retornou ao campo de batalha`);
+            }
+        });
+
+        this.ui.render();
+    }
+
+    /**
+     * Encontra o dono original de uma carta
+     * Procura em todas as zonas de ambos jogadores
+     * @param {Object} card - Carta para encontrar o dono
+     * @returns {Object|null} - Jogador dono ou null
+     */
+    _findCardOwner(card) {
+        // Se a carta tem ownerId, usar isso
+        if (card.ownerId) {
+            return card.ownerId === 'player' ? this.player : this.opponent;
+        }
+
+        // Verificar pelo instanceId se contém identificador do dono
+        if (card.instanceId) {
+            if (card.instanceId.includes('_player_') || card.instanceId.startsWith('player_')) {
+                return this.player;
+            }
+            if (card.instanceId.includes('_opponent_') || card.instanceId.startsWith('opponent_')) {
+                return this.opponent;
+            }
+        }
+
+        // Fallback: verificar em qual deck a carta foi originalmente
+        // Por segurança, retornar opponent (a maioria dos exílios são de oponentes)
+        return this.opponent;
     }
 }
 

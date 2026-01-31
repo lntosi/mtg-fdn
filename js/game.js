@@ -1614,6 +1614,9 @@ class GameState {
                         this.detachFromCreature(target, roilOwner);
                     }
                     roilOwner.battlefield.splice(roilIdx, 1);
+                    // Desregistrar efeitos especiais e trigger LTB
+                    this.unregisterSpecialEffect(target);
+                    this.triggers.onLeaveBattlefield(target, roilOwner);
                     // Reset card state
                     target.damage = 0;
                     target.powerModifier = 0;
@@ -1814,6 +1817,8 @@ class GameState {
             owner.battlefield.splice(index, 1);
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
+            // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
+            this.triggers.onLeaveBattlefield(permanent, owner);
             // Adiciona à zona de exílio do dono
             owner.exile.push(permanent);
         }
@@ -1846,9 +1851,11 @@ class GameState {
                 const idx = player.battlefield.indexOf(aura);
                 if (idx > -1) {
                     player.battlefield.splice(idx, 1);
-                    player.graveyard.push(aura);
                     // Desregistrar efeitos especiais
                     this.unregisterSpecialEffect(aura);
+                    // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
+                    this.triggers.onLeaveBattlefield(aura, player);
+                    player.graveyard.push(aura);
                     this.ui.log(`${aura.name} foi para o cemitério`);
                 }
             });
@@ -2186,6 +2193,8 @@ class GameState {
             owner.battlefield.splice(index, 1);
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
+            // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
+            this.triggers.onLeaveBattlefield(permanent, owner);
             owner.graveyard.push(permanent);
         }
     }
