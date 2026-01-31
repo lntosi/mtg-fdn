@@ -983,6 +983,48 @@ class GameState {
         return this.awaitingPlayerContinue === true;
     }
 
+    // Verifica e oferece kicker ao jogador
+    async handleKicker(card, player) {
+        // Verificar se a carta tem kicker
+        if (!card.kickerCost) return false;
+
+        // Calcular mana disponível
+        const availableMana = this.rules.calculateAvailableMana(player);
+        const totalMana = Object.values(availableMana).reduce((a, b) => a + b, 0);
+
+        // Calcular custo total com kicker
+        // Formato: "1U" -> 1 genérico + 1 azul = 2 total
+        const kickerCost = this.rules.parseCost(card.kickerCost);
+        const baseCost = card.cmc || 0;
+        const totalCostWithKicker = baseCost + (kickerCost.cmc || 0);
+
+        // Verificar se pode pagar kicker
+        const canPayKicker = totalMana >= totalCostWithKicker;
+        if (!canPayKicker) return false;
+
+        // Para o jogador humano, perguntar se quer pagar kicker
+        if (player === this.player) {
+            const wantKicker = await this.ui.promptYesNo({
+                title: `${card.name} - Encostar`,
+                description: `Deseja pagar o custo de encostar (${card.kickerCost})?`,
+                yesText: 'Sim, encostar',
+                noText: 'Não'
+            });
+
+            if (wantKicker) {
+                card.kicked = true;
+                return true;
+            }
+        } else {
+            // IA sempre paga kicker se puder e faz sentido
+            // Para Into the Roil, sempre vale a pena comprar carta extra
+            card.kicked = true;
+            return true;
+        }
+
+        return false;
+    }
+
     // Jogar uma carta
     async playCard(card, player) {
         if (!this.rules.canPlayCard(card, player)) {
@@ -1211,10 +1253,34 @@ class GameState {
                     return false;
                 }
 
+                // Verificar kicker antes de pagar mana
+                if (card.kickerCost) {
+                    await this.handleKicker(card, player);
+                }
+
                 // Pagar mana antes de selecionar
                 const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
                 this.rules.payMana(card, player, selectedLands);
                 if (player === this.player) this.ui.clearLandSelection();
+
+                // Pagar custo de kicker se foi escolhido
+                if (card.kicked) {
+                    const kickerCostParsed = this.rules.parseCost(card.kickerCost);
+                    // Pagar colorido primeiro
+                    const coloredCost = {};
+                    ['W', 'U', 'B', 'R', 'G'].forEach(color => {
+                        if (kickerCostParsed[color]) coloredCost[color] = kickerCostParsed[color];
+                    });
+                    if (Object.keys(coloredCost).length > 0) {
+                        this.payColoredMana(coloredCost, player);
+                    }
+                    // Pagar genérico
+                    if (kickerCostParsed.generic) {
+                        this.payGenericMana(kickerCostParsed.generic, player);
+                    }
+                    this.ui.log(`${card.name} foi encostado!`);
+                }
+
                 window.soundManager.playMagic();
 
                 this.ui.promptForTarget(card, validTargets, async (target) => {
@@ -1232,9 +1298,31 @@ class GameState {
                 return true;
             } else {
                 // Sem alvo ou é IA
+                // Verificar kicker para IA
+                if (card.kickerCost && player === this.opponent) {
+                    await this.handleKicker(card, player);
+                }
+
                 const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
                 this.rules.payMana(card, player, selectedLands);
                 if (player === this.player) this.ui.clearLandSelection();
+
+                // Pagar custo de kicker se foi escolhido (IA)
+                if (card.kicked) {
+                    const kickerCostParsed = this.rules.parseCost(card.kickerCost);
+                    const coloredCost = {};
+                    ['W', 'U', 'B', 'R', 'G'].forEach(color => {
+                        if (kickerCostParsed[color]) coloredCost[color] = kickerCostParsed[color];
+                    });
+                    if (Object.keys(coloredCost).length > 0) {
+                        this.payColoredMana(coloredCost, player);
+                    }
+                    if (kickerCostParsed.generic) {
+                        this.payGenericMana(kickerCostParsed.generic, player);
+                    }
+                    this.ui.log(`${card.name} foi encostado!`);
+                }
+
                 window.soundManager.playMagic();
 
                 if (needsTarget && player === this.opponent) {
@@ -1329,7 +1417,7 @@ class GameState {
             this.ui.clearLandSelection();
             window.soundManager.playMagic();
 
-            this.ui.promptForTarget(aura, validTargets, (target) => {
+            this.ui.promptForTarget(aura, validTargets, async (target) => {
                 // Remover carta da mão após seleção do alvo
                 const handIndex = player.hand.indexOf(aura);
                 if (handIndex > -1) {
@@ -1337,7 +1425,7 @@ class GameState {
                 }
                 delete aura.pendingCast;
 
-                this.attachAura(aura, target, player);
+                await this.attachAura(aura, target, player);
             });
         } else {
             // IA: escolher melhor alvo automaticamente
@@ -1346,13 +1434,13 @@ class GameState {
 
             const target = this.ai.chooseBestAuraTarget(aura, validTargets, player);
             if (target) {
-                this.attachAura(aura, target, player);
+                await this.attachAura(aura, target, player);
             }
         }
     }
 
     // Anexar Aura a uma criatura
-    attachAura(aura, target, controller) {
+    async attachAura(aura, target, controller) {
         aura.attachedTo = target.instanceId;
         aura.controlledBy = controller === this.player ? 'player' : 'opponent';
         controller.battlefield.push(aura);
@@ -1361,6 +1449,10 @@ class GameState {
         this.registerSpecialEffect(aura);
 
         this.ui.log(`${aura.name} foi anexado a ${target.name}`);
+
+        // Resolver ETB da Aura (ex: New Horizons coloca contador +1/+1)
+        await this.triggers.resolveETB(aura, controller);
+
         this.ui.render();
     }
 
@@ -1752,6 +1844,9 @@ class GameState {
                         if (!ownTarget.counters) ownTarget.counters = {};
                         ownTarget.counters.plusOnePlusOne = (ownTarget.counters.plusOnePlusOne || 0) + 1;
                         this.ui.log(`${ownTarget.name} ganhou um contador +1/+1`);
+
+                        // Trigger Wildwood Scourge e outras sinergias com contadores
+                        this.triggers.onCounterPlaced(ownTarget, caster, 1);
 
                         // Calcula dano (após o counter)
                         const damage = this.rules.getCreaturePower(ownTarget);
@@ -2246,6 +2341,24 @@ class GameState {
     }
 
     // === HABILIDADES ATIVADAS ===
+
+    // Verifica se uma carta no cemitério tem habilidade ativada que pode ser usada
+    canActivateGraveyardAbility(card, player) {
+        // Verificar se a carta está de fato no cemitério
+        if (!player.graveyard.includes(card)) return false;
+
+        switch (card.id) {
+            case 'reassembling_skeleton':
+                // {1}{B}: Return from graveyard to battlefield tapped
+                // Precisa de 1 preto + 1 genérico = 2 mana total com pelo menos 1 preto
+                const mana = this.rules.calculateAvailableMana(player);
+                const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
+                const hasBlack = (mana.B || 0) >= 1 || (mana.any || 0) >= 1;
+                return hasBlack && totalMana >= 2;
+            default:
+                return false;
+        }
+    }
 
     // Verifica se uma carta tem habilidade ativada e pode usá-la
     canActivateAbility(card, player) {
@@ -2839,6 +2952,41 @@ class GameState {
                 this.rules.drawCard(player);
                 this.rules.drawCard(player);
                 this.ui.log(`Mystic Archaeologist: ${player.name} comprou 2 cartas`);
+                break;
+        }
+
+        this.ui.render();
+        return true;
+    }
+
+    // Ativa habilidade de uma carta no cemitério
+    async activateGraveyardAbility(card, player) {
+        if (!this.canActivateGraveyardAbility(card, player)) {
+            return false;
+        }
+
+        switch (card.id) {
+            case 'reassembling_skeleton':
+                // {1}{B}: Return from graveyard to battlefield tapped
+                this.payColoredMana({ B: 1 }, player);
+                this.payGenericMana(1, player);
+
+                // Remover do cemitério
+                const graveyardIndex = player.graveyard.indexOf(card);
+                if (graveyardIndex > -1) {
+                    player.graveyard.splice(graveyardIndex, 1);
+                }
+
+                // Colocar no campo de batalha virado
+                card.tapped = true;
+                card.summoningSickness = true;
+                card.damage = 0;
+                card.powerModifier = 0;
+                card.toughnessModifier = 0;
+                card.counters = null;
+                player.battlefield.push(card);
+
+                this.ui.log(`${card.name} retornou do cemitério para o campo de batalha (virado)`);
                 break;
         }
 

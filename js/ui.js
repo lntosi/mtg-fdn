@@ -2126,12 +2126,31 @@ class GameUI {
             emptyMsg.textContent = 'Nenhuma carta no cemitério';
             cardsContainer.appendChild(emptyMsg);
         } else {
+            const player = owner === 'player' ? this.game.player : this.game.opponent;
             // Mostrar cartas da mais recente para a mais antiga
             [...graveyard].reverse().forEach(card => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'graveyard-card-wrapper';
+
                 const cardEl = this.createCardElement(card, true);
                 cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
                 cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
-                cardsContainer.appendChild(cardEl);
+                cardWrapper.appendChild(cardEl);
+
+                // Verificar se a carta tem habilidade ativável do cemitério (só para jogador)
+                if (owner === 'player' && this.game.canActivateGraveyardAbility(card, player)) {
+                    const activateBtn = document.createElement('button');
+                    activateBtn.className = 'graveyard-activate-btn';
+                    activateBtn.textContent = 'Ativar';
+                    activateBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        this.hideGraveyardModal();
+                        await this.game.activateGraveyardAbility(card, player);
+                    });
+                    cardWrapper.appendChild(activateBtn);
+                }
+
+                cardsContainer.appendChild(cardWrapper);
             });
         }
 

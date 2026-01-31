@@ -2818,6 +2818,32 @@ body {
     width: 100%;
 }
 
+/* Wrapper para carta + botão de ativação no cemitério */
+.graveyard-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.graveyard-activate-btn {
+    padding: 4px 12px;
+    font-size: 0.75em;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.graveyard-activate-btn:hover {
+    background: linear-gradient(135deg, #27ae60, #229954);
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
 .btn-close-modal {
     margin-top: 20px;
     padding: 12px 40px;

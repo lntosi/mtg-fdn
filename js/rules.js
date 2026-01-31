@@ -1259,8 +1259,23 @@ class RulesEngine {
 
     // Desvirar todas as permanentes
     untapAll(player) {
+        // Coletar todas as auras com freeze_aura de ambos os jogadores
+        const allBattlefields = [
+            ...(this.game?.player?.battlefield || []),
+            ...(this.game?.opponent?.battlefield || [])
+        ];
+        const freezeAuras = allBattlefields.filter(c =>
+            c.type === 'enchantment' &&
+            c.keywords?.includes('freeze_aura') &&
+            c.attachedTo
+        );
+
         player.battlefield.forEach(card => {
-            card.tapped = false;
+            // Verificar se esta criatura está encantada por uma freeze_aura
+            const isFrozen = freezeAuras.some(aura => aura.attachedTo === card.instanceId);
+            if (!isFrozen) {
+                card.tapped = false;
+            }
         });
     }
 

@@ -171,6 +171,21 @@ class TriggerManager {
             await this._handlePrayerOfBindingETB(card, controller, opponent);
         }
 
+        // New Horizons - put +1/+1 counter on target creature you control
+        if (card.id === 'new_horizons') {
+            await this._handleNewHorizonsETB(card, controller);
+        }
+
+        // Starlight Snare / Freeze Aura - tap the enchanted creature on ETB
+        if (card.keywords?.includes('freeze_aura') && card.attachedTo) {
+            const allCreatures = [...this.player.battlefield, ...this.opponent.battlefield];
+            const enchantedCreature = allCreatures.find(c => c.instanceId === card.attachedTo);
+            if (enchantedCreature) {
+                enchantedCreature.tapped = true;
+                this.ui.log(`${card.name}: ${enchantedCreature.name} foi virado`);
+            }
+        }
+
         // --- LAND ETBs ---
 
         // Uncharted Haven - escolher cor ao entrar
@@ -816,6 +831,46 @@ class TriggerManager {
                 || validTargets[0];
             await exileTarget(target);
         }
+    }
+
+    /**
+     * New Horizons - ETB: put +1/+1 counter on target creature you control
+     * @param {Object} card - New Horizons aura
+     * @param {Object} controller - Jogador que controla
+     */
+    async _handleNewHorizonsETB(card, controller) {
+        const validTargets = controller.battlefield.filter(c => c.type === 'creature');
+
+        if (validTargets.length === 0) {
+            this.ui.log(`${card.name}: não há criaturas para receber contador`);
+            return;
+        }
+
+        let target;
+        if (controller === this.player) {
+            target = await this.ui.promptTriggerTarget({
+                title: 'New Horizons',
+                description: 'Escolha uma criatura para receber um contador +1/+1:',
+                validTargets: validTargets,
+                canSkip: false
+            });
+        } else {
+            // IA escolhe a criatura com maior poder
+            target = validTargets.sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            )[0];
+        }
+
+        if (target) {
+            if (!target.counters) target.counters = {};
+            target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
+            this.ui.log(`${card.name}: ${target.name} ganhou um contador +1/+1`);
+
+            // Trigger Wildwood Scourge
+            this.onCounterPlaced(target, controller, 1);
+        }
+
+        this.ui.render();
     }
 
     // ========================================
