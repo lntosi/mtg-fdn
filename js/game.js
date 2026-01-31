@@ -2103,36 +2103,67 @@ class GameState {
                 break;
 
             case 'biogenic_upgrade':
-                // Biogenic Upgrade - distribute 3 +1/+1 counters, then double
-                const ownCreatures = caster.battlefield.filter(c => c.type === 'creature');
-                if (ownCreatures.length > 0) {
-                    let targetCreature;
+                // Biogenic Upgrade - distribute 3 +1/+1 counters among 1-3 creatures, then double each
+                const bioCreatures = caster.battlefield.filter(c => c.type === 'creature');
+                if (bioCreatures.length > 0) {
+                    let selectedTargets = [];
+
                     if (caster === this.player) {
-                        targetCreature = await this.ui.promptTriggerTarget({
+                        // Jogador escolhe 1-3 criaturas
+                        selectedTargets = await this.ui.promptMultiTarget({
                             title: 'Biogenic Upgrade',
-                            description: 'Escolha uma criatura para receber +1/+1 counters (3 + dobrados):',
-                            validTargets: ownCreatures,
+                            description: 'Escolha 1-3 criaturas para distribuir 3 contadores +1/+1 (depois dobram):',
+                            validTargets: bioCreatures,
+                            minTargets: 1,
+                            maxTargets: Math.min(3, bioCreatures.length),
                             canSkip: false
                         });
                     } else {
-                        // IA escolhe criatura com menos counters ou maior poder
-                        targetCreature = ownCreatures.sort((a, b) =>
-                            (a.counters?.plusOnePlusOne || 0) - (b.counters?.plusOnePlusOne || 0)
-                        )[0];
+                        // IA: escolhe criaturas estrategicamente
+                        // Prioriza criaturas que já têm contadores (para maximizar o dobro)
+                        const sorted = [...bioCreatures].sort((a, b) => {
+                            const aCounters = a.counters?.plusOnePlusOne || 0;
+                            const bCounters = b.counters?.plusOnePlusOne || 0;
+                            return bCounters - aCounters; // Mais contadores primeiro
+                        });
+                        // IA geralmente põe todos em 1 criatura para maximizar (3 + existentes) * 2
+                        selectedTargets = [sorted[0]];
                     }
-                    if (targetCreature) {
-                        // Add 3 counters
-                        if (!targetCreature.counters) targetCreature.counters = {};
-                        targetCreature.counters.plusOnePlusOne = (targetCreature.counters.plusOnePlusOne || 0) + 3;
-                        this.ui.log(`${targetCreature.name} recebeu 3 contadores +1/+1`);
 
-                        // Double the counters
-                        targetCreature.counters.plusOnePlusOne *= 2;
-                        this.ui.log(`Contadores em ${targetCreature.name} dobrados para ${targetCreature.counters.plusOnePlusOne}`);
+                    if (selectedTargets && selectedTargets.length > 0) {
+                        // Distribuir 3 contadores entre os alvos
+                        // Distribuição: 3 em 1, ou 2+1 em 2, ou 1+1+1 em 3
+                        const countersPerTarget = [];
+                        const numTargets = selectedTargets.length;
 
-                        // Trigger counter synergy (Wildwood Scourge)
-                        if (this.triggers) {
-                            this.triggers.onCounterPlaced(targetCreature, caster, 3);
+                        if (numTargets === 1) {
+                            countersPerTarget.push(3);
+                        } else if (numTargets === 2) {
+                            countersPerTarget.push(2, 1);
+                        } else {
+                            countersPerTarget.push(1, 1, 1);
+                        }
+
+                        // Aplicar contadores e depois dobrar cada um
+                        for (let i = 0; i < selectedTargets.length; i++) {
+                            const target = selectedTargets[i];
+                            const countersToAdd = countersPerTarget[i];
+
+                            if (!target.counters) target.counters = {};
+                            const beforeCounters = target.counters.plusOnePlusOne || 0;
+
+                            // Adicionar contadores
+                            target.counters.plusOnePlusOne = beforeCounters + countersToAdd;
+                            this.ui.log(`${target.name} recebeu ${countersToAdd} contador(es) +1/+1`);
+
+                            // Dobrar os contadores
+                            target.counters.plusOnePlusOne *= 2;
+                            this.ui.log(`Contadores em ${target.name} dobrados para ${target.counters.plusOnePlusOne}`);
+
+                            // Trigger counter synergy (Wildwood Scourge)
+                            if (this.triggers) {
+                                this.triggers.onCounterPlaced(target, caster, countersToAdd);
+                            }
                         }
                     }
                 }

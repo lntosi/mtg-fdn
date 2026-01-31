@@ -96,7 +96,7 @@ const CARD_DATABASE = {
             { id: "dwynenss_elite", name: "Dwynen's Elite", type: "creature", subtype: "Elf Warrior", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, se você controla outro Elfo, crie um token 1/1 Elf Warrior.", qty: 1 },
             { id: "beast_kin_ranger", name: "Beast-Kin Ranger", type: "creature", subtype: "Elf Ranger", cost: "2G", cmc: 3, power: 3, toughness: 3, keywords: ["trample"], text: "Atropelar. Quando outra criatura entra em campo sob seu controle, esta criatura ganha +1/+0 até o fim do turno.", qty: 1 },
             { id: "thornweald_archer", name: "Thornweald Archer", type: "creature", subtype: "Elf Archer", cost: "1G", cmc: 2, power: 2, toughness: 1, keywords: ["reach", "deathtouch"], qty: 1 },
-            { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
+            { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, keywords: ["elf_lord"], text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
             { id: "tajuru_pathwarden", name: "Tajuru Pathwarden", type: "creature", subtype: "Elf Warrior", cost: "4G", cmc: 5, power: 5, toughness: 4, keywords: ["vigilance", "trample"], qty: 1 },
             { id: "wildheart_invoker", name: "Wildheart Invoker", type: "creature", subtype: "Elf Shaman", cost: "2GG", cmc: 4, power: 4, toughness: 3, text: "8: Criatura alvo ganha +5/+5 e atropelar até o fim do turno.", qty: 1 },
             // Feitiços (4)
