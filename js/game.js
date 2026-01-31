@@ -1448,6 +1448,8 @@ class GameState {
             case 'moment_of_craving':
             case 'heros_downfall':
             case 'incinerating_blast':
+            case 'scorching_dragonfire':
+            case 'fiery_annihilation':
             case 'murder':
                 // Filtrar criaturas que podem ser alvo (não têm hexproof)
                 targets = opponent.battlefield.filter(c =>
