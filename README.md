@@ -126,9 +126,9 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 ### IA com 3 Níveis de Dificuldade
 | Nível | Comportamento |
 |-------|---------------|
-| 🟢 **Aprendiz** | Ataques subótimos, não usa habilidades ativadas |
-| 🟡 **Mago** | Avalia trades, usa habilidades, não ataca com power 0 |
-| 🔴 **Planeswalker** | Guarda mana para instants, joga otimizado |
+| **Aprendiz** | Comete erros frequentes, faz trades ruins, não usa habilidades ativadas |
+| **Mago** | Joga de forma competente, avalia trades, usa habilidades |
+| **Planeswalker** | Joga de forma otimizada, reserva mana para respostas, trades seletivos |
 
 ## Tecnologias
 
@@ -164,7 +164,8 @@ mtg/
 │   ├── 01_TESTING.md       # Guia de testes
 │   ├── 02_DEBUG.md         # Comandos de debug
 │   ├── 03_CARD_VALIDATION.md # Status das cartas
-│   └── 04_FUTURE_DECKS_PLAN.md # Plano para novos decks
+│   ├── 04_FUTURE_DECKS_PLAN.md # Plano para decks (arquivado)
+│   └── 05_AI_DIFFICULTY_PLAN.md # Sistema de dificuldade da IA
 ├── screenshots/            # Screenshots da aplicação
 ├── package.json            # Configuração npm e Jest
 └── CLAUDE.md               # Guia para Claude Code
@@ -193,9 +194,9 @@ Veja [docs/01_TESTING.md](docs/01_TESTING.md) para mais detalhes.
 
 Veja [docs/ROADMAP.md](docs/ROADMAP.md) para o plano completo de desenvolvimento.
 
-**Próximos passos:**
-- Refinamentos de IA (timing de instants)
-- Responsividade mobile
+**Próximos passos (opcional):**
+- Responsividade mobile/tablet
+- Velocidade configurável das jogadas da IA
 - Novos modos de jogo
 
 ## Créditos

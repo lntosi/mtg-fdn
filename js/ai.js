@@ -4,30 +4,45 @@
 const AI_DIFFICULTY = {
     aprendiz: {
         name: 'Aprendiz',
-        description: 'IA fácil - comete erros, não usa habilidades ativadas',
+        description: 'IA fácil - comete erros frequentes e faz trades ruins',
         attackWithZeroPower: true,      // Ataca mesmo com power 0 (erro)
         useActivatedAbilities: false,   // Não usa habilidades ativadas
         holdManaForInstants: false,     // Não guarda mana para respostas
-        evaluateTrades: false,          // Não avalia trades corretamente
-        aggressiveness: 0.9             // Muito agressivo (ataca mais)
+        mistakeRate: 0.25,              // 25% de chance de escolha subótima
+        thresholds: {
+            attackPower: 1,             // Ataca com qualquer power (agressivo)
+            lifeAdvantage: 2,           // Ataca se 2+ vida na frente
+            tradePower: 2,              // Aceita trades ruins (power 2+)
+            panicMultiplier: 3          // Bloqueia cedo (vida <= ataque * 3)
+        }
     },
     mago: {
         name: 'Mago',
-        description: 'IA equilibrada - joga de forma competente',
+        description: 'IA equilibrada - joga competentemente',
         attackWithZeroPower: false,     // Não ataca com power 0
         useActivatedAbilities: true,    // Usa habilidades quando sobra mana
         holdManaForInstants: false,     // Ainda não guarda mana
-        evaluateTrades: true,           // Avalia trades básicos
-        aggressiveness: 0.6             // Equilibrado
+        mistakeRate: 0,                 // Sem erros
+        thresholds: {
+            attackPower: 3,             // Trade com power 3+
+            lifeAdvantage: 5,           // Ataca se 5+ vida na frente
+            tradePower: 4,              // Aceita trades razoáveis (power 4+)
+            panicMultiplier: 2          // Bloqueio equilibrado
+        }
     },
     planeswalker: {
         name: 'Planeswalker',
-        description: 'IA difícil - joga de forma otimizada',
+        description: 'IA difícil - joga de forma otimizada e reserva mana para respostas',
         attackWithZeroPower: false,
         useActivatedAbilities: true,    // Usa habilidades estrategicamente
         holdManaForInstants: true,      // Guarda mana para respostas
-        evaluateTrades: true,
-        aggressiveness: 0.4             // Mais cauteloso, trades inteligentes
+        mistakeRate: 0,                 // Sem erros
+        thresholds: {
+            attackPower: 4,             // Só trade com power 4+ (seletivo)
+            lifeAdvantage: 8,           // Só ataca agressivo com 8+ vida na frente
+            tradePower: 5,              // Só aceita trades muito favoráveis
+            panicMultiplier: 1.5        // Bloqueia tarde (mais calculado)
+        }
     }
 };
 
@@ -159,6 +174,27 @@ class AIPlayer {
             // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
             if (phase === 1) {
                 playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
+            }
+
+            // Planeswalker: reservar mana para instants
+            if (this.difficulty.holdManaForInstants) {
+                const instantsInHand = opponent.hand.filter(c => c.type === 'instant');
+                if (instantsInHand.length > 0) {
+                    const baseMana = this.rules.calculateAvailableMana(opponent);
+                    const totalMana = Object.values(baseMana).reduce((a, b) => a + b, 0);
+                    const cheapestCmc = Math.min(...instantsInHand.map(c => c.cmc || 2));
+                    const manaToHold = Math.min(cheapestCmc, 3);
+
+                    const originalCount = playableCards.length;
+                    playableCards = playableCards.filter(card => {
+                        const costAfterPlay = totalMana - (card.cmc || 0);
+                        return costAfterPlay >= manaToHold;
+                    });
+
+                    if (playableCards.length < originalCount && playableCards.length === 0) {
+                        this.game.ui.log(`IA reservando mana para respostas`);
+                    }
+                }
             }
 
             // Verificar se pode jogar algo MELHOR usando Treasures
@@ -408,6 +444,14 @@ class AIPlayer {
 
     // Escolhe a melhor carta para jogar
     chooseBestCard(playableCards) {
+        if (playableCards.length === 0) return null;
+
+        // Aprendiz: chance de escolha subótima
+        if (this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+            const randomCard = playableCards[Math.floor(Math.random() * playableCards.length)];
+            return randomCard;
+        }
+
         // Prioridade: criaturas > encantamentos > feitiços
         const creatures = playableCards.filter(c => c.type === 'creature');
         if (creatures.length > 0) {
@@ -549,13 +593,17 @@ class AIPlayer {
 
             const lifeAdvantage = this.game.opponent.life - this.game.player.life;
 
+            // Usar thresholds configurados por dificuldade
+            const attackPowerThreshold = this.difficulty.thresholds.attackPower;
+            const lifeAdvantageThreshold = this.difficulty.thresholds.lifeAdvantage;
+
             if (!canBeBlocked) {
                 attackers.push(attacker);
             } else if (!canDie) {
                 attackers.push(attacker);
-            } else if (canKill && (hasLifelink || attackerPower >= 3)) {
+            } else if (canKill && (hasLifelink || attackerPower >= attackPowerThreshold)) {
                 attackers.push(attacker);
-            } else if (lifeAdvantage > 5) {
+            } else if (lifeAdvantage > lifeAdvantageThreshold) {
                 // Jogar agressivo se estamos na frente
                 attackers.push(attacker);
             }
@@ -613,15 +661,19 @@ class AIPlayer {
             const b2Dies = attackerPower >= this.rules.getCreatureToughness(b2);
             const blockerDeaths = (b1Dies ? 1 : 0) + (b2Dies ? 1 : 0);
 
+            // Usar thresholds configurados por dificuldade
+            const tradePowerThreshold = this.difficulty.thresholds.tradePower;
+            const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+
             // Bloquear se:
             // 1. Conseguimos matar sem perder nenhum bloqueador
-            // 2. Conseguimos matar perdendo só 1 bloqueador e atacante tem 4+ de poder
-            // 3. Estamos em risco de morrer
+            // 2. Conseguimos matar perdendo só 1 bloqueador e atacante tem power >= threshold
+            // 3. Estamos em risco de morrer (vida <= power * panicMultiplier)
             if (canKill && blockerDeaths === 0) {
                 return [b1, b2];
-            } else if (canKill && blockerDeaths === 1 && attackerPower >= 4) {
+            } else if (canKill && blockerDeaths === 1 && attackerPower >= tradePowerThreshold) {
                 return [b1, b2];
-            } else if (this.game.opponent.life <= attackerPower * 2) {
+            } else if (this.game.opponent.life <= attackerPower * panicMultiplier) {
                 return [b1, b2];
             }
 
@@ -691,18 +743,22 @@ class AIPlayer {
                 const attackerDies = blockerPower >= attackerToughness ||
                     this.rules.hasKeyword(blocker, 'deathtouch', false);
 
+                // Usar thresholds configurados por dificuldade
+                const tradePowerThreshold = this.difficulty.thresholds.tradePower;
+                const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+
                 // Bloquear se:
                 // 1. Matamos o atacante sem morrer
-                // 2. Atacante tem 4+ de poder (vale a troca)
-                // 3. Temos muito mais vida
+                // 2. Atacante tem power >= threshold (vale a troca)
+                // 3. Estamos em risco de morrer (vida <= power * panicMultiplier)
 
                 if (attackerDies && !blockerDies) {
                     assignBlockers(attacker, [blocker]);
                     break;
-                } else if (attackerPower >= 4 && attackerDies) {
+                } else if (attackerPower >= tradePowerThreshold && attackerDies) {
                     assignBlockers(attacker, [blocker]);
                     break;
-                } else if (this.game.opponent.life <= attackerPower * 2) {
+                } else if (this.game.opponent.life <= attackerPower * panicMultiplier) {
                     // Bloquear se vamos morrer em breve
                     assignBlockers(attacker, [blocker]);
                     break;
@@ -719,6 +775,12 @@ class AIPlayer {
     // Escolhe melhor alvo para um feitiço
     chooseBestSpellTarget(spell, validTargets) {
         if (validTargets.length === 0) return null;
+
+        // Aprendiz: chance de escolha subótima
+        if (this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+            const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
+            return randomTarget;
+        }
 
         const player = this.game.player;
 
@@ -762,6 +824,13 @@ class AIPlayer {
     // Escolhe melhor alvo para uma Aura
     chooseBestAuraTarget(aura, validTargets, controller) {
         if (validTargets.length === 0) return null;
+
+        // Aprendiz: chance de escolha subótima (mas não para auras negativas em si mesmo)
+        const isNegativeAura = aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas';
+        if (!isNegativeAura && this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+            const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
+            return randomTarget;
+        }
 
         const player = this.game.player;
         const opponent = this.game.opponent;

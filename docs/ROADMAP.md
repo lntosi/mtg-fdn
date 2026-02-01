@@ -64,19 +64,18 @@ Este documento mapeia o desenvolvimento do jogo.
 
 ## Itens Pendentes (Opcional)
 
-### 1. Melhorias de IA
+### 1. Melhorias de IA ✅
 
 #### Implementado
 - [x] Níveis de dificuldade (Aprendiz, Mago, Planeswalker)
 - [x] `attackWithZeroPower`: IA não ataca com criaturas power 0 (Mago+)
 - [x] `useActivatedAbilities`: IA usa habilidades ativadas (Mago+)
 - [x] Sequenciamento de ETBs condicionais (Main Phase 2)
+- [x] `holdManaForInstants`: Reservar mana para respostas (Planeswalker)
+- [x] `thresholds`: Thresholds configuráveis por dificuldade (ataque, bloqueio, trades)
+- [x] `mistakeRate`: Erros aleatórios do Aprendiz (25% escolhas subótimas)
 
-#### Pendente (ver `05_AI_DIFFICULTY_PLAN.md`)
-- [ ] `holdManaForInstants`: Reservar mana para respostas (Planeswalker)
-- [ ] `evaluateTrades`: Avaliação inteligente de trades
-- [ ] `aggressiveness`: Thresholds dinâmicos por dificuldade
-- [ ] Targeting subótimo para Aprendiz
+#### Pendente (opcional)
 - [ ] Velocidade configurável das jogadas da IA
 
 ### 2. UI/UX
@@ -102,6 +101,23 @@ Este documento mapeia o desenvolvimento do jogo.
 ---
 
 ## Histórico de Atualizações
+
+### Fevereiro 2026 - Melhorias de IA
+
+**Sistema de dificuldade completamente implementado:**
+
+| Parâmetro | Aprendiz | Mago | Planeswalker |
+|-----------|:--------:|:----:|:------------:|
+| Erros aleatórios | 25% | 0% | 0% |
+| Usa habilidades | Não | Sim | Sim |
+| Reserva mana | Não | Não | Sim |
+| Trade threshold | 1+ | 3+ | 4+ |
+
+**Novos recursos:**
+- Thresholds configuráveis por dificuldade (ataque, bloqueio, trades)
+- `mistakeRate`: Aprendiz comete erros em 25% das escolhas
+- `holdManaForInstants`: Planeswalker reserva mana para respostas
+- Descrições atualizadas na seleção de dificuldade
 
 ### Fevereiro 2026 - Auditoria Completa de Decks
 

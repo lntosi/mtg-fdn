@@ -925,9 +925,9 @@ class GameUI {
         if (!select || !descriptionEl) return;
 
         const descriptions = {
-            aprendiz: 'IA fácil - comete erros, não usa habilidades ativadas',
+            aprendiz: 'IA fácil - comete erros frequentes e faz trades ruins',
             mago: 'IA equilibrada - joga de forma competente',
-            planeswalker: 'IA difícil - joga de forma otimizada'
+            planeswalker: 'IA difícil - joga de forma otimizada e reserva mana para respostas'
         };
 
         descriptionEl.textContent = descriptions[select.value] || '';
