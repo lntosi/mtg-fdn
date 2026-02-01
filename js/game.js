@@ -1042,7 +1042,59 @@ class GameState {
             return false;
         }
 
-        // Para o jogador humano, perguntar se quer usar o Orb
+        // Calcular mana disponível SEM o Orb
+        const fullMana = this.rules.calculateAvailableMana(player);
+        const manaWithoutOrb = { ...fullMana };
+        // Orb produz R, então subtraímos 1 do vermelho (ou do 'any' se não houver R)
+        if (manaWithoutOrb.R > 0) {
+            manaWithoutOrb.R -= 1;
+        } else if (manaWithoutOrb.any > 0) {
+            manaWithoutOrb.any -= 1;
+        }
+
+        // Verificar se pode pagar o custo SEM o Orb
+        const cost = this.rules.parseCost(card.cost);
+
+        // Aplicar redução de custo de Dragons (Dragonlord's Servant)
+        let adjustedGeneric = cost.generic || 0;
+        if (this.activeEffects?.costReduction > 0) {
+            const servantCount = player.battlefield.filter(c =>
+                c.id === 'dragonlords_servant'
+            ).length;
+            adjustedGeneric = Math.max(0, adjustedGeneric - servantCount);
+        }
+
+        // Calcular se pode pagar sem o Orb
+        let canPayWithoutOrb = true;
+        let remainingMana = { ...manaWithoutOrb };
+
+        // Verificar custos coloridos
+        for (const color in cost.colored) {
+            const needed = cost.colored[color];
+            if ((remainingMana[color] || 0) < needed) {
+                canPayWithoutOrb = false;
+                break;
+            }
+            remainingMana[color] -= needed;
+        }
+
+        // Verificar custo genérico
+        if (canPayWithoutOrb) {
+            const totalRemaining = Object.values(remainingMana).reduce((a, b) => a + b, 0);
+            if (totalRemaining < adjustedGeneric) {
+                canPayWithoutOrb = false;
+            }
+        }
+
+        // Se NÃO pode pagar sem o Orb, usa automaticamente e dá haste (regra MTG)
+        if (!canPayWithoutOrb) {
+            untappedOrb.tapped = true;
+            card.useOrbForHaste = true;
+            this.ui.log(`Carnelian Orb usado - ${card.name} ganhará ímpeto`);
+            return true;
+        }
+
+        // Se PODE pagar sem o Orb, perguntar ao jogador humano
         if (player === this.player) {
             const useOrb = await this.ui.promptYesNo({
                 title: 'Carnelian Orb of Dragonkind',
@@ -1052,7 +1104,6 @@ class GameState {
             });
 
             if (useOrb) {
-                // Virar o Orb manualmente (será considerado no pagamento de mana)
                 untappedOrb.tapped = true;
                 card.useOrbForHaste = true;
                 return true;
