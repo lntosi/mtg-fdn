@@ -436,6 +436,34 @@ class AIPlayer {
                 // Na Main Phase 2 não faz sentido
                 return false;
 
+            case 'goblin_firebomb':
+                // {7}, T, Sacrifice: Destroy target permanent
+                // Alto custo - só usar para ameaças significativas
+                const firebombTargets = opponent.battlefield.filter(c =>
+                    !c.keywords?.includes('indestructible')
+                );
+
+                if (firebombTargets.length === 0) return false;
+
+                // Avaliar se há alvos valiosos
+                const hasValuableTarget = firebombTargets.some(target => {
+                    // Criaturas fortes (power >= 4 ou efeitos perigosos)
+                    if (target.type === 'creature') {
+                        const power = this.rules.getCreaturePower(target);
+                        const hasKeywords = target.keywords?.some(kw =>
+                            ['flying', 'lifelink', 'double_strike', 'trample'].includes(kw)
+                        );
+                        return power >= 4 || hasKeywords;
+                    }
+                    // Enchantments/Artifacts problemáticos
+                    if (target.type === 'enchantment' || target.type === 'artifact') {
+                        return true; // Sempre vale destruir permanentes não-criatura
+                    }
+                    return false;
+                });
+
+                return hasValuableTarget;
+
             default:
                 // Por padrão, ativar se possível
                 return true;

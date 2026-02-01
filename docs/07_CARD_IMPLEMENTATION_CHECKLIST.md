@@ -322,9 +322,9 @@ Ver documento separado: [06_SPELL_TARGETING_CHECKLIST.md](06_SPELL_TARGETING_CHE
 
 | Artifact | Custo | Efeito | canActivate | activate | AI | Status |
 |----------|:-----:|:------:|:-----------:|:--------:|:--:|:------:|
-| Goblin Firebomb | {7}, T, Sac | Destroy permanent | ✅ | ✅ | ⚠️ default | ⚠️ |
+| Goblin Firebomb | {7}, T, Sac | Destroy permanent | ✅ | ✅ | ✅ | ✅ |
 
-**Nota:** Goblin Firebomb funciona para jogador humano, mas IA usa lógica `default` (não avalia inteligentemente quando sacrificar).
+**Lógica de IA para Goblin Firebomb:** Só ativa se houver alvo valioso (criatura power>=4, keywords perigosas, ou permanentes não-criatura).
 
 ---
 
