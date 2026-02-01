@@ -165,7 +165,9 @@ mtg/
 │   ├── 02_DEBUG.md         # Comandos de debug
 │   ├── 03_CARD_VALIDATION.md # Status das cartas
 │   ├── 04_FUTURE_DECKS_PLAN.md # Plano para decks (arquivado)
-│   └── 05_AI_DIFFICULTY_PLAN.md # Sistema de dificuldade da IA
+│   ├── 05_AI_DIFFICULTY_PLAN.md # Sistema de dificuldade da IA
+│   ├── 06_SPELL_TARGETING_CHECKLIST.md # Verificação de spells com alvo
+│   └── 07_CARD_IMPLEMENTATION_CHECKLIST.md # Checklist de implementação
 ├── screenshots/            # Screenshots da aplicação
 ├── package.json            # Configuração npm e Jest
 └── CLAUDE.md               # Guia para Claude Code
