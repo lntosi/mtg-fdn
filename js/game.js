@@ -1533,6 +1533,7 @@ class GameState {
             case 'snakeskin_veil':
             case 'offer_immortality':
             case 'adamant_will':
+            case 'giant_growth':
                 targets = caster.battlefield.filter(c => c.type === 'creature');
                 break;
 
@@ -1597,6 +1598,22 @@ class GameState {
                     (c.type === 'creature' && c.keywords && c.keywords.includes('flying') &&
                      this.rules.canBeTargetedBy(c, caster))
                 );
+                break;
+
+            case 'fleeting_distraction':
+                // -1/-0 em qualquer criatura (sua ou do oponente)
+                targets = [
+                    ...caster.battlefield.filter(c => c.type === 'creature'),
+                    ...opponent.battlefield.filter(c => c.type === 'creature' && this.rules.canBeTargetedBy(c, caster))
+                ];
+                break;
+
+            case 'into_the_roil':
+                // Bounce qualquer permanente não-terreno
+                targets = [
+                    ...caster.battlefield.filter(c => c.type !== 'land'),
+                    ...opponent.battlefield.filter(c => c.type !== 'land' && this.rules.canBeTargetedBy(c, caster))
+                ];
                 break;
 
             default:

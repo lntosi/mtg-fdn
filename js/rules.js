@@ -233,6 +233,13 @@ class RulesEngine {
             return allPermanents.some(c => c.type !== 'land');
         }
 
+        // Angelic Edict - criatura ou encantamento do oponente
+        if (card.id === 'angelic_edict') {
+            return opponent.battlefield.some(c =>
+                c.type === 'creature' || c.type === 'enchantment'
+            );
+        }
+
         // Essence Scatter - counter creature spell only
         if (card.id === 'essence_scatter' || card.keywords?.includes('counterspell_creature')) {
             return this.game.stack.some(item =>
