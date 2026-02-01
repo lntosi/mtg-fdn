@@ -261,29 +261,92 @@ Ver documento separado: [06_SPELL_TARGETING_CHECKLIST.md](06_SPELL_TARGETING_CHE
 
 ---
 
-## 4. Artifacts (Equipment)
+## 4. Artifacts
+
+### 4.1 Equipment
 
 | # | Verificação | Arquivo | Função |
 |---|-------------|---------|--------|
 | 1 | Definição | cards.js | `type: "artifact", subtype: "Equipment", keywords: ["equipment"]` |
 | 2 | Auto-equip ETB | triggers.js | `resolveETB()` para equipamentos com auto-attach |
-| 3 | Aplicar bônus | rules.js | `applyEquipmentEffects()` |
-| 4 | Habilidade Equip | game.js | `canActivateAbility()` + `activateAbility()` |
-| 5 | Desanexar | game.js | `detachFromCreature()` |
+| 3 | Aplicar bônus estáticos | rules.js | `calculateBonuses()` |
+| 4 | Aplicar keywords | rules.js | `getCreatureKeywords()` |
+| 5 | Bônus condicionais | rules.js | Verificar condição (ex: "durante seu turno") |
+| 6 | Habilidade Equip | game.js | `canActivateAbility()` + `activateAbility()` |
+| 7 | Desanexar | game.js | `detachFromCreature()` |
 
-### Matriz de Equipment
+#### Matriz de Equipment
 
-| Equipment | ETB | Equip Cost | applyEffects | canActivate | Status |
-|-----------|:---:|:----------:|:------------:|:-----------:|:------:|
-| Pirate's Cutlass | ✅ (auto-attach Pirate) | {1} | ✅ (+2/+1) | ✅ | ✅ |
-| Quick-Draw Katana | ✅ (auto-attach) | {1} | ✅ (+1/+1, first strike) | ✅ | ✅ |
+| Equipment | ETB | Bônus | Condição | canActivate | Status |
+|-----------|:---:|:-----:|:--------:|:-----------:|:------:|
+| Pirate's Cutlass | ✅ (auto-attach Pirate) | +2/+1 | Sempre | ✅ | ✅ |
+| Quick-Draw Katana | ❌ (sem ETB) | +2/+0, first strike | **Seu turno** | ✅ | ✅ |
 
-### Outros Artefatos
+---
 
-| Artifact | Tipo | Implementação | Status |
-|----------|------|---------------|:------:|
-| Carnelian Orb of Dragonkind | Mana + static | `tap_for_mana` + `getCreatureKeywords()` | ✅ |
-| Treasure Token | Sacrifice for mana | `sacrifice_for_mana` | ✅ |
+### 4.2 Mana Rocks (Artefatos que produzem mana)
+
+| # | Verificação | Arquivo | Função |
+|---|-------------|---------|--------|
+| 1 | Definição | cards.js | `keywords: ["tap_for_mana"], produces: "X"` |
+| 2 | Produzir mana | rules.js | `calculateAvailableMana()` |
+| 3 | **Efeito condicional** | Se mana tiver efeito especial, verificar: |
+| 3a | Escolha do jogador | game.js | Método para perguntar se quer usar |
+| 3b | Verificar se pode pagar SEM | game.js | Calcular mana disponível sem o artefato |
+| 3c | Aplicar efeito | game.js/rules.js | Setar flag e aplicar efeito |
+| 3d | **Visual feedback** | ui.js | Exibir keyword/efeito concedido corretamente |
+
+#### Matriz de Mana Rocks
+
+| Artifact | Produz | Efeito Condicional | Escolha | Visual | Status |
+|----------|:------:|:------------------:|:-------:|:------:|:------:|
+| Carnelian Orb | {R} | Dragon ganha haste | ✅ `handleCarnelianOrb()` | ✅ `hasHasteFromOrb` | ✅ |
+| Treasure Token | any | Sacrifício | N/A (auto) | N/A | ✅ |
+
+**Regra MTG importante:** Se o mana de uma fonte COM efeito condicional é gasto em um spell elegível, o efeito DEVE ser aplicado (não é opcional). A escolha é apenas sobre QUAL fonte de mana usar.
+
+---
+
+### 4.3 Artefatos com Habilidades Ativadas
+
+| # | Verificação | Arquivo | Função |
+|---|-------------|---------|--------|
+| 1 | Definição | cards.js | Usar `id` único |
+| 2 | Verificar se pode ativar | game.js | `canActivateAbility()` |
+| 3 | Executar habilidade | game.js | `activateAbility()` |
+| 4 | Validar alvo (se tiver) | game.js | Verificar `hasTargetPermanent` etc. |
+| 5 | Sacrifício (se necessário) | game.js | Remover do battlefield |
+| 6 | IA usar habilidade | ai.js | `shouldActivateAbility()` |
+
+#### Matriz de Activated Abilities
+
+| Artifact | Custo | Efeito | canActivate | activate | AI | Status |
+|----------|:-----:|:------:|:-----------:|:--------:|:--:|:------:|
+| Goblin Firebomb | {7}, T, Sac | Destroy permanent | ✅ | ✅ | ⚠️ default | ⚠️ |
+
+**Nota:** Goblin Firebomb funciona para jogador humano, mas IA usa lógica `default` (não avalia inteligentemente quando sacrificar).
+
+---
+
+### 4.4 Tokens de Artefato
+
+| Token | Gerado por | Habilidade | Status |
+|-------|-----------|------------|:------:|
+| Treasure Token | Rapacious Dragon, Seize the Spoils, Spectral Sailor, etc. | Sac: add any color | ✅ |
+
+---
+
+### Verificações Críticas para Artefatos com Efeitos Condicionais
+
+**Ao implementar um artefato que produz mana com efeito condicional:**
+
+```markdown
+[ ] 1. O jogador tem escolha se tiver mana suficiente sem o artefato?
+[ ] 2. Se não tiver mana suficiente, o artefato é usado automaticamente?
+[ ] 3. O efeito é aplicado corretamente quando o mana é gasto?
+[ ] 4. O visual reflete o efeito (ex: sem overlay de summoning sickness se tem haste)?
+[ ] 5. A IA usa o artefato de forma inteligente?
+```
 
 ---
 
@@ -333,6 +396,7 @@ Ver documento separado: [06_SPELL_TARGETING_CHECKLIST.md](06_SPELL_TARGETING_CHE
 | Fev 2026 | Fleeting Distraction | Não selecionava alvo | Faltava em `getValidSpellTargets()` |
 | Fev 2026 | Into the Roil | Não selecionava alvo | Faltava em `getValidSpellTargets()` |
 | Fev 2026 | Angelic Edict | Prioridade sem alvos | Faltava em `hasValidTargets()` |
+| Fev 2026 | Carnelian Orb | Escolha ignorada + visual errado | Não verificava se podia pagar sem Orb; UI não checava `hasHasteFromOrb` |
 
 ---
 
