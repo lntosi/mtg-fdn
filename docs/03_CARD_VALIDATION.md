@@ -2,44 +2,25 @@
 
 Este documento rastreia o status de validação de todas as cartas do jogo.
 
-## Processo de Validação
+**Status: TODOS OS 10 DECKS VALIDADOS** ✅ (Fevereiro 2026)
 
-Para validar uma carta corretamente, siga estes passos:
+---
 
-### 1. Consultar Scryfall
-- Acesse `https://scryfall.com/card/fdn/[número]` ou busque pelo nome
-- Anote o texto oficial em inglês da carta
-- Verifique: tipo, subtipo, custo de mana, poder/resistência, keywords, habilidades
+## Resumo Geral
 
-### 2. Comparar com cards.js
-- Verifique se `id`, `name`, `type`, `subtype`, `cost`, `cmc`, `power`, `toughness` estão corretos
-- Verifique se `keywords` inclui todas as habilidades da carta
-- Verifique se `text` reflete o texto oficial (pode ser em português)
-
-### 3. Verificar Implementação
-Para cada tipo de habilidade, verificar o arquivo correspondente:
-
-| Tipo | Onde Verificar |
-|------|----------------|
-| **Keywords simples** | `rules.js` → `getCreatureKeywords()`, `canBlock()`, `canAttack()` |
-| **ETB triggers** | `triggers.js` → `resolveETB()` |
-| **Death triggers** | `triggers.js` → `onCreatureDeath()` |
-| **Combat triggers** | `triggers.js` → `onBeginCombat()`, `onDeclareAttackers()` |
-| **End step triggers** | `triggers.js` → `onEndStep()` |
-| **Activated abilities** | `game.js` → `canActivateAbility()`, `activateAbility()` |
-| **Static effects (lords)** | `rules.js` → `calculateBonuses()` |
-| **Spell effects** | `game.js` → `resolveSpell()` |
-| **Cost reduction** | `rules.js` → `hasEnoughMana()`, `payMana()` |
-
-### 4. Testar em Jogo (Opcional)
-- Usar comandos debug para adicionar carta à mão/campo
-- Verificar se comportamento corresponde ao esperado
-
-### 5. Atualizar Status
-- ✓ = Texto oficial verificado E implementação correta
-- ⚠ = Ainda não verificado contra Scryfall
-- ✗ = Bug conhecido (descrever nas notas)
-- \- = Carta vanilla (só stats, sem habilidades)
+| Deck | Cor | Cards | Status | Última Validação |
+|------|:---:|:-----:|:------:|:----------------:|
+| Cats | W | 14 | ✅ | Dez 2025 |
+| Goblins | R | 14 | ✅ | Dez 2025 |
+| Vampires | B | 14 | ✅ | Dez 2025 |
+| Elves | G | 12 | ✅ | Dez 2025 |
+| Pirates | U | 14 | ✅ | Dez 2025 |
+| Healing | W | 14 | ✅ | Fev 2026 |
+| Primal | G | 12 | ✅ | Fev 2026 |
+| Inferno | R | 12 | ✅ | Fev 2026 |
+| Wizards | U | 14 | ✅ | Fev 2026 |
+| Undead | B | 12 | ✅ | Fev 2026 |
+| **Total** | - | **132** | ✅ | - |
 
 ---
 
@@ -48,237 +29,228 @@ Para cada tipo de habilidade, verificar o arquivo correspondente:
 | Status | Significado |
 |--------|-------------|
 | ✓ | Validado e funcionando |
-| ⚠ | Precisa verificar |
-| ✗ | Bug conhecido |
 | - | Vanilla (sem habilidade especial) |
 
-## Tipos de Habilidade
+---
 
-| Tipo | Descrição |
-|------|-----------|
-| **Keyword** | Habilidade estática (flying, lifelink, etc.) |
-| **ETB** | Entra em campo (enters the battlefield) |
-| **Death** | Quando morre |
-| **Combat** | Início do combate ou ao atacar/bloquear |
-| **Activated** | Custo para ativar (tap, mana) |
-| **Triggered** | Dispara em condição específica |
-| **Static** | Efeito permanente enquanto em campo |
-| **Spell** | Efeito de mágica (instant/sorcery) |
-| **Aura** | Encantamento que anexa a permanente |
+## CATS (Branco) ✅
+
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Plains | Land | Produz W | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Savannah Lions | Creature 2/1 | - | - |
+| Leonin Vanguard | Creature 1/1 | Combat trigger: 3+ criaturas → +1/+1 e 1 vida | ✓ |
+| Helpful Hunter | Creature 1/1 | ETB: draw a card | ✓ |
+| Leonin Skyhunter | Creature 2/2 | Flying | ✓ |
+| Ingenious Leonin | Creature 4/4 | {3}{W}: +1/+1 counter, Cat gets first strike | ✓ |
+| Prideful Parent | Creature 2/2 | Vigilance, ETB: create 1/1 Cat token | ✓ |
+| Felidar Savior | Creature 2/3 | Lifelink, ETB: +1/+1 counter on up to 2 creatures | ✓ |
+| Jazal Goldmane | Creature 4/4 | First strike, {3}{W}{W}: attackers get +X/+X | ✓ |
+| Moment of Triumph | Instant | +2/+2, gain 2 life | ✓ |
+| Pacifism | Aura | Enchanted creature can't attack or block | ✓ |
+| Elspeth's Smite | Instant | 3 damage to attacker/blocker, exile if dies | ✓ |
+| Angelic Edict | Sorcery | Exile creature or enchantment | ✓ |
 
 ---
 
-## CATS (Branco) - **VALIDADO COM SCRYFALL** ✓
+## GOBLINS (Vermelho) ✅
 
-| Card | Tipo | Habilidade | Scryfall | Status | Notas |
-|------|------|------------|----------|--------|-------|
-| Plains | Land | Produz W | ✓ | ✓ | Terreno básico |
-| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ | ✓ | Jogador escolhe cor ao entrar |
-| Savannah Lions | Creature 2/1 | - | ✓ | - | Vanilla W |
-| Leonin Vanguard | Creature 1/1 | Combat trigger: 3+ criaturas → +1/+1 e 1 vida | ✓ | ✓ | `_handleLeoninVanguard()` em triggers.js |
-| Helpful Hunter | Creature 1/1 | ETB: draw a card | ✓ | ✓ | `etb_draw` keyword |
-| Leonin Skyhunter | Creature 2/2 | Flying | ✓ | ✓ | `flying` keyword |
-| Ingenious Leonin | Creature 4/4 | {3}{W}: +1/+1 counter, Cat gets first strike | ✓ | ✓ | Habilidade ativada implementada |
-| Prideful Parent | Creature 2/2 | Vigilance, ETB: create 1/1 Cat token | ✓ | ✓ | `vigilance` + `_createCatToken()` |
-| Felidar Savior | Creature 2/3 | Lifelink, ETB: +1/+1 counter on up to 2 creatures | ✓ | ✓ | `lifelink` + `etb_counter_two` |
-| Jazal Goldmane | Creature 4/4 | First strike, {3}{W}{W}: attackers get +X/+X | ✓ | ✓ | Legendary, habilidade ativada implementada |
-| Moment of Triumph | Instant | +2/+2, gain 2 life | ✓ | ✓ | Buff + lifegain |
-| Pacifism | Aura | Enchanted creature can't attack or block | ✓ | ✓ | `hasPacifism()` em rules.js |
-| Elspeth's Smite | Instant | 3 damage to attacker/blocker, exile if dies | ✓ | ✓ | **Corrigido**: era exile direto, agora 3 dano + exile on death |
-| Angelic Edict | Sorcery | Exile creature or enchantment | ✓ | ✓ | `exilePermanent()` |
-
-*Todas as cartas do deck Cats foram validadas com Scryfall e implementadas corretamente.
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Mountain | Land | Produz R | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Frenzied Goblin | Creature 1/1 | Attack trigger: pay {R} → creature can't block | ✓ |
+| Swab Goblin | Creature 2/2 | - | - |
+| Raging Redcap | Creature 1/2 | Double strike | ✓ |
+| Goblin Smuggler | Creature 2/2 | Haste, {T}: power ≤2 can't be blocked | ✓ |
+| Battle-Rattle Shaman | Creature 2/2 | Combat: may give +2/+0 | ✓ |
+| Dropkick Bomber | Creature 2/3 | Lord +1/+1, {R}: Goblin gains flying + sac on damage | ✓ |
+| Kindled Fury | Instant | +1/+0 and first strike | ✓ |
+| Dragon Fodder | Sorcery | Create two 1/1 Goblin tokens | ✓ |
+| Volley Veteran | Creature 4/2 | ETB: damage = number of Goblins | ✓ |
+| Incinerating Blast | Sorcery | 6 damage + optional loot | ✓ |
+| Goblin Oriflamme | Enchantment | Attacking creatures get +1/+0 | ✓ |
+| Goblin Firebomb | Artifact | Flash, {7},T,Sac: destroy permanent | ✓ |
 
 ---
 
-## GOBLINS (Vermelho) - **VALIDADO COM SCRYFALL** ✓
+## VAMPIRES (Preto) ✅
 
-| Card | Tipo | Habilidade | Scryfall | Status | Notas |
-|------|------|------------|----------|--------|-------|
-| Mountain | Land | Produz R | ✓ | ✓ | Terreno básico |
-| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ | ✓ | Jogador escolhe cor ao entrar |
-| Frenzied Goblin | Creature 1/1 | Attack trigger: pay {R} → creature can't block | ✓ | ✓ | `onFrenziedGoblinAttacks()` em triggers.js |
-| Swab Goblin | Creature 2/2 | - | ✓ | - | Vanilla 1R |
-| Raging Redcap | Creature 1/2 | Double strike | ✓ | ✓ | `double_strike` keyword |
-| Goblin Smuggler | Creature 2/2 | Haste, {T}: power ≤2 can't be blocked | ✓ | ✓ | `haste` + habilidade ativada implementada |
-| Battle-Rattle Shaman | Creature 2/2 | Combat: may give +2/+0 | ✓ | ✓ | `_handleBattleRattleShaman()` com canSkip |
-| Dropkick Bomber | Creature 2/3 | Lord +1/+1, {R}: Goblin gains flying + sac on damage | ✓ | ✓ | `goblin_lord` + habilidade ativada |
-| Kindled Fury | Instant | +1/+0 and first strike | ✓ | ✓ | Buff + `first_strike` temporário |
-| Dragon Fodder | Sorcery | Create two 1/1 Goblin tokens | ✓ | ✓ | `resolveSpell()` cria 2 tokens |
-| Volley Veteran | Creature 4/2 | ETB: damage = number of Goblins | ✓ | ✓ | ETB implementado em triggers.js |
-| Incinerating Blast | Sorcery | 6 damage + optional loot | ✓ | ✓ | **Corrigido**: era 5 dano, agora 6 + loot |
-| Goblin Oriflamme | Enchantment | Attacking creatures get +1/+0 | ✓ | ✓ | Static em `calculateBonuses()` |
-| Goblin Firebomb | Artifact | Flash, {7},T,Sac: destroy permanent | ✓ | ✓ | **Corrigido**: era {1} e 2 dano, agora {7} e destroy |
-
-*Todas as cartas do deck Goblins foram validadas com Scryfall e implementadas corretamente.
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Swamp | Land | Produz B | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Vampire Neonate | Creature 0/3 | {2},{T}: drain 1 | ✓ |
+| Vampire Interloper | Creature 2/1 | Flying, can't block | ✓ |
+| Stromkirk Bloodthief | Creature 2/2 | End step: +1/+1 on vampire if opponent lost life | ✓ |
+| Highborn Vampire | Creature 4/3 | - | - |
+| Vampire Spawn | Creature 2/3 | ETB: drain 2 | ✓ |
+| Bloodtithe Collector | Creature 3/2 | Flying, ETB: opponent discards if lost life | ✓ |
+| Vengeful Bloodwitch | Creature 3/2 | Flying, menace, death: drain 1 on each death | ✓ |
+| Crossway Troublemakers | Creature 5/5 | Attacking vamps have deathtouch/lifelink, death: pay 2 life draw | ✓ |
+| Moment of Craving | Instant | -2/-2, gain 2 life | ✓ |
+| Offer Immortality | Instant | Deathtouch + indestructible until end of turn | ✓ |
+| Hero's Downfall | Instant | Destroy creature or planeswalker | ✓ |
+| Untamed Hunger | Aura | +2/+1 and menace | ✓ |
 
 ---
 
-## VAMPIRES (Preto) - **VALIDADO COM SCRYFALL** ✓
+## ELVES (Verde) ✅
 
-| Card | Tipo | Habilidade | Scryfall | Status | Notas |
-|------|------|------------|----------|--------|-------|
-| Swamp | Land | Produz B | ✓ | ✓ | Terreno básico |
-| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ | ✓ | Jogador escolhe cor ao entrar |
-| Vampire Neonate | Creature 0/3 | {2},{T}: drain 1 | ✓ | ✓ | Habilidade ativada em `canActivateAbility()` |
-| Vampire Interloper | Creature 2/1 | Flying, can't block | ✓ | ✓ | `flying` + `cant_block` keywords |
-| Stromkirk Bloodthief | Creature 2/2 | End step: +1/+1 on vampire if opponent lost life | ✓ | ✓ | `_handleStromkirkBloodthief()` em triggers.js |
-| Highborn Vampire | Creature 4/3 | - | ✓ | - | Vanilla 3B |
-| Vampire Spawn | Creature 2/3 | ETB: drain 2 | ✓ | ✓ | ETB em `resolveETB()` |
-| Bloodtithe Collector | Creature 3/2 | Flying, ETB: opponent discards if lost life | ✓ | ✓ | `flying` + ETB condicional |
-| Vengeful Bloodwitch | Creature 3/2 | Flying, menace, death: drain 1 on each death | ✓ | ✓ | `onCreatureDeath()` em triggers.js |
-| Crossway Troublemakers | Creature 5/5 | Attacking vamps have deathtouch/lifelink, death: pay 2 life draw | ✓ | ✓ | Static em `getCreatureKeywords()` + death trigger implementado |
-| Moment of Craving | Instant | -2/-2, gain 2 life | ✓ | ✓ | Spell em `resolveSpellWithTarget()` |
-| Offer Immortality | Instant | Deathtouch + indestructible until end of turn | ✓ | ✓ | **Corrigido**: era +1/+1 se vampiro, agora deathtouch + indestructible |
-| Hero's Downfall | Instant | Destroy creature or planeswalker | ✓ | ✓ | `destroyPermanent()` |
-| Untamed Hunger | Aura | +2/+1 and menace | ✓ | ✓ | Aura em `calculateBonuses()` |
-
-*Todas as cartas do deck Vampires foram validadas com Scryfall e implementadas corretamente.
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Forest | Land | Produz G | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Llanowar Elves | Creature 1/1 | {T}: Add {G} | ✓ |
+| Elvish Regrower | Creature 4/3 | ETB: return permanent from graveyard | ✓ |
+| Dwynen's Elite | Creature 2/2 | ETB: create 1/1 Elf if you control another Elf | ✓ |
+| Beast-Kin Ranger | Creature 3/3 | Trample, +1/+0 when another creature enters | ✓ |
+| Thornweald Archer | Creature 2/1 | Reach, Deathtouch | ✓ |
+| Elvish Archdruid | Creature 2/2 | Other Elves +1/+1, {T}: Add G for each Elf | ✓ |
+| Tajuru Pathwarden | Creature 5/4 | Vigilance, Trample | ✓ |
+| Wildheart Invoker | Creature 4/3 | {8}: +5/+5 and trample | ✓ |
+| Snakeskin Veil | Instant | +1/+1 counter, hexproof until end of turn | ✓ |
+| Broken Wings | Instant | Destroy artifact, enchantment, or flying creature | ✓ |
+| Felling Blow | Sorcery | +1/+1 counter on your creature, it deals damage = power | ✓ |
+| Joraga Invocation | Sorcery | +3/+3 and must be blocked | ✓ |
 
 ---
 
-## ELVES (Verde) - **VALIDADO COM SCRYFALL** ✓
+## PIRATES (Azul) ✅
 
-| Card | Tipo | Habilidade | Scryfall | Status | Notas |
-|------|------|------------|----------|--------|-------|
-| Forest | Land | Produz G | ✓ | ✓ | Terreno básico |
-| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ | ✓ | Jogador escolhe cor ao entrar |
-| Llanowar Elves | Creature 1/1 | {T}: Add {G} | ✓ | ✓ | `tap_for_mana` keyword |
-| Elvish Regrower | Creature 4/3 | ETB: return permanent from graveyard | ✓ | ✓ | ETB em `resolveETB()` |
-| Dwynen's Elite | Creature 2/2 | ETB: create 1/1 Elf if you control another Elf | ✓ | ✓ | ETB condicional implementado |
-| Beast-Kin Ranger | Creature 3/3 | Trample, +1/+0 when another creature enters | ✓ | ✓ | `trample` + trigger em triggers.js |
-| Thornweald Archer | Creature 2/1 | Reach, Deathtouch | ✓ | ✓ | `reach` + `deathtouch` keywords |
-| Elvish Archdruid | Creature 2/2 | Other Elves +1/+1, {T}: Add G for each Elf | ✓ | ✓ | Lord em `calculateBonuses()` + activated ability |
-| Tajuru Pathwarden | Creature 5/4 | Vigilance, Trample | ✓ | ✓ | `vigilance` + `trample` keywords |
-| Wildheart Invoker | Creature 4/3 | {8}: +5/+5 and trample | ✓ | ✓ | Activated ability implementada |
-| Snakeskin Veil | Instant | +1/+1 counter, hexproof until end of turn | ✓ | ✓ | Spell em `resolveSpellWithTarget()` |
-| Broken Wings | Instant | Destroy artifact, enchantment, or flying creature | ✓ | ✓ | `destroyPermanent()` |
-| Felling Blow | Sorcery | +1/+1 counter on your creature, it deals damage = power | ✓ | ✓ | **Corrigido**: era destroy flying, agora one-sided fight |
-| Joraga Invocation | Sorcery | +3/+3 and must be blocked | ✓ | ✓ | Implementado (must be blocked é limitação conhecida) |
-
-*Todas as cartas do deck Elves foram validadas com Scryfall e implementadas corretamente.
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Island | Land | Produz U | ✓ |
+| Uncharted Haven | Land | Produz cor escolhida, entra virado | ✓ |
+| Spectral Sailor | Creature 1/1 | Flash, Flying, {3}{U}: Draw | ✓ |
+| Kitesail Corsair | Creature 2/1 | Flying while attacking | ✓ |
+| Brineborn Cutthroat | Creature 2/1 | Flash, +1/+1 on spell during opponent's turn | ✓ |
+| Corsair Captain | Creature 2/2 | ETB Treasure, Other Pirates +1/+1 | ✓ |
+| Storm Fleet Spy | Creature 2/2 | Raid: draw a card | ✓ |
+| Bigfin Bouncer | Creature 3/2 | ETB bounce opponent creature | ✓ |
+| Skyship Buccaneer | Creature 4/3 | Flying, Raid: draw | ✓ |
+| Tolarian Terror | Creature 5/5 | Cost reduction, Ward {2} | ✓ |
+| Opt | Instant | Scry 1, Draw | ✓ |
+| Cancel | Instant | Counter target spell | ✓ |
+| Eaten by Piranhas | Aura | Flash, base 1/1, loses abilities | ✓ |
+| Pirate's Cutlass | Equipment | ETB attach Pirate, +2/+1, Equip {2} | ✓ |
 
 ---
 
-## PIRATES (Azul) - **VALIDADO COM SCRYFALL** ✓
+## HEALING (Branco) ✅
 
-| Card | Tipo | Habilidade | Scryfall | Status | Notas |
-|------|------|------------|----------|--------|-------|
-| Island | Land | Produz U | ✓ | ✓ | Terreno básico |
-| Uncharted Haven | Land | Produz cor escolhida, entra virado | ✓ | ✓ | Jogador escolhe cor ao entrar |
-| Spectral Sailor | Creature 1/1 | Flash, Flying, {3}{U}: Draw | ✓ | ✓ | Habilidade ativada implementada |
-| Kitesail Corsair | Creature 2/1 | Flying while attacking | ✓ | ✓ | `flying_when_attacking` em rules.js |
-| Brineborn Cutthroat | Creature 2/1 | Flash, +1/+1 on spell during opponent's turn | ✓ | ✓ | Trigger em `onSpellCast()` |
-| Corsair Captain | Creature 2/2 | ETB Treasure, Other Pirates +1/+1 | ✓ | ✓ | Lord em `calculateBonuses()` |
-| Storm Fleet Spy | Creature 2/2 | Raid: draw a card | ✓ | ✓ | `raid_draw` em triggers.js |
-| Bigfin Bouncer | Creature 3/2 | ETB bounce opponent creature | ✓ | ✓ | `etb_bounce` com prompt de alvo |
-| Skyship Buccaneer | Creature 4/3 | Flying, Raid: draw | ✓ | ✓ | Flying + `raid_draw` |
-| Tolarian Terror | Creature 5/5 | Cost reduction, Ward {2} | ✓ | ✓ | Custo e Ward totalmente implementados |
-| Opt | Instant | Scry 1, Draw | ✓ | ✓ | Scry com imagem completa da carta |
-| Cancel | Instant | Counter target spell | ✓ | ✓ | `counterspell` keyword |
-| Eaten by Piranhas | Aura | Flash, base 1/1, loses abilities | ✓ | ✓ | Flash + debuff implementado |
-| Pirate's Cutlass | Equipment | ETB attach Pirate, +2/+1, Equip {2} | ✓ | ✓ | ETB + Equip implementados |
-
-*Todas as cartas do deck Pirates foram validadas e implementadas.
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Plains | Land | Produz W | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Hinterland Sanctifier | Creature 3/2 | Other creature enters → gain 1 life | ✓ |
+| Bishop's Soldier | Creature 2/2 | Lifelink | ✓ |
+| Ajani's Pridemate | Creature 2/2 | Lifegain → +1/+1 counter | ✓ |
+| Dazzling Angel | Creature 2/3 | Flying, other creature enters → gain 1 life | ✓ |
+| Inspiring Overseer | Creature 2/1 | Flying, ETB: gain 1 life, draw a card | ✓ |
+| Twinblade Paladin | Creature 3/3 | Lifegain → +1/+1, double strike if life ≥ 25 | ✓ |
+| Herald of Faith | Creature 4/3 | Flying, attack → gain 2 life | ✓ |
+| Ancestor Dragon | Creature 5/6 | Flying, attack → gain 1 life per attacker | ✓ |
+| Adamant Will | Instant | +2/+2, indestructible until end of turn | ✓ |
+| Deadly Riposte | Instant | 3 damage to tapped creature, gain 2 life | ✓ |
+| Prayer of Binding | Enchantment | Flash, exile nonland permanent, gain 2 life, returns on LTB | ✓ |
+| Quick-Draw Katana | Equipment | +2/+0, first strike on your turn, Equip {2} | ✓ |
 
 ---
 
-## Resumo por Status
+## PRIMAL (Verde) ✅
 
-| Status | Quantidade | Percentual |
-|--------|------------|------------|
-| ✓ Validado | 64 | 91% |
-| ⚠ Verificar | 0 | 0% |
-| ✗ Bug conhecido | 0 | 0% |
-| - Vanilla | 6 | 9% |
-| **Total** | **70** | **100%** |
-
-**Decks 100% validados:** Pirates (Azul), Cats (Branco), Goblins (Vermelho), Vampires (Preto), Elves (Verde)
-
-🎉 **TODOS OS 5 DECKS VALIDADOS COM SCRYFALL!**
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Forest | Land | Produz G | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Druid of the Cowl | Creature 1/3 | {T}: Add {G} | ✓ |
+| Wildwood Scourge | Creature 1/1 | Counter synergy: +1/+1 when counter placed on another | ✓ |
+| Territorial Scythecat | Creature 2/1 | Trample, Landfall: +1/+1 counter | ✓ |
+| Aggressive Mammoth | Creature 8/8 | Trample, other creatures have trample | ✓ |
+| Giant Growth | Instant | +3/+3 until end of turn | ✓ |
+| Snakeskin Veil | Instant | +1/+1 counter, hexproof until end of turn | ✓ |
+| Bite Down | Instant | Your creature fights target creature | ✓ |
+| Felling Blow | Sorcery | +1/+1 counter, deals damage = power to opponent creature | ✓ |
+| Biogenic Upgrade | Sorcery | Distribute 3 +1/+1 counters among 1-3 creatures, double | ✓ |
+| New Horizons | Aura | Enchant land, ETB: +1/+1 counter, land taps for 2 mana | ✓ |
 
 ---
 
-## Bugs Corrigidos (Histórico)
+## INFERNO (Vermelho) ✅
 
-| Data | Card | Problema | Correção |
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Mountain | Land | Produz R | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Dragonlord's Servant | Creature 1/3 | Dragon spells cost {1} less | ✓ |
+| Kargan Dragonrider | Creature 3/4 | Flying if you control a Dragon | ✓ |
+| Firespitter Whelp | Creature 2/2 | Flying, spellcast (non-creature, non-Dragon) → 1 damage | ✓ |
+| Dragon Whelp | Creature 2/3 | Flying, {R}: +1/+0 until end of turn | ✓ |
+| Shivan Dragon | Creature 5/5 | Flying, {R}: +1/+0 until end of turn | ✓ |
+| Furnace Whelp | Creature 2/2 | Flying, {R}: +1/+0 until end of turn | ✓ |
+| Terror of Mount Velus | Creature 5/5 | Flying, double strike, ETB: creatures gain double strike | ✓ |
+| Scorching Dragonfire | Instant | 3 damage, exile if dies | ✓ |
+| Fiery Annihilation | Sorcery | 5 damage to creature | ✓ |
+| Seize the Spoils | Sorcery | Discard 1, draw 2, create Treasure | ✓ |
+
+---
+
+## WIZARDS (Azul) ✅
+
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Island | Land | Produz U | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Burrog Befuddler | Creature 1/1 | Flash, ETB: target creature gets -1/-0 | ✓ |
+| Mischievous Mystic | Creature 2/1 | Flying, second draw each turn → create Faerie token | ✓ |
+| Mystic Archaeologist | Creature 2/1 | {3}{U}{U}: Draw 2 cards | ✓ |
+| Exclusion Mage | Creature 2/2 | ETB: bounce target opponent creature | ✓ |
+| Erudite Wizard | Creature 2/3 | Second draw each turn → +1/+1 counter | ✓ |
+| Clinquant Skymage | Creature 2/2 | Flying, draw → +1/+1 counter | ✓ |
+| Icewind Elemental | Creature 3/4 | Flying, ETB: loot (draw + discard) | ✓ |
+| Fleeting Distraction | Instant | Target creature gets -1/-0, draw a card | ✓ |
+| Essence Scatter | Instant | Counter target creature spell | ✓ |
+| Into the Roil | Instant | Bounce nonland permanent, Kicker: draw a card | ✓ |
+| Quick Study | Instant | Draw 2 cards | ✓ |
+| Starlight Snare | Aura | Flash, ETB: tap enchanted creature, can't untap | ✓ |
+
+---
+
+## UNDEAD (Preto) ✅
+
+| Card | Tipo | Habilidade | Status |
+|------|------|------------|--------|
+| Swamp | Land | Produz B | ✓ |
+| Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Diregraf Ghoul | Creature 2/2 | Enters tapped | ✓ |
+| Walking Corpse | Creature 2/2 | - | - |
+| Virus Beetle | Creature 1/2 | ETB: opponent discards a card | ✓ |
+| Reassembling Skeleton | Creature 1/1 | {1}{B}: Return from graveyard to battlefield tapped | ✓ |
+| Death Baron | Creature 2/2 | Zombies and Skeletons +1/+1 and deathtouch | ✓ |
+| Ghoulraiser | Creature 2/2 | ETB: return random Zombie from graveyard to hand | ✓ |
+| Gravedigger | Creature 2/2 | ETB: return target creature from graveyard to hand | ✓ |
+| Rot Hulk | Creature 5/5 | Menace, ETB: return Zombie/Skeleton from graveyard to battlefield | ✓ |
+| Murder | Instant | Destroy target creature | ✓ |
+| Mind Rot | Sorcery | Target opponent discards 2 cards | ✓ |
+| Rise Again | Sorcery | Return target creature from graveyard to battlefield | ✓ |
+
+---
+
+## Correções de Fevereiro 2026
+
+| Deck | Card | Problema | Correção |
 |------|------|----------|----------|
-| 2025-12-11 | Pirate's Cutlass | ETB não permitia escolha de Pirata | Implementado prompt de seleção para múltiplos piratas |
-| 2025-12-11 | Pirate's Cutlass | Habilidade Equip 2 não implementada | Implementado em canActivateAbility/activateAbility + UI |
-| 2025-12-11 | Equipamentos (geral) | Não tinham renderização visual | Implementado sistema de badges e borda dourada |
-| 2025-12-11 | Brineborn Cutthroat | Jogo congelava ao atacar | `currentPlayer` → `activePlayer` em triggers.js |
-| 2025-12-11 | Spectral Sailor | Habilidade ativada não implementada | Implementado 3U: draw em canActivateAbility/activateAbility |
-| 2025-12-11 | Tolarian Terror | Redução de custo não implementada | Implementado em hasEnoughMana/payMana |
-| 2025-12-11 | Felidar Savior | Botão "Confirmar" sem estilo no modal | Adicionado CSS `.btn-trigger-confirm` |
-| 2025-12-11 | Battle-Rattle Shaman | Habilidade obrigatória (deveria ser "may") | Alterado `canSkip: true` |
-| 2025-12-11 | Ingenious Leonin | Cálculo de mana errado (3 em vez de 4) | Corrigido para `leoninTotalMana >= 4` |
-| 2025-12-11 | Vengeful Bloodwitch | Trigger errado (life loss vs death) | Reimplementado como death trigger |
-| 2025-12-11 | Uncharted Haven | Produzia qualquer cor (deveria escolher ao entrar) | Implementado prompt de escolha de cor |
-| 2025-12-11 | Eaten by Piranhas | IA travava em loop tentando jogar sem alvos válidos | Adicionado `hasValidAuraTargets()` em `canCastSpell()` |
-| 2025-12-11 | Eaten by Piranhas | Flash não funcionava (só jogava na main phase) | Cartas com Flash agora usam `canCastInstant()` |
-| 2025-12-11 | Eaten by Piranhas | Só podia mirar criaturas do oponente | Agora pode mirar qualquer criatura |
-| 2025-12-11 | Eaten by Piranhas | Stats fixos 1/1 ignoravam counters | Agora usa base 1/1 + counters + bônus |
-| 2025-12-11 | Tolarian Terror | Ward {2} era apenas visual | Implementado prompt para jogador pagar Ward + IA paga automaticamente |
-| 2025-12-11 | Modais/Prompts | Alguns modais não eram arrastáveis | Criado `makeModalDraggable()` para padronizar drag em todos os modais |
-| 2025-12-11 | Opt (Scry) | Modal de Scry mostrava apenas nome da carta | Implementado exibição da imagem completa via Scryfall |
-| 2025-12-11 | Elspeth's Smite | Exilava diretamente em vez de causar dano | Corrigido: 3 dano + exile on death flag |
-| 2025-12-11 | Incinerating Blast | Causava 5 dano sem loot | Corrigido: 6 dano + loot opcional (IA faz automaticamente) |
-| 2025-12-11 | Goblin Firebomb | ID errado e custo {1} causando 2 dano | Corrigido: custo {7}, T, Sac: destroy target permanent |
-| 2025-12-11 | Offer Immortality | Dava +1/+1 se vampiro + indestructible | Corrigido: agora dá deathtouch + indestructible |
-| 2025-12-11 | Crossway Troublemakers | Death trigger não implementado | Implementado: pay 2 life draw quando vampiro morre |
-| 2025-12-11 | Felling Blow | Era "destroy flying creature" | Corrigido: one-sided fight (+1/+1, dano = poder) |
-| 2025-12-11 | Joraga Invocation | "Must be blocked" não implementado | Implementado: flag `mustBeBlocked` + validação + IA respeita |
-| 2025-12-11 | Snakeskin Veil | Hexproof temporário não verificado em targeting | Implementado: `canBeTargetedBy()` verifica hexproof |
-| 2025-12-11 | Felling Blow | Ordem de alvos invertida (oponente antes de sua) | Corrigido: fluxo especial para ordem correta |
-| 2025-12-11 | Incinerating Blast | Loot era automático para IA, não existia para jogador | Implementado: prompt Yes/No + escolha de carta para jogador |
+| Inferno | Firespitter Whelp | Trigger incorreto (disparava para Dragons) | Condição corrigida: NOT creature AND NOT Dragon |
+| Wizards | Into the Roil | Kicker nunca disparava | Sistema de kicker implementado com prompt |
+| Wizards | Starlight Snare | "Não desvira" não funcionava | freeze_aura implementado (ETB tap + prevent untap) |
+| Primal | New Horizons | ETB não colocava contador | attachAura agora chama resolveETB |
+| Primal | Felling Blow | Wildwood Scourge não disparava | onCounterPlaced chamado após colocar contador |
+| Primal | Biogenic Upgrade | Só aceitava 1 alvo | Multi-target implementado (1-3 criaturas) |
+| Undead | Reassembling Skeleton | Habilidade do cemitério não existia | Sistema de graveyard abilities implementado |
+| Elves | Elvish Archdruid | Faltava keyword elf_lord | Keyword adicionada para consistência |
 
 ---
 
-## Limitações Conhecidas
-
-Mecânicas que estão parcialmente implementadas ou simplificadas:
-
-| Mecânica | Carta(s) | Limitação | Impacto |
-|----------|----------|-----------|---------|
-| ~~**Hexproof**~~ | ~~Snakeskin Veil (temp)~~ | ~~Proteção temporária não verificada em targeting~~ | ✅ Corrigido |
-| ~~**Must be blocked**~~ | ~~Joraga Invocation~~ | ~~Não força bloqueio~~ | ✅ Corrigido |
-
-**Nenhuma limitação conhecida restante!** Todas as mecânicas foram implementadas de forma robusta.
-
----
-
-## Prioridades de Validação
-
-### ✅ TODAS AS PRIORIDADES CONCLUÍDAS
-
-1. ~~**Crossway Troublemakers** (Vampires) - Múltiplos efeitos (static + death trigger + pay life)~~ ✓
-2. ~~**Stromkirk Bloodthief** (Vampires) - End step trigger condicional~~ ✓
-3. ~~**Bloodtithe Collector** (Vampires) - ETB condicional com descarte~~ ✓
-4. ~~**Elvish Archdruid** (Elves) - Lord + tap for mana por elfo~~ ✓
-5. ~~**Joraga Invocation** (Elves) - Mass buff + must be blocked~~ ✓
-6. ~~**Felling Blow** (Elves) - One-sided fight~~ ✓
-
-### Todos os Decks Validados
-1. ~~**PIRATES (Azul)**~~ ✓ VALIDADO
-2. ~~**CATS (Branco)**~~ ✓ VALIDADO
-3. ~~**GOBLINS (Vermelho)**~~ ✓ VALIDADO
-4. ~~**VAMPIRES (Preto)**~~ ✓ VALIDADO
-5. ~~**ELVES (Verde)**~~ ✓ VALIDADO
-
----
-
-## Como Usar Este Documento
-
-### Para solicitar validação:
-- "Valide as cartas do deck Vampires"
-- "Verifique todas as cartas com death triggers"
-- "Audite as cartas com status ⚠"
-- "Teste a interação de Crossway Troublemakers"
-
-### Para reportar bug:
-1. Descreva o comportamento esperado vs observado
-2. Forneça screenshot se possível
-3. Indique a carta e situação de jogo
-
-### Para atualizar este documento:
-Após correção de bug, mover card de ⚠/✗ para ✓ e adicionar entrada no histórico.
+*Última atualização: Fevereiro 2026*

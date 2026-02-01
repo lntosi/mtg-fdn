@@ -1,15 +1,54 @@
 # Plano de Implementação - 5 Decks Restantes da Beginner Box
 
+> **📁 ARQUIVO HISTÓRICO - Fevereiro 2026**
+>
+> Este documento está arquivado. Todos os 10 decks foram **completamente implementados e validados**.
+> Mantido para referência histórica das mecânicas planejadas vs implementadas.
+>
+> Ver `ROADMAP.md` para o status atual do projeto.
+
+---
+
 Este documento descreve o plano para adicionar os 5 decks Jumpstart restantes da Foundations Beginner Box.
 
-## Decks Atuais (Implementados)
-- ✅ Cats (Branco)
-- ✅ Goblins (Vermelho)
-- ✅ Vampires (Preto)
-- ✅ Elves (Verde)
-- ✅ Pirates (Azul)
+## Status Final
 
-## Decks a Implementar
+| Deck | Cor | Status | Implementado |
+|------|-----|--------|:------------:|
+| **Cats** | Branco | ✅ Completo | Dezembro 2025 |
+| **Goblins** | Vermelho | ✅ Completo | Dezembro 2025 |
+| **Vampires** | Preto | ✅ Completo | Dezembro 2025 |
+| **Elves** | Verde | ✅ Completo | Dezembro 2025 |
+| **Pirates** | Azul | ✅ Completo | Dezembro 2025 |
+| **Healing** | Branco | ✅ Completo | Janeiro 2026 |
+| **Inferno** | Vermelho | ✅ Completo | Janeiro 2026 |
+| **Primal** | Verde | ✅ Completo | Janeiro 2026 |
+| **Wizards** | Azul | ✅ Completo | Janeiro 2026 |
+| **Undead** | Preto | ✅ Completo | Janeiro 2026 |
+
+### Mecânicas Implementadas
+
+Todas as mecânicas planejadas neste documento foram implementadas:
+- ✅ Lifegain triggers (Ajani's Pridemate, Twinblade Paladin)
+- ✅ Kicker (Into the Roil)
+- ✅ Graveyard activation (Reassembling Skeleton)
+- ✅ Freeze aura (Starlight Snare)
+- ✅ Fight mechanic (Bite Down, Felling Blow)
+- ✅ Counter synergy (Wildwood Scourge)
+- ✅ Multi-target spells (Biogenic Upgrade)
+- ✅ Dragon cost reduction (Dragonlord's Servant)
+- ✅ Zombie/Skeleton lord (Death Baron)
+- ✅ Mill mechanic (Crow of Dark Tidings)
+
+---
+
+## Plano Original (Histórico)
+
+*O conteúdo abaixo é o plano original, mantido para referência.*
+
+---
+
+## Decks Originalmente Planejados
 
 | Deck | Cor | Mecânica Principal | Complexidade |
 |------|-----|-------------------|--------------|

@@ -181,6 +181,101 @@ Use o nome completo ou parcial da carta. O sistema encontra cartas que **contêm
 | Eaten by Piranhas | Enchantment | 1U | - flash | `"Piranhas"` ou `"Eaten"` |
 | Pirate's Cutlass | Artifact | 3 | - equipment | `"Cutlass"` |
 
+### Healing (Branco) 💚
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Plains | Land | - | - | `"Plains"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Ajani's Pridemate | Creature | 1W | 2/2 lifegain_counter | `"Pridemate"` ou `"Ajani"` |
+| Ancestor Dragon | Creature | 4WW | 5/6 flying | `"Ancestor"` |
+| Bishop's Soldier | Creature | 1W | 2/2 lifelink | `"Bishop"` ou `"Soldier"` |
+| Dazzling Angel | Creature | 2W | 2/3 flying | `"Dazzling"` ou `"Angel"` |
+| Herald of Faith | Creature | 3WW | 4/3 flying | `"Herald"` ou `"Faith"` |
+| Hinterland Sanctifier | Creature | 1W | 3/2 etb_lifegain | `"Hinterland"` ou `"Sanctifier"` |
+| Inspiring Overseer | Creature | 2W | 2/1 flying | `"Overseer"` ou `"Inspiring"` |
+| Twinblade Paladin | Creature | 3W | 3/3 double_strike_above_starting | `"Twinblade"` ou `"Paladin"` |
+| Adamant Will | Instant | 1W | - | `"Adamant"` |
+| Deadly Riposte | Instant | 1W | - | `"Riposte"` ou `"Deadly"` |
+| Prayer of Binding | Enchantment | 3W | - | `"Prayer"` ou `"Binding"` |
+| Quick-Draw Katana | Artifact | 2 | - equipment | `"Katana"` ou `"Quick-Draw"` |
+
+### Inferno (Vermelho) 🔥
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Mountain | Land | - | - | `"Mountain"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Dragonlord's Servant | Creature | 1R | 1/3 dragon_cost_reduction | `"Servant"` ou `"Dragonlord"` |
+| Fire Elemental | Creature | 3RR | 5/4 | `"Fire Elemental"` |
+| Firespitter Whelp | Creature | 2R | 2/2 flying | `"Firespitter"` ou `"Whelp"` |
+| Kargan Dragonrider | Creature | 1R | 2/2 | `"Kargan"` ou `"Dragonrider"` |
+| Rapacious Dragon | Creature | 4R | 3/3 flying | `"Rapacious"` |
+| Skyraker Giant | Creature | 2RR | 4/3 reach | `"Skyraker"` ou `"Giant"` |
+| Terror of Mount Velus | Creature | 5RR | 5/5 flying, double_strike | `"Terror"` ou `"Velus"` |
+| Fiery Annihilation | Sorcery | 4R | - | `"Annihilation"` ou `"Fiery"` |
+| Scorching Dragonfire | Instant | 1R | - | `"Scorching"` ou `"Dragonfire"` |
+| Seize the Spoils | Sorcery | 2R | - | `"Seize"` ou `"Spoils"` |
+| Carnelian Orb of Dragonkind | Artifact | 2 | - | `"Carnelian"` ou `"Orb"` |
+
+### Wizards (Azul) 🧙
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Island | Land | - | - | `"Island"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Burrog Befuddler | Creature | 1U | 1/1 flash | `"Burrog"` ou `"Befuddler"` |
+| Clinquant Skymage | Creature | 2U | 2/2 flying | `"Clinquant"` ou `"Skymage"` |
+| Erudite Wizard | Creature | 2U | 2/1 | `"Erudite"` |
+| Exclusion Mage | Creature | 2U | 2/2 | `"Exclusion"` |
+| Goblin Electromancer | Creature | UR | 2/2 wizard_discount | `"Electromancer"` |
+| Icewind Elemental | Creature | 4U | 3/4 flying | `"Icewind"` |
+| Mischievous Mystic | Creature | 1U | 2/1 flying | `"Mischievous"` ou `"Mystic"` |
+| Mystic Archaeologist | Creature | 1U | 2/1 | `"Archaeologist"` |
+| Arcane Epiphany | Instant | 4U | - | `"Epiphany"` ou `"Arcane"` |
+| Essence Scatter | Instant | 1U | - counterspell_creature | `"Essence"` ou `"Scatter"` |
+| Into the Roil | Instant | 1U | - kicker | `"Roil"` |
+| Quick Study | Instant | 2U | - | `"Quick Study"` |
+| Starlight Snare | Enchantment | 2W | - | `"Starlight"` ou `"Snare"` |
+
+### Primal (Verde) 🦖
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Forest | Land | - | - | `"Forest"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Aggressive Mammoth | Creature | 3GGG | 8/8 trample | `"Mammoth"` ou `"Aggressive"` |
+| Bear Cub | Creature | 1G | 2/2 | `"Bear"` ou `"Cub"` |
+| Druid of the Cowl | Creature | 1G | 1/3 tap_for_mana | `"Druid"` ou `"Cowl"` |
+| Magnigoth Sentry | Creature | 3G | 4/6 reach | `"Magnigoth"` ou `"Sentry"` |
+| Mild-Mannered Librarian | Creature | 1G | 2/3 | `"Librarian"` ou `"Mild"` |
+| Thrashing Brontodon | Creature | 1GG | 3/4 | `"Brontodon"` ou `"Thrashing"` |
+| Wildwood Scourge | Creature | XG | 0/0 | `"Wildwood"` ou `"Scourge"` |
+| Bite Down | Instant | 1G | - fight | `"Bite"` |
+| Giant Growth | Instant | G | - | `"Giant Growth"` |
+| Snakeskin Veil | Instant | G | - | `"Snakeskin"` ou `"Veil"` |
+| Biogenic Upgrade | Sorcery | 4GG | - | `"Biogenic"` ou `"Upgrade"` |
+| New Horizons | Enchantment | 2G | - aura | `"Horizons"` ou `"New"` |
+
+### Undead (Preto) 💀
+
+| Nome | Tipo | Custo | Stats | Como Referenciar |
+|------|------|-------|-------|------------------|
+| Swamp | Land | - | - | `"Swamp"` |
+| Uncharted Haven | Land | - | - | `"Haven"` |
+| Crow of Dark Tidings | Creature | 2B | 2/1 flying | `"Crow"` ou `"Tidings"` |
+| Death Baron | Creature | 1BB | 2/2 zombie_skeleton_lord | `"Baron"` ou `"Death"` |
+| Diregraf Ghoul | Creature | B | 2/2 enters_tapped | `"Diregraf"` ou `"Ghoul"` |
+| Hungry Ghoul | Creature | 1B | 2/2 | `"Hungry"` |
+| Maalfeld Twins | Creature | 5B | 4/4 | `"Maalfeld"` ou `"Twins"` |
+| Reassembling Skeleton | Creature | 1B | 1/1 graveyard_ability | `"Reassembling"` ou `"Skeleton"` |
+| Rot Hulk | Creature | 5BB | 5/5 | `"Rot"` ou `"Hulk"` |
+| Skeleton Archer | Creature | 3B | 3/3 | `"Archer"` |
+| Virus Beetle | Creature | 1B | 1/2 | `"Virus"` ou `"Beetle"` |
+| Undying Malice | Instant | B | - | `"Undying"` ou `"Malice"` |
+| Cemetery Recruitment | Sorcery | 1B | - | `"Cemetery"` ou `"Recruitment"` |
+| Rise Again | Sorcery | 4B | - | `"Rise"` |
+
 ---
 
 ## Exemplos de Uso

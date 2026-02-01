@@ -560,4 +560,4 @@ creature.temporaryKeywords = [];
 
 ---
 
-*Última atualização: Dezembro 2025*
+*Última atualização: Fevereiro 2026*
