@@ -549,15 +549,11 @@ class GameState {
             card.tapped = true;
         }
 
-        // Carnelian Orb of Dragonkind: se Dragão e o Orb foi usado (está virado), ganha haste
-        if (card.subtype?.includes('Dragon')) {
-            const tappedOrb = controller.battlefield.find(c =>
-                c.id === 'carnelian_orb' && c.tapped
-            );
-            if (tappedOrb) {
-                card.hasHasteFromOrb = true;
-                this.ui.log(`${card.name} ganha ímpeto (Carnelian Orb of Dragonkind)`);
-            }
+        // Carnelian Orb of Dragonkind: se jogador escolheu usar o Orb, Dragão ganha haste
+        if (card.useOrbForHaste) {
+            card.hasHasteFromOrb = true;
+            delete card.useOrbForHaste; // Limpar flag temporário
+            this.ui.log(`${card.name} ganha ímpeto (Carnelian Orb of Dragonkind)`);
         }
 
         // Registrar efeitos especiais para otimização
@@ -1025,6 +1021,51 @@ class GameState {
         return false;
     }
 
+    /**
+     * Verifica se o jogador quer usar o Carnelian Orb para dar haste ao Dragão
+     * @param {Object} card - A carta sendo conjurada
+     * @param {Object} player - O jogador conjurando
+     * @returns {Promise<boolean>} - true se o Orb deve ser usado
+     */
+    async handleCarnelianOrb(card, player) {
+        // Só se aplica a Dragões
+        if (!card.subtype?.includes('Dragon') || card.type !== 'creature') {
+            return false;
+        }
+
+        // Verificar se tem Carnelian Orb desvirado
+        const untappedOrb = player.battlefield.find(c =>
+            c.id === 'carnelian_orb' && !c.tapped
+        );
+
+        if (!untappedOrb) {
+            return false;
+        }
+
+        // Para o jogador humano, perguntar se quer usar o Orb
+        if (player === this.player) {
+            const useOrb = await this.ui.promptYesNo({
+                title: 'Carnelian Orb of Dragonkind',
+                description: `Usar o Orb para dar ímpeto a ${card.name}?`,
+                yesText: 'Sim, dar ímpeto',
+                noText: 'Não, guardar Orb'
+            });
+
+            if (useOrb) {
+                // Virar o Orb manualmente (será considerado no pagamento de mana)
+                untappedOrb.tapped = true;
+                card.useOrbForHaste = true;
+                return true;
+            }
+            return false;
+        } else {
+            // IA sempre usa o Orb para dar haste (boa estratégia)
+            untappedOrb.tapped = true;
+            card.useOrbForHaste = true;
+            return true;
+        }
+    }
+
     // Jogar uma carta
     async playCard(card, player) {
         if (!this.rules.canPlayCard(card, player)) {
@@ -1349,6 +1390,10 @@ class GameState {
         } else {
             // Permanentes (criaturas, encantamentos não-aura, artefatos)
             // NOVO: Colocar na pilha para permitir counterspells
+
+            // Carnelian Orb: perguntar se quer usar para dar haste ao Dragão ANTES de pagar mana
+            await this.handleCarnelianOrb(card, player);
+
             const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
             this.rules.payMana(card, player, selectedLands);
             if (player === this.player) this.ui.clearLandSelection();
