@@ -1385,6 +1385,31 @@ class GameState {
 
                 window.soundManager.playMagic();
 
+                // Spells que alvejam cemitério precisam de modal (não battlefield highlight)
+                const graveyardTargetingSpells = ['cemetery_recruitment'];
+                if (graveyardTargetingSpells.includes(card.id)) {
+                    // Usar modal para seleção de alvo no cemitério
+                    const target = await this.ui.promptTriggerTarget({
+                        title: `${card.name}`,
+                        description: 'Escolha uma criatura do seu cemitério:',
+                        validTargets: validTargets,
+                        canSkip: false
+                    });
+
+                    if (target) {
+                        const handIndex = player.hand.indexOf(card);
+                        if (handIndex > -1) {
+                            player.hand.splice(handIndex, 1);
+                        }
+                        delete card.pendingCast;
+
+                        await this.resolveSpellWithTarget(card, player, target);
+                        player.graveyard.push(card);
+                        this.ui.render();
+                    }
+                    return true;
+                }
+
                 this.ui.promptForTarget(card, validTargets, async (target) => {
                     // Remover carta da mão após seleção do alvo
                     const handIndex = player.hand.indexOf(card);

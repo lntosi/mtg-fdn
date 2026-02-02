@@ -663,10 +663,18 @@ class TriggerManager {
                 this.ui.log(`${card.name} causou 1 de dano a ${target.playerRef.name}`);
                 this.game.checkGameOver();
             } else {
-                target.damage = (target.damage || 0) + 1;
-                this.ui.log(`${card.name} causou 1 de dano a ${target.name}`);
-                const targetOwner = controller.battlefield.includes(target) ? controller : opponent;
-                await this.game.checkCreatureDeath(target, targetOwner);
+                // Find the ACTUAL creature on battlefield (target may be a copy)
+                let actualCreature = controller.battlefield.find(c => c.instanceId === target.instanceId);
+                let targetOwner = controller;
+                if (!actualCreature) {
+                    actualCreature = opponent.battlefield.find(c => c.instanceId === target.instanceId);
+                    targetOwner = opponent;
+                }
+                if (actualCreature) {
+                    actualCreature.damage = (actualCreature.damage || 0) + 1;
+                    this.ui.log(`${card.name} causou 1 de dano a ${actualCreature.name}`);
+                    await this.game.checkCreatureDeath(actualCreature, targetOwner);
+                }
             }
             this.ui.render();
         };
