@@ -378,7 +378,7 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    min-height: 50px;
+    min-height: 155px; /* Fixed height to prevent layout shift when lands tap/untap */
     padding: 5px;
     position: relative;
     overflow: visible !important;
@@ -392,11 +392,11 @@ body {
     flex-wrap: wrap;
     flex-direction: column;
     align-items: flex-end;
+    justify-content: center;
     position: absolute;
     right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    max-height: calc(100% - 20px);
+    top: 10px;
+    bottom: 10px;
     max-width: 180px;
     padding: 5px;
     overflow: visible !important;
