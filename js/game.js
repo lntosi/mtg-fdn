@@ -1022,10 +1022,55 @@ class GameState {
     }
 
     /**
+     * Verifica se o jogador pode pagar o custo de uma carta SEM usar o Carnelian Orb
+     * @param {Object} card - A carta a verificar
+     * @param {Object} player - O jogador
+     * @returns {boolean} - true se pode pagar sem o Orb
+     */
+    canAffordWithoutOrb(card, player) {
+        // Calcular mana disponível SEM o Orb
+        const fullMana = this.rules.calculateAvailableMana(player);
+        const manaWithoutOrb = { ...fullMana };
+
+        // Orb produz R, então subtraímos 1 do vermelho (ou do 'any' se não houver R)
+        if (manaWithoutOrb.R > 0) {
+            manaWithoutOrb.R -= 1;
+        } else if (manaWithoutOrb.any > 0) {
+            manaWithoutOrb.any -= 1;
+        }
+
+        // Verificar se pode pagar o custo SEM o Orb
+        const cost = this.rules.parseCost(card.cost);
+
+        // Aplicar redução de custo de Dragons (Dragonlord's Servant)
+        let adjustedGeneric = cost.generic || 0;
+        if (this.activeEffects?.costReduction > 0 && card.subtype?.includes('Dragon')) {
+            const servantCount = player.battlefield.filter(c =>
+                c.id === 'dragonlords_servant'
+            ).length;
+            adjustedGeneric = Math.max(0, adjustedGeneric - servantCount);
+        }
+
+        // Verificar custos coloridos
+        let remainingMana = { ...manaWithoutOrb };
+        for (const color in cost.colored) {
+            const needed = cost.colored[color];
+            if ((remainingMana[color] || 0) < needed) {
+                return false;
+            }
+            remainingMana[color] -= needed;
+        }
+
+        // Verificar custo genérico
+        const totalRemaining = Object.values(remainingMana).reduce((a, b) => a + b, 0);
+        return totalRemaining >= adjustedGeneric;
+    }
+
+    /**
      * Verifica se o jogador quer usar o Carnelian Orb para dar haste ao Dragão
      * @param {Object} card - A carta sendo conjurada
      * @param {Object} player - O jogador conjurando
-     * @returns {Promise<boolean>} - true se o Orb deve ser usado
+     * @returns {Promise<boolean|string>} - true se usar Orb, false se não, 'cancel' se cancelar
      */
     async handleCarnelianOrb(card, player) {
         // Só se aplica a Dragões
@@ -1042,71 +1087,34 @@ class GameState {
             return false;
         }
 
-        // Calcular mana disponível SEM o Orb
-        const fullMana = this.rules.calculateAvailableMana(player);
-        const manaWithoutOrb = { ...fullMana };
-        // Orb produz R, então subtraímos 1 do vermelho (ou do 'any' se não houver R)
-        if (manaWithoutOrb.R > 0) {
-            manaWithoutOrb.R -= 1;
-        } else if (manaWithoutOrb.any > 0) {
-            manaWithoutOrb.any -= 1;
-        }
+        // Calcular se pode pagar SEM o Orb
+        const canPayWithoutOrb = this.canAffordWithoutOrb(card, player);
 
-        // Verificar se pode pagar o custo SEM o Orb
-        const cost = this.rules.parseCost(card.cost);
-
-        // Aplicar redução de custo de Dragons (Dragonlord's Servant)
-        let adjustedGeneric = cost.generic || 0;
-        if (this.activeEffects?.costReduction > 0) {
-            const servantCount = player.battlefield.filter(c =>
-                c.id === 'dragonlords_servant'
-            ).length;
-            adjustedGeneric = Math.max(0, adjustedGeneric - servantCount);
-        }
-
-        // Calcular se pode pagar sem o Orb
-        let canPayWithoutOrb = true;
-        let remainingMana = { ...manaWithoutOrb };
-
-        // Verificar custos coloridos
-        for (const color in cost.colored) {
-            const needed = cost.colored[color];
-            if ((remainingMana[color] || 0) < needed) {
-                canPayWithoutOrb = false;
-                break;
-            }
-            remainingMana[color] -= needed;
-        }
-
-        // Verificar custo genérico
-        if (canPayWithoutOrb) {
-            const totalRemaining = Object.values(remainingMana).reduce((a, b) => a + b, 0);
-            if (totalRemaining < adjustedGeneric) {
-                canPayWithoutOrb = false;
-            }
-        }
-
-        // Se NÃO pode pagar sem o Orb, usa automaticamente e dá haste (regra MTG)
-        if (!canPayWithoutOrb) {
-            untappedOrb.tapped = true;
-            card.useOrbForHaste = true;
-            this.ui.log(`Carnelian Orb usado - ${card.name} ganhará ímpeto`);
-            return true;
-        }
-
-        // Se PODE pagar sem o Orb, perguntar ao jogador humano
+        // Jogador humano: SEMPRE perguntar
         if (player === this.player) {
+            const description = canPayWithoutOrb
+                ? `Usar o Carnelian Orb para conjurar ${card.name}?\nSe usar, o Dragão ganhará ímpeto.`
+                : `Usar o Carnelian Orb para conjurar ${card.name}?\nSe usar, o Dragão ganhará ímpeto.\n⚠️ Você precisa do Orb para pagar o custo.`;
+
+            const noText = canPayWithoutOrb
+                ? 'Não, usar outras fontes'
+                : 'Cancelar conjuração';
+
             const useOrb = await this.ui.promptYesNo({
                 title: 'Carnelian Orb of Dragonkind',
-                description: `Usar o Orb para dar ímpeto a ${card.name}?`,
-                yesText: 'Sim, dar ímpeto',
-                noText: 'Não, guardar Orb'
+                description,
+                yesText: 'Sim, usar Orb',
+                noText
             });
 
             if (useOrb) {
                 untappedOrb.tapped = true;
                 card.useOrbForHaste = true;
+                this.ui.log(`Carnelian Orb usado - ${card.name} ganhará ímpeto`);
                 return true;
+            } else if (!canPayWithoutOrb) {
+                // Jogador escolheu cancelar (não pode pagar sem Orb)
+                return 'cancel';
             }
             return false;
         } else {
@@ -1443,7 +1451,14 @@ class GameState {
             // NOVO: Colocar na pilha para permitir counterspells
 
             // Carnelian Orb: perguntar se quer usar para dar haste ao Dragão ANTES de pagar mana
-            await this.handleCarnelianOrb(card, player);
+            const orbResult = await this.handleCarnelianOrb(card, player);
+            if (orbResult === 'cancel') {
+                // Jogador cancelou a conjuração - devolver carta à mão
+                player.hand.push(card);
+                this.ui.log(`Conjuração de ${card.name} cancelada`);
+                this.ui.render();
+                return false;
+            }
 
             const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
             this.rules.payMana(card, player, selectedLands);
