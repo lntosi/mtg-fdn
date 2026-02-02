@@ -923,10 +923,9 @@ class RulesEngine {
             return bonuses;
         }
 
-        // Encontrar o controlador da criatura
-        const controller = this.game.player.battlefield.includes(creature)
-            ? this.game.player
-            : this.game.opponent;
+        // Encontrar o controlador da criatura (usar instanceId para funcionar com cópias)
+        const playerHasCreature = this.game.player.battlefield.some(c => c.instanceId === creature.instanceId);
+        const controller = playerHasCreature ? this.game.player : this.game.opponent;
 
         // === ENCANTAMENTOS GLOBAIS DO CONTROLADOR ===
         controller.battlefield.forEach(card => {
@@ -1111,9 +1110,9 @@ class RulesEngine {
             return keywords;
         }
 
-        const controller = this.game.player.battlefield.includes(creature)
-            ? this.game.player
-            : this.game.opponent;
+        // Usar instanceId para encontrar o controlador (funciona mesmo com cópias do objeto)
+        const playerHasCreature = this.game.player.battlefield.some(c => c.instanceId === creature.instanceId);
+        const controller = playerHasCreature ? this.game.player : this.game.opponent;
 
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
 
@@ -1250,10 +1249,9 @@ class RulesEngine {
         if (!this.game?.player?.battlefield) {
             return true;
         }
-        // Verificar quem controla a criatura
-        const creatureController = this.game.player.battlefield.includes(creature)
-            ? this.game.player
-            : this.game.opponent;
+        // Verificar quem controla a criatura (usar instanceId para funcionar com cópias)
+        const playerHasCreature = this.game.player.battlefield.some(c => c.instanceId === creature.instanceId);
+        const creatureController = playerHasCreature ? this.game.player : this.game.opponent;
 
         // Se o caster é o mesmo controlador, hexproof não se aplica
         if (caster === creatureController) {
