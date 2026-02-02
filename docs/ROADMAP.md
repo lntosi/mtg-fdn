@@ -6,7 +6,9 @@ Este documento mapeia o desenvolvimento do jogo.
 
 ## Status Atual
 
-**Projeto COMPLETO** - Todos os 10 decks implementados e validados ✅
+**BETA** - Fase de testes com jogadores selecionados
+
+Todas as funcionalidades foram implementadas. O projeto está em fase de testes e correção de bugs reportados pelos beta testers.
 
 | Deck | Cor | Status | Última Validação |
 |------|:---:|:------:|:----------------:|
@@ -22,6 +24,21 @@ Este documento mapeia o desenvolvimento do jogo.
 | Undead | B | ✅ | Fev 2026 |
 
 **Testes**: 140 testes unitários passando ✅
+
+---
+
+## Fase Beta
+
+### Como Reportar Bugs
+
+Beta testers com acesso ao repositório podem:
+1. Abrir uma **Issue** no GitHub descrevendo o bug
+2. Incluir o **log da partida** (ESC → Debug → Export Log)
+3. Descrever os **passos para reproduzir**
+
+### Bugs Conhecidos
+
+*Nenhum bug em aberto no momento.*
 
 ---
 
@@ -48,7 +65,11 @@ Este documento mapeia o desenvolvimento do jogo.
 - ✅ Counterspells (creature-only e genérico)
 - ✅ Cost reduction (Dragons, Wizards)
 - ✅ Scry mechanic
+- ✅ Mill mechanic
 - ✅ Leaves-the-battlefield triggers (Prayer of Binding)
+- ✅ Undying effect (Undying Malice)
+- ✅ Modal spells (Deadly Plot)
+- ✅ Sacrifice costs (Eaten Alive)
 
 ### Sistema de Jogo
 - ✅ Stack e sistema de prioridade
@@ -57,40 +78,30 @@ Este documento mapeia o desenvolvimento do jogo.
 - ✅ Atribuição de dano a múltiplos bloqueadores
 - ✅ Contadores (+1/+1)
 - ✅ Dano em criaturas (cleanup automático)
-- ✅ Tokens (Cat, Elf, Goblin, Faerie, Treasure)
+- ✅ Tokens (Cat, Elf, Goblin, Faerie, Zombie, Treasure)
 - ✅ Exílio com retorno condicional
 
----
+### IA
+- ✅ Três níveis de dificuldade (Aprendiz, Mago, Planeswalker)
+- ✅ Habilidades ativadas (Mago+)
+- ✅ Reserva de mana para instantes (Planeswalker)
+- ✅ Thresholds configuráveis por dificuldade
 
-## Itens Pendentes (Opcional)
-
-### 1. Melhorias de IA ✅
-
-#### Implementado
-- [x] Níveis de dificuldade (Aprendiz, Mago, Planeswalker)
-- [x] `attackWithZeroPower`: IA não ataca com criaturas power 0 (Mago+)
-- [x] `useActivatedAbilities`: IA usa habilidades ativadas (Mago+)
-- [x] Sequenciamento de ETBs condicionais (Main Phase 2)
-- [x] `holdManaForInstants`: Reservar mana para respostas (Planeswalker)
-- [x] `thresholds`: Thresholds configuráveis por dificuldade (ataque, bloqueio, trades)
-- [x] `mistakeRate`: Erros aleatórios do Aprendiz (25% escolhas subótimas)
-
-#### Pendente (opcional)
-- [ ] Velocidade configurável das jogadas da IA
-
-### 2. UI/UX
-- [ ] Responsividade mobile/tablet
-- [ ] Modo de treino com dicas
-
-### 3. Refatoração (Baixa Prioridade)
-- [ ] Extrair `combat.js` do `game.js`
-- [ ] Extrair `stack.js` do `game.js`
-
-*Nota: A refatoração não é necessária para o funcionamento do jogo. Seria útil apenas para futuras expansões.*
+### UI/UX
+- ✅ Preview de carta ampliado
+- ✅ Indicador de mana por cor
+- ✅ Stack badge com hover dropdown
+- ✅ Priority stops configuráveis (estilo Arena)
+- ✅ Menu de configurações (ESC)
+- ✅ Personalização do jogador (nome + avatar)
+- ✅ Modal de seleção de alvo com agrupamento
+- ✅ Sistema de som e música
 
 ---
 
-## Ideias Futuras (Sem Compromisso)
+## Ideias Futuras (Pós-1.0)
+
+Funcionalidades que podem ser consideradas após a versão estável:
 
 - Estatísticas (win rate, cartas mais jogadas)
 - Conquistas/Achievements
@@ -101,6 +112,14 @@ Este documento mapeia o desenvolvimento do jogo.
 ---
 
 ## Histórico de Atualizações
+
+### Fevereiro 2026 - Beta Release
+
+**Entrada em fase Beta:**
+- Todos os 10 decks validados contra listas oficiais do Beginner Box
+- Deck Undead completamente reescrito com cartas oficiais
+- UI de seleção de alvo melhorada (agrupamento + avatares)
+- 140 testes unitários passando
 
 ### Fevereiro 2026 - Melhorias de IA
 
@@ -113,32 +132,18 @@ Este documento mapeia o desenvolvimento do jogo.
 | Reserva mana | Não | Não | Sim |
 | Trade threshold | 1+ | 3+ | 4+ |
 
-**Novos recursos:**
-- Thresholds configuráveis por dificuldade (ataque, bloqueio, trades)
-- `mistakeRate`: Aprendiz comete erros em 25% das escolhas
-- `holdManaForInstants`: Planeswalker reserva mana para respostas
-- Descrições atualizadas na seleção de dificuldade
-
 ### Fevereiro 2026 - Auditoria Completa de Decks
 
 **Varredura completa dos 10 decks** com correções robustas:
 
 | Deck | Correções |
 |------|-----------|
-| Inferno | Firespitter Whelp - trigger condition corrigida |
-| Wizards | Into the Roil - kicker implementado; Starlight Snare - freeze_aura |
-| Primal | New Horizons - ETB de Aura; Felling Blow - counter trigger; Biogenic Upgrade - multi-target |
-| Undead | Reassembling Skeleton - graveyard ability implementada |
+| Inferno | Firespitter Whelp - trigger condition corrigida; Mountain qty corrigido |
+| Wizards | Into the Roil - kicker implementado; Starlight Snare - freeze_aura; Essence Scatter removido |
+| Primal | New Horizons - ETB de Aura; Felling Blow - counter trigger; Forest qty corrigido |
+| Undead | Deck completamente reescrito com lista oficial |
 | Elves | Elvish Archdruid - keyword `elf_lord` adicionada |
 | Cats, Goblins, Vampires, Pirates, Healing | Nenhum bug encontrado |
-
-**Novas funcionalidades:**
-- Sistema de habilidades ativadas do cemitério (UI com botão no modal)
-- Sistema de kicker com prompt para jogador
-- Freeze aura (tap + prevent untap)
-- Aura ETB effects (attachAura chama resolveETB)
-- Multi-target selection (promptMultiTarget)
-- Música de fundo com crossfade seamless
 
 ### Janeiro 2026 - UI e Seleção de Decks
 
@@ -168,7 +173,7 @@ Este documento mapeia o desenvolvimento do jogo.
 - ✅ Primal (G) - Fight, Giant Growth, Trample lords
 - ✅ Inferno (R) - Dragons, Cost reduction, Haste synergy
 - ✅ Wizards (U) - Draw triggers, Kicker, Spell discount
-- ✅ Undead (B) - Graveyard recursion, Zombie/Skeleton lords
+- ✅ Undead (B) - Graveyard recursion, Zombie/Skeleton lords, Mill
 
 ### UI/UX
 - ✅ Preview de carta ampliado
