@@ -1603,7 +1603,9 @@ class GameState {
             // Dois alvos
             'felling_blow', 'bite_down',
             // Bounce/outros
-            'fleeting_distraction', 'into_the_roil'
+            'fleeting_distraction', 'into_the_roil',
+            // Undead deck
+            'undying_malice', 'deadly_plot', 'cemetery_recruitment', 'eaten_alive'
         ];
 
         // Counterspells têm alvo especial (na stack)
@@ -1725,6 +1727,42 @@ class GameState {
                     ...caster.battlefield.filter(c => c.type !== 'land'),
                     ...opponent.battlefield.filter(c => c.type !== 'land' && this.rules.canBeTargetedBy(c, caster))
                 ];
+                break;
+
+            // === UNDEAD DECK SPELLS ===
+            case 'undying_malice':
+                // Target any creature
+                targets = [
+                    ...caster.battlefield.filter(c => c.type === 'creature'),
+                    ...opponent.battlefield.filter(c => c.type === 'creature' && this.rules.canBeTargetedBy(c, caster))
+                ];
+                break;
+
+            case 'cemetery_recruitment':
+                // Target creature in your graveyard
+                targets = caster.graveyard.filter(c => c.type === 'creature');
+                break;
+
+            case 'deadly_plot':
+                // Modal: destroy creature OR return zombie from graveyard
+                // For targeting, we show opponent creatures (destroy mode will be handled in resolution)
+                targets = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
+                );
+                // If no opponent creatures but has zombies in graveyard, those are valid
+                if (targets.length === 0) {
+                    targets = caster.graveyard.filter(c =>
+                        c.type === 'creature' && c.subtype?.includes('Zombie')
+                    );
+                }
+                break;
+
+            case 'eaten_alive':
+                // Target opponent creature or planeswalker
+                targets = opponent.battlefield.filter(c =>
+                    (c.type === 'creature' || c.type === 'planeswalker') &&
+                    this.rules.canBeTargetedBy(c, caster)
+                );
                 break;
 
             default:
@@ -2024,6 +2062,141 @@ class GameState {
                     }
                 }
                 await this.checkCreatureDeath(target, targetOwner);
+                break;
+
+            // === UNDEAD DECK SPELLS ===
+            case 'undying_malice':
+                // Give target creature "when dies, return to battlefield with +1/+1 counter"
+                target.undyingMalice = true;
+                this.ui.log(`${target.name} ganhou: "Quando esta criatura morre, devolva-a ao campo com um contador +1/+1"`);
+                break;
+
+            case 'cemetery_recruitment':
+                // Return creature from graveyard to hand; draw if Zombie
+                const crIdx = caster.graveyard.indexOf(target);
+                if (crIdx > -1) {
+                    caster.graveyard.splice(crIdx, 1);
+                    this.triggers._resetCardState(target);
+                    caster.hand.push(target);
+                    this.ui.log(`${caster.name} devolveu ${target.name} do cemitério para a mão`);
+
+                    // If Zombie, draw a card
+                    if (target.subtype?.includes('Zombie')) {
+                        this.rules.drawCard(caster);
+                        this.ui.log(`${target.name} é um Zumbi - ${caster.name} comprou uma carta`);
+                    }
+                }
+                break;
+
+            case 'deadly_plot':
+                // Modal: check if target is in graveyard or battlefield
+                const isInGraveyard = caster.graveyard.includes(target);
+                if (isInGraveyard) {
+                    // Mode 2: Return Zombie from graveyard to battlefield tapped
+                    const dpIdx = caster.graveyard.indexOf(target);
+                    if (dpIdx > -1) {
+                        caster.graveyard.splice(dpIdx, 1);
+                        this.triggers._resetCardState(target);
+                        target.tapped = true;
+                        target.summoningSickness = true;
+                        caster.battlefield.push(target);
+                        this.ui.log(`Deadly Plot: ${target.name} voltou do cemitério para o campo de batalha`);
+                        // Trigger ETB
+                        await this.triggers.resolveETB(target, caster);
+                    }
+                } else {
+                    // Mode 1: Destroy target creature or planeswalker
+                    await this.destroyPermanent(target, targetOwner);
+                    this.ui.log(`Deadly Plot: ${target.name} foi destruído`);
+                }
+                break;
+
+            case 'eaten_alive':
+                // Additional cost: sacrifice a creature OR pay {3}{B}
+                const ownCreaturesEA = caster.battlefield.filter(c => c.type === 'creature');
+                const availableManaEA = this.rules.calculateAvailableMana(caster);
+                const totalManaEA = availableManaEA.W + availableManaEA.U + availableManaEA.B +
+                                   availableManaEA.R + availableManaEA.G + availableManaEA.any;
+                const canPayExtra = totalManaEA >= 4 && availableManaEA.B >= 1; // {3}{B} extra
+
+                let paidCost = false;
+
+                if (ownCreaturesEA.length > 0 && canPayExtra) {
+                    // Player can choose sacrifice or pay
+                    if (caster === this.player) {
+                        const choice = await this.ui.promptYesNo({
+                            title: 'Eaten Alive - Custo Adicional',
+                            description: 'Escolha como pagar o custo adicional:',
+                            yesText: 'Sacrificar criatura',
+                            noText: 'Pagar {3}{B}'
+                        });
+                        if (choice) {
+                            // Sacrifice
+                            const sacTarget = await this.ui.promptTriggerTarget({
+                                title: 'Eaten Alive - Sacrifício',
+                                description: 'Escolha uma criatura para sacrificar:',
+                                validTargets: ownCreaturesEA,
+                                canSkip: false
+                            });
+                            if (sacTarget) {
+                                await this.sacrificeCreature(sacTarget, caster);
+                                paidCost = true;
+                            }
+                        } else {
+                            // Pay {3}{B}
+                            this.payColoredMana({ B: 1 }, caster);
+                            this.payGenericMana(3, caster);
+                            this.ui.log(`${caster.name} pagou {3}{B} como custo adicional`);
+                            paidCost = true;
+                        }
+                    } else {
+                        // AI: sacrifice if has expendable creature, otherwise pay
+                        const expendable = ownCreaturesEA.filter(c =>
+                            this.rules.getCreaturePower(c) <= 2
+                        ).sort((a, b) =>
+                            this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+                        )[0];
+                        if (expendable) {
+                            await this.sacrificeCreature(expendable, caster);
+                        } else {
+                            this.payColoredMana({ B: 1 }, caster);
+                            this.payGenericMana(3, caster);
+                            this.ui.log(`${caster.name} pagou {3}{B} como custo adicional`);
+                        }
+                        paidCost = true;
+                    }
+                } else if (ownCreaturesEA.length > 0) {
+                    // Must sacrifice
+                    if (caster === this.player) {
+                        const sacTarget = await this.ui.promptTriggerTarget({
+                            title: 'Eaten Alive - Sacrifício',
+                            description: 'Escolha uma criatura para sacrificar:',
+                            validTargets: ownCreaturesEA,
+                            canSkip: false
+                        });
+                        if (sacTarget) {
+                            await this.sacrificeCreature(sacTarget, caster);
+                            paidCost = true;
+                        }
+                    } else {
+                        const sacTarget = ownCreaturesEA.sort((a, b) =>
+                            this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+                        )[0];
+                        await this.sacrificeCreature(sacTarget, caster);
+                        paidCost = true;
+                    }
+                } else if (canPayExtra) {
+                    // Must pay mana
+                    this.payColoredMana({ B: 1 }, caster);
+                    this.payGenericMana(3, caster);
+                    this.ui.log(`${caster.name} pagou {3}{B} como custo adicional`);
+                    paidCost = true;
+                }
+
+                if (paidCost) {
+                    this.exilePermanent(target, targetOwner);
+                    this.ui.log(`Eaten Alive: ${target.name} foi exilado`);
+                }
                 break;
 
             default:
@@ -2441,6 +2614,12 @@ class GameState {
                 await this.triggers.onCreatureDeath(permanent, owner);
             }
 
+            // Check if creature was returned by undying effect (Undying Malice)
+            if (permanent._returnedByUndying) {
+                delete permanent._returnedByUndying;
+                return; // Creature is already back on battlefield, don't move to graveyard
+            }
+
             // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
             if (permanent.type === 'creature') {
                 this.detachFromCreature(permanent, owner);
@@ -2452,6 +2631,37 @@ class GameState {
             // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
             this.triggers.onLeaveBattlefield(permanent, owner);
             owner.graveyard.push(permanent);
+        }
+    }
+
+    /**
+     * Sacrifica uma criatura (vai para o cemitério, dispara death triggers)
+     * Similar a destroyPermanent mas semanticamente é um sacrifício
+     */
+    async sacrificeCreature(creature, owner) {
+        const index = owner.battlefield.indexOf(creature);
+        if (index > -1) {
+            this.ui.log(`${owner.name} sacrificou ${creature.name}`);
+
+            // Chamar death triggers ANTES de mover para o cemitério
+            if (this.triggers) {
+                await this.triggers.onCreatureDeath(creature, owner);
+            }
+
+            // Desanexar equipamentos e auras
+            this.detachFromCreature(creature, owner);
+
+            owner.battlefield.splice(index, 1);
+            this.unregisterSpecialEffect(creature);
+            this.triggers.onLeaveBattlefield(creature, owner);
+
+            // Check if creature was returned by undying effect
+            if (!creature._returnedByUndying) {
+                owner.graveyard.push(creature);
+            }
+            delete creature._returnedByUndying;
+
+            this.ui.render();
         }
     }
 

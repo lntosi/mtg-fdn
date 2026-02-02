@@ -3043,7 +3043,7 @@ body {
 
 /* === Modal Genérico de Trigger com Seleção de Alvo === */
 .trigger-target-content {
-    max-width: 700px;
+    max-width: 800px;
 }
 
 .trigger-target-content h2 {
@@ -3055,16 +3055,109 @@ body {
     color: #e0c0e0;
 }
 
+/* Container para os grupos de alvos */
+.trigger-target-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Cada grupo de alvos (jogadores, suas criaturas, criaturas do oponente) */
+.trigger-target-group {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Cabeçalho do grupo */
+.trigger-target-group-header {
+    background: linear-gradient(135deg, rgba(100, 80, 120, 0.7), rgba(60, 50, 80, 0.9));
+    padding: 8px 15px;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #e0c0e0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .trigger-target-creatures {
     display: flex;
     gap: 10px;
     justify-content: center;
     flex-wrap: wrap;
-    margin: 20px 0;
-    padding: 20px;
+    margin: 0;
+    padding: 15px;
     background: rgba(0, 0, 0, 0.3);
+    border-radius: 0;
+    min-height: auto;
+}
+
+/* Card especial para alvo de jogador */
+.player-target-card {
+    width: 100px;
+    height: 130px;
+    background: linear-gradient(135deg, #2c3e50, #1a252f);
+    border: 3px solid #7d8fa3;
     border-radius: 10px;
-    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 10px;
+    gap: 5px;
+}
+
+.player-target-card:hover {
+    transform: scale(1.1);
+    border-color: #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+}
+
+.player-target-card.trigger-valid-target {
+    border-color: #f1c40f;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+}
+
+/* Avatar do jogador no card de alvo */
+.player-target-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    border: 2px solid #95a5a6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.player-target-avatar.has-avatar-image {
+    border-color: #f1c40f;
+}
+
+/* Nome do jogador */
+.player-target-name {
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #ecf0f1;
+    text-align: center;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Vida do jogador */
+.player-target-life {
+    font-size: 0.7em;
+    color: #e74c3c;
+    font-weight: bold;
 }
 
 .trigger-target-creatures .card {

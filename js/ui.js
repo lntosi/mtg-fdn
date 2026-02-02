@@ -3130,12 +3130,12 @@ class GameUI {
 
             const title = document.getElementById('trigger-target-title');
             const description = document.getElementById('trigger-target-description');
-            const creaturesContainer = document.getElementById('trigger-target-creatures');
+            const groupsContainer = document.getElementById('trigger-target-groups');
             const btnSkip = document.getElementById('btn-trigger-skip');
 
             // Configurar conteúdo
             title.textContent = options.title || 'Selecione um Alvo';
-            description.textContent = options.description || 'Escolha uma criatura:';
+            description.textContent = options.description || 'Escolha um alvo:';
 
             // Configurar botão de pular
             if (options.canSkip) {
@@ -3148,22 +3148,112 @@ class GameUI {
                 btnSkip.classList.add('hidden');
             }
 
-            // Renderizar criaturas válidas
-            creaturesContainer.innerHTML = '';
-            options.validTargets.forEach(creature => {
-                const cardEl = this.createCardElement(creature, true);
-                cardEl.classList.add('trigger-valid-target');
-                cardEl.addEventListener('click', () => {
-                    modal.classList.add('hidden');
-                    resolve(creature);
-                });
-                cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
-                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
-                creaturesContainer.appendChild(cardEl);
-            });
+            // Separar alvos em grupos
+            const playerTargets = options.validTargets.filter(t => t.isPlayer);
+            const opponentCreatures = options.validTargets.filter(t => !t.isPlayer && t.owner === 'opponent');
+            const playerCreatures = options.validTargets.filter(t => !t.isPlayer && t.owner === 'player');
+
+            groupsContainer.innerHTML = '';
+
+            // Renderizar grupo de jogadores (se houver)
+            if (playerTargets.length > 0) {
+                const playersGroup = this._createTargetGroup('Jogadores', playerTargets, resolve, modal, true);
+                groupsContainer.appendChild(playersGroup);
+            }
+
+            // Renderizar criaturas do oponente
+            if (opponentCreatures.length > 0) {
+                const opponentGroup = this._createTargetGroup('Criaturas do Oponente', opponentCreatures, resolve, modal, false);
+                groupsContainer.appendChild(opponentGroup);
+            }
+
+            // Renderizar suas criaturas
+            if (playerCreatures.length > 0) {
+                const yourGroup = this._createTargetGroup('Suas Criaturas', playerCreatures, resolve, modal, false);
+                groupsContainer.appendChild(yourGroup);
+            }
 
             modal.classList.remove('hidden');
         });
+    }
+
+    /**
+     * Cria um grupo de alvos para o modal de seleção
+     * @private
+     */
+    _createTargetGroup(label, targets, resolve, modal, isPlayerGroup) {
+        const group = document.createElement('div');
+        group.className = 'trigger-target-group';
+
+        const header = document.createElement('div');
+        header.className = 'trigger-target-group-header';
+        header.textContent = label;
+        group.appendChild(header);
+
+        const container = document.createElement('div');
+        container.className = 'trigger-target-creatures';
+
+        targets.forEach(target => {
+            let targetEl;
+
+            if (target.isPlayer) {
+                // Criar elemento especial para jogador com avatar
+                targetEl = this._createPlayerTargetElement(target);
+            } else {
+                // Criar elemento de carta normal
+                targetEl = this.createCardElement(target, true);
+                targetEl.addEventListener('mouseenter', () => this.showCardPreview(target));
+                targetEl.addEventListener('mouseleave', () => this.hideCardPreview());
+            }
+
+            targetEl.classList.add('trigger-valid-target');
+            targetEl.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                resolve(target);
+            });
+            container.appendChild(targetEl);
+        });
+
+        group.appendChild(container);
+        return group;
+    }
+
+    /**
+     * Cria um elemento visual para alvo de jogador (com avatar)
+     * @private
+     */
+    _createPlayerTargetElement(playerTarget) {
+        const el = document.createElement('div');
+        el.className = 'player-target-card';
+
+        // Container do avatar
+        const avatarContainer = document.createElement('div');
+        avatarContainer.className = 'player-target-avatar';
+
+        // Carregar imagem do avatar
+        const avatarId = playerTarget.avatarId;
+        if (avatarId) {
+            avatarContainer.textContent = this.getAvatarEmoji(avatarId);
+            this.loadAvatarImage(avatarId, avatarContainer);
+        } else {
+            avatarContainer.textContent = playerTarget.isSelf ? '🧙' : '🤖';
+        }
+
+        // Nome do jogador
+        const nameEl = document.createElement('div');
+        nameEl.className = 'player-target-name';
+        nameEl.textContent = playerTarget.displayName || playerTarget.name;
+
+        // Vida atual
+        const lifeEl = document.createElement('div');
+        lifeEl.className = 'player-target-life';
+        lifeEl.textContent = `${playerTarget.life} vida`;
+
+        el.appendChild(avatarContainer);
+        el.appendChild(nameEl);
+        el.appendChild(lifeEl);
+
+        return el;
     }
 
     /**

@@ -174,8 +174,8 @@ const CARD_DATABASE = {
         name: "Inferno",
         color: "red",
         cards: [
-            // Terrenos (7)
-            { id: "inferno_mountain_1", name: "Mountain", type: "land", subtype: "basic", produces: "R", qty: 7 },
+            // Terrenos (8)
+            { id: "inferno_mountain_1", name: "Mountain", type: "land", subtype: "basic", produces: "R", qty: 8 },
             // Terreno especial (1)
             { id: "inferno_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
@@ -205,8 +205,8 @@ const CARD_DATABASE = {
         name: "Primal",
         color: "green",
         cards: [
-            // Terrenos (7)
-            { id: "primal_forest_1", name: "Forest", type: "land", subtype: "basic", produces: "G", qty: 7 },
+            // Terrenos (8)
+            { id: "primal_forest_1", name: "Forest", type: "land", subtype: "basic", produces: "G", qty: 8 },
             // Terreno especial (1)
             { id: "primal_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
@@ -252,11 +252,8 @@ const CARD_DATABASE = {
 
             // Instants (4)
             { id: "fleeting_distraction", name: "Fleeting Distraction", type: "instant", cost: "U", cmc: 1, text: "Criatura alvo recebe -1/-0 até o fim do turno. Compre um card.", qty: 1 },
-            { id: "essence_scatter", name: "Essence Scatter", type: "instant", cost: "1U", cmc: 2, keywords: ["counterspell_creature"], text: "Anule a mágica de criatura alvo.", qty: 1 },
             { id: "into_the_roil", name: "Into the Roil", type: "instant", cost: "1U", cmc: 2, keywords: ["kicker"], kickerCost: "1U", text: "Encostar {1}{U}. Devolva a permanente alvo que não seja terreno para a mão de seu dono. Se esta mágica foi encostada, compre um card.", qty: 1 },
             { id: "quick_study", name: "Quick Study", type: "instant", cost: "2U", cmc: 3, keywords: ["draw_2"], text: "Compre dois cards.", qty: 1 },
-
-            // Sorcery (1)
             { id: "arcane_epiphany", name: "Arcane Epiphany", type: "instant", cost: "3UU", cmc: 5, keywords: ["wizard_discount", "draw_3"], text: "Esta mágica custa {1} a menos se você controlar um Mago. Compre três cards.", qty: 1 },
 
             // Enchantment (1)
@@ -264,30 +261,32 @@ const CARD_DATABASE = {
         ]
     },
 
-    // ========== UNDEAD DECK (Black - Graveyard Recursion) ==========
+    // ==================== UNDEAD (Preto) ====================
     undead: {
         name: "Undead",
         color: "black",
         cards: [
             // Terrenos (8)
-            { id: "swamp", name: "Swamp", type: "land", produces: "B", qty: 8 },
+            { id: "undead_swamp", name: "Swamp", type: "land", subtype: "basic", produces: "B", qty: 7 },
+            { id: "undead_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
-            // Criaturas (9)
-            { id: "diregraf_ghoul", name: "Diregraf Ghoul", type: "creature", subtype: "Zombie", cost: "B", cmc: 1, power: 2, toughness: 2, keywords: ["enters_tapped"], text: "Diregraf Ghoul entra em jogo virado.", qty: 2 },
-            { id: "walking_corpse", name: "Walking Corpse", type: "creature", subtype: "Zombie", cost: "1B", cmc: 2, power: 2, toughness: 2, text: "", qty: 2 },
-            { id: "virus_beetle", name: "Virus Beetle", type: "creature", subtype: "Insect", cost: "1B", cmc: 2, power: 1, toughness: 1, keywords: ["etb_discard_opponent"], text: "Quando Virus Beetle entra em jogo, cada oponente descarta um card.", qty: 1 },
+            // Criaturas (8)
+            { id: "diregraf_ghoul", name: "Diregraf Ghoul", type: "creature", subtype: "Zombie", cost: "B", cmc: 1, power: 2, toughness: 2, keywords: ["enters_tapped"], text: "Diregraf Ghoul entra em jogo virado.", qty: 1 },
+            { id: "hungry_ghoul", name: "Hungry Ghoul", type: "creature", subtype: "Zombie", cost: "1B", cmc: 2, power: 2, toughness: 2, text: "{1}, Sacrifique outra criatura: Coloque um contador +1/+1 nesta criatura.", qty: 1 },
             { id: "reassembling_skeleton", name: "Reassembling Skeleton", type: "creature", subtype: "Skeleton Warrior", cost: "1B", cmc: 2, power: 1, toughness: 1, keywords: ["graveyard_return"], text: "{1}{B}: Devolva este card do seu cemitério para o campo de batalha virado.", qty: 1 },
+            { id: "crow_of_dark_tidings", name: "Crow of Dark Tidings", type: "creature", subtype: "Zombie Bird", cost: "2B", cmc: 3, power: 2, toughness: 1, keywords: ["flying", "etb_mill_2", "death_mill_2"], text: "Voar. Quando esta criatura entra ou morre, coloque os dois cards do topo do seu grimório no cemitério.", qty: 1 },
             { id: "death_baron", name: "Death Baron", type: "creature", subtype: "Zombie Wizard", cost: "1BB", cmc: 3, power: 2, toughness: 2, keywords: ["zombie_skeleton_lord", "zombie_skeleton_deathtouch"], text: "Skeletons e outros Zombies que você controla recebem +1/+1 e têm toque mortífero.", qty: 1 },
-            { id: "ghoulraiser", name: "Ghoulraiser", type: "creature", subtype: "Zombie", cost: "1BB", cmc: 3, power: 2, toughness: 2, keywords: ["etb_return_zombie"], text: "Quando Ghoulraiser entra em jogo, devolva um card de Zombie aleatório do seu cemitério para sua mão.", qty: 1 },
-            { id: "gravedigger", name: "Gravedigger", type: "creature", subtype: "Zombie", cost: "3B", cmc: 4, power: 2, toughness: 2, keywords: ["etb_return_creature"], text: "Quando Gravedigger entra em jogo, você pode devolver um card de criatura alvo do seu cemitério para sua mão.", qty: 1 },
-            { id: "rot_hulk", name: "Rot Hulk", type: "creature", subtype: "Zombie", cost: "5BB", cmc: 7, power: 5, toughness: 5, keywords: ["menace", "etb_return_zombie_battlefield"], text: "Ameaçar. Quando Rot Hulk entra em jogo, devolva um card de Zombie alvo do seu cemitério para o campo de batalha.", qty: 1 },
+            { id: "skeleton_archer", name: "Skeleton Archer", type: "creature", subtype: "Skeleton Archer", cost: "3B", cmc: 4, power: 3, toughness: 3, keywords: ["etb_ping_any"], text: "Quando esta criatura entra, ela causa 1 de dano a qualquer alvo.", qty: 1 },
+            { id: "suspicious_shambler", name: "Suspicious Shambler", type: "creature", subtype: "Zombie", cost: "3B", cmc: 4, power: 4, toughness: 2, keywords: ["graveyard_create_zombies"], text: "{4}{B}{B}, Exile este card do seu cemitério: Crie dois tokens de criatura Zumbi 2/2 pretos. Ative apenas como feitiço.", qty: 1 },
+            { id: "maalfeld_twins", name: "Maalfeld Twins", type: "creature", subtype: "Zombie", cost: "5B", cmc: 6, power: 4, toughness: 4, keywords: ["death_create_zombies"], text: "Quando esta criatura morre, crie dois tokens de criatura Zumbi 2/2 pretos.", qty: 1 },
 
-            // Instants (1)
-            { id: "murder", name: "Murder", type: "instant", cost: "1BB", cmc: 3, text: "Destrua a criatura alvo.", qty: 1 },
+            // Instants (2)
+            { id: "undying_malice", name: "Undying Malice", type: "instant", cost: "B", cmc: 1, text: "Até o fim do turno, criatura alvo ganha 'Quando esta criatura morre, devolva-a ao campo de batalha virada sob o controle de seu dono com um contador +1/+1 nela.'", qty: 1 },
+            { id: "deadly_plot", name: "Deadly Plot", type: "instant", cost: "3B", cmc: 4, text: "Escolha um — • Destrua a criatura ou planeswalker alvo. • Devolva card de criatura Zumbi alvo do seu cemitério para o campo de batalha virado.", qty: 1 },
 
             // Sorceries (2)
-            { id: "mind_rot", name: "Mind Rot", type: "sorcery", cost: "2B", cmc: 3, text: "O jogador alvo descarta dois cards.", qty: 1 },
-            { id: "rise_again", name: "Rise Again", type: "sorcery", cost: "4B", cmc: 5, keywords: ["return_creature_battlefield"], text: "Devolva a criatura alvo do seu cemitério para o campo de batalha.", qty: 1 }
+            { id: "cemetery_recruitment", name: "Cemetery Recruitment", type: "sorcery", cost: "1B", cmc: 2, text: "Devolva card de criatura alvo do seu cemitério para sua mão. Se for um card de Zumbi, compre um card.", qty: 1 },
+            { id: "eaten_alive", name: "Eaten Alive", type: "sorcery", cost: "B", cmc: 1, keywords: ["sacrifice_cost"], text: "Como custo adicional para conjurar esta mágica, sacrifique uma criatura ou pague {3}{B}. Exile a criatura ou planeswalker alvo.", qty: 1 }
         ]
     }
 };

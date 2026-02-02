@@ -275,14 +275,45 @@ class RulesEngine {
             return player.hand.length >= 2; // Including the spell itself
         }
 
-        // Rise Again - precisa de criatura no cemitério
-        if (card.id === 'rise_again') {
+        // === NEW UNDEAD DECK SPELLS ===
+
+        // Undying Malice - needs any creature
+        if (card.id === 'undying_malice') {
+            const allCreatures = [
+                ...player.battlefield.filter(c => c.type === 'creature'),
+                ...opponent.battlefield.filter(c => c.type === 'creature')
+            ];
+            return allCreatures.length > 0;
+        }
+
+        // Deadly Plot - needs opponent creature OR zombie in graveyard (modal spell)
+        if (card.id === 'deadly_plot') {
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            const hasZombieInGraveyard = player.graveyard.some(c =>
+                c.type === 'creature' && c.subtype?.includes('Zombie')
+            );
+            return hasOpponentCreature || hasZombieInGraveyard;
+        }
+
+        // Cemetery Recruitment - needs creature in graveyard
+        if (card.id === 'cemetery_recruitment') {
             return player.graveyard.some(c => c.type === 'creature');
         }
 
-        // Mind Rot - oponente precisa ter cards na mão
-        if (card.id === 'mind_rot') {
-            return opponent.hand.length > 0;
+        // Eaten Alive - needs opponent creature AND (can sacrifice OR has extra mana)
+        if (card.id === 'eaten_alive') {
+            const hasOpponentPermanent = opponent.battlefield.some(c =>
+                c.type === 'creature' || c.type === 'planeswalker'
+            );
+            if (!hasOpponentPermanent) return false;
+
+            // Check if can sacrifice or pay extra mana
+            const hasCreatureToSacrifice = player.battlefield.some(c => c.type === 'creature');
+            const availableMana = this.calculateAvailableMana(player);
+            const totalMana = availableMana.W + availableMana.U + availableMana.B + availableMana.R + availableMana.G + availableMana.any;
+            const canPayExtra = totalMana >= 5 && availableMana.B >= 2; // {3}{B} + {B} base = 5 total, 2B
+
+            return hasCreatureToSacrifice || canPayExtra;
         }
 
         // Para outros instants, assumir que sempre há alvos válidos

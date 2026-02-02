@@ -124,24 +124,14 @@ class TriggerManager {
 
         // === UNDEAD DECK ETBs ===
 
-        // ETB Discard Opponent (Virus Beetle)
-        if (card.keywords?.includes('etb_discard_opponent')) {
-            await this._handleDiscardOpponentETB(card, controller, opponent);
+        // ETB Mill 2 (Crow of Dark Tidings)
+        if (card.keywords?.includes('etb_mill_2')) {
+            this._handleMill(controller, 2, card.name);
         }
 
-        // ETB Return Zombie (Ghoulraiser)
-        if (card.keywords?.includes('etb_return_zombie')) {
-            this._handleReturnZombieETB(card, controller);
-        }
-
-        // ETB Return Creature (Gravedigger)
-        if (card.keywords?.includes('etb_return_creature')) {
-            await this._handleReturnCreatureETB(card, controller);
-        }
-
-        // ETB Return Zombie to Battlefield (Rot Hulk)
-        if (card.keywords?.includes('etb_return_zombie_battlefield')) {
-            await this._handleReturnZombieBattlefieldETB(card, controller);
+        // ETB Ping Any (Skeleton Archer)
+        if (card.keywords?.includes('etb_ping_any')) {
+            await this._handlePingAnyETB(card, controller, opponent);
         }
 
         // --- CARD-SPECIFIC ETBs ---
@@ -252,6 +242,18 @@ class TriggerManager {
             subtype: 'Elf Warrior',
             power: 1,
             toughness: 1,
+            summoningSickness: true
+        });
+    }
+
+    _createZombieToken(controller) {
+        controller.battlefield.push({
+            instanceId: `zombie_token_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            name: 'Zombie Token',
+            type: 'creature',
+            subtype: 'Zombie',
+            power: 2,
+            toughness: 2,
             summoningSickness: true
         });
     }
@@ -595,6 +597,110 @@ class TriggerManager {
     }
 
     // === UNDEAD DECK ETB HELPERS ===
+
+    /**
+     * Mill cards - put top N cards from library into graveyard
+     * @param {Object} player - Player who mills
+     * @param {number} amount - Number of cards to mill
+     * @param {string} sourceName - Name of the source card
+     */
+    _handleMill(player, amount, sourceName) {
+        const milled = [];
+        for (let i = 0; i < amount && player.library.length > 0; i++) {
+            const card = player.library.pop();
+            player.graveyard.push(card);
+            milled.push(card.name);
+        }
+        if (milled.length > 0) {
+            this.ui.log(`${sourceName}: ${player.name} colocou ${milled.join(', ')} no cemitério`);
+        }
+        this.ui.render();
+    }
+
+    /**
+     * Skeleton Archer - deal 1 damage to any target on ETB
+     */
+    async _handlePingAnyETB(card, controller, opponent) {
+        // Valid targets: any creature or player
+        // Mark creatures with their owner for proper grouping in UI
+        const opponentCreatures = opponent.battlefield
+            .filter(c => c.type === 'creature')
+            .map(c => ({ ...c, owner: 'opponent' }));
+
+        const controllerCreatures = controller.battlefield
+            .filter(c => c.type === 'creature')
+            .map(c => ({ ...c, owner: 'player' }));
+
+        // Create pseudo-targets for players with avatar info
+        const playerTargets = [
+            {
+                instanceId: 'target_opponent',
+                name: opponent.name,
+                displayName: opponent.name,
+                isPlayer: true,
+                isSelf: false,
+                playerRef: opponent,
+                avatarId: opponent.avatar,
+                life: opponent.life
+            },
+            {
+                instanceId: 'target_self',
+                name: controller.name,
+                displayName: `${controller.name} (você)`,
+                isPlayer: true,
+                isSelf: true,
+                playerRef: controller,
+                avatarId: controller.avatar,
+                life: controller.life
+            }
+        ];
+
+        const allTargets = [...opponentCreatures, ...controllerCreatures, ...playerTargets];
+
+        const dealDamage = async (target) => {
+            if (target.isPlayer) {
+                this.game.loseLife(target.playerRef, 1);
+                this.ui.log(`${card.name} causou 1 de dano a ${target.playerRef.name}`);
+                this.game.checkGameOver();
+            } else {
+                target.damage = (target.damage || 0) + 1;
+                this.ui.log(`${card.name} causou 1 de dano a ${target.name}`);
+                const targetOwner = controller.battlefield.includes(target) ? controller : opponent;
+                await this.game.checkCreatureDeath(target, targetOwner);
+            }
+            this.ui.render();
+        };
+
+        if (controller === this.player) {
+            // Player chooses target
+            const target = await this.ui.promptTriggerTarget({
+                title: 'Skeleton Archer',
+                description: 'Escolha um alvo para 1 de dano:',
+                validTargets: allTargets,
+                canSkip: false
+            });
+
+            if (target) {
+                await dealDamage(target);
+            }
+        } else {
+            // AI logic: prioritize killing creatures, then opponent face
+            const opponentCreatures = opponent.battlefield.filter(c => c.type === 'creature');
+
+            // Check if any opponent creature can be killed with 1 damage
+            const canKill = opponentCreatures.find(c => {
+                const toughness = this.rules.getCreatureToughness(c) - (c.damage || 0);
+                return toughness <= 1;
+            });
+
+            if (canKill) {
+                await dealDamage(canKill);
+            } else {
+                // Otherwise, hit opponent's face
+                await dealDamage(playerTargets[0]); // target_opponent
+            }
+        }
+    }
 
     /**
      * Virus Beetle - opponent discards a card on ETB
@@ -1073,6 +1179,43 @@ class TriggerManager {
      */
     async onCreatureDeath(creature, owner) {
         const opponent = owner === this.player ? this.opponent : this.player;
+
+        // === UNDEAD DECK DEATH TRIGGERS ===
+
+        // Undying Malice effect - creature stays on battlefield with +1/+1 counter
+        if (creature.undyingMalice) {
+            delete creature.undyingMalice;
+            // Reset card state (damage, modifiers)
+            creature.damage = 0;
+            creature.powerModifier = 0;
+            creature.toughnessModifier = 0;
+            creature.temporaryKeywords = [];
+            // Add +1/+1 counter
+            if (!creature.counters) creature.counters = {};
+            creature.counters.plusOnePlusOne = (creature.counters.plusOnePlusOne || 0) + 1;
+            // Creature stays tapped and gets summoning sickness
+            creature.tapped = true;
+            creature.summoningSickness = true;
+            this.ui.log(`${creature.name} voltou ao campo de batalha com um contador +1/+1 (Undying Malice)`);
+            // Set flag so destroyPermanent doesn't remove the creature
+            creature._returnedByUndying = true;
+            this.ui.render();
+            return true; // Signal that creature was returned
+        }
+
+        // Crow of Dark Tidings - mill 2 when dies
+        if (creature.keywords?.includes('death_mill_2')) {
+            this._handleMill(owner, 2, creature.name);
+        }
+
+        // Maalfeld Twins - create two 2/2 Zombie tokens when dies
+        if (creature.keywords?.includes('death_create_zombies')) {
+            this._createZombieToken(owner);
+            this._createZombieToken(owner);
+            this.ui.log(`${creature.name}: criou dois tokens Zumbi 2/2`);
+        }
+
+        // === VAMPIRES DECK DEATH TRIGGERS ===
 
         // Vengeful Bloodwitch - quando esta ou outra criatura que você controla morre,
         // oponente alvo perde 1 vida e você ganha 1 vida

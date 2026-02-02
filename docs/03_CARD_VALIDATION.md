@@ -4,23 +4,26 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 **Status: TODOS OS 10 DECKS VALIDADOS** ✅ (Fevereiro 2026)
 
+**IMPORTANTE:** Este checklist segue as listas oficiais do **MTG Foundations Beginner Box**.
+Fonte: https://magic.wizards.com/en/news/feature/foundations-beginner-box-contents
+
 ---
 
 ## Resumo Geral
 
 | Deck | Cor | Cards | Status | Última Validação |
 |------|:---:|:-----:|:------:|:----------------:|
-| Cats | W | 14 | ✅ | Dez 2025 |
-| Goblins | R | 14 | ✅ | Dez 2025 |
-| Vampires | B | 14 | ✅ | Dez 2025 |
-| Elves | G | 12 | ✅ | Dez 2025 |
-| Pirates | U | 14 | ✅ | Dez 2025 |
+| Cats | W | 14 | ✅ | Fev 2026 |
+| Goblins | R | 14 | ✅ | Fev 2026 |
+| Vampires | B | 14 | ✅ | Fev 2026 |
+| Elves | G | 14 | ✅ | Fev 2026 |
+| Pirates | U | 14 | ✅ | Fev 2026 |
 | Healing | W | 14 | ✅ | Fev 2026 |
 | Primal | G | 12 | ✅ | Fev 2026 |
 | Inferno | R | 12 | ✅ | Fev 2026 |
-| Wizards | U | 14 | ✅ | Fev 2026 |
-| Undead | B | 12 | ✅ | Fev 2026 |
-| **Total** | - | **132** | ✅ | - |
+| Wizards | U | 13 | ✅ | Fev 2026 |
+| Undead | B | 14 | ✅ | Fev 2026 |
+| **Total** | - | **135** | ✅ | - |
 
 ---
 
@@ -37,7 +40,7 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Plains | Land | Produz W | ✓ |
+| Plains (7) | Land | Produz W | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Savannah Lions | Creature 2/1 | - | - |
 | Leonin Vanguard | Creature 1/1 | Combat trigger: 3+ criaturas → +1/+1 e 1 vida | ✓ |
@@ -58,7 +61,7 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Mountain | Land | Produz R | ✓ |
+| Mountain (7) | Land | Produz R | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Frenzied Goblin | Creature 1/1 | Attack trigger: pay {R} → creature can't block | ✓ |
 | Swab Goblin | Creature 2/2 | - | - |
@@ -66,9 +69,9 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 | Goblin Smuggler | Creature 2/2 | Haste, {T}: power ≤2 can't be blocked | ✓ |
 | Battle-Rattle Shaman | Creature 2/2 | Combat: may give +2/+0 | ✓ |
 | Dropkick Bomber | Creature 2/3 | Lord +1/+1, {R}: Goblin gains flying + sac on damage | ✓ |
+| Volley Veteran | Creature 4/2 | ETB: damage = number of Goblins | ✓ |
 | Kindled Fury | Instant | +1/+0 and first strike | ✓ |
 | Dragon Fodder | Sorcery | Create two 1/1 Goblin tokens | ✓ |
-| Volley Veteran | Creature 4/2 | ETB: damage = number of Goblins | ✓ |
 | Incinerating Blast | Sorcery | 6 damage + optional loot | ✓ |
 | Goblin Oriflamme | Enchantment | Attacking creatures get +1/+0 | ✓ |
 | Goblin Firebomb | Artifact | Flash, {7},T,Sac: destroy permanent | ✓ |
@@ -79,15 +82,15 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Swamp | Land | Produz B | ✓ |
+| Swamp (7) | Land | Produz B | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Vampire Neonate | Creature 0/3 | {2},{T}: drain 1 | ✓ |
 | Vampire Interloper | Creature 2/1 | Flying, can't block | ✓ |
 | Stromkirk Bloodthief | Creature 2/2 | End step: +1/+1 on vampire if opponent lost life | ✓ |
 | Highborn Vampire | Creature 4/3 | - | - |
 | Vampire Spawn | Creature 2/3 | ETB: drain 2 | ✓ |
-| Bloodtithe Collector | Creature 3/2 | Flying, ETB: opponent discards if lost life | ✓ |
-| Vengeful Bloodwitch | Creature 3/2 | Flying, menace, death: drain 1 on each death | ✓ |
+| Bloodtithe Collector | Creature 3/4 | Flying, ETB: opponent discards if lost life | ✓ |
+| Vengeful Bloodwitch | Creature 1/1 | Death trigger: drain 1 | ✓ |
 | Crossway Troublemakers | Creature 5/5 | Attacking vamps have deathtouch/lifelink, death: pay 2 life draw | ✓ |
 | Moment of Craving | Instant | -2/-2, gain 2 life | ✓ |
 | Offer Immortality | Instant | Deathtouch + indestructible until end of turn | ✓ |
@@ -100,14 +103,14 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Forest | Land | Produz G | ✓ |
+| Forest (7) | Land | Produz G | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Llanowar Elves | Creature 1/1 | {T}: Add {G} | ✓ |
-| Elvish Regrower | Creature 4/3 | ETB: return permanent from graveyard | ✓ |
 | Dwynen's Elite | Creature 2/2 | ETB: create 1/1 Elf if you control another Elf | ✓ |
-| Beast-Kin Ranger | Creature 3/3 | Trample, +1/+0 when another creature enters | ✓ |
 | Thornweald Archer | Creature 2/1 | Reach, Deathtouch | ✓ |
+| Beast-Kin Ranger | Creature 3/3 | Trample, +1/+0 when another creature enters | ✓ |
 | Elvish Archdruid | Creature 2/2 | Other Elves +1/+1, {T}: Add G for each Elf | ✓ |
+| Elvish Regrower | Creature 4/3 | ETB: return permanent from graveyard | ✓ |
 | Tajuru Pathwarden | Creature 5/4 | Vigilance, Trample | ✓ |
 | Wildheart Invoker | Creature 4/3 | {8}: +5/+5 and trample | ✓ |
 | Snakeskin Veil | Instant | +1/+1 counter, hexproof until end of turn | ✓ |
@@ -121,7 +124,7 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Island | Land | Produz U | ✓ |
+| Island (7) | Land | Produz U | ✓ |
 | Uncharted Haven | Land | Produz cor escolhida, entra virado | ✓ |
 | Spectral Sailor | Creature 1/1 | Flash, Flying, {3}{U}: Draw | ✓ |
 | Kitesail Corsair | Creature 2/1 | Flying while attacking | ✓ |
@@ -142,9 +145,9 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Plains | Land | Produz W | ✓ |
+| Plains (7) | Land | Produz W | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
-| Hinterland Sanctifier | Creature 3/2 | Other creature enters → gain 1 life | ✓ |
+| Hinterland Sanctifier | Creature 1/2 | Other creature enters → gain 1 life | ✓ |
 | Bishop's Soldier | Creature 2/2 | Lifelink | ✓ |
 | Ajani's Pridemate | Creature 2/2 | Lifegain → +1/+1 counter | ✓ |
 | Dazzling Angel | Creature 2/3 | Flying, other creature enters → gain 1 life | ✓ |
@@ -163,16 +166,17 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Forest | Land | Produz G | ✓ |
+| Forest (8) | Land | Produz G | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
+| Mild-Mannered Librarian | Creature 1/1 | {3}{G}: Transform + 2x +1/+1 + draw (once) | ✓ |
+| Bear Cub | Creature 2/2 | - | - |
 | Druid of the Cowl | Creature 1/3 | {T}: Add {G} | ✓ |
 | Wildwood Scourge | Creature 1/1 | Counter synergy: +1/+1 when counter placed on another | ✓ |
-| Territorial Scythecat | Creature 2/1 | Trample, Landfall: +1/+1 counter | ✓ |
+| Thrashing Brontodon | Creature 3/4 | {1}, Sacrifice: destroy artifact/enchantment | ✓ |
+| Magnigoth Sentry | Creature 4/4 | Reach | ✓ |
 | Aggressive Mammoth | Creature 8/8 | Trample, other creatures have trample | ✓ |
 | Giant Growth | Instant | +3/+3 until end of turn | ✓ |
-| Snakeskin Veil | Instant | +1/+1 counter, hexproof until end of turn | ✓ |
-| Bite Down | Instant | Your creature fights target creature | ✓ |
-| Felling Blow | Sorcery | +1/+1 counter, deals damage = power to opponent creature | ✓ |
+| Bite Down | Instant | Your creature deals damage = power to target | ✓ |
 | Biogenic Upgrade | Sorcery | Distribute 3 +1/+1 counters among 1-3 creatures, double | ✓ |
 | New Horizons | Aura | Enchant land, ETB: +1/+1 counter, land taps for 2 mana | ✓ |
 
@@ -182,18 +186,19 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Mountain | Land | Produz R | ✓ |
+| Mountain (8) | Land | Produz R | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Dragonlord's Servant | Creature 1/3 | Dragon spells cost {1} less | ✓ |
-| Kargan Dragonrider | Creature 3/4 | Flying if you control a Dragon | ✓ |
+| Kargan Dragonrider | Creature 2/2 | Flying if you control a Dragon | ✓ |
 | Firespitter Whelp | Creature 2/2 | Flying, spellcast (non-creature, non-Dragon) → 1 damage | ✓ |
-| Dragon Whelp | Creature 2/3 | Flying, {R}: +1/+0 until end of turn | ✓ |
-| Shivan Dragon | Creature 5/5 | Flying, {R}: +1/+0 until end of turn | ✓ |
-| Furnace Whelp | Creature 2/2 | Flying, {R}: +1/+0 until end of turn | ✓ |
+| Skyraker Giant | Creature 4/3 | Reach | ✓ |
+| Fire Elemental | Creature 5/4 | - | - |
+| Rapacious Dragon | Creature 3/3 | Flying, ETB: create 2 Treasure tokens | ✓ |
 | Terror of Mount Velus | Creature 5/5 | Flying, double strike, ETB: creatures gain double strike | ✓ |
 | Scorching Dragonfire | Instant | 3 damage, exile if dies | ✓ |
-| Fiery Annihilation | Sorcery | 5 damage to creature | ✓ |
+| Fiery Annihilation | Instant | 5 damage to creature, exile equipment, exile if dies | ✓ |
 | Seize the Spoils | Sorcery | Discard 1, draw 2, create Treasure | ✓ |
+| Carnelian Orb of Dragonkind | Artifact | {T}: Add {R}, Dragon gets haste | ✓ |
 
 ---
 
@@ -201,19 +206,19 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Island | Land | Produz U | ✓ |
+| Island (7) | Land | Produz U | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
-| Burrog Befuddler | Creature 1/1 | Flash, ETB: target creature gets -1/-0 | ✓ |
+| Burrog Befuddler | Creature 2/1 | Flash, ETB: target creature gets -1/-0 | ✓ |
 | Mischievous Mystic | Creature 2/1 | Flying, second draw each turn → create Faerie token | ✓ |
 | Mystic Archaeologist | Creature 2/1 | {3}{U}{U}: Draw 2 cards | ✓ |
 | Exclusion Mage | Creature 2/2 | ETB: bounce target opponent creature | ✓ |
 | Erudite Wizard | Creature 2/3 | Second draw each turn → +1/+1 counter | ✓ |
-| Clinquant Skymage | Creature 2/2 | Flying, draw → +1/+1 counter | ✓ |
+| Clinquant Skymage | Creature 1/1 | Flying, draw → +1/+1 counter | ✓ |
 | Icewind Elemental | Creature 3/4 | Flying, ETB: loot (draw + discard) | ✓ |
 | Fleeting Distraction | Instant | Target creature gets -1/-0, draw a card | ✓ |
-| Essence Scatter | Instant | Counter target creature spell | ✓ |
 | Into the Roil | Instant | Bounce nonland permanent, Kicker: draw a card | ✓ |
 | Quick Study | Instant | Draw 2 cards | ✓ |
+| Arcane Epiphany | Instant | Draw 3 cards, costs {1} less if you control Wizard | ✓ |
 | Starlight Snare | Aura | Flash, ETB: tap enchanted creature, can't untap | ✓ |
 
 ---
@@ -222,34 +227,31 @@ Este documento rastreia o status de validação de todas as cartas do jogo.
 
 | Card | Tipo | Habilidade | Status |
 |------|------|------------|--------|
-| Swamp | Land | Produz B | ✓ |
+| Swamp (7) | Land | Produz B | ✓ |
 | Uncharted Haven | Land | Enters tapped, escolhe cor | ✓ |
 | Diregraf Ghoul | Creature 2/2 | Enters tapped | ✓ |
-| Walking Corpse | Creature 2/2 | - | - |
-| Virus Beetle | Creature 1/2 | ETB: opponent discards a card | ✓ |
+| Hungry Ghoul | Creature 2/2 | {1}, Sacrifice creature: +1/+1 counter | ✓ |
 | Reassembling Skeleton | Creature 1/1 | {1}{B}: Return from graveyard to battlefield tapped | ✓ |
+| Crow of Dark Tidings | Creature 2/1 | Flying, ETB/Death: mill 2 | ✓ |
 | Death Baron | Creature 2/2 | Zombies and Skeletons +1/+1 and deathtouch | ✓ |
-| Ghoulraiser | Creature 2/2 | ETB: return random Zombie from graveyard to hand | ✓ |
-| Gravedigger | Creature 2/2 | ETB: return target creature from graveyard to hand | ✓ |
-| Rot Hulk | Creature 5/5 | Menace, ETB: return Zombie/Skeleton from graveyard to battlefield | ✓ |
-| Murder | Instant | Destroy target creature | ✓ |
-| Mind Rot | Sorcery | Target opponent discards 2 cards | ✓ |
-| Rise Again | Sorcery | Return target creature from graveyard to battlefield | ✓ |
+| Skeleton Archer | Creature 3/3 | ETB: 1 damage to any target | ✓ |
+| Suspicious Shambler | Creature 4/2 | {4}{B}{B}, Exile from graveyard: create 2 Zombie tokens | ✓ |
+| Maalfeld Twins | Creature 4/4 | Death: create 2 Zombie 2/2 tokens | ✓ |
+| Undying Malice | Instant | Target creature returns with +1/+1 counter when dies | ✓ |
+| Deadly Plot | Instant | Modal: destroy creature OR return Zombie from graveyard | ✓ |
+| Cemetery Recruitment | Sorcery | Return creature from graveyard, draw if Zombie | ✓ |
+| Eaten Alive | Sorcery | Exile creature/planeswalker (sac creature OR pay {3}{B}) | ✓ |
 
 ---
 
 ## Correções de Fevereiro 2026
 
-| Deck | Card | Problema | Correção |
-|------|------|----------|----------|
-| Inferno | Firespitter Whelp | Trigger incorreto (disparava para Dragons) | Condição corrigida: NOT creature AND NOT Dragon |
-| Wizards | Into the Roil | Kicker nunca disparava | Sistema de kicker implementado com prompt |
-| Wizards | Starlight Snare | "Não desvira" não funcionava | freeze_aura implementado (ETB tap + prevent untap) |
-| Primal | New Horizons | ETB não colocava contador | attachAura agora chama resolveETB |
-| Primal | Felling Blow | Wildwood Scourge não disparava | onCounterPlaced chamado após colocar contador |
-| Primal | Biogenic Upgrade | Só aceitava 1 alvo | Multi-target implementado (1-3 criaturas) |
-| Undead | Reassembling Skeleton | Habilidade do cemitério não existia | Sistema de graveyard abilities implementado |
-| Elves | Elvish Archdruid | Faltava keyword elf_lord | Keyword adicionada para consistência |
+| Deck | Problema | Correção |
+|------|----------|----------|
+| Inferno | Mountain qty: 7 | Corrigido para 8 |
+| Primal | Forest qty: 7 | Corrigido para 8 |
+| Wizards | Tinha Essence Scatter (não oficial) | Removido |
+| Undead | Deck completamente errado | Reconstruído com lista oficial |
 
 ---
 
