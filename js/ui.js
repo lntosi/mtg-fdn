@@ -2306,6 +2306,41 @@ class GameUI {
         return result;
     }
 
+    /**
+     * Converte notação de mana {W}, {3}{B}, etc. em ícones HTML dentro de um texto
+     * Usado para mensagens de UI (não para texto original de cartas)
+     * @param {string} text - Texto contendo notação de mana como {W}, {3}, {B}
+     * @returns {string} - Texto com ícones HTML de mana
+     */
+    formatManaInText(text) {
+        if (!text) return '';
+
+        const manaIcons = {
+            'W': '<i class="ms ms-w ms-cost"></i>',
+            'U': '<i class="ms ms-u ms-cost"></i>',
+            'B': '<i class="ms ms-b ms-cost"></i>',
+            'R': '<i class="ms ms-r ms-cost"></i>',
+            'G': '<i class="ms ms-g ms-cost"></i>',
+            '0': '<i class="ms ms-0 ms-cost"></i>',
+            '1': '<i class="ms ms-1 ms-cost"></i>',
+            '2': '<i class="ms ms-2 ms-cost"></i>',
+            '3': '<i class="ms ms-3 ms-cost"></i>',
+            '4': '<i class="ms ms-4 ms-cost"></i>',
+            '5': '<i class="ms ms-5 ms-cost"></i>',
+            '6': '<i class="ms ms-6 ms-cost"></i>',
+            '7': '<i class="ms ms-7 ms-cost"></i>',
+            '8': '<i class="ms ms-8 ms-cost"></i>',
+            '9': '<i class="ms ms-9 ms-cost"></i>',
+            'X': '<i class="ms ms-x ms-cost"></i>',
+            'T': '<i class="ms ms-tap ms-cost"></i>'
+        };
+
+        // Substituir {X} por ícones onde X é W, U, B, R, G, 0-9, X, T
+        return text.replace(/\{([WUBRGX0-9T])\}/gi, (match, symbol) => {
+            return manaIcons[symbol.toUpperCase()] || match;
+        });
+    }
+
     // === Modal de Exílio ===
 
     showExileModal(owner) {
@@ -2642,7 +2677,7 @@ class GameUI {
 
     // Log de mensagens
     log(message, type = 'normal') {
-        // Registrar no LogManager para debug/export
+        // Registrar no LogManager para debug/export (texto puro, sem HTML)
         if (window.logManager) {
             // Categorizar automaticamente baseado no conteúdo
             let category = 'action';
@@ -2674,7 +2709,9 @@ class GameUI {
                 logEntry.classList.add('turn-start');
             }
 
-            logEntry.textContent = message;
+            // Converter notação de mana {W}, {3}{B} etc. para ícones na exibição
+            const displayMessage = this.formatManaInText(message);
+            logEntry.innerHTML = displayMessage;
             this.logPanelContent.appendChild(logEntry);
             this.logPanelContent.scrollTop = this.logPanelContent.scrollHeight;
         }
@@ -3343,11 +3380,11 @@ class GameUI {
             const btnYes = document.getElementById('btn-yes');
             const btnNo = document.getElementById('btn-no');
 
-            // Configurar conteúdo
+            // Configurar conteúdo (converter mana notation para ícones)
             title.textContent = options.title || 'Confirmar';
-            description.textContent = options.description || 'Deseja realizar esta ação?';
-            btnYes.textContent = options.yesText || 'Sim';
-            btnNo.textContent = options.noText || 'Não';
+            description.innerHTML = this.formatManaInText(options.description || 'Deseja realizar esta ação?');
+            btnYes.innerHTML = this.formatManaInText(options.yesText || 'Sim');
+            btnNo.innerHTML = this.formatManaInText(options.noText || 'Não');
 
             // Event handlers
             const cleanup = () => {
