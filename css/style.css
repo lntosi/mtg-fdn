@@ -379,9 +379,37 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 155px; /* Fixed height to prevent layout shift when lands tap/untap */
+    max-height: 180px; /* Limite máximo para evitar overflow */
     padding: 5px;
     position: relative;
-    overflow: visible !important;
+    overflow-y: auto;
+    overflow-x: visible;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
+}
+
+/* Scrollbar styling for webkit browsers */
+.lands::-webkit-scrollbar {
+    height: 4px;
+}
+
+.lands::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lands::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.3);
+    border-radius: 2px;
+}
+
+/* Tamanho reduzido quando há muitos terrenos (classe adicionada via JS) */
+.lands.many-items .card {
+    width: 56px;
+    height: 78px;
+}
+
+.lands.many-items {
+    gap: 4px;
 }
 
 /* Zona de outros permanentes (encantamentos, artefatos) - canto lateral */
@@ -392,15 +420,32 @@ body {
     flex-wrap: wrap;
     flex-direction: column;
     align-items: flex-end;
-    justify-content: center;
+    justify-content: flex-start;
     position: absolute;
     right: 10px;
     top: 10px;
     bottom: 10px;
     max-width: 180px;
     padding: 5px;
-    overflow: visible !important;
+    overflow-y: auto;
+    overflow-x: visible;
     z-index: 5;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 100, 180, 0.5) transparent;
+}
+
+/* Scrollbar styling for webkit browsers */
+.other-permanents::-webkit-scrollbar {
+    width: 4px;
+}
+
+.other-permanents::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.other-permanents::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.5);
+    border-radius: 2px;
 }
 
 .other-permanents:empty {
@@ -410,6 +455,17 @@ body {
 .other-permanents .card {
     width: 70px;
     height: 98px;
+    flex-shrink: 0;
+}
+
+/* Tamanho reduzido quando há muitos permanentes (classe adicionada via JS) */
+.other-permanents.many-items .card {
+    width: 56px;
+    height: 78px;
+}
+
+.other-permanents.many-items {
+    gap: 4px;
 }
 
 /* Lands do oponente: mesma ordem visual (lands acima, criaturas abaixo) */

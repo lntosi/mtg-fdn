@@ -1256,6 +1256,24 @@ class GameUI {
                 creaturesContainer.appendChild(cardEl);
             }
         });
+
+        // Ajuste dinâmico para muitos itens - reduz tamanho quando há excesso
+        const landsCount = landsContainer.children.length;
+        const otherCount = otherContainer.children.length;
+
+        // Lands: mais de 8 terrenos = modo compacto
+        if (landsCount > 8) {
+            landsContainer.classList.add('many-items');
+        } else {
+            landsContainer.classList.remove('many-items');
+        }
+
+        // Other permanents: mais de 4 itens = modo compacto
+        if (otherCount > 4) {
+            otherContainer.classList.add('many-items');
+        } else {
+            otherContainer.classList.remove('many-items');
+        }
     }
 
     renderAttachedAuras(creature, creatureEl) {
