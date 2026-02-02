@@ -1000,9 +1000,11 @@ class GameState {
 
         // Para o jogador humano, perguntar se quer pagar kicker
         if (player === this.player) {
+            // Formatar custo de kicker para exibição com ícones (ex: "1U" -> "{1}{U}")
+            const formattedKickerCost = card.kickerCost.split('').map(c => `{${c}}`).join('');
             const wantKicker = await this.ui.promptYesNo({
                 title: `${card.name} - Encostar`,
-                description: `Deseja pagar o custo de encostar (${card.kickerCost})?`,
+                description: `Deseja pagar o custo de encostar ${formattedKickerCost}?`,
                 yesText: 'Sim, encostar',
                 noText: 'Não'
             });
