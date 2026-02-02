@@ -96,6 +96,11 @@ class RulesEngine {
             return this.hasValidAuraTargets(card, player);
         }
 
+        // Sorceries precisam verificar alvos válidos (ex: Seize the Spoils precisa de carta para descartar)
+        if (card.type === 'sorcery') {
+            if (!this.hasValidTargets(card, player)) return false;
+        }
+
         return true;
     }
 

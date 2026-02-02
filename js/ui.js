@@ -588,8 +588,11 @@ class GameUI {
         }
 
         // Keywords temporárias (buffs até fim do turno - Kindled Fury, Wildheart Invoker, etc.)
+        // Exclui keywords que já são nativas da carta para evitar duplicação visual
         if (card.temporaryKeywords && card.temporaryKeywords.length > 0) {
-            const visibleTempKeywords = card.temporaryKeywords.filter(kw => combatKeywords.includes(kw));
+            const visibleTempKeywords = card.temporaryKeywords.filter(kw =>
+                combatKeywords.includes(kw) && !baseKeywords.includes(kw)
+            );
 
             visibleTempKeywords.forEach(kw => {
                 const badge = document.createElement('span');
