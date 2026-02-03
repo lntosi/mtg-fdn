@@ -362,9 +362,19 @@ class RulesEngine {
     calculateAvailableMana(player) {
         const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
 
+        // Encontrar todas as auras New Horizons no campo do jogador
+        const newHorizonsAuras = player.battlefield.filter(c =>
+            c.id === 'new_horizons' && c.attachedTo
+        );
+        const landsWithNewHorizons = new Set(newHorizonsAuras.map(a => a.attachedTo));
+
         player.battlefield.forEach(card => {
             if (card.type === 'land' && !card.tapped) {
-                if (card.produces === 'any') {
+                // Verificar se o terreno está encantado com New Horizons
+                if (landsWithNewHorizons.has(card.instanceId)) {
+                    // New Horizons: terreno produz 2 mana de qualquer cor
+                    mana.any += 2;
+                } else if (card.produces === 'any') {
                     // Uncharted Haven: usa a cor escolhida, ou 'any' se ainda não escolheu
                     if (card.chosenColor) {
                         mana[card.chosenColor]++;

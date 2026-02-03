@@ -1532,6 +1532,9 @@ class GameState {
         } else if (aura.id === 'untamed_hunger') {
             // Untamed Hunger: encantar criatura que você controla
             validTargets = player.battlefield.filter(c => c.type === 'creature');
+        } else if (aura.id === 'new_horizons') {
+            // New Horizons: encantar terreno que você controla
+            validTargets = player.battlefield.filter(c => c.type === 'land');
         } else {
             // Padrão: qualquer criatura
             validTargets = [
