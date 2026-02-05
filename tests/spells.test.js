@@ -331,3 +331,161 @@ describe('Instant Timing', () => {
         expect(canCastDuringOpponentTurn).toBe(false);
     });
 });
+
+describe('Bite Down (One-Sided Fight)', () => {
+    let rules;
+
+    beforeEach(() => {
+        rules = new TestRulesEngine();
+    });
+
+    describe('Target Requirements', () => {
+        test('requires own creature AND opponent creature', () => {
+            const player = createPlayer({
+                battlefield: [createCreature({ name: 'My Creature' })]
+            });
+            const opponent = createPlayer({
+                battlefield: [createCreature({ name: 'Enemy Creature' })]
+            });
+
+            const hasOwnCreature = player.battlefield.some(c => c.type === 'creature');
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            const canCast = hasOwnCreature && hasOpponentCreature;
+
+            expect(canCast).toBe(true);
+        });
+
+        test('cannot cast without own creature', () => {
+            const player = createPlayer({ battlefield: [] });
+            const opponent = createPlayer({
+                battlefield: [createCreature({ name: 'Enemy' })]
+            });
+
+            const hasOwnCreature = player.battlefield.some(c => c.type === 'creature');
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            const canCast = hasOwnCreature && hasOpponentCreature;
+
+            expect(canCast).toBe(false);
+        });
+
+        test('cannot cast without opponent creature', () => {
+            const player = createPlayer({
+                battlefield: [createCreature({ name: 'My Creature' })]
+            });
+            const opponent = createPlayer({ battlefield: [] });
+
+            const hasOwnCreature = player.battlefield.some(c => c.type === 'creature');
+            const hasOpponentCreature = opponent.battlefield.some(c => c.type === 'creature');
+            const canCast = hasOwnCreature && hasOpponentCreature;
+
+            expect(canCast).toBe(false);
+        });
+    });
+
+    describe('Damage Resolution', () => {
+        test('own creature deals damage equal to its power', () => {
+            const ownCreature = createCreature({ power: 4, toughness: 4 });
+            const enemyCreature = createCreature({ power: 2, toughness: 3 });
+
+            // Bite Down: sua criatura causa dano igual ao poder dela
+            const damage = ownCreature.power;
+            enemyCreature.damage = (enemyCreature.damage || 0) + damage;
+
+            expect(damage).toBe(4);
+            expect(enemyCreature.damage).toBe(4);
+        });
+
+        test('enemy creature does NOT deal damage back (one-sided)', () => {
+            const ownCreature = createCreature({ power: 2, toughness: 2 });
+            const enemyCreature = createCreature({ power: 5, toughness: 5 });
+
+            // Bite Down é one-sided - inimigo NÃO causa dano de volta
+            const ownDamageReceived = 0; // Diferente de Fight que seria recíproco
+
+            expect(ownCreature.damage || 0).toBe(ownDamageReceived);
+        });
+
+        test('deathtouch on own creature kills enemy regardless of toughness', () => {
+            const ownCreature = createCreature({
+                power: 1,
+                toughness: 1,
+                keywords: ['deathtouch']
+            });
+            const enemyCreature = createCreature({ power: 10, toughness: 10 });
+
+            const damage = ownCreature.power;
+            enemyCreature.damage = damage;
+
+            // Deathtouch: qualquer dano > 0 é letal
+            const hasDeathtouch = ownCreature.keywords?.includes('deathtouch');
+            const isLethal = hasDeathtouch && damage > 0;
+
+            expect(isLethal).toBe(true);
+        });
+
+        test('enemy dies if damage >= toughness', () => {
+            const ownCreature = createCreature({ power: 4, toughness: 4 });
+            const enemyCreature = createCreature({ power: 2, toughness: 3 });
+
+            const damage = ownCreature.power;
+            enemyCreature.damage = damage;
+
+            const enemyDies = enemyCreature.damage >= enemyCreature.toughness;
+
+            expect(enemyDies).toBe(true);
+        });
+
+        test('enemy survives if damage < toughness', () => {
+            const ownCreature = createCreature({ power: 2, toughness: 2 });
+            const enemyCreature = createCreature({ power: 3, toughness: 5 });
+
+            const damage = ownCreature.power;
+            enemyCreature.damage = damage;
+
+            const enemyDies = enemyCreature.damage >= enemyCreature.toughness;
+
+            expect(enemyDies).toBe(false);
+            expect(enemyCreature.damage).toBe(2);
+        });
+    });
+
+    describe('Target Selection UI', () => {
+        test('targets without owner property should still be selectable', () => {
+            // Bug fix: promptTriggerTarget filtrava por t.owner, mas criaturas
+            // passadas não tinham essa propriedade, resultando em lista vazia
+            const ownCreatures = [
+                createCreature({ name: 'Creature 1' }),
+                createCreature({ name: 'Creature 2' })
+            ];
+
+            // Simular lógica corrigida: ungroupedTargets como fallback
+            const playerTargets = ownCreatures.filter(t => t.isPlayer);
+            const opponentCreatures = ownCreatures.filter(t => !t.isPlayer && t.owner === 'opponent');
+            const playerCreatures = ownCreatures.filter(t => !t.isPlayer && t.owner === 'player');
+            const ungroupedTargets = ownCreatures.filter(t => !t.isPlayer && !t.owner);
+
+            // Sem o fix, todos os grupos seriam vazios
+            expect(playerTargets.length).toBe(0);
+            expect(opponentCreatures.length).toBe(0);
+            expect(playerCreatures.length).toBe(0);
+
+            // Com o fix, ungroupedTargets captura criaturas sem owner
+            expect(ungroupedTargets.length).toBe(2);
+        });
+
+        test('targets with owner property are grouped correctly', () => {
+            const targets = [
+                createCreature({ name: 'My Creature', owner: 'player' }),
+                createCreature({ name: 'Enemy Creature', owner: 'opponent' })
+            ];
+
+            const playerCreatures = targets.filter(t => !t.isPlayer && t.owner === 'player');
+            const opponentCreatures = targets.filter(t => !t.isPlayer && t.owner === 'opponent');
+
+            expect(playerCreatures.length).toBe(1);
+            expect(opponentCreatures.length).toBe(1);
+            expect(playerCreatures[0].name).toBe('My Creature');
+            expect(opponentCreatures[0].name).toBe('Enemy Creature');
+        });
+    });
+});

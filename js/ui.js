@@ -3189,6 +3189,8 @@ class GameUI {
             const playerTargets = options.validTargets.filter(t => t.isPlayer);
             const opponentCreatures = options.validTargets.filter(t => !t.isPlayer && t.owner === 'opponent');
             const playerCreatures = options.validTargets.filter(t => !t.isPlayer && t.owner === 'player');
+            // Fallback: alvos que não têm owner definido (ex: criaturas passadas sem marcação)
+            const ungroupedTargets = options.validTargets.filter(t => !t.isPlayer && !t.owner);
 
             groupsContainer.innerHTML = '';
 
@@ -3208,6 +3210,13 @@ class GameUI {
             if (playerCreatures.length > 0) {
                 const yourGroup = this._createTargetGroup('Suas Criaturas', playerCreatures, resolve, modal, false);
                 groupsContainer.appendChild(yourGroup);
+            }
+
+            // Renderizar alvos sem grupo (fallback para compatibilidade)
+            if (ungroupedTargets.length > 0) {
+                const defaultLabel = options.groupLabel || 'Alvos Disponíveis';
+                const ungroupedGroup = this._createTargetGroup(defaultLabel, ungroupedTargets, resolve, modal, false);
+                groupsContainer.appendChild(ungroupedGroup);
             }
 
             modal.classList.remove('hidden');
