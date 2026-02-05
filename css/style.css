@@ -868,6 +868,31 @@ body {
     box-shadow: 0 0 15px 5px #f39c12aa;
 }
 
+/* Criatura que produz mana selecionável (Druid of the Cowl, Llanowar Elves, etc) */
+.card.mana-producer-selectable {
+    cursor: pointer;
+}
+
+.card.mana-producer-selectable:hover {
+    box-shadow: 0 0 15px 5px #2ecc71aa;
+}
+
+/* Criatura produtora de mana selecionada */
+.card.mana-producer-selected {
+    box-shadow: 0 0 20px 8px #2ecc71;
+}
+
+.card.mana-producer-selected::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 14px;
+    color: #2ecc71;
+    text-shadow: 0 0 3px #000;
+    z-index: 10;
+}
+
 .card.attacking {
     box-shadow: 0 0 25px 10px #e74c3c;
     animation: pulse-attack 0.8s infinite;

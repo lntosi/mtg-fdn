@@ -1191,6 +1191,12 @@ class GameUI {
             }
             // Eventos de clique normais
             else if (card.type === 'creature') {
+                // Verificar se criatura pode produzir mana (tap_for_mana)
+                const canProduceMana = isPlayer &&
+                    card.keywords?.includes('tap_for_mana') &&
+                    !card.tapped &&
+                    !card.summoningSickness;
+
                 if (isPlayer && this.game.phase === PHASES.DECLARE_ATTACKERS && this.game.isPlayerTurn()) {
                     const hasAbility = this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player);
 
@@ -1218,6 +1224,15 @@ class GameUI {
                 } else if (isPlayer && this.waitingForBlockers) {
                     cardEl.addEventListener('click', () => this.selectBlocker(card));
                     cardEl.style.cursor = 'pointer';
+                } else if (canProduceMana) {
+                    // Criatura que produz mana - permitir seleção para mana pool
+                    cardEl.classList.add('mana-producer-selectable');
+                    cardEl.addEventListener('click', () => this.toggleManaProducerSelection(card));
+                    cardEl.style.cursor = 'pointer';
+                    // Marcar se já selecionado
+                    if (this.selectedLands.some(l => l.instanceId === card.instanceId)) {
+                        cardEl.classList.add('mana-producer-selected');
+                    }
                 } else if (isPlayer && this.game.isPlayerTurn() && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
                     // Habilidade ativada disponível
                     cardEl.classList.add('has-ability');
@@ -2630,7 +2645,23 @@ class GameUI {
         this.render();
     }
 
-    // === Seleção Manual de Terrenos para Mana ===
+    // === Seleção Manual de Produtores de Mana (Terrenos e Criaturas) ===
+
+    /**
+     * Seleciona/desseleciona uma criatura que produz mana (ex: Druid of the Cowl)
+     */
+    toggleManaProducerSelection(card) {
+        const index = this.selectedLands.findIndex(l => l.instanceId === card.instanceId);
+        if (index > -1) {
+            // Desselecionar
+            this.selectedLands.splice(index, 1);
+        } else {
+            // Selecionar - criatura produz mana da cor indicada em 'produces'
+            this.selectedLands.push(card);
+        }
+        this.render();
+    }
+
     async toggleLandSelection(card) {
         const index = this.selectedLands.findIndex(l => l.instanceId === card.instanceId);
         if (index > -1) {

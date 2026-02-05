@@ -569,8 +569,10 @@ class RulesEngine {
             }
         }
 
-        // Separar terrenos pré-selecionados dos demais
+        // Separar terrenos e criaturas pré-selecionados dos demais
         const selectedIds = new Set(selectedLands.map(l => l.instanceId));
+
+        // Terrenos pré-selecionados e não-selecionados
         const preSelected = player.battlefield.filter(c =>
             c.type === 'land' && !c.tapped && selectedIds.has(c.instanceId)
         );
@@ -578,9 +580,14 @@ class RulesEngine {
             c.type === 'land' && !c.tapped && !selectedIds.has(c.instanceId)
         );
 
-        const manaCreatures = player.battlefield.filter(c =>
+        // Criaturas que produzem mana (tap_for_mana)
+        const allManaCreatures = player.battlefield.filter(c =>
             c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
         );
+
+        // Separar criaturas pré-selecionadas das demais
+        const preSelectedCreatures = allManaCreatures.filter(c => selectedIds.has(c.instanceId));
+        const manaCreatures = allManaCreatures.filter(c => !selectedIds.has(c.instanceId));
 
         // Obter floating mana do jogador
         const playerKey = player === this.game.player ? 'player' : 'opponent';
@@ -618,7 +625,16 @@ class RulesEngine {
                 }
             }
 
-            // 3. Usar outros terrenos da cor (auto-tap)
+            // 3. Usar criaturas PRÉ-SELECIONADAS que produzem mana da cor
+            for (const creature of preSelectedCreatures) {
+                if (needed <= 0) break;
+                if (creature.produces === color && !creature.tapped) {
+                    creature.tapped = true;
+                    needed--;
+                }
+            }
+
+            // 4. Usar outros terrenos da cor (auto-tap)
             for (const land of otherLands) {
                 if (needed <= 0) break;
                 const producesColor = land.produces === color ||
@@ -629,7 +645,7 @@ class RulesEngine {
                 }
             }
 
-            // Usar criaturas mana da cor
+            // 5. Usar outras criaturas mana da cor (auto-tap)
             for (const creature of manaCreatures) {
                 if (needed <= 0) break;
                 if (creature.produces === color && !creature.tapped) {
@@ -687,6 +703,15 @@ class RulesEngine {
             }
         }
 
+        // Usar criaturas pré-selecionadas para genérico
+        for (const creature of preSelectedCreatures) {
+            if (genericNeeded <= 0) break;
+            if (!creature.tapped) {
+                creature.tapped = true;
+                genericNeeded--;
+            }
+        }
+
         // Depois outros terrenos (auto-tap)
         for (const land of otherLands) {
             if (genericNeeded <= 0) break;
@@ -696,6 +721,7 @@ class RulesEngine {
             }
         }
 
+        // Depois outras criaturas mana (auto-tap)
         for (const creature of manaCreatures) {
             if (genericNeeded <= 0) break;
             if (!creature.tapped) {
