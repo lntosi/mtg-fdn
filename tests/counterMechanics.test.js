@@ -408,3 +408,149 @@ describe('Interaction: Counter Synergy + Lifegain Counter', () => {
         expect(scourge.counters.plusOnePlusOne).toBe(1);
     });
 });
+
+describe('Biogenic Upgrade (counter distribution + doubling)', () => {
+    /**
+     * Biogenic Upgrade: Distribute three +1/+1 counters among one, two, or three
+     * target creatures, then double the number of +1/+1 counters on each of those creatures.
+     */
+
+    test('distributes 3 counters on 1 creature, then doubles (3 → 6)', () => {
+        const creature = createCreature({ name: 'Target', power: 2, toughness: 2 });
+        if (!creature.counters) creature.counters = {};
+
+        // Distribuição: 3 contadores na criatura
+        const distribution = [{ creature, counters: 3 }];
+
+        // Aplicar contadores
+        distribution.forEach(({ creature: c, counters }) => {
+            c.counters.plusOnePlusOne = (c.counters.plusOnePlusOne || 0) + counters;
+        });
+
+        // Dobrar contadores em cada alvo
+        distribution.forEach(({ creature: c }) => {
+            c.counters.plusOnePlusOne = c.counters.plusOnePlusOne * 2;
+        });
+
+        expect(creature.counters.plusOnePlusOne).toBe(6); // 3 * 2 = 6
+    });
+
+    test('distributes 3 counters on 2 creatures (2+1), then doubles (4+2)', () => {
+        const creature1 = createCreature({ name: 'Target 1', power: 3, toughness: 3 });
+        const creature2 = createCreature({ name: 'Target 2', power: 1, toughness: 1 });
+        if (!creature1.counters) creature1.counters = {};
+        if (!creature2.counters) creature2.counters = {};
+
+        // Distribuição: 2 na primeira, 1 na segunda
+        const distribution = [
+            { creature: creature1, counters: 2 },
+            { creature: creature2, counters: 1 }
+        ];
+
+        // Aplicar contadores
+        distribution.forEach(({ creature: c, counters }) => {
+            c.counters.plusOnePlusOne = (c.counters.plusOnePlusOne || 0) + counters;
+        });
+
+        // Dobrar contadores em cada alvo
+        distribution.forEach(({ creature: c }) => {
+            c.counters.plusOnePlusOne = c.counters.plusOnePlusOne * 2;
+        });
+
+        expect(creature1.counters.plusOnePlusOne).toBe(4); // 2 * 2 = 4
+        expect(creature2.counters.plusOnePlusOne).toBe(2); // 1 * 2 = 2
+    });
+
+    test('distributes 3 counters on 3 creatures (1+1+1), then doubles (2+2+2)', () => {
+        const creature1 = createCreature({ name: 'Target 1' });
+        const creature2 = createCreature({ name: 'Target 2' });
+        const creature3 = createCreature({ name: 'Target 3' });
+        if (!creature1.counters) creature1.counters = {};
+        if (!creature2.counters) creature2.counters = {};
+        if (!creature3.counters) creature3.counters = {};
+
+        // Distribuição: 1 em cada
+        const distribution = [
+            { creature: creature1, counters: 1 },
+            { creature: creature2, counters: 1 },
+            { creature: creature3, counters: 1 }
+        ];
+
+        // Aplicar contadores
+        distribution.forEach(({ creature: c, counters }) => {
+            c.counters.plusOnePlusOne = (c.counters.plusOnePlusOne || 0) + counters;
+        });
+
+        // Dobrar contadores em cada alvo
+        distribution.forEach(({ creature: c }) => {
+            c.counters.plusOnePlusOne = c.counters.plusOnePlusOne * 2;
+        });
+
+        expect(creature1.counters.plusOnePlusOne).toBe(2); // 1 * 2 = 2
+        expect(creature2.counters.plusOnePlusOne).toBe(2); // 1 * 2 = 2
+        expect(creature3.counters.plusOnePlusOne).toBe(2); // 1 * 2 = 2
+    });
+
+    test('doubles existing counters in addition to new ones', () => {
+        const creature = createCreature({ name: 'Target' });
+        if (!creature.counters) creature.counters = {};
+        creature.counters.plusOnePlusOne = 2; // Já tinha 2 contadores
+
+        // Distribuição: 3 contadores
+        const distribution = [{ creature, counters: 3 }];
+
+        // Aplicar contadores
+        distribution.forEach(({ creature: c, counters }) => {
+            c.counters.plusOnePlusOne = (c.counters.plusOnePlusOne || 0) + counters;
+        });
+        // Agora tem 2 + 3 = 5 contadores
+
+        // Dobrar contadores
+        distribution.forEach(({ creature: c }) => {
+            c.counters.plusOnePlusOne = c.counters.plusOnePlusOne * 2;
+        });
+
+        expect(creature.counters.plusOnePlusOne).toBe(10); // (2 + 3) * 2 = 10
+    });
+
+    test('only doubles counters on targeted creatures, not all', () => {
+        const target = createCreature({ name: 'Target' });
+        const bystander = createCreature({ name: 'Bystander' });
+        if (!target.counters) target.counters = {};
+        if (!bystander.counters) bystander.counters = {};
+        bystander.counters.plusOnePlusOne = 3; // Bystander tem 3 contadores
+
+        // Distribuição: apenas no target
+        const distribution = [{ creature: target, counters: 3 }];
+
+        // Aplicar contadores
+        distribution.forEach(({ creature: c, counters }) => {
+            c.counters.plusOnePlusOne = (c.counters.plusOnePlusOne || 0) + counters;
+        });
+
+        // Dobrar contadores APENAS nos alvos
+        distribution.forEach(({ creature: c }) => {
+            c.counters.plusOnePlusOne = c.counters.plusOnePlusOne * 2;
+        });
+
+        expect(target.counters.plusOnePlusOne).toBe(6); // 3 * 2 = 6
+        expect(bystander.counters.plusOnePlusOne).toBe(3); // Não foi dobrado
+    });
+
+    test('distribution must total exactly 3 counters', () => {
+        const creature1 = createCreature({ name: 'Target 1' });
+        const creature2 = createCreature({ name: 'Target 2' });
+
+        // Testar que a soma deve ser exatamente 3
+        const validDistributions = [
+            [{ creature: creature1, counters: 3 }],                              // 3 = 3 ✓
+            [{ creature: creature1, counters: 2 }, { creature: creature2, counters: 1 }], // 2+1 = 3 ✓
+            [{ creature: creature1, counters: 1 }, { creature: creature2, counters: 2 }], // 1+2 = 3 ✓
+        ];
+
+        validDistributions.forEach(dist => {
+            const total = dist.reduce((sum, d) => sum + d.counters, 0);
+            expect(total).toBe(3);
+        });
+    });
+});

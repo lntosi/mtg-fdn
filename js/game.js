@@ -2441,49 +2441,32 @@ class GameState {
                 // Biogenic Upgrade - distribute 3 +1/+1 counters among 1-3 creatures, then double each
                 const bioCreatures = caster.battlefield.filter(c => c.type === 'creature');
                 if (bioCreatures.length > 0) {
-                    let selectedTargets = [];
+                    let distribution = [];
 
                     if (caster === this.player) {
-                        // Jogador escolhe 1-3 criaturas
-                        selectedTargets = await this.ui.promptMultiTarget({
+                        // Jogador distribui contadores manualmente
+                        distribution = await this.ui.promptDistributeCounters({
                             title: 'Biogenic Upgrade',
-                            description: 'Escolha 1-3 criaturas para distribuir 3 contadores +1/+1 (depois dobram):',
+                            description: 'Distribua 3 contadores +1/+1 entre suas criaturas',
                             validTargets: bioCreatures,
-                            minTargets: 1,
-                            maxTargets: Math.min(3, bioCreatures.length),
-                            canSkip: false
+                            totalCounters: 3,
+                            counterType: '+1/+1',
+                            thenDouble: true
                         });
                     } else {
-                        // IA: escolhe criaturas estrategicamente
-                        // Prioriza criaturas que já têm contadores (para maximizar o dobro)
+                        // IA: põe todos em 1 criatura para maximizar (3 + existentes) * 2
+                        // Prioriza criaturas que já têm contadores
                         const sorted = [...bioCreatures].sort((a, b) => {
                             const aCounters = a.counters?.plusOnePlusOne || 0;
                             const bCounters = b.counters?.plusOnePlusOne || 0;
-                            return bCounters - aCounters; // Mais contadores primeiro
+                            return bCounters - aCounters;
                         });
-                        // IA geralmente põe todos em 1 criatura para maximizar (3 + existentes) * 2
-                        selectedTargets = [sorted[0]];
+                        distribution = [{ creature: sorted[0], counters: 3 }];
                     }
 
-                    if (selectedTargets && selectedTargets.length > 0) {
-                        // Distribuir 3 contadores entre os alvos
-                        // Distribuição: 3 em 1, ou 2+1 em 2, ou 1+1+1 em 3
-                        const countersPerTarget = [];
-                        const numTargets = selectedTargets.length;
-
-                        if (numTargets === 1) {
-                            countersPerTarget.push(3);
-                        } else if (numTargets === 2) {
-                            countersPerTarget.push(2, 1);
-                        } else {
-                            countersPerTarget.push(1, 1, 1);
-                        }
-
+                    if (distribution && distribution.length > 0) {
                         // Aplicar contadores e depois dobrar cada um
-                        for (let i = 0; i < selectedTargets.length; i++) {
-                            const target = selectedTargets[i];
-                            const countersToAdd = countersPerTarget[i];
-
+                        for (const { creature: target, counters: countersToAdd } of distribution) {
                             if (!target.counters) target.counters = {};
                             const beforeCounters = target.counters.plusOnePlusOne || 0;
 

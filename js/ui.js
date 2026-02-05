@@ -3615,7 +3615,17 @@ class GameUI {
             btnConfirm = document.createElement('button');
             btnConfirm.id = 'btn-trigger-confirm';
             btnConfirm.className = 'btn-trigger-confirm';
-            btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
+
+            // Função para atualizar texto do botão (com sufixo customizado ou padrão)
+            const suffix = options.confirmTextSuffix;
+            const updateConfirmText = (count) => {
+                if (suffix) {
+                    btnConfirm.textContent = `Confirmar (${count} ${suffix})`;
+                } else {
+                    btnConfirm.textContent = `Confirmar (${count}/${maxTargets})`;
+                }
+            };
+            updateConfirmText(selectedTargets.length);
             btnConfirm.disabled = selectedTargets.length < minTargets;
             btnSkip.parentNode.insertBefore(btnConfirm, btnSkip);
 
@@ -3656,13 +3666,168 @@ class GameUI {
                         cardEl.classList.add('selected-target');
                     }
                     // Atualizar botão
-                    btnConfirm.textContent = `Confirmar (${selectedTargets.length}/${maxTargets})`;
+                    updateConfirmText(selectedTargets.length);
                     btnConfirm.disabled = selectedTargets.length < minTargets;
                 });
 
                 cardEl.addEventListener('mouseenter', () => this.showCardPreview(creature));
                 cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
                 creaturesContainer.appendChild(cardEl);
+            });
+
+            modal.classList.remove('hidden');
+        });
+    }
+
+    /**
+     * Mostra um modal para o jogador distribuir contadores entre criaturas
+     * @param {Object} options - Opções do prompt
+     * @param {string} options.title - Título do modal
+     * @param {string} options.description - Descrição do efeito
+     * @param {Array} options.validTargets - Lista de criaturas válidas
+     * @param {number} options.totalCounters - Total de contadores a distribuir
+     * @param {string} options.counterType - Tipo de contador (ex: '+1/+1')
+     * @param {boolean} options.thenDouble - Se deve dobrar depois (para Biogenic Upgrade)
+     * @returns {Promise<Array>} - Array de {creature, counters} para cada criatura que recebeu contadores
+     */
+    promptDistributeCounters(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('distribute-counters-modal');
+            if (!modal) {
+                // Fallback: distribuir igualmente
+                const result = options.validTargets.map((c, i) => ({
+                    creature: c,
+                    counters: i === 0 ? options.totalCounters : 0
+                })).filter(r => r.counters > 0);
+                resolve(result);
+                return;
+            }
+
+            const title = document.getElementById('distribute-counters-title');
+            const description = document.getElementById('distribute-counters-description');
+            const remainingDisplay = document.getElementById('counters-remaining-value');
+            const creaturesContainer = document.getElementById('distribute-counters-creatures');
+            const btnConfirm = document.getElementById('btn-distribute-confirm');
+
+            const totalCounters = options.totalCounters || 3;
+            const counterType = options.counterType || '+1/+1';
+            let remainingCounters = totalCounters;
+
+            // Estado: contadores por criatura
+            const distribution = new Map();
+            options.validTargets.forEach(c => distribution.set(c.instanceId, 0));
+
+            // Configurar conteúdo
+            title.textContent = options.title || 'Distribuir Contadores';
+            let desc = options.description || `Distribua ${totalCounters} contadores ${counterType}:`;
+            if (options.thenDouble) {
+                desc += ' (depois dobram)';
+            }
+            description.textContent = desc;
+
+            // Função para atualizar UI
+            const updateUI = () => {
+                remainingDisplay.textContent = remainingCounters;
+                btnConfirm.disabled = remainingCounters > 0;
+                btnConfirm.textContent = remainingCounters > 0
+                    ? `Distribua todos os contadores (${remainingCounters} restantes)`
+                    : 'Confirmar Distribuição';
+            };
+
+            // Renderizar criaturas com controles
+            creaturesContainer.innerHTML = '';
+            options.validTargets.forEach(creature => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'distribute-creature-card';
+                wrapper.dataset.instanceId = creature.instanceId;
+
+                // Card da criatura
+                const cardEl = this.createCardElement(creature, true);
+                cardEl.style.pointerEvents = 'none'; // Desabilitar clique no card
+                wrapper.appendChild(cardEl);
+
+                // Controles de contadores
+                const controls = document.createElement('div');
+                controls.className = 'distribute-counter-controls';
+
+                const btnMinus = document.createElement('button');
+                btnMinus.className = 'btn-counter-minus';
+                btnMinus.textContent = '−';
+                btnMinus.disabled = true;
+
+                const counterValue = document.createElement('span');
+                counterValue.className = 'counter-value';
+                counterValue.textContent = '0';
+
+                const btnPlus = document.createElement('button');
+                btnPlus.className = 'btn-counter-plus';
+                btnPlus.textContent = '+';
+
+                btnMinus.addEventListener('click', () => {
+                    const current = distribution.get(creature.instanceId);
+                    if (current > 0) {
+                        distribution.set(creature.instanceId, current - 1);
+                        remainingCounters++;
+                        counterValue.textContent = current - 1;
+                        btnMinus.disabled = current - 1 === 0;
+                        btnPlus.disabled = false;
+                        wrapper.classList.toggle('has-counters', current - 1 > 0);
+                        updateUI();
+                    }
+                });
+
+                btnPlus.addEventListener('click', () => {
+                    if (remainingCounters > 0) {
+                        const current = distribution.get(creature.instanceId);
+                        distribution.set(creature.instanceId, current + 1);
+                        remainingCounters--;
+                        counterValue.textContent = current + 1;
+                        btnMinus.disabled = false;
+                        btnPlus.disabled = remainingCounters === 0;
+                        wrapper.classList.add('has-counters');
+                        updateUI();
+
+                        // Atualizar todos os botões + (desabilitar se não há mais contadores)
+                        if (remainingCounters === 0) {
+                            creaturesContainer.querySelectorAll('.btn-counter-plus').forEach(btn => {
+                                btn.disabled = true;
+                            });
+                        }
+                    }
+                });
+
+                // Hover no card mostra preview
+                wrapper.addEventListener('mouseenter', () => this.showCardPreview(creature));
+                wrapper.addEventListener('mouseleave', () => this.hideCardPreview());
+
+                controls.appendChild(btnMinus);
+                controls.appendChild(counterValue);
+                controls.appendChild(btnPlus);
+                wrapper.appendChild(controls);
+                creaturesContainer.appendChild(wrapper);
+            });
+
+            // Configurar botão de confirmar
+            updateUI();
+
+            // Limpar event listeners anteriores clonando o botão
+            const newBtnConfirm = btnConfirm.cloneNode(true);
+            btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+            newBtnConfirm.disabled = true;
+            newBtnConfirm.textContent = `Distribua todos os contadores (${remainingCounters} restantes)`;
+
+            newBtnConfirm.addEventListener('click', () => {
+                modal.classList.add('hidden');
+
+                // Construir resultado
+                const result = [];
+                distribution.forEach((counters, instanceId) => {
+                    if (counters > 0) {
+                        const creature = options.validTargets.find(c => c.instanceId === instanceId);
+                        result.push({ creature, counters });
+                    }
+                });
+                resolve(result);
             });
 
             modal.classList.remove('hidden');
