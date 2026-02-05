@@ -122,6 +122,24 @@ class TriggerManager {
             this.ui.log(`${card.name}: ${controller.name} ganhou 1 vida`);
         }
 
+        // ETB X Counters (Wildwood Scourge and other Hydras)
+        // A criatura entra com X contadores +1/+1, onde X foi escolhido ao conjurar
+        if (card.keywords?.includes('etb_x_counters')) {
+            const xValue = card.xValue || 0;
+            if (xValue > 0) {
+                if (!card.counters) card.counters = {};
+                card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + xValue;
+                this.ui.log(`${card.name} entra com ${xValue} contadores +1/+1`);
+
+                // Trigger counter_synergy para outras criaturas (como outro Wildwood Scourge)
+                // Nota: O próprio Wildwood Scourge não trigger de si mesmo porque
+                // onCounterPlaced verifica card !== creature
+                this.onCounterPlaced(card, controller, xValue);
+            }
+            // Limpar xValue após uso
+            delete card.xValue;
+        }
+
         // === UNDEAD DECK ETBs ===
 
         // ETB Mill 2 (Crow of Dark Tidings)

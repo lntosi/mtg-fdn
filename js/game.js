@@ -1481,18 +1481,48 @@ class GameState {
             // Permanentes (criaturas, encantamentos não-aura, artefatos)
             // NOVO: Colocar na pilha para permitir counterspells
 
+            // Verificar se carta tem X no custo
+            if (this.rules.hasXCost(card)) {
+                const maxX = this.rules.getMaxXValue(card, player);
+
+                if (player === this.player) {
+                    // Jogador escolhe valor de X
+                    const xValue = await this.ui.promptXValue({
+                        card: card,
+                        maxX: maxX,
+                        minX: 1  // Mínimo 1 para criaturas 0/0 (senão morrem imediatamente)
+                    });
+
+                    if (xValue === null) {
+                        // Jogador cancelou - devolver carta à mão
+                        player.hand.push(card);
+                        this.ui.log(`Conjuração de ${card.name} cancelada`);
+                        this.ui.render();
+                        return false;
+                    }
+
+                    card.xValue = xValue;
+                } else {
+                    // IA: usa o maior X possível para maximizar força
+                    card.xValue = maxX;
+                }
+
+                this.ui.log(`${player.name} escolheu X = ${card.xValue} para ${card.name}`);
+            }
+
             // Carnelian Orb: perguntar se quer usar para dar haste ao Dragão ANTES de pagar mana
             const orbResult = await this.handleCarnelianOrb(card, player);
             if (orbResult === 'cancel') {
                 // Jogador cancelou a conjuração - devolver carta à mão
                 player.hand.push(card);
+                delete card.xValue; // Limpar valor de X se cancelar
                 this.ui.log(`Conjuração de ${card.name} cancelada`);
                 this.ui.render();
                 return false;
             }
 
             const selectedLands = (player === this.player) ? this.ui.selectedLands : [];
-            this.rules.payMana(card, player, selectedLands);
+            this.rules.payMana(card, player, selectedLands, card.xValue);
             if (player === this.player) this.ui.clearLandSelection();
 
             this.ui.log(`${player.name} conjurou ${card.name}`);

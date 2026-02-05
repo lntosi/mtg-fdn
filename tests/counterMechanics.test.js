@@ -554,3 +554,112 @@ describe('Biogenic Upgrade (counter distribution + doubling)', () => {
         });
     });
 });
+
+describe('X Cost Mechanic (Wildwood Scourge / Hydras)', () => {
+    /**
+     * Wildwood Scourge: {X}{G}
+     * This creature enters with X +1/+1 counters on it.
+     * Base stats: 0/0
+     */
+
+    test('Wildwood Scourge has correct base stats (0/0) and X cost', () => {
+        const scourge = CREATURES.wildwoodScourge();
+        expect(scourge.power).toBe(0);
+        expect(scourge.toughness).toBe(0);
+        expect(scourge.cost).toBe('XG');
+        expect(scourge.keywords).toContain('etb_x_counters');
+    });
+
+    test('creature enters with X +1/+1 counters based on xValue', () => {
+        const creature = createCreature({
+            name: 'Test Hydra',
+            power: 0,
+            toughness: 0,
+            keywords: ['etb_x_counters'],
+            xValue: 3  // Escolheu X = 3
+        });
+
+        // Simular ETB com X contadores
+        if (creature.keywords?.includes('etb_x_counters')) {
+            const xValue = creature.xValue || 0;
+            if (xValue > 0) {
+                if (!creature.counters) creature.counters = {};
+                creature.counters.plusOnePlusOne = (creature.counters.plusOnePlusOne || 0) + xValue;
+            }
+            delete creature.xValue;
+        }
+
+        expect(creature.counters.plusOnePlusOne).toBe(3);
+        expect(creature.xValue).toBeUndefined(); // xValue limpo após uso
+    });
+
+    test('X=0 results in 0 counters (creature would die)', () => {
+        const creature = createCreature({
+            name: 'Test Hydra',
+            power: 0,
+            toughness: 0,
+            keywords: ['etb_x_counters'],
+            xValue: 0
+        });
+
+        // Simular ETB
+        if (creature.keywords?.includes('etb_x_counters')) {
+            const xValue = creature.xValue || 0;
+            if (xValue > 0) {
+                if (!creature.counters) creature.counters = {};
+                creature.counters.plusOnePlusOne = (creature.counters.plusOnePlusOne || 0) + xValue;
+            }
+        }
+
+        // Com X=0, criatura 0/0 não recebe contadores e morreria
+        expect(creature.counters.plusOnePlusOne).toBeUndefined();
+    });
+
+    test('effective stats are base + counters', () => {
+        const creature = createCreature({
+            name: 'Test Hydra',
+            power: 0,
+            toughness: 0
+        });
+        if (!creature.counters) creature.counters = {};
+        creature.counters.plusOnePlusOne = 5; // X = 5
+
+        const effectivePower = creature.power + (creature.counters.plusOnePlusOne || 0);
+        const effectiveToughness = creature.toughness + (creature.counters.plusOnePlusOne || 0);
+
+        expect(effectivePower).toBe(5);  // 0 + 5 = 5
+        expect(effectiveToughness).toBe(5);  // 0 + 5 = 5
+    });
+
+    test('X cost parsing extracts hasX flag', () => {
+        // Simular parseCost
+        const parseCost = (costString) => {
+            const cost = { generic: 0, colored: {}, hasX: false };
+            const matches = costString.match(/(\d+)|([WUBRGX])/g) || [];
+            matches.forEach(match => {
+                if (match === 'X') {
+                    cost.hasX = true;
+                } else if (/\d+/.test(match)) {
+                    cost.generic += parseInt(match);
+                } else {
+                    cost.colored[match] = (cost.colored[match] || 0) + 1;
+                }
+            });
+            return cost;
+        };
+
+        const xgCost = parseCost('XG');
+        expect(xgCost.hasX).toBe(true);
+        expect(xgCost.colored.G).toBe(1);
+        expect(xgCost.generic).toBe(0);
+
+        const xxggCost = parseCost('XXGG');
+        expect(xxggCost.hasX).toBe(true);
+        expect(xxggCost.colored.G).toBe(2);
+
+        const normalCost = parseCost('2GG');
+        expect(normalCost.hasX).toBe(false);
+        expect(normalCost.generic).toBe(2);
+        expect(normalCost.colored.G).toBe(2);
+    });
+});

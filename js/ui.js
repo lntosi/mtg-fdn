@@ -3834,6 +3834,100 @@ class GameUI {
         });
     }
 
+    /**
+     * Mostra um modal para o jogador escolher o valor de X no custo de mana
+     * @param {Object} options - Opções do prompt
+     * @param {Object} options.card - A carta sendo jogada
+     * @param {number} options.maxX - Valor máximo de X que pode pagar
+     * @param {number} options.minX - Valor mínimo de X (default 1)
+     * @returns {Promise<number|null>} - Valor de X escolhido ou null se cancelar
+     */
+    promptXValue(options) {
+        return new Promise((resolve) => {
+            const { card, maxX, minX = 1 } = options;
+
+            // Se maxX < minX, não pode jogar
+            if (maxX < minX) {
+                resolve(null);
+                return;
+            }
+
+            // Criar modal dinamicamente
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'x-value-modal';
+            modal.innerHTML = `
+                <div class="modal-content x-value-content">
+                    <h2>Escolher valor de X</h2>
+                    <p class="x-value-card-name">${card.name}</p>
+                    <p class="x-value-description">Custo: ${card.cost.replace('X', '<span class="x-highlight">X</span>')}</p>
+                    <div class="x-value-slider-container">
+                        <button class="btn-x-decrease" ${minX >= maxX ? 'disabled' : ''}>−</button>
+                        <div class="x-value-display">
+                            <span class="x-label">X = </span>
+                            <span class="x-current-value">${minX}</span>
+                        </div>
+                        <button class="btn-x-increase" ${minX >= maxX ? 'disabled' : ''}>+</button>
+                    </div>
+                    <p class="x-value-total">Custo total: <span class="x-total-cost">${this.formatManaCost(card.cost, minX)}</span></p>
+                    <div class="x-value-buttons">
+                        <button class="btn-x-cancel">Cancelar</button>
+                        <button class="btn-x-confirm">Confirmar</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            let currentX = minX;
+            const valueDisplay = modal.querySelector('.x-current-value');
+            const totalCostDisplay = modal.querySelector('.x-total-cost');
+            const btnDecrease = modal.querySelector('.btn-x-decrease');
+            const btnIncrease = modal.querySelector('.btn-x-increase');
+            const btnCancel = modal.querySelector('.btn-x-cancel');
+            const btnConfirm = modal.querySelector('.btn-x-confirm');
+
+            const updateDisplay = () => {
+                valueDisplay.textContent = currentX;
+                totalCostDisplay.textContent = this.formatManaCost(card.cost, currentX);
+                btnDecrease.disabled = currentX <= minX;
+                btnIncrease.disabled = currentX >= maxX;
+            };
+
+            btnDecrease.addEventListener('click', () => {
+                if (currentX > minX) {
+                    currentX--;
+                    updateDisplay();
+                }
+            });
+
+            btnIncrease.addEventListener('click', () => {
+                if (currentX < maxX) {
+                    currentX++;
+                    updateDisplay();
+                }
+            });
+
+            btnCancel.addEventListener('click', () => {
+                modal.remove();
+                resolve(null);
+            });
+
+            btnConfirm.addEventListener('click', () => {
+                modal.remove();
+                resolve(currentX);
+            });
+        });
+    }
+
+    /**
+     * Formata o custo de mana substituindo X pelo valor escolhido
+     */
+    formatManaCost(cost, xValue) {
+        // Substituir X pelo valor numérico
+        return cost.replace('X', xValue.toString());
+    }
+
     // === LINHAS DE CONEXÃO ATACANTE-BLOQUEADOR ===
 
     drawCombatLines() {

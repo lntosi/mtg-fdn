@@ -196,9 +196,11 @@ const CREATURES = {
         id: 'wildwood_scourge',
         name: 'Wildwood Scourge',
         subtype: 'Hydra',
-        power: 1,
-        toughness: 1,
-        keywords: ['counter_synergy']
+        cost: 'XG',
+        cmc: 1,
+        power: 0,
+        toughness: 0,
+        keywords: ['counter_synergy', 'etb_x_counters']
     }),
 
     ajanisPridemate: () => createCreature({

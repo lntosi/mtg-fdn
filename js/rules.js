@@ -321,40 +321,21 @@ class RulesEngine {
     }
 
     hasEnoughMana(card, player) {
-        if (!card.cmc) return true;
+        if (!card.cmc && !this.hasXCost(card)) return true;
 
         const availableMana = this.calculateAvailableMana(player);
         const cost = this.parseCost(card.cost);
 
-        // Tolarian Terror: custo reduzido por instant/sorcery no cemitério
-        if (card.id === 'tolarian_terror') {
-            const instantSorceryCount = player.graveyard.filter(c =>
-                c.type === 'instant' || c.type === 'sorcery'
-            ).length;
-            cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        // Para cartas com X no custo, verificar se pode pagar pelo menos X=1
+        // (X=0 geralmente resulta em criatura 0/0 que morre imediatamente)
+        if (cost.hasX) {
+            // Precisa ter mana suficiente para parte colorida + pelo menos 1 para X
+            const minXValue = 1;
+            cost.generic += minXValue; // Tratar X mínimo como genérico
         }
 
-        // Dragonlord's Servant: Dragon spells cost {1} less
-        // Otimização: só verifica se há cartas de cost reduction em jogo
-        if (this.game?.activeEffects?.costReduction > 0 &&
-            card.subtype?.includes('Dragon') && card.type === 'creature') {
-            const servantCount = player.battlefield.filter(c =>
-                c.id === 'dragonlords_servant'
-            ).length;
-            if (servantCount > 0) {
-                cost.generic = Math.max(0, cost.generic - servantCount);
-            }
-        }
-
-        // Arcane Epiphany: costs {1} less if you control a Wizard
-        if (card.keywords?.includes('wizard_discount')) {
-            const hasWizard = player.battlefield.some(c =>
-                c.type === 'creature' && c.subtype?.includes('Wizard')
-            );
-            if (hasWizard) {
-                cost.generic = Math.max(0, cost.generic - 1);
-            }
-        }
+        // Aplicar reduções de custo
+        this.applyCostReductions(cost, card, player);
 
         return this.canPayCost(cost, availableMana);
     }
@@ -442,13 +423,15 @@ class RulesEngine {
     }
 
     parseCost(costString) {
-        if (!costString) return { generic: 0, colored: {} };
+        if (!costString) return { generic: 0, colored: {}, hasX: false };
 
-        const cost = { generic: 0, colored: {} };
-        const matches = costString.match(/(\d+)|([WUBRG])/g) || [];
+        const cost = { generic: 0, colored: {}, hasX: false };
+        const matches = costString.match(/(\d+)|([WUBRGX])/g) || [];
 
         matches.forEach(match => {
-            if (/\d+/.test(match)) {
+            if (match === 'X') {
+                cost.hasX = true;
+            } else if (/\d+/.test(match)) {
                 cost.generic += parseInt(match);
             } else {
                 cost.colored[match] = (cost.colored[match] || 0) + 1;
@@ -456,6 +439,71 @@ class RulesEngine {
         });
 
         return cost;
+    }
+
+    /**
+     * Verifica se o custo de uma carta contém X
+     */
+    hasXCost(card) {
+        return card.cost?.includes('X') || false;
+    }
+
+    /**
+     * Calcula o mana total disponível para pagar X
+     */
+    getMaxXValue(card, player) {
+        const availableMana = this.calculateAvailableMana(player);
+        const cost = this.parseCost(card.cost);
+
+        // Aplicar reduções de custo (dragon servant, etc)
+        this.applyCostReductions(cost, card, player);
+
+        // Calcular mana necessário para a parte não-X do custo
+        let reservedForColored = 0;
+        for (const color in cost.colored) {
+            reservedForColored += cost.colored[color];
+        }
+        reservedForColored += cost.generic;
+
+        // Mana total disponível
+        const totalMana = Object.values(availableMana).reduce((a, b) => a + b, 0);
+
+        // X máximo = mana total - custo base (parte não-X)
+        return Math.max(0, totalMana - reservedForColored);
+    }
+
+    /**
+     * Aplica reduções de custo a um objeto cost
+     */
+    applyCostReductions(cost, card, player) {
+        // Tolarian Terror
+        if (card.id === 'tolarian_terror') {
+            const instantSorceryCount = player.graveyard.filter(c =>
+                c.type === 'instant' || c.type === 'sorcery'
+            ).length;
+            cost.generic = Math.max(0, cost.generic - instantSorceryCount);
+        }
+
+        // Dragonlord's Servant
+        if (this.game?.activeEffects?.costReduction > 0 &&
+            card.subtype?.includes('Dragon') && card.type === 'creature') {
+            const servantCount = player.battlefield.filter(c =>
+                c.id === 'dragonlords_servant'
+            ).length;
+            if (servantCount > 0) {
+                cost.generic = Math.max(0, cost.generic - servantCount);
+            }
+        }
+
+        // Wizard discount
+        if (card.keywords?.includes('wizard_discount')) {
+            const hasWizard = player.battlefield.some(c =>
+                c.type === 'creature' && c.subtype?.includes('Wizard')
+            );
+            if (hasWizard) {
+                cost.generic = Math.max(0, cost.generic - 1);
+            }
+        }
     }
 
     canPayCost(cost, availableMana) {
@@ -482,8 +530,14 @@ class RulesEngine {
 
     // Pagar mana (tapa terrenos automaticamente, ou usa pré-selecionados)
     // selectedLands: array opcional de terrenos pré-selecionados pelo jogador
-    payMana(card, player, selectedLands = []) {
+    // xValue: valor de X para cartas com custo X (opcional)
+    payMana(card, player, selectedLands = [], xValue = 0) {
         const cost = this.parseCost(card.cost);
+
+        // Se a carta tem X no custo, adicionar o valor de X ao custo genérico
+        if (cost.hasX && xValue > 0) {
+            cost.generic += xValue;
+        }
 
         // Tolarian Terror: custo reduzido por instant/sorcery no cemitério
         if (card.id === 'tolarian_terror') {
