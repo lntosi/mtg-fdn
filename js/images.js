@@ -16,7 +16,11 @@ class ImageManager {
             liliana: 'Liliana, Dreadhorde General',
             gideon: 'Gideon Blackblade',
             nissa: 'Nissa Revane',
-            ajani: 'Ajani Goldmane'
+            ajani: 'Ajani Goldmane',
+            garruk: 'Garruk Wildspeaker',
+            elspeth: 'Elspeth, Sun\'s Champion',
+            sorin: 'Sorin Markov',
+            teferi: 'Teferi, Hero of Dominaria'
         };
     }
 

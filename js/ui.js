@@ -427,7 +427,11 @@ class GameUI {
             liliana: '💀',
             gideon: '⚔️',
             nissa: '🌿',
-            ajani: '🦁'
+            ajani: '🦁',
+            garruk: '🐻',
+            elspeth: '🛡️',
+            sorin: '🧛',
+            teferi: '⏳'
         };
         return avatars[avatar] || '🧙‍♂️';
     }

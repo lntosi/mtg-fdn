@@ -197,13 +197,13 @@ class GameState {
         const deckAvatars = {
             cats: 'ajani',      // Ajani é um Leonin (gato)
             goblins: 'chandra', // Chandra combina com vermelho/goblins
-            vampires: 'liliana', // Liliana combina com preto/vampiros
+            vampires: 'sorin',  // Sorin é um vampiro!
             elves: 'nissa',     // Nissa combina com verde/elfos
             pirates: 'jace',    // Jace combina com azul/piratas
-            healing: 'gideon',  // Gideon é branco/proteção
+            healing: 'elspeth', // Elspeth é uma cavaleira branca
             inferno: 'chandra', // Chandra é vermelho/dragões
-            primal: 'nissa',    // Nissa é verde/natureza
-            wizards: 'jace',    // Jace é azul/magos
+            primal: 'garruk',   // Garruk é verde/bestas
+            wizards: 'teferi',  // Teferi é um mago temporal
             undead: 'liliana'   // Liliana é preto/mortos-vivos
         };
 
@@ -382,7 +382,11 @@ class GameState {
             liliana: 'Liliana',
             gideon: 'Gideon',
             nissa: 'Nissa',
-            ajani: 'Ajani'
+            ajani: 'Ajani',
+            garruk: 'Garruk',
+            elspeth: 'Elspeth',
+            sorin: 'Sorin',
+            teferi: 'Teferi'
         };
         return names[avatar] || 'Oponente';
     }
