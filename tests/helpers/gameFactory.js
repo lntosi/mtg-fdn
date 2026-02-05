@@ -189,6 +189,59 @@ const CREATURES = {
         subtype: 'Vampire',
         power: 1,
         toughness: 1
+    }),
+
+    // Counter Synergy creatures
+    wildwoodScourge: () => createCreature({
+        id: 'wildwood_scourge',
+        name: 'Wildwood Scourge',
+        subtype: 'Hydra',
+        power: 1,
+        toughness: 1,
+        keywords: ['counter_synergy']
+    }),
+
+    ajanisPridemate: () => createCreature({
+        id: 'ajani_pridemate',
+        name: "Ajani's Pridemate",
+        subtype: 'Cat Soldier',
+        power: 2,
+        toughness: 2,
+        keywords: ['lifegain_counter']
+    }),
+
+    // Lord creatures
+    deathBaron: () => createCreature({
+        id: 'death_baron',
+        name: 'Death Baron',
+        subtype: 'Zombie Wizard',
+        power: 2,
+        toughness: 2,
+        keywords: ['zombie_skeleton_lord']
+    }),
+
+    gravedigger: () => createCreature({
+        id: 'gravedigger',
+        name: 'Gravedigger',
+        subtype: 'Zombie',
+        power: 2,
+        toughness: 2
+    }),
+
+    skeletonArcher: () => createCreature({
+        id: 'skeleton_archer',
+        name: 'Skeleton Archer',
+        subtype: 'Skeleton Archer',
+        power: 3,
+        toughness: 3
+    }),
+
+    mildManneredLibrarian: () => createCreature({
+        id: 'mild_mannered_librarian',
+        name: 'Mild-Mannered Librarian',
+        subtype: 'Human',
+        power: 1,
+        toughness: 1
     })
 };
 

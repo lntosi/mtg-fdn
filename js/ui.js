@@ -1996,7 +1996,7 @@ class GameUI {
 
         const title = document.getElementById('trigger-target-title');
         const description = document.getElementById('trigger-target-description');
-        const creaturesContainer = document.getElementById('trigger-target-creatures');
+        const creaturesContainer = document.getElementById('trigger-target-groups');
         const skipBtn = document.getElementById('btn-trigger-skip');
 
         title.textContent = 'Vidência (Scry 1)';
@@ -2091,7 +2091,7 @@ class GameUI {
 
         const title = document.getElementById('trigger-target-title');
         const description = document.getElementById('trigger-target-description');
-        const creaturesContainer = document.getElementById('trigger-target-creatures');
+        const creaturesContainer = document.getElementById('trigger-target-groups');
         const skipBtn = document.getElementById('btn-trigger-skip');
 
         title.textContent = `${counterSpell.name} - Escolha uma Mágica`;
@@ -3497,7 +3497,7 @@ class GameUI {
 
             const title = document.getElementById('trigger-target-title');
             const description = document.getElementById('trigger-target-description');
-            const creaturesContainer = document.getElementById('trigger-target-creatures');
+            const creaturesContainer = document.getElementById('trigger-target-groups');
             const btnSkip = document.getElementById('btn-trigger-skip');
 
             const maxTargets = options.maxTargets || 2;
