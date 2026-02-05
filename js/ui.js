@@ -1244,6 +1244,9 @@ class GameUI {
 
             // Adicionar ao container apropriado
             if (card.type === 'land') {
+                // Renderizar auras anexadas ao terreno (ex: New Horizons)
+                this.renderAttachedAurasOnLand(card, cardEl);
+
                 // Verificar se é alvo válido para spell/aura (ex: New Horizons)
                 if (this.waitingForTarget && this.validTargets.includes(card)) {
                     cardEl.classList.add('valid-target');
@@ -1329,6 +1332,48 @@ class GameUI {
             if (hasBuff && !hasDebuff) {
                 creatureEl.classList.add('has-buff-aura');
             }
+        }
+    }
+
+    /**
+     * Renderiza indicador visual de auras anexadas a um terreno
+     * @param {Object} land - O terreno
+     * @param {HTMLElement} landEl - O elemento DOM do terreno
+     */
+    renderAttachedAurasOnLand(land, landEl) {
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        const attachedAuras = allBattlefields.filter(card =>
+            card.subtype === 'Aura' && card.attachedTo === land.instanceId
+        );
+
+        if (attachedAuras.length > 0) {
+            // Adicionar classe visual indicando que o terreno está encantado
+            landEl.classList.add('has-land-aura');
+
+            // Criar container para badges de auras
+            const auraContainer = document.createElement('div');
+            auraContainer.className = 'land-aura-indicators';
+
+            attachedAuras.forEach((aura) => {
+                const auraBadge = document.createElement('div');
+                auraBadge.className = 'land-aura-badge';
+                auraBadge.textContent = '✨';
+                auraBadge.title = `${aura.name}`;
+
+                // Hover mostra preview da aura
+                auraBadge.addEventListener('mouseenter', (e) => {
+                    e.stopPropagation();
+                    this.showCardPreview(aura);
+                });
+                auraBadge.addEventListener('mouseleave', (e) => {
+                    e.stopPropagation();
+                    this.hideCardPreview();
+                });
+
+                auraContainer.appendChild(auraBadge);
+            });
+
+            landEl.appendChild(auraContainer);
         }
     }
 
@@ -2586,18 +2631,50 @@ class GameUI {
     }
 
     // === Seleção Manual de Terrenos para Mana ===
-    toggleLandSelection(card) {
+    async toggleLandSelection(card) {
         const index = this.selectedLands.findIndex(l => l.instanceId === card.instanceId);
         if (index > -1) {
+            // Desselecionar - limpar cor escolhida se houver
+            delete card.newHorizonsChosenColor;
             this.selectedLands.splice(index, 1);
         } else {
+            // Verificar se terreno está encantado com New Horizons
+            const hasNewHorizons = this.isLandEnchantedWithNewHorizons(card);
+
+            if (hasNewHorizons) {
+                // Pedir para escolher a cor (produz 2 mana dessa cor)
+                const chosenColor = await this.promptColorChoice({
+                    title: 'New Horizons',
+                    description: 'Escolha uma cor. O terreno produzirá 2 mana dessa cor:',
+                    colors: ['W', 'U', 'B', 'R', 'G']
+                });
+                card.newHorizonsChosenColor = chosenColor;
+            }
+
             this.selectedLands.push(card);
         }
         this.render();
     }
 
+    /**
+     * Verifica se um terreno está encantado com New Horizons
+     * @param {Object} land - O terreno a verificar
+     * @returns {boolean}
+     */
+    isLandEnchantedWithNewHorizons(land) {
+        if (!this.game) return false;
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.some(card =>
+            card.id === 'new_horizons' && card.attachedTo === land.instanceId
+        );
+    }
+
     clearLandSelection() {
         if (this.selectedLands.length > 0) {
+            // Limpar cores temporárias escolhidas para New Horizons
+            this.selectedLands.forEach(land => {
+                delete land.newHorizonsChosenColor;
+            });
             this.selectedLands = [];
             this.render();
         }
@@ -2607,7 +2684,10 @@ class GameUI {
     getSelectedLandsMana() {
         const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
         this.selectedLands.forEach(land => {
-            if (land.produces === 'any') {
+            // Terreno encantado com New Horizons - produz 2 da cor escolhida
+            if (land.newHorizonsChosenColor) {
+                mana[land.newHorizonsChosenColor] += 2;
+            } else if (land.produces === 'any') {
                 if (land.chosenColor) {
                     mana[land.chosenColor]++;
                 } else {

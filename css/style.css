@@ -972,6 +972,45 @@ body {
     animation: pulse-attack 0.8s infinite;
 }
 
+/* === AURAS EM TERRENOS (ex: New Horizons) === */
+
+/* Borda verde/dourada brilhante para terrenos encantados */
+.card.has-land-aura {
+    position: relative;
+    box-shadow: 0 0 0 2px #32cd32, 0 0 10px 3px rgba(50, 205, 50, 0.5) !important;
+}
+
+/* Container para badges de auras em terrenos */
+.land-aura-indicators {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: flex;
+    gap: 2px;
+    z-index: 20;
+}
+
+/* Badge individual de aura em terreno */
+.land-aura-badge {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #228b22 0%, #32cd32 50%, #228b22 100%);
+    border: 2px solid #90ee90;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(50, 205, 50, 0.8);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.land-aura-badge:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba(50, 205, 50, 1);
+}
+
 /* === EQUIPAMENTOS ANEXADOS === */
 
 /* Borda dourada/metálica para criaturas equipadas */

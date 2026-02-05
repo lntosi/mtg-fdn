@@ -543,9 +543,19 @@ class RulesEngine {
                 needed -= fromFloating;
             }
 
-            // 1. Usar terrenos PRÉ-SELECIONADOS da cor primeiro
+            // 1. Usar terrenos PRÉ-SELECIONADOS com New Horizons da cor escolhida (produzem 2)
             for (const land of preSelected) {
                 if (needed <= 0) break;
+                if (land.newHorizonsChosenColor === color && !land.tapped) {
+                    land.tapped = true;
+                    needed -= 2; // New Horizons produz 2 mana
+                }
+            }
+
+            // 2. Usar terrenos PRÉ-SELECIONADOS normais da cor
+            for (const land of preSelected) {
+                if (needed <= 0) break;
+                if (land.newHorizonsChosenColor) continue; // Já tratado acima
                 const producesColor = land.produces === color ||
                     (land.produces === 'any' && land.chosenColor === color);
                 if (producesColor && !land.tapped) {
@@ -554,7 +564,7 @@ class RulesEngine {
                 }
             }
 
-            // 2. Usar outros terrenos da cor (auto-tap)
+            // 3. Usar outros terrenos da cor (auto-tap)
             for (const land of otherLands) {
                 if (needed <= 0) break;
                 const producesColor = land.produces === color ||
@@ -575,9 +585,10 @@ class RulesEngine {
             }
 
             // Usar terrenos "any" que ainda não escolheram cor (fallback)
-            // Primeiro pré-selecionados
+            // Primeiro pré-selecionados (exceto New Horizons que já foi tratado)
             for (const land of preSelected) {
                 if (needed <= 0) break;
+                if (land.newHorizonsChosenColor) continue;
                 if (land.produces === 'any' && !land.chosenColor && !land.tapped) {
                     land.tapped = true;
                     needed--;
@@ -609,11 +620,16 @@ class RulesEngine {
         }
 
         // Usar terrenos pré-selecionados para genérico primeiro
+        // Terrenos com New Horizons produzem 2 mana
         for (const land of preSelected) {
             if (genericNeeded <= 0) break;
             if (!land.tapped) {
                 land.tapped = true;
-                genericNeeded--;
+                if (land.newHorizonsChosenColor) {
+                    genericNeeded -= 2; // New Horizons produz 2 mana
+                } else {
+                    genericNeeded--;
+                }
             }
         }
 
@@ -632,6 +648,11 @@ class RulesEngine {
                 creature.tapped = true;
                 genericNeeded--;
             }
+        }
+
+        // Limpar cores temporárias escolhidas para New Horizons
+        for (const land of preSelected) {
+            delete land.newHorizonsChosenColor;
         }
     }
 
