@@ -1240,8 +1240,14 @@ class GameUI {
 
             // Adicionar ao container apropriado
             if (card.type === 'land') {
+                // Verificar se é alvo válido para spell/aura (ex: New Horizons)
+                if (this.waitingForTarget && this.validTargets.includes(card)) {
+                    cardEl.classList.add('valid-target');
+                    cardEl.style.cursor = 'crosshair';
+                    cardEl.addEventListener('click', () => this.selectTarget(card));
+                }
                 // Seleção manual de terrenos para mana (apenas terrenos do jogador não tapados)
-                if (isPlayer && !card.tapped) {
+                else if (isPlayer && !card.tapped) {
                     cardEl.classList.add('land-selectable');
                     cardEl.addEventListener('click', () => this.toggleLandSelection(card));
                 }

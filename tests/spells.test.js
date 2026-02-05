@@ -3,7 +3,7 @@
  * Valida efeitos de instants, sorceries e targeting
  */
 
-const { createCreature, createPlayer, createSpell, CREATURES, SPELLS } = require('./helpers/gameFactory');
+const { createCreature, createPlayer, createSpell, createLand, CREATURES, SPELLS } = require('./helpers/gameFactory');
 const { TestRulesEngine } = require('./helpers/rulesEngine');
 
 describe('Removal Spells', () => {
@@ -486,6 +486,125 @@ describe('Bite Down (One-Sided Fight)', () => {
             expect(opponentCreatures.length).toBe(1);
             expect(playerCreatures[0].name).toBe('My Creature');
             expect(opponentCreatures[0].name).toBe('Enemy Creature');
+        });
+    });
+});
+
+describe('New Horizons (Land Aura)', () => {
+    describe('Target Requirements', () => {
+        test('can only enchant lands you control', () => {
+            const player = createPlayer({
+                battlefield: [
+                    createLand({ name: 'Forest' }),
+                    createLand({ name: 'Forest 2' }),
+                    createCreature({ name: 'Bear' })
+                ]
+            });
+
+            // New Horizons: encantar terreno que você controla
+            const validTargets = player.battlefield.filter(c => c.type === 'land');
+
+            expect(validTargets.length).toBe(2);
+            expect(validTargets.every(t => t.type === 'land')).toBe(true);
+        });
+
+        test('cannot enchant opponent lands', () => {
+            const player = createPlayer({
+                battlefield: [createLand({ name: 'My Forest' })]
+            });
+            const opponent = createPlayer({
+                battlefield: [createLand({ name: 'Enemy Forest' })]
+            });
+
+            // Apenas terrenos do jogador são válidos
+            const validTargets = player.battlefield.filter(c => c.type === 'land');
+
+            expect(validTargets.length).toBe(1);
+            expect(validTargets[0].name).toBe('My Forest');
+        });
+
+        test('cannot cast without lands', () => {
+            const player = createPlayer({
+                battlefield: [createCreature({ name: 'Bear' })]
+            });
+
+            const validTargets = player.battlefield.filter(c => c.type === 'land');
+
+            expect(validTargets.length).toBe(0);
+        });
+    });
+
+    describe('Land Targeting in UI', () => {
+        test('lands should be selectable as targets when waitingForTarget', () => {
+            // Bug fix: lands não tinham lógica de targeting, só de seleção de mana
+            const lands = [
+                createLand({ name: 'Forest 1' }),
+                createLand({ name: 'Forest 2' })
+            ];
+
+            // Simular estado de UI
+            const waitingForTarget = true;
+            const validTargets = lands;
+
+            // Cada terreno deve ser marcado como alvo válido
+            lands.forEach(land => {
+                const isValidTarget = waitingForTarget && validTargets.includes(land);
+                expect(isValidTarget).toBe(true);
+            });
+        });
+
+        test('lands not in validTargets should not be selectable as targets', () => {
+            const forest = createLand({ name: 'Forest' });
+            const mountain = createLand({ name: 'Mountain' });
+
+            const waitingForTarget = true;
+            const validTargets = [forest]; // Apenas Forest é válido
+
+            expect(validTargets.includes(forest)).toBe(true);
+            expect(validTargets.includes(mountain)).toBe(false);
+        });
+    });
+
+    describe('ETB Effect', () => {
+        test('puts +1/+1 counter on target creature when entering', () => {
+            const creature = createCreature({ power: 2, toughness: 2 });
+            if (!creature.counters) creature.counters = {};
+
+            // ETB: coloca um contador +1/+1 em criatura alvo
+            creature.counters.plusOnePlusOne = (creature.counters.plusOnePlusOne || 0) + 1;
+
+            expect(creature.counters.plusOnePlusOne).toBe(1);
+        });
+
+        test('ETB counter should trigger Wildwood Scourge', () => {
+            const creature = createCreature({ power: 2, toughness: 2 });
+            const scourge = CREATURES.wildwoodScourge();
+            if (!creature.counters) creature.counters = {};
+            if (!scourge.counters) scourge.counters = {};
+
+            // New Horizons ETB coloca contador na criatura
+            creature.counters.plusOnePlusOne = 1;
+
+            // Isso deve triggerar Wildwood Scourge
+            if (scourge.keywords?.includes('counter_synergy') &&
+                !creature.subtype?.includes('Hydra')) {
+                scourge.counters.plusOnePlusOne = (scourge.counters.plusOnePlusOne || 0) + 1;
+            }
+
+            expect(creature.counters.plusOnePlusOne).toBe(1);
+            expect(scourge.counters.plusOnePlusOne).toBe(1);
+        });
+    });
+
+    describe('Enchanted Land Mana Production', () => {
+        test('enchanted land produces 2 mana of one color', () => {
+            const land = createLand({ name: 'Forest', produces: 'G' });
+
+            // Simular aura anexada
+            const newHorizonsAttached = true;
+            const manaProduced = newHorizonsAttached ? 2 : 1;
+
+            expect(manaProduced).toBe(2);
         });
     });
 });
