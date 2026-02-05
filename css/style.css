@@ -3062,6 +3062,46 @@ body {
     gap: 15px;
 }
 
+/* Quando cards são adicionados diretamente (promptMultiTarget) */
+.trigger-target-groups > .card {
+    max-width: 120px;
+}
+
+.trigger-target-groups:has(> .card) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+/* Estilo para cards válidos diretamente no container */
+.trigger-target-groups > .card.trigger-valid-target {
+    border: 3px solid #f1c40f;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.trigger-target-groups > .card.trigger-valid-target:hover {
+    transform: scale(1.05);
+    border-color: #f39c12;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.8);
+}
+
+/* Cards selecionados (para promptMultiTarget) */
+.trigger-target-groups > .card.selected-target {
+    border: 4px solid #2ecc71;
+    box-shadow: 0 0 25px rgba(46, 204, 113, 0.9);
+    transform: translateY(-8px);
+}
+
+.trigger-target-groups > .card.selected-target:hover {
+    border-color: #27ae60;
+    box-shadow: 0 0 30px rgba(46, 204, 113, 1);
+}
+
 /* Cada grupo de alvos (jogadores, suas criaturas, criaturas do oponente) */
 .trigger-target-group {
     border: 1px solid rgba(255, 255, 255, 0.15);
