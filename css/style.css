@@ -834,7 +834,7 @@ body {
 }
 
 .card.tapped:hover {
-    transform: rotate(90deg) scale(2.2);
+    transform: rotate(90deg) scale(1.1);
     z-index: 1000;
 }
 
@@ -1331,7 +1331,11 @@ body {
 }
 
 .lands .card:hover {
-    transform: scale(1.5) translateY(-20px);
+    transform: scale(1.1);
+}
+
+.lands .card.tapped:hover {
+    transform: rotate(90deg) scale(1.05);
 }
 
 /* === Modal de Seleção === */
