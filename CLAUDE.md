@@ -122,8 +122,23 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 
 - **Optimized for 70-80% browser zoom**: The layout works best at reduced zoom levels. Full 100% zoom support would require deeper layout refactoring (Arena-style fan hand, stacked lands, etc.) - deferred to future development.
 - **Preview panel**: Right side panel shows enlarged card on hover (420px width, 480px image)
-- **Hand card hover**: Reduced zoom (1.4x) to avoid visual clutter alongside preview panel
 - **Contextual main button**: Changes text/color based on game state (Passar Turno, Ir para Combate, etc.)
+
+### Card Hover Zoom Configuration
+
+Different zoom levels by card location (configured in `css/style.css`):
+
+| Location | CSS Selector | Zoom | Notes |
+|----------|--------------|------|-------|
+| Fallback | `.card:hover` | 2.0x | Default for unconfigured areas |
+| Hand | `#player-hand .card:hover` | 1.3x | Reduced since preview shows details |
+| Battlefield | `.battlefield .card:hover` | 1.3x | Same as hand |
+| Tapped cards | `.card.tapped:hover` | 1.1x | Maintains rotate(90deg) |
+| Lands | `.lands .card:hover` | 1.1x | Minimal zoom |
+| Artifacts/Enchantments | `.other-permanents .card:hover` | 1.05x | Uses `!important` |
+| View mode (post-game) | `#game-container.view-mode ...` | Same as above | Mirrors normal gameplay |
+
+**CSS Specificity Note**: Rules are ordered so more specific selectors come later and override generic ones. `.other-permanents` rules use `!important` to ensure they override `.battlefield` rules.
 
 ## MTG Keywords Implemented
 
@@ -131,7 +146,7 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, haste, reach, menace, flash, ward, hexproof, indestructible
 
 ### Internal Keywords (not shown in preview, used for game logic)
-- **tap_for_mana**: Creature can tap for mana (e.g., Llanowar Elves)
+- **tap_for_mana**: Creature can tap for mana (e.g., Llanowar Elves, Druid of the Cowl). Player can manually select these creatures for mana payment by clicking them.
 - **etb_draw**: Draw a card when enters battlefield
 - **etb_bounce**: Return target creature to owner's hand
 - **etb_counter_two**: Put +1/+1 counter on up to two other creatures (Felidar Savior)
@@ -160,6 +175,8 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 - **counterspell_creature**: Only counters creature spells (Essence Scatter)
 - **lifegain_counter**: Gets +1/+1 counter when you gain life (Ajani's Pridemate)
 - **double_strike_above_starting**: Has double strike if life >= starting life (Twinblade Paladin)
+- **etb_x_counters**: Enters with X +1/+1 counters based on X mana paid (Wildwood Scourge)
+- **counter_synergy**: Gets +1/+1 counter when counters placed on other non-Hydra creatures (Wildwood Scourge)
 
 ### Keyword Display System (Preview Panel)
 
@@ -669,10 +686,13 @@ All 10 decks are now fully implemented. Below are key mechanics for each of the 
 - Ajani's Pridemate: +1/+1 counter on lifegain (lifegain_counter keyword)
 - Twinblade Paladin: conditional double strike when life >= starting life
 
-#### Primal (G) - Fight Mechanic ✅
+#### Primal (G) - Fight & Counter Mechanics ✅
 - Bite Down: One-sided fight (your creature deals damage to target)
 - Giant Growth, Snakeskin Veil: Combat tricks with targeting
 - Aggressive Mammoth: Gives all creatures trample
+- Wildwood Scourge: X mana cost (etb_x_counters) + counter synergy triggers
+- Biogenic Upgrade: Distribute 3 counters then double - triggers counter synergy twice per creature
+- New Horizons: Aura on land that adds +1/+1 counter to creature
 
 #### Inferno (R) - Dragon Synergies ✅
 - Dragonlord's Servant: Dragons cost {1} less (dragon_cost_reduction)
@@ -956,6 +976,60 @@ await this.resolveSpell(card, caster);
 ```
 
 **Bug:** Card was drawn before scry completed because `handleScry()` wasn't awaited.
+
+### Button Cloning and Function References
+
+**Clone buttons BEFORE defining functions that reference them.**
+
+```javascript
+// ❌ WRONG - btnConfirm reference becomes stale after cloning
+const btnConfirm = document.getElementById('btn-confirm');
+const updateUI = () => {
+    btnConfirm.disabled = remainingCounters > 0;  // References OLD element
+};
+// ... later ...
+const newBtn = btnConfirm.cloneNode(true);
+btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
+// Now updateUI() updates the OLD button (not in DOM), newBtn never updates!
+
+// ✅ CORRECT - Clone first, then define function
+const oldBtn = document.getElementById('btn-confirm');
+const btnConfirm = oldBtn.cloneNode(true);
+oldBtn.parentNode.replaceChild(btnConfirm, oldBtn);
+const updateUI = () => {
+    btnConfirm.disabled = remainingCounters > 0;  // References correct element
+};
+```
+
+**Bug:** Biogenic Upgrade modal's confirm button never enabled because `updateUI()` was updating the old (cloned-out) button element.
+
+### Counter Triggers: "One or More" Mechanic
+
+**Cards like Wildwood Scourge trigger once per EVENT, not per counter.**
+
+```javascript
+// Wildwood Scourge: "Whenever one or more +1/+1 counters are put on
+// another non-Hydra creature you control, put a +1/+1 counter on this creature."
+
+// Biogenic Upgrade creates TWO events per creature:
+// 1. Initial counter placement (e.g., +1 counter)
+// 2. Doubling (which PLACES more counters)
+
+// So for 3 creatures, Wildwood Scourge triggers 6 times (3 × 2 events)
+for (const { creature: target, counters: countersToAdd } of distribution) {
+    // Event 1: Add initial counters
+    target.counters.plusOnePlusOne = beforeCounters + countersToAdd;
+    this.triggers.onCounterPlaced(target, caster, countersToAdd);  // Trigger!
+
+    // Event 2: Double counters (this also PLACES counters)
+    const beforeDouble = target.counters.plusOnePlusOne;
+    target.counters.plusOnePlusOne *= 2;
+    const addedByDoubling = target.counters.plusOnePlusOne - beforeDouble;
+    this.triggers.onCounterPlaced(target, caster, addedByDoubling);  // Trigger again!
+}
+```
+
+**Bug:** Wildwood Scourge only gained 3 counters from Biogenic Upgrade instead of 6, because doubling wasn't calling `onCounterPlaced()`.
 
 ---
 
