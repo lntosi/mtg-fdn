@@ -2500,17 +2500,24 @@ class GameState {
                             if (!target.counters) target.counters = {};
                             const beforeCounters = target.counters.plusOnePlusOne || 0;
 
-                            // Adicionar contadores
+                            // Adicionar contadores iniciais
                             target.counters.plusOnePlusOne = beforeCounters + countersToAdd;
                             this.ui.log(`${target.name} recebeu ${countersToAdd} contador(es) +1/+1`);
 
-                            // Dobrar os contadores
-                            target.counters.plusOnePlusOne *= 2;
-                            this.ui.log(`Contadores em ${target.name} dobrados para ${target.counters.plusOnePlusOne}`);
-
-                            // Trigger counter synergy (Wildwood Scourge)
+                            // Trigger para os contadores iniciais
                             if (this.triggers) {
                                 this.triggers.onCounterPlaced(target, caster, countersToAdd);
+                            }
+
+                            // Dobrar os contadores (isso também coloca contadores!)
+                            const beforeDouble = target.counters.plusOnePlusOne;
+                            target.counters.plusOnePlusOne *= 2;
+                            const addedByDoubling = target.counters.plusOnePlusOne - beforeDouble;
+                            this.ui.log(`Contadores em ${target.name} dobrados para ${target.counters.plusOnePlusOne}`);
+
+                            // Trigger para os contadores adicionados pelo dobro
+                            if (this.triggers && addedByDoubling > 0) {
+                                this.triggers.onCounterPlaced(target, caster, addedByDoubling);
                             }
                         }
                     }

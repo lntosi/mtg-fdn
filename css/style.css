@@ -2780,8 +2780,37 @@ body {
     pointer-events: auto;
 }
 
+/* View mode: mesmos hovers configurados para o jogo normal */
 #game-container.view-mode .card:hover {
-    transform: scale(2.2) translateY(-50px);
+    transform: scale(2.0) translateY(-30px);
+}
+
+#game-container.view-mode #player-hand .card:hover {
+    transform: scale(1.3) translateY(-15px);
+}
+
+#game-container.view-mode .battlefield .card:hover {
+    transform: scale(1.3);
+}
+
+#game-container.view-mode .card.tapped:hover {
+    transform: rotate(90deg) scale(1.1);
+}
+
+#game-container.view-mode .lands .card:hover {
+    transform: scale(1.1);
+}
+
+#game-container.view-mode .lands .card.tapped:hover {
+    transform: rotate(90deg) scale(1.1);
+}
+
+#game-container.view-mode .other-permanents .card:hover {
+    transform: scale(1.05) !important;
+}
+
+#game-container.view-mode .other-permanents .card.tapped:hover {
+    transform: rotate(90deg) scale(1.05) !important;
 }
 
 #game-container.view-mode::after {

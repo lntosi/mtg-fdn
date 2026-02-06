@@ -3738,7 +3738,11 @@ class GameUI {
             const description = document.getElementById('distribute-counters-description');
             const remainingDisplay = document.getElementById('counters-remaining-value');
             const creaturesContainer = document.getElementById('distribute-counters-creatures');
-            const btnConfirm = document.getElementById('btn-distribute-confirm');
+
+            // Clonar botão PRIMEIRO para limpar event listeners anteriores
+            const oldBtnConfirm = document.getElementById('btn-distribute-confirm');
+            const btnConfirm = oldBtnConfirm.cloneNode(true);
+            oldBtnConfirm.parentNode.replaceChild(btnConfirm, oldBtnConfirm);
 
             const totalCounters = options.totalCounters || 3;
             const counterType = options.counterType || '+1/+1';
@@ -3756,7 +3760,7 @@ class GameUI {
             }
             description.textContent = desc;
 
-            // Função para atualizar UI
+            // Função para atualizar UI (btnConfirm já é o elemento correto)
             const updateUI = () => {
                 remainingDisplay.textContent = remainingCounters;
                 btnConfirm.disabled = remainingCounters > 0;
@@ -3774,7 +3778,7 @@ class GameUI {
 
                 // Card da criatura
                 const cardEl = this.createCardElement(creature, true);
-                cardEl.style.pointerEvents = 'none'; // Desabilitar clique no card
+                cardEl.style.pointerEvents = 'none';
                 wrapper.appendChild(cardEl);
 
                 // Controles de contadores
@@ -3804,6 +3808,10 @@ class GameUI {
                         btnPlus.disabled = false;
                         wrapper.classList.toggle('has-counters', current - 1 > 0);
                         updateUI();
+                        // Reabilitar botões + de outras criaturas
+                        creaturesContainer.querySelectorAll('.btn-counter-plus').forEach(btn => {
+                            btn.disabled = false;
+                        });
                     }
                 });
 
@@ -3818,7 +3826,7 @@ class GameUI {
                         wrapper.classList.add('has-counters');
                         updateUI();
 
-                        // Atualizar todos os botões + (desabilitar se não há mais contadores)
+                        // Desabilitar todos os + se não há mais contadores
                         if (remainingCounters === 0) {
                             creaturesContainer.querySelectorAll('.btn-counter-plus').forEach(btn => {
                                 btn.disabled = true;
@@ -3838,16 +3846,10 @@ class GameUI {
                 creaturesContainer.appendChild(wrapper);
             });
 
-            // Configurar botão de confirmar
+            // Atualizar UI inicial
             updateUI();
 
-            // Limpar event listeners anteriores clonando o botão
-            const newBtnConfirm = btnConfirm.cloneNode(true);
-            btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
-            newBtnConfirm.disabled = true;
-            newBtnConfirm.textContent = `Distribua todos os contadores (${remainingCounters} restantes)`;
-
-            newBtnConfirm.addEventListener('click', () => {
+            btnConfirm.addEventListener('click', () => {
                 modal.classList.add('hidden');
 
                 // Construir resultado
