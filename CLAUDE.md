@@ -170,7 +170,7 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 - **zombie_skeleton_lord**: Gives +1/+1 and deathtouch to Zombies and Skeletons (Death Baron)
 - **dragon_cost_reduction**: Dragons cost {1} less (Dragonlord's Servant)
 - **wizard_discount**: Instants and sorceries cost {1} less (Goblin Electromancer)
-- **draw_counter**: Gets +1/+1 counter when drawing second card each turn (Clinquant Skymage)
+- **draw_counter**: Gets +1/+1 counter on every card draw (Clinquant Skymage)
 - **second_draw_faerie**: Creates 1/1 Faerie token on second draw each turn (Mischievous Mystic)
 - **counterspell_creature**: Only counters creature spells (Essence Scatter)
 - **lifegain_counter**: Gets +1/+1 counter when you gain life (Ajani's Pridemate)
@@ -700,7 +700,7 @@ All 10 decks are now fully implemented. Below are key mechanics for each of the 
 - Terror of Mount Velus: Double strike dragon finisher
 
 #### Wizards (U) - Draw Triggers & Kicker ✅
-- Clinquant Skymage: +1/+1 counter on second draw (draw_counter)
+- Clinquant Skymage: +1/+1 counter on every draw (draw_counter)
 - Mischievous Mystic: Creates Faerie on second draw (second_draw_faerie)
 - Into the Roil: Kicker for additional draw
 - Essence Scatter: Counterspell creatures only (counterspell_creature)
