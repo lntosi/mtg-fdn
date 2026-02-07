@@ -3544,6 +3544,11 @@ class GameState {
                 }
                 this.cantBlockThisTurn = [];
                 this.cantBeBlockedThisTurn = [];
+                // Resetar contador de draws para o jogador ativo (para triggers de segundo draw)
+                if (this.drawsThisTurn) {
+                    const playerKey = this.activePlayer === this.player ? 'player' : 'opponent';
+                    this.drawsThisTurn[playerKey] = 0;
+                }
                 await this.nextPhase();
                 break;
 
