@@ -995,8 +995,10 @@ class GameState {
         // Calcular custo total com kicker
         // Formato: "1U" -> 1 genérico + 1 azul = 2 total
         const kickerCost = this.rules.parseCost(card.kickerCost);
+        // Somar genérico + colorido para obter custo total do kicker
+        const kickerTotal = kickerCost.generic + Object.values(kickerCost.colored).reduce((a, b) => a + b, 0);
         const baseCost = card.cmc || 0;
-        const totalCostWithKicker = baseCost + (kickerCost.cmc || 0);
+        const totalCostWithKicker = baseCost + kickerTotal;
 
         // Verificar se pode pagar kicker
         const canPayKicker = totalMana >= totalCostWithKicker;
