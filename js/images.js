@@ -69,10 +69,29 @@ class ImageManager {
             // Normalizar nome da carta para busca
             const searchName = this.normalizeCardName(cardName);
 
-            const response = await fetch(
-                `${this.baseUrl}?fuzzy=${encodeURIComponent(searchName)}`,
+            // Primeiro: tentar buscar versão de Foundations (FDN)
+            let response = await fetch(
+                `${this.baseUrl}?exact=${encodeURIComponent(searchName)}&set=fdn`,
                 { headers: { 'Accept': 'application/json' } }
             );
+
+            // Se não encontrou em FDN, tentar Jumpstart Foundations (J25)
+            if (!response.ok) {
+                await this.delay(this.requestDelay);
+                response = await fetch(
+                    `${this.baseUrl}?exact=${encodeURIComponent(searchName)}&set=j25`,
+                    { headers: { 'Accept': 'application/json' } }
+                );
+            }
+
+            // Fallback: busca fuzzy (qualquer set)
+            if (!response.ok) {
+                await this.delay(this.requestDelay);
+                response = await fetch(
+                    `${this.baseUrl}?fuzzy=${encodeURIComponent(searchName)}`,
+                    { headers: { 'Accept': 'application/json' } }
+                );
+            }
 
             if (!response.ok) {
                 console.log(`Imagem não encontrada para: ${cardName}`);
