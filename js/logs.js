@@ -353,8 +353,10 @@ class LogManager {
                 const rules = window.game?.rules;
                 let power, toughness;
                 if (rules) {
-                    power = rules.getCreaturePower(c, player);
-                    toughness = rules.getCreatureToughness(c, player);
+                    // Verificar se a criatura está atacando para bônus como Goblin Oriflamme
+                    const isAttacking = window.game?.currentAttackers?.some(a => a.instanceId === c.instanceId) || false;
+                    power = rules.getCreaturePower(c, isAttacking);
+                    toughness = rules.getCreatureToughness(c, isAttacking);
                 } else {
                     // Fallback se rules não disponível
                     power = (c.power || 0) + (c.powerModifier || 0) + (c.counters?.plusOnePlusOne || 0);
