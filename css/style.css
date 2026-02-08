@@ -361,27 +361,82 @@ body {
 .creatures {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     align-items: center;
-    align-content: center;
     flex: 1;
-    min-height: 80px;
-    padding: 5px;
+    min-height: 180px; /* Altura suficiente para carta (170px) + margem */
+    padding: 5px 10px;
     position: relative;
-    overflow: visible !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
+}
+
+/* Scrollbar horizontal para criaturas (webkit) */
+.creatures::-webkit-scrollbar {
+    height: 6px;
+}
+
+.creatures::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.creatures::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.3);
+    border-radius: 3px;
+}
+
+/* Centralizar criaturas quando há poucas (sem overflow) */
+.creatures::before {
+    content: '';
+    flex: 1;
+}
+
+.creatures::after {
+    content: '';
+    flex: 1;
 }
 
 .lands {
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     align-items: center;
-    min-height: auto;
-    padding: 3px;
+    min-height: 125px; /* Altura suficiente para carta (117px) + margem */
+    padding: 3px 10px;
     position: relative;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
+}
+
+/* Scrollbar horizontal para terrenos (webkit) */
+.lands::-webkit-scrollbar {
+    height: 6px;
+}
+
+.lands::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.lands::-webkit-scrollbar-thumb {
+    background: rgba(180, 100, 180, 0.3);
+    border-radius: 3px;
+}
+
+/* Centralizar terrenos quando há poucos (sem overflow) */
+.lands::before {
+    content: '';
+    flex: 1;
+}
+
+.lands::after {
+    content: '';
+    flex: 1;
 }
 
 /* Zona de outros permanentes (encantamentos, artefatos) - canto lateral */
