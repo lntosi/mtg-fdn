@@ -643,6 +643,52 @@ class AIPlayer {
     // Escolhe bloqueadores
     chooseBlockers(attackers, possibleBlockers) {
         const assignments = {};
+        const aiLife = this.game.opponent.life;
+
+        // === CALCULAR DANO TOTAL INCOMING ===
+        const calculateTotalDamage = (attackerList, currentAssignments) => {
+            let total = 0;
+            attackerList.forEach(attacker => {
+                if (!currentAssignments[attacker.instanceId]) {
+                    // Atacante não bloqueado - dano total
+                    total += this.rules.getCreaturePower(attacker);
+                } else if (this.rules.hasKeyword(attacker, 'trample', true)) {
+                    // Atacante com trample - dano pode passar
+                    const blockers = currentAssignments[attacker.instanceId];
+                    const blockerToughness = blockers.reduce((sum, b) =>
+                        sum + this.rules.getCreatureToughness(b), 0);
+                    const attackerPower = this.rules.getCreaturePower(attacker);
+                    const excess = attackerPower - blockerToughness;
+                    if (excess > 0) total += excess;
+                }
+                // Atacante bloqueado sem trample - 0 dano ao jogador
+            });
+            return total;
+        };
+
+        // Helper: verificar se criatura é token ou baixo valor (descartável)
+        const isExpendable = (creature) => {
+            // Tokens são sempre descartáveis
+            if (creature.instanceId?.startsWith('token_')) return true;
+            // Criaturas 1/1 sem habilidades especiais são descartáveis
+            const power = this.rules.getCreaturePower(creature);
+            const toughness = this.rules.getCreatureToughness(creature);
+            const hasValuableKeyword = creature.keywords?.some(k =>
+                ['deathtouch', 'lifelink', 'flying', 'first_strike', 'double_strike'].includes(k)
+            );
+            if (power <= 1 && toughness <= 1 && !hasValuableKeyword) return true;
+            return false;
+        };
+
+        // Helper: calcular "valor" de uma criatura para ordenar chump blockers
+        const creatureValue = (creature) => {
+            if (creature.instanceId?.startsWith('token_')) return 0;
+            let value = this.rules.getCreaturePower(creature) + this.rules.getCreatureToughness(creature);
+            if (creature.keywords?.includes('deathtouch')) value += 3;
+            if (creature.keywords?.includes('lifelink')) value += 2;
+            if (creature.keywords?.includes('flying')) value += 2;
+            return value;
+        };
 
         // Helper: verificar se atacante tem menace (considera auras como Untamed Hunger)
         const hasMenace = (attacker) => this.rules.hasKeyword(attacker, 'menace', true);
@@ -915,6 +961,98 @@ class AIPlayer {
                 }
             }
         });
+
+        // === FASE DE CHUMP BLOCK INTELIGENTE ===
+        // Após bloqueios normais, verificar se dano restante é perigoso
+        const unblockeddamage = calculateTotalDamage(attackers, assignments);
+        const lifeAfterDamage = aiLife - unblockeddamage;
+        const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+
+        // Situações que justificam chump block:
+        // 1. Dano seria letal (vida <= 0)
+        // 2. Ficaria em range letal para próximo turno (vida <= maior atacante * panicMultiplier)
+        // 3. Temos bloqueadores descartáveis (tokens) sobrando
+
+        if (unblockeddamage > 0) {
+            // Encontrar atacantes não bloqueados
+            const unblockedAttackers = attackers.filter(a => !assignments[a.instanceId]);
+
+            // Ordenar atacantes por poder (maior primeiro) - priorizar bloquear os maiores
+            const sortedUnblockedAttackers = [...unblockedAttackers].sort((a, b) =>
+                this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+            );
+
+            // Encontrar bloqueadores disponíveis para chump block
+            let availableChumpBlockers = possibleBlockers.filter(b =>
+                !b.assignedToBlock && this.rules.canAttack(b) // Usar canAttack para verificar se não está tapped
+            );
+
+            // Ordenar por valor (menor primeiro) - sacrificar os menos valiosos
+            availableChumpBlockers.sort((a, b) => creatureValue(a) - creatureValue(b));
+
+            // Calcular dano do maior atacante no campo do jogador (para próximo turno)
+            const playerCreatures = this.game.player.battlefield.filter(c => c.type === 'creature');
+            const biggestPlayerCreaturePower = playerCreatures.length > 0
+                ? Math.max(...playerCreatures.map(c => this.rules.getCreaturePower(c)))
+                : 0;
+            const nextTurnLethalThreshold = biggestPlayerCreaturePower * panicMultiplier;
+
+            for (const attacker of sortedUnblockedAttackers) {
+                if (availableChumpBlockers.length === 0) break;
+
+                const attackerPower = this.rules.getCreaturePower(attacker);
+                const attackerHasMenace = hasMenace(attacker);
+
+                // Pular atacantes com menace se não temos 2 bloqueadores
+                if (attackerHasMenace && availableChumpBlockers.length < 2) continue;
+
+                // Recalcular dano atual
+                const currentUnblockedDamage = calculateTotalDamage(attackers, assignments);
+                const currentLifeAfter = aiLife - currentUnblockedDamage;
+
+                // Decidir se vale chump block este atacante
+                let shouldChumpBlock = false;
+                let reason = '';
+
+                // 1. Dano seria letal
+                if (currentLifeAfter <= 0) {
+                    shouldChumpBlock = true;
+                    reason = 'lethal';
+                }
+                // 2. Ficaria em range letal para próximo turno
+                else if (currentLifeAfter <= nextTurnLethalThreshold) {
+                    shouldChumpBlock = true;
+                    reason = 'next_turn_lethal';
+                }
+                // 3. Temos tokens/descartáveis e atacante é forte
+                else if (isExpendable(availableChumpBlockers[0]) && attackerPower >= 3) {
+                    shouldChumpBlock = true;
+                    reason = 'expendable_blocker';
+                }
+                // 4. Atacante muito forte (power >= 4) e temos bloqueador de baixo valor
+                else if (attackerPower >= 4 && creatureValue(availableChumpBlockers[0]) <= 3) {
+                    shouldChumpBlock = true;
+                    reason = 'big_attacker';
+                }
+
+                if (shouldChumpBlock) {
+                    if (attackerHasMenace) {
+                        // Menace: precisa de 2 bloqueadores
+                        const b1 = availableChumpBlockers.shift();
+                        const b2 = availableChumpBlockers.shift();
+                        if (b1 && b2) {
+                            assignBlockers(attacker, [b1, b2]);
+                        }
+                    } else {
+                        // Bloqueio normal: 1 bloqueador
+                        const blocker = availableChumpBlockers.shift();
+                        if (blocker) {
+                            assignBlockers(attacker, [blocker]);
+                        }
+                    }
+                }
+            }
+        }
 
         // Limpar flags
         possibleBlockers.forEach(b => delete b.assignedToBlock);

@@ -547,3 +547,113 @@ describe('AI Gang Blocking', () => {
         });
     });
 });
+
+describe('AI Chump Blocking', () => {
+    // Helper para simular lógica de chump block
+    const isExpendable = (creature) => {
+        if (creature.instanceId?.startsWith('token_')) return true;
+        const power = creature.power || 0;
+        const toughness = creature.toughness || 0;
+        const hasValuableKeyword = creature.keywords?.some(k =>
+            ['deathtouch', 'lifelink', 'flying', 'first_strike', 'double_strike'].includes(k)
+        );
+        if (power <= 1 && toughness <= 1 && !hasValuableKeyword) return true;
+        return false;
+    };
+
+    const creatureValue = (creature) => {
+        if (creature.instanceId?.startsWith('token_')) return 0;
+        let value = (creature.power || 0) + (creature.toughness || 0);
+        if (creature.keywords?.includes('deathtouch')) value += 3;
+        if (creature.keywords?.includes('lifelink')) value += 2;
+        if (creature.keywords?.includes('flying')) value += 2;
+        return value;
+    };
+
+    describe('Expendable Creature Detection', () => {
+        test('tokens are expendable', () => {
+            const token = createCreature({ instanceId: 'token_cat_123', power: 1, toughness: 1 });
+            expect(isExpendable(token)).toBe(true);
+        });
+
+        test('1/1 without keywords is expendable', () => {
+            const creature = createCreature({ power: 1, toughness: 1, keywords: [] });
+            expect(isExpendable(creature)).toBe(true);
+        });
+
+        test('1/1 with deathtouch is NOT expendable', () => {
+            const creature = createCreature({ power: 1, toughness: 1, keywords: ['deathtouch'] });
+            expect(isExpendable(creature)).toBe(false);
+        });
+
+        test('2/2 is NOT expendable', () => {
+            const creature = createCreature({ power: 2, toughness: 2, keywords: [] });
+            expect(isExpendable(creature)).toBe(false);
+        });
+    });
+
+    describe('Creature Value Calculation', () => {
+        test('token has value 0', () => {
+            const token = createCreature({ instanceId: 'token_cat_123', power: 1, toughness: 1 });
+            expect(creatureValue(token)).toBe(0);
+        });
+
+        test('2/2 vanilla has value 4', () => {
+            const creature = createCreature({ power: 2, toughness: 2, keywords: [] });
+            expect(creatureValue(creature)).toBe(4);
+        });
+
+        test('deathtouch adds 3 to value', () => {
+            const creature = createCreature({ power: 1, toughness: 1, keywords: ['deathtouch'] });
+            expect(creatureValue(creature)).toBe(2 + 3); // 1+1 + 3 deathtouch
+        });
+
+        test('flying adds 2 to value', () => {
+            const creature = createCreature({ power: 2, toughness: 1, keywords: ['flying'] });
+            expect(creatureValue(creature)).toBe(3 + 2); // 2+1 + 2 flying
+        });
+
+        test('lifelink adds 2 to value', () => {
+            const creature = createCreature({ power: 3, toughness: 3, keywords: ['lifelink'] });
+            expect(creatureValue(creature)).toBe(6 + 2); // 3+3 + 2 lifelink
+        });
+    });
+
+    describe('Chump Block Decision Logic', () => {
+        test('token should chump block a 3-power attacker', () => {
+            // Token is expendable, attacker power >= 3
+            const token = createCreature({ instanceId: 'token_cat_123', power: 1, toughness: 1 });
+            const attacker = createCreature({ power: 3, toughness: 3 });
+
+            const shouldBlock = isExpendable(token) && attacker.power >= 3;
+            expect(shouldBlock).toBe(true);
+        });
+
+        test('token should NOT chump block a 2-power attacker (not worth it)', () => {
+            // Attacker power < 3, not big enough to waste a token
+            const token = createCreature({ instanceId: 'token_cat_123', power: 1, toughness: 1 });
+            const attacker = createCreature({ power: 2, toughness: 2 });
+
+            const shouldBlock = isExpendable(token) && attacker.power >= 3;
+            expect(shouldBlock).toBe(false);
+        });
+
+        test('low-value creature should chump block a 4+ power attacker', () => {
+            // 1/1 has value 2, attacker power >= 4
+            const creature = createCreature({ power: 1, toughness: 1, keywords: [] });
+            const attacker = createCreature({ power: 4, toughness: 4 });
+
+            const shouldBlock = creatureValue(creature) <= 3 && attacker.power >= 4;
+            expect(shouldBlock).toBe(true);
+        });
+
+        test('valuable creature should NOT chump block', () => {
+            // 2/2 with flying has value 4+2=6, too valuable to sacrifice
+            const creature = createCreature({ power: 2, toughness: 2, keywords: ['flying'] });
+            const attacker = createCreature({ power: 4, toughness: 4 });
+
+            const shouldBlock = creatureValue(creature) <= 3 && attacker.power >= 4;
+            expect(shouldBlock).toBe(false);
+        });
+    });
+});
