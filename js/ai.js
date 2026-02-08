@@ -708,6 +708,115 @@ class AIPlayer {
             return null;
         };
 
+        // Helper: selecionar par de bloqueadores para gang block voluntário
+        // Usado quando nenhum bloqueador único pode fazer trade favorável
+        const selectGangBlockPair = (availableBlockers, attacker) => {
+            if (availableBlockers.length < 2) return null;
+
+            const attackerToughness = this.rules.getCreatureToughness(attacker);
+            const attackerPower = this.rules.getCreaturePower(attacker);
+            const attackerHasDeathtouch = this.rules.hasKeyword(attacker, 'deathtouch', true);
+            const attackerHasTrample = this.rules.hasKeyword(attacker, 'trample', true);
+
+            // Usar thresholds configurados por dificuldade
+            const tradePowerThreshold = this.difficulty.thresholds.tradePower;
+            const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+            const aiLife = this.game.opponent.life;
+
+            // Encontrar o melhor par de bloqueadores que juntos podem matar o atacante
+            let bestPair = null;
+            let bestScore = -Infinity;
+
+            for (let i = 0; i < availableBlockers.length; i++) {
+                for (let j = i + 1; j < availableBlockers.length; j++) {
+                    const b1 = availableBlockers[i];
+                    const b2 = availableBlockers[j];
+
+                    const b1Power = this.rules.getCreaturePower(b1);
+                    const b2Power = this.rules.getCreaturePower(b2);
+                    const b1Toughness = this.rules.getCreatureToughness(b1);
+                    const b2Toughness = this.rules.getCreatureToughness(b2);
+                    const b1HasDeathtouch = this.rules.hasKeyword(b1, 'deathtouch', false);
+                    const b2HasDeathtouch = this.rules.hasKeyword(b2, 'deathtouch', false);
+
+                    const combinedPower = b1Power + b2Power;
+                    const canKillAttacker = combinedPower >= attackerToughness ||
+                        b1HasDeathtouch || b2HasDeathtouch;
+
+                    // Se não consegue matar o atacante, não vale a pena
+                    if (!canKillAttacker) continue;
+
+                    // Calcular quantos bloqueadores morrem
+                    // Nota: o atacante distribui dano, então assumimos pior caso
+                    // (atacante mata um bloqueador, a menos que tenha deathtouch que mata ambos)
+                    let blockerDeaths = 0;
+                    if (attackerHasDeathtouch) {
+                        // Deathtouch mata ambos os bloqueadores
+                        blockerDeaths = 2;
+                    } else {
+                        // Atacante pode matar pelo menos o menor bloqueador
+                        if (attackerPower >= b1Toughness) blockerDeaths++;
+                        if (attackerPower >= b2Toughness) blockerDeaths++;
+                        // Na prática, dano é dividido, então geralmente só mata 1
+                        // Mas vamos ser conservadores
+                        blockerDeaths = Math.min(blockerDeaths, attackerPower >= (b1Toughness + b2Toughness) ? 2 : 1);
+                    }
+
+                    // Calcular valor das criaturas (power como proxy)
+                    const blockersTotalValue = b1Power + b2Power;
+                    const attackerValue = attackerPower;
+
+                    // Score: positivo = bom para IA
+                    // - Matar atacante grande sem perder bloqueadores = muito bom
+                    // - Matar atacante grande perdendo 1 bloqueador = ok se atacante vale
+                    // - Perder 2 bloqueadores = só se estamos em pânico
+                    let score = 0;
+
+                    if (blockerDeaths === 0) {
+                        // Matamos atacante sem perder ninguém - excelente!
+                        score = attackerValue * 10;
+                    } else if (blockerDeaths === 1) {
+                        // Perdemos 1 bloqueador para matar atacante
+                        // Vale se atacante tem power >= threshold
+                        if (attackerPower >= tradePowerThreshold) {
+                            score = attackerValue - Math.min(b1Power, b2Power);
+                        } else if (aiLife <= attackerPower * panicMultiplier) {
+                            // Em pânico, qualquer bloqueio vale
+                            score = attackerPower;
+                        } else {
+                            score = -1; // Não vale a pena
+                        }
+                    } else {
+                        // Perdemos ambos bloqueadores
+                        // Só vale se estamos em pânico
+                        if (aiLife <= attackerPower * panicMultiplier) {
+                            score = attackerPower - blockersTotalValue;
+                        } else if (attackerPower >= tradePowerThreshold + 2) {
+                            // Atacante muito forte, pode valer
+                            score = attackerPower - blockersTotalValue;
+                        } else {
+                            score = -10; // Não vale
+                        }
+                    }
+
+                    // Trample reduz valor do gang block (dano passa)
+                    if (attackerHasTrample && score > 0) {
+                        const excessDamage = attackerPower - (b1Toughness + b2Toughness);
+                        if (excessDamage > 0) {
+                            score -= excessDamage;
+                        }
+                    }
+
+                    if (score > bestScore && score > 0) {
+                        bestScore = score;
+                        bestPair = [b1, b2];
+                    }
+                }
+            }
+
+            return bestPair;
+        };
+
         // PRIMEIRO: Bloquear atacantes com mustBeBlocked (obrigatório)
         const mustBlockAttackers = attackers.filter(a => a.mustBeBlocked);
         mustBlockAttackers.forEach(attacker => {
@@ -762,7 +871,8 @@ class AIPlayer {
                 return;
             }
 
-            // Lógica normal (sem menace): 1 bloqueador
+            // Lógica normal (sem menace): tentar 1 bloqueador primeiro
+            let foundSingleBlocker = false;
             for (const blocker of availableBlockers) {
                 const blockerPower = this.rules.getCreaturePower(blocker);
                 const blockerToughness = this.rules.getCreatureToughness(blocker);
@@ -782,14 +892,26 @@ class AIPlayer {
 
                 if (attackerDies && !blockerDies) {
                     assignBlockers(attacker, [blocker]);
+                    foundSingleBlocker = true;
                     break;
                 } else if (attackerPower >= tradePowerThreshold && attackerDies) {
                     assignBlockers(attacker, [blocker]);
+                    foundSingleBlocker = true;
                     break;
                 } else if (this.game.opponent.life <= attackerPower * panicMultiplier) {
                     // Bloquear se vamos morrer em breve
                     assignBlockers(attacker, [blocker]);
+                    foundSingleBlocker = true;
                     break;
+                }
+            }
+
+            // GANG BLOCK VOLUNTÁRIO: Se não encontrou bloqueador único favorável,
+            // tentar bloquear com 2 criaturas para matar atacante grande
+            if (!foundSingleBlocker && availableBlockers.length >= 2) {
+                const gangBlockPair = selectGangBlockPair(availableBlockers, attacker);
+                if (gangBlockPair) {
+                    assignBlockers(attacker, gangBlockPair);
                 }
             }
         });

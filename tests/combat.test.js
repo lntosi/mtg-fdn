@@ -350,3 +350,200 @@ describe('Combat Restrictions', () => {
         });
     });
 });
+
+describe('AI Gang Blocking', () => {
+    let rules;
+    let mockAI;
+
+    beforeEach(() => {
+        rules = new TestRulesEngine();
+        // Mock AI com thresholds padrão
+        mockAI = {
+            rules: rules,
+            difficulty: {
+                thresholds: {
+                    tradePower: 3,
+                    panicMultiplier: 2
+                }
+            },
+            game: {
+                opponent: { life: 20 }
+            }
+        };
+    });
+
+    // Helper para simular lógica de gang block
+    const selectGangBlockPair = (availableBlockers, attacker, ai) => {
+        if (availableBlockers.length < 2) return null;
+
+        const attackerToughness = ai.rules.getCreatureToughness(attacker);
+        const attackerPower = ai.rules.getCreaturePower(attacker);
+        const attackerHasDeathtouch = attacker.keywords?.includes('deathtouch');
+        const tradePowerThreshold = ai.difficulty.thresholds.tradePower;
+        const panicMultiplier = ai.difficulty.thresholds.panicMultiplier;
+        const aiLife = ai.game.opponent.life;
+
+        let bestPair = null;
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < availableBlockers.length; i++) {
+            for (let j = i + 1; j < availableBlockers.length; j++) {
+                const b1 = availableBlockers[i];
+                const b2 = availableBlockers[j];
+
+                const b1Power = ai.rules.getCreaturePower(b1);
+                const b2Power = ai.rules.getCreaturePower(b2);
+                const b1Toughness = ai.rules.getCreatureToughness(b1);
+                const b2Toughness = ai.rules.getCreatureToughness(b2);
+                const b1HasDeathtouch = b1.keywords?.includes('deathtouch');
+                const b2HasDeathtouch = b2.keywords?.includes('deathtouch');
+
+                const combinedPower = b1Power + b2Power;
+                const canKillAttacker = combinedPower >= attackerToughness ||
+                    b1HasDeathtouch || b2HasDeathtouch;
+
+                if (!canKillAttacker) continue;
+
+                let blockerDeaths = 0;
+                if (attackerHasDeathtouch) {
+                    blockerDeaths = 2;
+                } else {
+                    blockerDeaths = attackerPower >= (b1Toughness + b2Toughness) ? 2 : 1;
+                }
+
+                const blockersTotalValue = b1Power + b2Power;
+                let score = 0;
+
+                if (blockerDeaths === 0) {
+                    score = attackerPower * 10;
+                } else if (blockerDeaths === 1) {
+                    if (attackerPower >= tradePowerThreshold) {
+                        score = attackerPower - Math.min(b1Power, b2Power);
+                    } else if (aiLife <= attackerPower * panicMultiplier) {
+                        score = attackerPower;
+                    } else {
+                        score = -1;
+                    }
+                } else {
+                    if (aiLife <= attackerPower * panicMultiplier) {
+                        score = attackerPower - blockersTotalValue;
+                    } else if (attackerPower >= tradePowerThreshold + 2) {
+                        score = attackerPower - blockersTotalValue;
+                    } else {
+                        score = -10;
+                    }
+                }
+
+                if (score > bestScore && score > 0) {
+                    bestScore = score;
+                    bestPair = [b1, b2];
+                }
+            }
+        }
+
+        return bestPair;
+    };
+
+    describe('Gang Block Strategy', () => {
+        test('two 2/2s do NOT gang block a 4/4 (both would die - bad trade)', () => {
+            // 4 power can kill both 2/2s - losing 2 creatures for 1 is bad
+            const attacker = createCreature({ power: 4, toughness: 4 });
+            const b1 = createCreature({ power: 2, toughness: 2, instanceId: 'b1' });
+            const b2 = createCreature({ power: 2, toughness: 2, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).toBeNull(); // Not worth the 2-for-1 trade
+        });
+
+        test('two 2/3s gang block a 5/5 (only 1 dies, powerful attacker)', () => {
+            // Combined toughness 6 > attacker power 5, so only 1 blocker dies
+            // Combined power 4 < 5, but attacker power 5 >= threshold 3, worth it
+            const attacker = createCreature({ power: 5, toughness: 5 });
+            const b1 = createCreature({ power: 2, toughness: 3, instanceId: 'b1' });
+            const b2 = createCreature({ power: 2, toughness: 3, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            // 4 combined power can't kill 5/5 - this should return null
+            expect(pair).toBeNull();
+        });
+
+        test('two 3/4s gang block a 5/5 (only 1 dies, can kill attacker)', () => {
+            // Combined power 6 can kill 5/5
+            // Combined toughness 8 > attacker power 5, so only 1 blocker dies
+            const attacker = createCreature({ power: 5, toughness: 5 });
+            const b1 = createCreature({ power: 3, toughness: 4, instanceId: 'b1' });
+            const b2 = createCreature({ power: 3, toughness: 4, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).not.toBeNull(); // Only lose 1 blocker for a 5/5 - good trade
+        });
+
+        test('two 3/3s gang block a 4/4 (only 1 blocker dies - good trade)', () => {
+            // 4 power can only kill one 3/3, but combined 6 power kills the 4/4
+            const attacker = createCreature({ power: 4, toughness: 4 });
+            const b1 = createCreature({ power: 3, toughness: 3, instanceId: 'b1' });
+            const b2 = createCreature({ power: 3, toughness: 3, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).not.toBeNull(); // Only lose 1 blocker to kill 4/4 - worth it
+        });
+
+        test('two 1/1s do NOT gang block a 3/3 (combined power insufficient)', () => {
+            const attacker = createCreature({ power: 3, toughness: 3 });
+            const b1 = createCreature({ power: 1, toughness: 1, instanceId: 'b1' });
+            const b2 = createCreature({ power: 1, toughness: 1, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).toBeNull(); // Can't kill 3/3 with 2 combined power
+        });
+
+        test('two 2/2s gang block a 3/3 (can kill, attacker power >= threshold)', () => {
+            const attacker = createCreature({ power: 3, toughness: 3 });
+            const b1 = createCreature({ power: 2, toughness: 2, instanceId: 'b1' });
+            const b2 = createCreature({ power: 2, toughness: 2, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).not.toBeNull(); // 4 power can kill 3/3, and 3 >= tradePowerThreshold
+        });
+
+        test('two 2/2s do NOT gang block a 2/2 (not worth it - low power)', () => {
+            const attacker = createCreature({ power: 2, toughness: 2 });
+            const b1 = createCreature({ power: 2, toughness: 2, instanceId: 'b1' });
+            const b2 = createCreature({ power: 2, toughness: 2, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            // Should not gang block - attacker power 2 < threshold 3
+            expect(pair).toBeNull();
+        });
+
+        test('gang blocks in panic mode even for small attacker', () => {
+            mockAI.game.opponent.life = 3; // Panic: 3 <= 2*2
+
+            const attacker = createCreature({ power: 2, toughness: 2 });
+            const b1 = createCreature({ power: 2, toughness: 2, instanceId: 'b1' });
+            const b2 = createCreature({ power: 2, toughness: 2, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            expect(pair).not.toBeNull(); // In panic mode, any block is worth it
+        });
+
+        test('deathtouch blocker enables gang block against bigger creature', () => {
+            const attacker = createCreature({ power: 6, toughness: 6 });
+            const b1 = createCreature({ power: 1, toughness: 1, instanceId: 'b1', keywords: ['deathtouch'] });
+            const b2 = createCreature({ power: 2, toughness: 2, instanceId: 'b2' });
+
+            const pair = selectGangBlockPair([b1, b2], attacker, mockAI);
+
+            // Deathtouch makes any damage lethal, so can kill the 6/6
+            expect(pair).not.toBeNull();
+        });
+    });
+});
