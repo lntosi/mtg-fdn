@@ -68,6 +68,12 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - Playing cards: 600-1200ms
 - Combat decisions: 800-1200ms
 
+**AI Target Selection:** The AI prioritizes targets intelligently:
+- **Removal spells**: Prioritizes actual threats over neutralized creatures (e.g., won't waste removal on a creature that already has Pacifism)
+- **Auras**: Won't put Pacifism on creatures that already have it
+- **Gang blocking**: Can assign multiple blockers to kill a dangerous attacker
+- **Chump blocking**: Will sacrifice expendable creatures (tokens, 1/1 vanillas) to prevent lethal damage
+
 **Priority Windows:** Player receives priority windows to respond with instants:
 - Configurable stops: Upkeep, Begin Combat, After Attackers, After Blockers, End Step
 - Separate settings for your turn vs opponent's turn (Settings menu → Priority Stops)
@@ -123,6 +129,32 @@ Example: A 3/3 creature with 2 damage shows as `3/1` with red stats and a `-2` b
 - **Optimized for 70-80% browser zoom**: The layout works best at reduced zoom levels. Full 100% zoom support would require deeper layout refactoring (Arena-style fan hand, stacked lands, etc.) - deferred to future development.
 - **Preview panel**: Right side panel shows enlarged card on hover (420px width, 480px image)
 - **Contextual main button**: Changes text/color based on game state (Passar Turno, Ir para Combate, etc.)
+
+### Card Sizes by Location
+
+| Location | Size | Notes |
+|----------|------|-------|
+| Player's Hand | 122×170px | 10% smaller than default |
+| Opponent's Hand | 60×84px | Face-down cards |
+| Creatures (BF) | 122×170px | 10% smaller than default |
+| Lands (BF) | 84×117px | Compact size |
+| Other Permanents | 70×98px | Artifacts, enchantments |
+
+### Overflow Handling
+
+| Area | Behavior | CSS Properties |
+|------|----------|----------------|
+| Creatures | Horizontal scroll | `flex-wrap: nowrap`, `overflow-x: auto` |
+| Lands | Horizontal scroll | `flex-wrap: nowrap`, `overflow-x: auto` |
+| Other Permanents | Vertical scroll | `overflow-y: auto` |
+
+Cards are centered when few, scrollable when many. Horizontal scroll prevents vertical card clipping.
+
+### Tapped Cards
+
+Tapped cards use horizontal-only margin to accommodate rotation without vertical displacement:
+- Creatures/default: `margin: 0 24px`
+- Lands: `margin: 0 16px` (smaller cards need less space)
 
 ### Card Hover Zoom Configuration
 
@@ -463,7 +495,7 @@ Run through this checklist:
 - [ ] **Keyword pattern**: Reusable effects use keywords, not card.id
 - [ ] **Target validation**: Instants have `hasValidTargets()` entry if needed
 - [ ] **AI support**: AI can use the card (check `ai.js` if special handling needed)
-- [ ] **Tests pass**: `npm test` shows all 140+ tests passing
+- [ ] **Tests pass**: `npm test` shows all 215+ tests passing
 
 ### Step 5: Update Documentation
 
@@ -644,7 +676,7 @@ case 'bite_down':
 npm test
 ```
 
-All 140 tests must pass before committing.
+All 215+ tests must pass before committing.
 
 ### Step 6: Check for Architectural Inconsistencies
 
