@@ -226,16 +226,16 @@ class RulesEngine {
             return player.battlefield.some(c => c.type === 'creature');
         }
 
-        // Fleeting Distraction - mira criatura (qualquer)
+        // Fleeting Distraction - mira criatura (qualquer, exceto spells na pilha)
         if (card.id === 'fleeting_distraction') {
-            return opponent.battlefield.some(c => c.type === 'creature') ||
-                   player.battlefield.some(c => c.type === 'creature');
+            return opponent.battlefield.some(c => c.type === 'creature' && !c.pendingResolution) ||
+                   player.battlefield.some(c => c.type === 'creature' && !c.pendingResolution);
         }
 
-        // Into the Roil - mira permanente não-terreno
+        // Into the Roil - mira permanente não-terreno (exceto spells na pilha)
         if (card.id === 'into_the_roil') {
             const allPermanents = [...opponent.battlefield, ...player.battlefield];
-            return allPermanents.some(c => c.type !== 'land');
+            return allPermanents.some(c => c.type !== 'land' && !c.pendingResolution);
         }
 
         // Angelic Edict - criatura ou encantamento do oponente
