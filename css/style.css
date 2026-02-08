@@ -409,7 +409,7 @@ body {
     padding: 3px 10px;
     position: relative;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: clip; /* Evita scrollbar vertical sem cortar transforms */
     scrollbar-width: thin;
     scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
 }
