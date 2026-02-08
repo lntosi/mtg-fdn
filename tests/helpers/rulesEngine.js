@@ -211,6 +211,20 @@ class TestRulesEngine {
         return Math.max(0, excessDamage);
     }
 
+    // Verifica se criatura tem Pacifism (ou efeito similar)
+    hasPacifism(creature) {
+        if (!this.game || !this.game.player) return false;
+
+        const allBattlefields = [
+            ...(this.game.player.battlefield || []),
+            ...(this.game.opponent?.battlefield || [])
+        ];
+
+        return allBattlefields.some(card =>
+            card.id === 'pacifism' && card.attachedTo === creature.instanceId
+        );
+    }
+
     // Verifica se tem mana suficiente (simplificado)
     hasEnoughMana(cost, availableMana) {
         const parsed = this.parseCost(cost);

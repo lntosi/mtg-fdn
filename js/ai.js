@@ -1084,8 +1084,15 @@ class AIPlayer {
             );
 
             if (enemyCreatures.length > 0) {
+                // Separar criaturas que são ameaças reais vs já neutralizadas
+                const actualThreats = enemyCreatures.filter(c => !this.rules.hasPacifism(c));
+                const neutralizedCreatures = enemyCreatures.filter(c => this.rules.hasPacifism(c));
+
+                // Priorizar ameaças reais - criaturas com Pacifism já estão neutralizadas
+                const targetPool = actualThreats.length > 0 ? actualThreats : neutralizedCreatures;
+
                 // Escolher a criatura com maior poder
-                return enemyCreatures.sort((a, b) => {
+                return targetPool.sort((a, b) => {
                     const aPower = this.rules.getCreaturePower(a);
                     const bPower = this.rules.getCreaturePower(b);
                     return bPower - aPower;
@@ -1130,8 +1137,18 @@ class AIPlayer {
             );
 
             if (enemyCreatures.length > 0) {
+                // Para Pacifism: não colocar em criaturas que já têm Pacifism (desperdício)
+                // Para Eaten by Piranhas: pode colocar mesmo com Pacifism (ainda reduz stats)
+                let targetPool = enemyCreatures;
+                if (aura.id === 'pacifism') {
+                    const notPacified = enemyCreatures.filter(c => !this.rules.hasPacifism(c));
+                    if (notPacified.length > 0) {
+                        targetPool = notPacified;
+                    }
+                }
+
                 // Escolher a criatura com maior poder (ou toughness como desempate)
-                return enemyCreatures.sort((a, b) => {
+                return targetPool.sort((a, b) => {
                     const aPower = this.rules.getCreaturePower(a);
                     const bPower = this.rules.getCreaturePower(b);
                     if (bPower !== aPower) return bPower - aPower;

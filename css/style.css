@@ -374,42 +374,14 @@ body {
 
 .lands {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    min-height: 155px; /* Fixed height to prevent layout shift when lands tap/untap */
-    max-height: 180px; /* Limite máximo para evitar overflow */
-    padding: 5px;
+    min-height: auto;
+    padding: 3px;
     position: relative;
-    overflow-y: auto;
-    overflow-x: visible;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
-}
-
-/* Scrollbar styling for webkit browsers */
-.lands::-webkit-scrollbar {
-    height: 4px;
-}
-
-.lands::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.lands::-webkit-scrollbar-thumb {
-    background: rgba(180, 100, 180, 0.3);
-    border-radius: 2px;
-}
-
-/* Tamanho reduzido quando há muitos terrenos (classe adicionada via JS) */
-.lands.many-items .card {
-    width: 56px;
-    height: 78px;
-}
-
-.lands.many-items {
-    gap: 4px;
+    overflow: visible;
 }
 
 /* Zona de outros permanentes (encantamentos, artefatos) - canto lateral */
@@ -457,17 +429,6 @@ body {
     height: 98px;
     flex-shrink: 0;
 }
-
-/* Tamanho reduzido quando há muitos permanentes (classe adicionada via JS) */
-.other-permanents.many-items .card {
-    width: 56px;
-    height: 78px;
-}
-
-.other-permanents.many-items {
-    gap: 4px;
-}
-
 
 /* Lands do oponente: mesma ordem visual (lands acima, criaturas abaixo) */
 #opponent-battlefield .lands {
@@ -816,11 +777,23 @@ body {
     position: relative;
 }
 
+/* Cartas na mão do jogador - 10% menores que o padrão */
+#player-hand .card {
+    width: 122px;
+    height: 170px;  /* 122 * 1.4 = 170.8 */
+}
+
 /* Cartas na mão - zoom reduzido pois preview lateral já mostra detalhes */
 #player-hand .card:hover {
     transform: scale(1.3) translateY(-15px);
     z-index: 100;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+/* Criaturas no battlefield - 10% menores que o padrão */
+.creatures .card {
+    width: 122px;
+    height: 170px;  /* 122 * 1.4 = 170.8 */
 }
 
 /* Cartas no battlefield - mesmo zoom da mão pois preview lateral já mostra detalhes */
@@ -831,7 +804,7 @@ body {
 
 .card.tapped {
     transform: rotate(90deg);
-    margin: 20px 28px;
+    margin: 0 24px; /* Apenas margem horizontal para acomodar rotação */
 }
 
 .card.tapped:hover {
@@ -1358,6 +1331,10 @@ body {
 
 .lands .card:hover {
     transform: scale(1.1);
+}
+
+.lands .card.tapped {
+    margin: 0 16px; /* Terrenos são menores, precisam de menos margem */
 }
 
 .lands .card.tapped:hover {

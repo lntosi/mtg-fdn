@@ -657,3 +657,151 @@ describe('AI Chump Blocking', () => {
         });
     });
 });
+
+describe('AI Removal Targeting', () => {
+    let rules;
+
+    beforeEach(() => {
+        rules = new TestRulesEngine();
+    });
+
+    describe('Prioritizing Actual Threats', () => {
+        test('should identify pacified creatures correctly', () => {
+            const creature1 = createCreature({ power: 5, toughness: 5 });
+            creature1.instanceId = 'creature_1';
+
+            const pacifism = {
+                id: 'pacifism',
+                type: 'enchantment',
+                attachedTo: 'creature_1'
+            };
+
+            rules.game = {
+                player: { battlefield: [creature1, pacifism] },
+                opponent: { battlefield: [] }
+            };
+
+            expect(rules.hasPacifism(creature1)).toBe(true);
+        });
+
+        test('should identify non-pacified creatures correctly', () => {
+            const creature1 = createCreature({ power: 5, toughness: 5 });
+            creature1.instanceId = 'creature_1';
+
+            const creature2 = createCreature({ power: 3, toughness: 3 });
+            creature2.instanceId = 'creature_2';
+
+            const pacifism = {
+                id: 'pacifism',
+                type: 'enchantment',
+                attachedTo: 'creature_1'  // Only on creature1
+            };
+
+            rules.game = {
+                player: { battlefield: [creature1, creature2, pacifism] },
+                opponent: { battlefield: [] }
+            };
+
+            expect(rules.hasPacifism(creature1)).toBe(true);
+            expect(rules.hasPacifism(creature2)).toBe(false);
+        });
+
+        test('AI removal should skip pacified creature when stronger threat exists', () => {
+            // Simula o cenário do bug: Fire Elemental (9/9) com Pacifism vs Skyraker Giant (6/5)
+            const pacifiedCreature = createCreature({ power: 9, toughness: 9 });
+            pacifiedCreature.instanceId = 'fire_elemental';
+
+            const actualThreat = createCreature({ power: 6, toughness: 5 });
+            actualThreat.instanceId = 'skyraker_giant';
+
+            const pacifism = {
+                id: 'pacifism',
+                type: 'enchantment',
+                attachedTo: 'fire_elemental'
+            };
+
+            rules.game = {
+                player: { battlefield: [pacifiedCreature, actualThreat, pacifism] },
+                opponent: { battlefield: [] }
+            };
+
+            const enemyCreatures = [pacifiedCreature, actualThreat];
+
+            // Separar ameaças reais de criaturas neutralizadas
+            const actualThreats = enemyCreatures.filter(c => !rules.hasPacifism(c));
+            const neutralizedCreatures = enemyCreatures.filter(c => rules.hasPacifism(c));
+
+            // Deve priorizar ameaças reais
+            expect(actualThreats).toContain(actualThreat);
+            expect(actualThreats).not.toContain(pacifiedCreature);
+            expect(neutralizedCreatures).toContain(pacifiedCreature);
+
+            // O alvo correto deve ser o Skyraker Giant, não o Fire Elemental pacificado
+            const targetPool = actualThreats.length > 0 ? actualThreats : neutralizedCreatures;
+            const bestTarget = targetPool.sort((a, b) =>
+                rules.getCreaturePower(b) - rules.getCreaturePower(a)
+            )[0];
+
+            expect(bestTarget).toBe(actualThreat);
+            expect(bestTarget.instanceId).toBe('skyraker_giant');
+        });
+
+        test('AI removal should target pacified creature only when no other options', () => {
+            // Cenário: única criatura no campo tem Pacifism
+            const pacifiedCreature = createCreature({ power: 5, toughness: 5 });
+            pacifiedCreature.instanceId = 'creature_1';
+
+            const pacifism = {
+                id: 'pacifism',
+                type: 'enchantment',
+                attachedTo: 'creature_1'
+            };
+
+            rules.game = {
+                player: { battlefield: [pacifiedCreature, pacifism] },
+                opponent: { battlefield: [] }
+            };
+
+            const enemyCreatures = [pacifiedCreature];
+
+            const actualThreats = enemyCreatures.filter(c => !rules.hasPacifism(c));
+            const neutralizedCreatures = enemyCreatures.filter(c => rules.hasPacifism(c));
+
+            // Sem ameaças reais, deve usar o pool de neutralizadas
+            expect(actualThreats.length).toBe(0);
+            expect(neutralizedCreatures.length).toBe(1);
+
+            const targetPool = actualThreats.length > 0 ? actualThreats : neutralizedCreatures;
+            expect(targetPool).toContain(pacifiedCreature);
+        });
+
+        test('AI should not put Pacifism on already pacified creature', () => {
+            const creature1 = createCreature({ power: 5, toughness: 5 });
+            creature1.instanceId = 'creature_1';
+
+            const creature2 = createCreature({ power: 3, toughness: 3 });
+            creature2.instanceId = 'creature_2';
+
+            const existingPacifism = {
+                id: 'pacifism',
+                type: 'enchantment',
+                attachedTo: 'creature_1'
+            };
+
+            rules.game = {
+                player: { battlefield: [creature1, creature2, existingPacifism] },
+                opponent: { battlefield: [] }
+            };
+
+            const validTargets = [creature1, creature2];
+
+            // Para Pacifism: filtrar criaturas que já têm Pacifism
+            const notPacified = validTargets.filter(c => !rules.hasPacifism(c));
+
+            // Deve escolher creature2, não creature1 que já tem Pacifism
+            expect(notPacified).toContain(creature2);
+            expect(notPacified).not.toContain(creature1);
+            expect(notPacified.length).toBe(1);
+        });
+    });
+});
