@@ -24,7 +24,7 @@ Um projeto educacional para aprender desenvolvimento de jogos, implementando mec
 Este projeto foi criado para:
 - 📚 **Aprender JavaScript** — manipulação de DOM, classes ES6+, async/await
 - 🎮 **Estudar game design** — máquinas de estado, sistemas de turnos, IA básica
-- 🧪 **Praticar TDD** — 140+ testes automatizados com Jest
+- 🧪 **Praticar TDD** — 210+ testes automatizados com Jest
 - 🃏 **Entender MTG** — regras, interações de cartas, sistema de prioridade
 
 **Não é um produto para distribuição.** É código-fonte para estudo.
@@ -56,6 +56,7 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 <tr>
 <td align="center"><strong>Seleção de Avatar</strong><br><img src="screenshots/avatar-selection.png" width="250"></td>
 <td align="center"><strong>Seleção de Decks</strong><br><img src="screenshots/deck-selection.png" width="250"></td>
+<td align="center"><strong>Conferir Deck</strong><br><img src="screenshots/conferir-deck.png" width="250"></td>
 <td align="center"><strong>Mulligan</strong><br><img src="screenshots/mulligan.png" width="250"></td>
 </tr>
 </table>
@@ -175,7 +176,7 @@ mtg/
 
 ## Testes Automatizados
 
-O projeto inclui **140+ testes** cobrindo:
+O projeto inclui **210+ testes** cobrindo:
 - Mecânicas de combate (first strike, trample, deathtouch)
 - Keywords e interações
 - Triggers de criaturas (ETB, death, combat)
