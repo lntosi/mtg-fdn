@@ -1778,18 +1778,19 @@ class GameState {
                 break;
 
             case 'fleeting_distraction':
-                // -1/-0 em qualquer criatura (sua ou do oponente)
+                // -1/-0 em qualquer criatura (sua ou do oponente, exceto spells na pilha)
                 targets = [
-                    ...caster.battlefield.filter(c => c.type === 'creature'),
-                    ...opponent.battlefield.filter(c => c.type === 'creature' && this.rules.canBeTargetedBy(c, caster))
+                    ...caster.battlefield.filter(c => c.type === 'creature' && !c.pendingResolution),
+                    ...opponent.battlefield.filter(c => c.type === 'creature' && !c.pendingResolution && this.rules.canBeTargetedBy(c, caster))
                 ];
                 break;
 
             case 'into_the_roil':
-                // Bounce qualquer permanente não-terreno
+                // Bounce qualquer permanente não-terreno (exceto spells na pilha)
+                // Cards com pendingResolution estão na pilha, não são permanentes ainda
                 targets = [
-                    ...caster.battlefield.filter(c => c.type !== 'land'),
-                    ...opponent.battlefield.filter(c => c.type !== 'land' && this.rules.canBeTargetedBy(c, caster))
+                    ...caster.battlefield.filter(c => c.type !== 'land' && !c.pendingResolution),
+                    ...opponent.battlefield.filter(c => c.type !== 'land' && !c.pendingResolution && this.rules.canBeTargetedBy(c, caster))
                 ];
                 break;
 

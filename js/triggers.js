@@ -411,7 +411,8 @@ class TriggerManager {
     }
 
     _handleBounceETB(card, controller, opponent) {
-        const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
+        // Excluir criaturas com pendingResolution (ainda na pilha, não são permanentes)
+        const validTargets = opponent.battlefield.filter(c => c.type === 'creature' && !c.pendingResolution);
         if (validTargets.length === 0) return;
 
         const bounceCreature = (targetCreature) => {
