@@ -4429,6 +4429,8 @@ class GameUI {
             attackerContainer.innerHTML = '';
             const attackerCard = this.createCardElement(attacker, true);
             attackerCard.classList.add('damage-source');
+            attackerCard.addEventListener('mouseenter', () => this.showCardPreview(attacker));
+            attackerCard.addEventListener('mouseleave', () => this.hideCardPreview());
             attackerContainer.appendChild(attackerCard);
 
             // Função para atualizar display
