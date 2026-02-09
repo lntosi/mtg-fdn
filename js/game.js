@@ -1935,30 +1935,12 @@ class GameState {
             case 'into_the_roil':
                 // Bounce nonland permanent, if kicked draw a card
                 const roilOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
-                const roilIdx = roilOwner.battlefield.indexOf(target);
-                if (roilIdx > -1) {
-                    if (target.type === 'creature') {
-                        this.detachFromCreature(target, roilOwner);
-                    }
-                    roilOwner.battlefield.splice(roilIdx, 1);
-                    // Desregistrar efeitos especiais e trigger LTB
-                    this.unregisterSpecialEffect(target);
-                    this.triggers.onLeaveBattlefield(target, roilOwner);
-                    // Reset card state
-                    target.damage = 0;
-                    target.powerModifier = 0;
-                    target.toughnessModifier = 0;
-                    target.temporaryKeywords = [];
-                    target.tapped = false;
-                    target.counters = null;
-                    roilOwner.hand.push(target);
-                    this.ui.log(`${target.name} devolvido para a mão de ${roilOwner.name}`);
+                this.bounceToHand(target, roilOwner, 'Into the Roil');
 
-                    // Check if kicked
-                    if (card.kicked) {
-                        this.rules.drawCard(caster);
-                        this.ui.log(`Into the Roil foi encostado: ${caster.name} comprou um card`);
-                    }
+                // Check if kicked
+                if (card.kicked) {
+                    this.rules.drawCard(caster);
+                    this.ui.log(`Into the Roil foi encostado: ${caster.name} comprou um card`);
                 }
                 break;
 
@@ -2325,6 +2307,53 @@ class GameState {
                 }
             });
         });
+    }
+
+    /**
+     * Devolve uma permanente para a mão do dono.
+     * Tokens deixam de existir em vez de ir para a mão (regra 111.7).
+     * @param {Object} target - A permanente a ser devolvida
+     * @param {Object} owner - O jogador que controla a permanente
+     * @param {string} sourceName - Nome da carta/efeito que causou o bounce (para log)
+     * @returns {boolean} - true se foi devolvido para mão, false se era token
+     */
+    bounceToHand(target, owner, sourceName = '') {
+        const index = owner.battlefield.indexOf(target);
+        if (index === -1) return false;
+
+        // Desanexar auras e equipamentos se for criatura
+        if (target.type === 'creature') {
+            this.detachFromCreature(target, owner);
+        }
+
+        // Remover do battlefield
+        owner.battlefield.splice(index, 1);
+
+        // Desregistrar efeitos especiais e trigger LTB
+        this.unregisterSpecialEffect(target);
+        this.triggers.onLeaveBattlefield(target, owner);
+
+        // Reset card state
+        target.damage = 0;
+        target.powerModifier = 0;
+        target.toughnessModifier = 0;
+        target.temporaryKeywords = [];
+        target.tapped = false;
+        target.summoningSickness = false;
+        target.counters = null;
+
+        // Tokens deixam de existir quando saem do battlefield (regra 111.7)
+        const isToken = target.name.toLowerCase().includes('token');
+        const prefix = sourceName ? `${sourceName}: ` : '';
+
+        if (isToken) {
+            this.ui.log(`${prefix}${target.name} devolvido (token deixou de existir)`);
+            return false;
+        } else {
+            owner.hand.push(target);
+            this.ui.log(`${prefix}${target.name} devolvido para a mão de ${owner.name}`);
+            return true;
+        }
     }
 
     // Resolve um counterspell - anula uma mágica na pilha

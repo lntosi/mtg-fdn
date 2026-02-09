@@ -416,19 +416,8 @@ class TriggerManager {
         if (validTargets.length === 0) return;
 
         const bounceCreature = (targetCreature) => {
-            const index = opponent.battlefield.indexOf(targetCreature);
-            if (index !== -1) {
-                // Desanexar auras e equipamentos (auras vão pro cemitério - regra 704.5m)
-                this.game.detachFromCreature(targetCreature, opponent);
-                opponent.battlefield.splice(index, 1);
-                // Desregistrar efeitos especiais e trigger LTB
-                this.game.unregisterSpecialEffect(targetCreature);
-                this.onLeaveBattlefield(targetCreature, opponent);
-                this._resetCardState(targetCreature); // Reset damage, modifiers, counters, etc.
-                opponent.hand.push(targetCreature);
-                this.ui.log(`${card.name} devolveu ${targetCreature.name} para a mão de ${opponent.name}`);
-                this.ui.render();
-            }
+            this.game.bounceToHand(targetCreature, opponent, card.name);
+            this.ui.render();
         };
 
         if (controller === this.player) {
