@@ -4389,6 +4389,9 @@ class GameState {
             }
         }
 
+        // Limpar linhas de combate antes de mostrar tela de fim
+        this.ui.clearCombatLines();
+
         // Mostrar tela de fim de jogo melhorada
         this.ui.showGameOverScreen(winner, reason);
     }
