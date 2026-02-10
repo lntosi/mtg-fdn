@@ -917,12 +917,10 @@ class TriggerManager {
                 opponent.battlefield.splice(index, 1);
                 // Desregistrar efeitos especiais
                 this.game.unregisterSpecialEffect(target);
-                // Exilar (salvar referência para possível retorno futuro)
-                if (!this.game.exile) this.game.exile = [];
+                // Exilar na zona de exílio do DONO da carta (para UI mostrar corretamente)
                 target.exiledBy = card.instanceId;
-                // Salvar dono original para saber para quem retornar
-                target.ownerId = opponent === this.player ? 'player' : 'opponent';
-                this.game.exile.push(target);
+                if (!opponent.exile) opponent.exile = [];
+                opponent.exile.push(target);
                 this.ui.log(`Prayer of Binding exilou ${target.name}`);
             }
             // Ganhar 2 vidas
@@ -1501,27 +1499,34 @@ class TriggerManager {
      */
     onLeaveBattlefield(card, owner) {
         // Verificar se há cartas exiladas por este permanente
-        if (!this.game.exile || this.game.exile.length === 0) return;
+        // Procurar nas zonas de exílio de ambos os jogadores
+        const allExile = [
+            ...(this.player.exile || []),
+            ...(this.opponent.exile || [])
+        ];
 
-        const toReturn = this.game.exile.filter(exiled => exiled.exiledBy === card.instanceId);
+        if (allExile.length === 0) return;
+
+        const toReturn = allExile.filter(exiled => exiled.exiledBy === card.instanceId);
 
         if (toReturn.length === 0) return;
 
         toReturn.forEach(exiledCard => {
-            // Remover da zona de exílio
-            const exileIndex = this.game.exile.indexOf(exiledCard);
-            if (exileIndex > -1) {
-                this.game.exile.splice(exileIndex, 1);
-            }
-
-            // Limpar a referência de exílio
-            delete exiledCard.exiledBy;
-
             // Determinar o dono original da carta exilada
-            // A carta volta para o dono, não para quem a exilou
             const cardOwner = this._findCardOwner(exiledCard);
 
             if (cardOwner) {
+                // Remover da zona de exílio do dono
+                if (cardOwner.exile) {
+                    const exileIndex = cardOwner.exile.indexOf(exiledCard);
+                    if (exileIndex > -1) {
+                        cardOwner.exile.splice(exileIndex, 1);
+                    }
+                }
+
+                // Limpar a referência de exílio
+                delete exiledCard.exiledBy;
+
                 // Retornar ao campo de batalha
                 cardOwner.battlefield.push(exiledCard);
 
@@ -1544,9 +1549,12 @@ class TriggerManager {
      * @returns {Object|null} - Jogador dono ou null
      */
     _findCardOwner(card) {
-        // Se a carta tem ownerId, usar isso
-        if (card.ownerId) {
-            return card.ownerId === 'player' ? this.player : this.opponent;
+        // Verificar na zona de exílio de cada jogador
+        if (this.player.exile && this.player.exile.includes(card)) {
+            return this.player;
+        }
+        if (this.opponent.exile && this.opponent.exile.includes(card)) {
+            return this.opponent;
         }
 
         // Verificar pelo instanceId se contém identificador do dono

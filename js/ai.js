@@ -1134,13 +1134,10 @@ class AIPlayer {
                 this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
             );
 
-            // Encontrar bloqueadores disponíveis para chump block
-            let availableChumpBlockers = possibleBlockers.filter(b =>
-                !b.assignedToBlock && this.rules.canAttack(b) // Usar canAttack para verificar se não está tapped
+            // Bloqueadores não usados (será filtrado por atacante no loop)
+            const unusedBlockers = possibleBlockers.filter(b =>
+                !b.assignedToBlock && !b.tapped
             );
-
-            // Ordenar por valor (menor primeiro) - sacrificar os menos valiosos
-            availableChumpBlockers.sort((a, b) => creatureValue(a) - creatureValue(b));
 
             // Calcular dano do maior atacante no campo do jogador (para próximo turno)
             const playerCreatures = this.game.player.battlefield.filter(c => c.type === 'creature');
@@ -1150,12 +1147,17 @@ class AIPlayer {
             const nextTurnLethalThreshold = biggestPlayerCreaturePower * panicMultiplier;
 
             for (const attacker of sortedUnblockedAttackers) {
-                if (availableChumpBlockers.length === 0) break;
+                // Filtrar bloqueadores que podem bloquear ESTE atacante (flying check!)
+                const availableChumpBlockers = unusedBlockers.filter(b =>
+                    !b.assignedToBlock && this.rules.canBlock(b, attacker)
+                ).sort((a, b) => creatureValue(a) - creatureValue(b));
+
+                if (availableChumpBlockers.length === 0) continue;
 
                 const attackerPower = this.rules.getCreaturePower(attacker);
                 const attackerHasMenace = hasMenace(attacker);
 
-                // Pular atacantes com menace se não temos 2 bloqueadores
+                // Pular atacantes com menace se não temos 2 bloqueadores válidos
                 if (attackerHasMenace && availableChumpBlockers.length < 2) continue;
 
                 // Recalcular dano atual
@@ -1164,40 +1166,35 @@ class AIPlayer {
 
                 // Decidir se vale chump block este atacante
                 let shouldChumpBlock = false;
-                let reason = '';
 
                 // 1. Dano seria letal
                 if (currentLifeAfter <= 0) {
                     shouldChumpBlock = true;
-                    reason = 'lethal';
                 }
                 // 2. Ficaria em range letal para próximo turno
                 else if (currentLifeAfter <= nextTurnLethalThreshold) {
                     shouldChumpBlock = true;
-                    reason = 'next_turn_lethal';
                 }
                 // 3. Temos tokens/descartáveis e atacante é forte
                 else if (isExpendable(availableChumpBlockers[0]) && attackerPower >= 3) {
                     shouldChumpBlock = true;
-                    reason = 'expendable_blocker';
                 }
                 // 4. Atacante muito forte (power >= 4) e temos bloqueador de baixo valor
                 else if (attackerPower >= 4 && creatureValue(availableChumpBlockers[0]) <= 3) {
                     shouldChumpBlock = true;
-                    reason = 'big_attacker';
                 }
 
                 if (shouldChumpBlock) {
                     if (attackerHasMenace) {
                         // Menace: precisa de 2 bloqueadores
-                        const b1 = availableChumpBlockers.shift();
-                        const b2 = availableChumpBlockers.shift();
+                        const b1 = availableChumpBlockers[0];
+                        const b2 = availableChumpBlockers[1];
                         if (b1 && b2) {
                             assignBlockers(attacker, [b1, b2]);
                         }
                     } else {
                         // Bloqueio normal: 1 bloqueador
-                        const blocker = availableChumpBlockers.shift();
+                        const blocker = availableChumpBlockers[0];
                         if (blocker) {
                             assignBlockers(attacker, [blocker]);
                         }
