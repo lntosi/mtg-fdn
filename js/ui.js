@@ -875,8 +875,8 @@ class GameUI {
         const selectedDecks = Array.from(checked).map(cb => cb.value);
         const deckCount = selectedDecks.length; // 1 ou 2 decks
 
-        // Determinar decks da IA baseado no modo selecionado
-        const allDecks = ['cats', 'goblins', 'vampires', 'elves', 'pirates'];
+        // Determinar decks da IA baseado no modo selecionado (todos os 10 decks)
+        const allDecks = ['cats', 'goblins', 'vampires', 'elves', 'pirates', 'healing', 'inferno', 'primal', 'wizards', 'undead'];
         const aiDeckMode = document.getElementById('ai-deck-mode')?.value || 'random-different';
         let aiDecks;
 
