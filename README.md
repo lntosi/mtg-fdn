@@ -128,6 +128,7 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 - Usa habilidades ativadas
 - Reserva mana para respostas com instants
 - Verificação de sobrevivência (não ataca se morre no contra-ataque)
+- Mulligan inteligente (avalia terrenos e curva de mana)
 
 ## Tecnologias
 

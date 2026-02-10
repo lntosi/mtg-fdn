@@ -46,7 +46,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `TriggerManager` - **All card triggers centralized here** (ETBs, death triggers, combat triggers)
 - `RulesEngine` - Validates plays, calculates mana, resolves combat damage
 - `GameUI` - Renders cards, handles clicks, manages graveyard/exile modals
-- `AIPlayer` - Decides which cards to play, attackers, blockers
+- `AIPlayer` - Decides which cards to play, attackers, blockers, mulligan decisions
 
 **Game Flow:**
 1. Player selects 1-2 decks → 20 or 40-card library (AI mirrors player's deck count)

@@ -335,11 +335,68 @@ class GameState {
         this.finishMulligan();
     }
 
-    finishMulligan() {
-        this.mulliganPhase = false;
+    /**
+     * Executa a lógica de mulligan da IA
+     * Usa London Mulligan: compra 7, decide se mantém, coloca X no fundo
+     */
+    doAIMulligan() {
+        const ai = this.ai;
+        const opponent = this.opponent;
+        const aiName = opponent.name;
 
-        // IA decide mulligan (simplificado: sempre mantém)
-        this.ui.log('Oponente manteve a mão inicial.');
+        // Loop de mulligan da IA
+        while (this.mulliganCount.opponent < 3) {
+            const shouldMull = ai.shouldMulligan(opponent.hand, this.mulliganCount.opponent);
+
+            if (!shouldMull) {
+                // IA mantém a mão
+                const eval_ = ai.evaluateHand(opponent.hand);
+                if (this.mulliganCount.opponent === 0) {
+                    this.ui.log(`${aiName} manteve a mão inicial.`);
+                } else {
+                    this.ui.log(`${aiName} manteve a mão após ${this.mulliganCount.opponent} mulligan(s).`);
+                }
+
+                // London Mulligan: colocar cartas no fundo
+                const cardsToBottom = this.mulliganCount.opponent;
+                if (cardsToBottom > 0) {
+                    const toBottom = ai.chooseCardsToBottom(opponent.hand, cardsToBottom);
+                    toBottom.forEach(instanceId => {
+                        const cardIndex = opponent.hand.findIndex(c => c.instanceId === instanceId);
+                        if (cardIndex !== -1) {
+                            const card = opponent.hand.splice(cardIndex, 1)[0];
+                            opponent.library.unshift(card);
+                        }
+                    });
+                    this.ui.log(`${aiName} colocou ${cardsToBottom} carta(s) no fundo.`);
+                }
+                break;
+            }
+
+            // IA faz mulligan
+            this.mulliganCount.opponent++;
+            const newHandSize = 7 - this.mulliganCount.opponent;
+
+            if (newHandSize <= 0) {
+                this.ui.log(`${aiName} não pode mais fazer mulligan!`);
+                break;
+            }
+
+            // Devolver mão para o grimório e comprar nova mão
+            opponent.library = [...opponent.library, ...opponent.hand];
+            opponent.hand = [];
+            this.drawSmoothedHand(opponent, 7);
+
+            const eval_ = ai.evaluateHand(opponent.hand);
+            this.ui.log(`${aiName} fez mulligan ${this.mulliganCount.opponent}! (${eval_.reason})`);
+        }
+    }
+
+    finishMulligan() {
+        // IA decide mulligan
+        this.doAIMulligan();
+
+        this.mulliganPhase = false;
 
         // Iniciar jogo
         this.turnNumber = 1;

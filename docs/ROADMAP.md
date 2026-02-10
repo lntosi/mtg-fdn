@@ -86,6 +86,7 @@ Beta testers com acesso ao repositório podem:
 - ✅ Habilidades ativadas
 - ✅ Reserva de mana para instantes
 - ✅ Verificação de sobrevivência (crack-back check)
+- ✅ Mulligan inteligente (London Mulligan com avaliação de mão)
 
 ### UI/UX
 - ✅ Preview de carta ampliado

@@ -22,6 +22,129 @@ class AIPlayer {
         this.config = AI_CONFIG;
     }
 
+    // === MULLIGAN ===
+
+    /**
+     * Avalia a qualidade de uma mão para decidir mulligan
+     * @param {Array} hand - Cartas na mão
+     * @returns {Object} { score: number, lands: number, playables: number, reason: string }
+     */
+    evaluateHand(hand) {
+        const lands = hand.filter(c => c.type === 'land').length;
+        const nonLands = hand.filter(c => c.type !== 'land');
+
+        // Contar cartas jogáveis nos primeiros turnos (CMC <= 3)
+        const earlyPlays = nonLands.filter(c => c.cmc <= 3).length;
+
+        // Verificar curva de mana
+        const hasOneOrTwoDrop = nonLands.some(c => c.cmc <= 2);
+        const hasThreeDrop = nonLands.some(c => c.cmc === 3);
+
+        let score = 0;
+        let reason = '';
+
+        // Avaliação baseada em terrenos
+        if (lands === 0) {
+            score = 0;
+            reason = 'sem terrenos';
+        } else if (lands === 1) {
+            score = 20;
+            reason = 'apenas 1 terreno';
+        } else if (lands >= 6) {
+            score = 15;
+            reason = 'muitos terrenos';
+        } else if (lands === 2) {
+            score = hasOneOrTwoDrop ? 60 : 40;
+            reason = lands + ' terrenos';
+        } else if (lands >= 3 && lands <= 4) {
+            // Quantidade ideal de terrenos
+            score = 70;
+            if (hasOneOrTwoDrop) score += 15;
+            if (hasThreeDrop) score += 10;
+            reason = 'mão equilibrada';
+        } else if (lands === 5) {
+            score = earlyPlays >= 2 ? 55 : 35;
+            reason = '5 terrenos';
+        }
+
+        // Bônus por jogadas iniciais
+        if (earlyPlays >= 2) score += 10;
+
+        return { score, lands, playables: earlyPlays, reason };
+    }
+
+    /**
+     * Decide se a IA deve fazer mulligan
+     * @param {Array} hand - Cartas na mão
+     * @param {number} mulliganCount - Quantos mulligans já foram feitos
+     * @returns {boolean} true se deve fazer mulligan
+     */
+    shouldMulligan(hand, mulliganCount) {
+        // Não fazer mais de 2 mulligans (ficaria com 5 cartas)
+        if (mulliganCount >= 2) return false;
+
+        const eval_ = this.evaluateHand(hand);
+
+        // Thresholds diferentes dependendo de quantos mulligans já fez
+        // Primeiro mulligan: mais exigente (score mínimo 50)
+        // Segundo mulligan: menos exigente (score mínimo 35)
+        const threshold = mulliganCount === 0 ? 50 : 35;
+
+        return eval_.score < threshold;
+    }
+
+    /**
+     * Escolhe quais cartas colocar no fundo do grimório (London Mulligan)
+     * @param {Array} hand - Cartas na mão
+     * @param {number} count - Quantas cartas colocar no fundo
+     * @returns {Array} instanceIds das cartas a colocar no fundo
+     */
+    chooseCardsToBottom(hand, count) {
+        if (count <= 0) return [];
+
+        // Ordenar cartas por "descartabilidade" (piores primeiro)
+        // Critérios: CMC muito alto, terrenos extras, duplicatas
+        const lands = hand.filter(c => c.type === 'land');
+        const nonLands = hand.filter(c => c.type !== 'land');
+
+        // Se tem muitos terrenos, colocar extras no fundo
+        const idealLands = 3;
+        const excessLands = Math.max(0, lands.length - idealLands);
+
+        // Ordenar non-lands por CMC (maior = menos desejável)
+        const sortedNonLands = [...nonLands].sort((a, b) => b.cmc - a.cmc);
+
+        // Ordenar terrenos (básicos primeiro para ir pro fundo se necessário)
+        const sortedLands = [...lands].sort((a, b) => {
+            // Terrenos especiais são mais valiosos
+            if (a.enters_tapped && !b.enters_tapped) return -1;
+            if (!a.enters_tapped && b.enters_tapped) return 1;
+            return 0;
+        });
+
+        const toBottom = [];
+
+        // Primeiro, adicionar terrenos em excesso
+        for (let i = 0; i < excessLands && toBottom.length < count; i++) {
+            toBottom.push(sortedLands[i].instanceId);
+        }
+
+        // Depois, adicionar spells de alto custo
+        for (const card of sortedNonLands) {
+            if (toBottom.length >= count) break;
+            toBottom.push(card.instanceId);
+        }
+
+        // Se ainda precisar, adicionar mais terrenos
+        for (let i = excessLands; i < sortedLands.length && toBottom.length < count; i++) {
+            toBottom.push(sortedLands[i].instanceId);
+        }
+
+        return toBottom.slice(0, count);
+    }
+
+    // === FIM MULLIGAN ===
+
     // Executa a vez da IA
     async takeTurn() {
         // Main Phase 1 - segura cartas com condições pós-combate
