@@ -4257,15 +4257,6 @@ body {
     color: #fff;
 }
 
-/* Difficulty description */
-.game-options .difficulty-description {
-    font-size: 0.75em;
-    color: #908090;
-    font-style: italic;
-    text-align: center;
-    margin-top: -5px;
-}
-
 /* AI Deck Manual Selection */
 .ai-deck-options {
     padding: 12px;

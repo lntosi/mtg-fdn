@@ -75,9 +75,8 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 1. Abra `index.html` no navegador
 2. Personalize seu jogador (nome e avatar)
 3. Selecione 1 ou 2 decks (20 ou 40 cartas)
-4. Escolha a dificuldade da IA
-5. A IA selecionará a mesma quantidade de decks
-6. Vença reduzindo a vida do oponente a 0!
+4. A IA selecionará a mesma quantidade de decks aleatoriamente
+5. Vença reduzindo a vida do oponente a 0!
 
 ## Funcionalidades
 
@@ -124,12 +123,11 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 - Histórico de partida exportável
 - Modo tela cheia
 
-### IA com 3 Níveis de Dificuldade
-| Nível | Comportamento |
-|-------|---------------|
-| **Aprendiz** | Comete erros frequentes, faz trades ruins, não usa habilidades ativadas |
-| **Mago** | Joga de forma competente, avalia trades, usa habilidades |
-| **Planeswalker** | Joga de forma otimizada, reserva mana para respostas, trades seletivos |
+### IA Inteligente
+- Avalia trades e bloqueios estratégicos
+- Usa habilidades ativadas
+- Reserva mana para respostas com instants
+- Verificação de sobrevivência (não ataca se morre no contra-ataque)
 
 ## Tecnologias
 
@@ -166,7 +164,6 @@ mtg/
 │   ├── 02_DEBUG.md         # Comandos de debug
 │   ├── 03_CARD_VALIDATION.md # Status das cartas
 │   ├── 04_FUTURE_DECKS_PLAN.md # Plano para decks (arquivado)
-│   ├── 05_AI_DIFFICULTY_PLAN.md # Sistema de dificuldade da IA
 │   ├── 06_SPELL_TARGETING_CHECKLIST.md # Verificação de spells com alvo
 │   └── 07_CARD_IMPLEMENTATION_CHECKLIST.md # Checklist de implementação
 ├── screenshots/            # Screenshots da aplicação
@@ -176,7 +173,7 @@ mtg/
 
 ## Testes Automatizados
 
-O projeto inclui **210+ testes** cobrindo:
+O projeto inclui **215+ testes** cobrindo:
 - Mecânicas de combate (first strike, trample, deathtouch)
 - Keywords e interações
 - Triggers de criaturas (ETB, death, combat)

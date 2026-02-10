@@ -196,12 +196,6 @@ class GameUI {
 
         this.btnStartGame.addEventListener('click', () => this.onStartGame());
 
-        // Seletor de dificuldade - atualizar descrição
-        const aiDifficultySelect = document.getElementById('ai-difficulty');
-        if (aiDifficultySelect) {
-            aiDifficultySelect.addEventListener('change', () => this.updateDifficultyDescription());
-        }
-
         // Botões de ação
         this.btnMainAction.addEventListener('click', () => this.onMainActionClick());
         this.btnNextPhase.addEventListener('click', () => this.game.nextPhase());
@@ -899,10 +893,6 @@ class GameUI {
         const startingLifeSelect = document.getElementById('starting-life');
         const startingLife = startingLifeSelect ? parseInt(startingLifeSelect.value) : 20;
 
-        // Obter dificuldade da IA
-        const aiDifficultySelect = document.getElementById('ai-difficulty');
-        const aiDifficulty = aiDifficultySelect ? aiDifficultySelect.value : 'mago';
-
         // Obter quem começa
         const startingPlayerSelect = document.getElementById('starting-player');
         const startingPlayerOption = startingPlayerSelect?.value || 'random';
@@ -922,22 +912,7 @@ class GameUI {
         const playerAvatar = localStorage.getItem('mtg_player_avatar') || 'jace';
 
         this.deckSelection.classList.add('hidden');
-        this.game.startGame(selectedDecks, aiDecks, { startingLife, playerName, playerAvatar, playerFirst, aiDifficulty });
-    }
-
-    // Atualiza a descrição da dificuldade da IA
-    updateDifficultyDescription() {
-        const select = document.getElementById('ai-difficulty');
-        const descriptionEl = document.getElementById('difficulty-description');
-        if (!select || !descriptionEl) return;
-
-        const descriptions = {
-            aprendiz: 'IA fácil - comete erros frequentes e faz trades ruins',
-            mago: 'IA equilibrada - joga de forma competente',
-            planeswalker: 'IA difícil - joga de forma otimizada e reserva mana para respostas'
-        };
-
-        descriptionEl.textContent = descriptions[select.value] || '';
+        this.game.startGame(selectedDecks, aiDecks, { startingLife, playerName, playerAvatar, playerFirst });
     }
 
     onAttackClick() {

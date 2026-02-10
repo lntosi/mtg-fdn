@@ -82,10 +82,10 @@ Beta testers com acesso ao repositório podem:
 - ✅ Exílio com retorno condicional
 
 ### IA
-- ✅ Três níveis de dificuldade (Aprendiz, Mago, Planeswalker)
-- ✅ Habilidades ativadas (Mago+)
-- ✅ Reserva de mana para instantes (Planeswalker)
-- ✅ Thresholds configuráveis por dificuldade
+- ✅ IA inteligente com avaliação de trades
+- ✅ Habilidades ativadas
+- ✅ Reserva de mana para instantes
+- ✅ Verificação de sobrevivência (crack-back check)
 
 ### UI/UX
 - ✅ Preview de carta ampliado
@@ -123,14 +123,11 @@ Funcionalidades que podem ser consideradas após a versão estável:
 
 ### Fevereiro 2026 - Melhorias de IA
 
-**Sistema de dificuldade completamente implementado:**
-
-| Parâmetro | Aprendiz | Mago | Planeswalker |
-|-----------|:--------:|:----:|:------------:|
-| Erros aleatórios | 25% | 0% | 0% |
-| Usa habilidades | Não | Sim | Sim |
-| Reserva mana | Não | Não | Sim |
-| Trade threshold | 1+ | 3+ | 4+ |
+**IA unificada com perfil "Planeswalker Equilibrado":**
+- Usa habilidades ativadas
+- Reserva mana para instantes
+- Avalia trades de forma equilibrada
+- Verificação de sobrevivência ao contra-ataque
 
 ### Fevereiro 2026 - Auditoria Completa de Decks
 

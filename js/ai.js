@@ -1,76 +1,25 @@
-// === Inteligência Artificial com Níveis de Dificuldade ===
+// === Inteligência Artificial ===
 
-// Configurações de dificuldade da IA
-const AI_DIFFICULTY = {
-    aprendiz: {
-        name: 'Aprendiz',
-        description: 'IA fácil - comete erros frequentes e faz trades ruins',
-        attackWithZeroPower: true,      // Ataca mesmo com power 0 (erro)
-        useActivatedAbilities: false,   // Não usa habilidades ativadas
-        holdManaForInstants: false,     // Não guarda mana para respostas
-        mistakeRate: 0.25,              // 25% de chance de escolha subótima
-        thresholds: {
-            attackPower: 1,             // Ataca com qualquer power (agressivo)
-            lifeAdvantage: 2,           // Ataca se 2+ vida na frente
-            tradePower: 2,              // Aceita trades ruins (power 2+)
-            panicMultiplier: 3          // Bloqueia cedo (vida <= ataque * 3)
-        }
-    },
-    mago: {
-        name: 'Mago',
-        description: 'IA equilibrada - joga competentemente',
-        attackWithZeroPower: false,     // Não ataca com power 0
-        useActivatedAbilities: true,    // Usa habilidades quando sobra mana
-        holdManaForInstants: false,     // Ainda não guarda mana
-        mistakeRate: 0,                 // Sem erros
-        thresholds: {
-            attackPower: 3,             // Trade com power 3+
-            lifeAdvantage: 5,           // Ataca se 5+ vida na frente
-            tradePower: 4,              // Aceita trades razoáveis (power 4+)
-            panicMultiplier: 2          // Bloqueio equilibrado
-        }
-    },
-    planeswalker: {
-        name: 'Planeswalker',
-        description: 'IA difícil - joga de forma otimizada e reserva mana para respostas',
-        attackWithZeroPower: false,
-        useActivatedAbilities: true,    // Usa habilidades estrategicamente
-        holdManaForInstants: true,      // Guarda mana para respostas
-        mistakeRate: 0,                 // Sem erros
-        thresholds: {
-            attackPower: 4,             // Só trade com power 4+ (seletivo)
-            lifeAdvantage: 8,           // Só ataca agressivo com 8+ vida na frente
-            tradePower: 5,              // Só aceita trades muito favoráveis
-            panicMultiplier: 1.5        // Bloqueia tarde (mais calculado)
-        }
+// Configuração única da IA - Perfil "Planeswalker Equilibrado"
+// Combina inteligência do Planeswalker com thresholds equilibrados
+const AI_CONFIG = {
+    attackWithZeroPower: false,     // Não ataca com power 0
+    useActivatedAbilities: true,    // Usa habilidades ativadas
+    holdManaForInstants: true,      // Guarda mana para respostas
+    mistakeRate: 0,                 // Sem erros
+    thresholds: {
+        attackPower: 3,             // Trade com power 3+
+        lifeAdvantage: 5,           // Ataca se 5+ vida na frente
+        tradePower: 4,              // Aceita trades razoáveis (power 4+)
+        panicMultiplier: 2          // Bloqueio equilibrado
     }
 };
 
-// Exportar constantes
-window.AI_DIFFICULTY = AI_DIFFICULTY;
-
 class AIPlayer {
-    constructor(gameState, rulesEngine, difficulty = 'mago') {
+    constructor(gameState, rulesEngine) {
         this.game = gameState;
         this.rules = rulesEngine;
-        this.setDifficulty(difficulty);
-    }
-
-    // Define o nível de dificuldade da IA
-    setDifficulty(level) {
-        if (AI_DIFFICULTY[level]) {
-            this.difficulty = AI_DIFFICULTY[level];
-            this.difficultyLevel = level;
-        } else {
-            console.warn(`Dificuldade '${level}' não encontrada, usando 'mago'`);
-            this.difficulty = AI_DIFFICULTY.mago;
-            this.difficultyLevel = 'mago';
-        }
-    }
-
-    // Retorna o nível de dificuldade atual
-    getDifficulty() {
-        return this.difficultyLevel;
+        this.config = AI_CONFIG;
     }
 
     // Executa a vez da IA
@@ -177,7 +126,7 @@ class AIPlayer {
             }
 
             // Planeswalker: reservar mana para instants
-            if (this.difficulty.holdManaForInstants) {
+            if (this.config.holdManaForInstants) {
                 const instantsInHand = opponent.hand.filter(c => c.type === 'instant');
                 if (instantsInHand.length > 0) {
                     const baseMana = this.rules.calculateAvailableMana(opponent);
@@ -264,7 +213,7 @@ class AIPlayer {
         }
 
         // 3. Usar habilidades ativadas (Main Phase 2, quando sobra mana)
-        if (phase === 2 && this.difficulty.useActivatedAbilities) {
+        if (phase === 2 && this.config.useActivatedAbilities) {
             await this.useActivatedAbilities();
         }
     }
@@ -475,7 +424,7 @@ class AIPlayer {
         if (playableCards.length === 0) return null;
 
         // Aprendiz: chance de escolha subótima
-        if (this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+        if (this.config.mistakeRate > 0 && Math.random() < this.config.mistakeRate) {
             const randomCard = playableCards[Math.floor(Math.random() * playableCards.length)];
             return randomCard;
         }
@@ -585,7 +534,7 @@ class AIPlayer {
             const attackerPower = this.rules.getCreaturePower(attacker);
 
             // Modo Mago+: não atacar com criaturas de power 0 (não causa dano)
-            if (!this.difficulty.attackWithZeroPower && attackerPower <= 0) {
+            if (!this.config.attackWithZeroPower && attackerPower <= 0) {
                 return; // Skip this attacker
             }
             const attackerToughness = this.rules.getCreatureToughness(attacker);
@@ -622,8 +571,8 @@ class AIPlayer {
             const lifeAdvantage = this.game.opponent.life - this.game.player.life;
 
             // Usar thresholds configurados por dificuldade
-            const attackPowerThreshold = this.difficulty.thresholds.attackPower;
-            const lifeAdvantageThreshold = this.difficulty.thresholds.lifeAdvantage;
+            const attackPowerThreshold = this.config.thresholds.attackPower;
+            const lifeAdvantageThreshold = this.config.thresholds.lifeAdvantage;
 
             if (!canBeBlocked) {
                 attackers.push(attacker);
@@ -637,7 +586,87 @@ class AIPlayer {
             }
         });
 
-        return attackers;
+        // === CRACK-BACK CHECK (Verificação de sobrevivência) ===
+        // Não atacar all-in se o oponente pode nos matar no contra-ataque
+        return this._filterAttackersForSurvival(attackers, possibleAttackers, defendingPlayer);
+    }
+
+    /**
+     * Filtra atacantes para garantir sobrevivência ao contra-ataque.
+     * Remove atacantes da lista se atacar com todos deixaria a IA morta.
+     */
+    _filterAttackersForSurvival(selectedAttackers, allCreatures, defendingPlayer) {
+        if (selectedAttackers.length === 0) return selectedAttackers;
+
+        const aiLife = this.game.opponent.life;
+        const playerLife = defendingPlayer.life;
+
+        // Calcular dano máximo que podemos causar (assumindo sem bloqueios)
+        const ourMaxDamage = selectedAttackers.reduce((sum, c) =>
+            sum + this.rules.getCreaturePower(c), 0);
+
+        // Se nosso ataque mata o oponente, atacar sem medo
+        if (ourMaxDamage >= playerLife) {
+            return selectedAttackers;
+        }
+
+        // Calcular dano potencial do contra-ataque do oponente
+        // Inclui: criaturas do oponente que não estão viradas + que podem atacar
+        const opponentCreatures = defendingPlayer.battlefield.filter(c =>
+            c.type === 'creature' && !c.tapped && !c.summoningSickness
+        );
+        const crackbackDamage = opponentCreatures.reduce((sum, c) =>
+            sum + this.rules.getCreaturePower(c), 0);
+
+        // Se o contra-ataque não nos mata, atacar livremente
+        if (crackbackDamage < aiLife) {
+            return selectedAttackers;
+        }
+
+        // === SITUAÇÃO PERIGOSA ===
+        // Contra-ataque pode nos matar E nosso ataque não mata o oponente
+        // Precisamos manter bloqueadores suficientes
+
+        // Calcular quanto dano precisamos bloquear para sobreviver
+        const damageToBlock = crackbackDamage - aiLife + 1;
+
+        // Criaturas que não estão atacando podem bloquear
+        const notAttacking = allCreatures.filter(c => !selectedAttackers.includes(c));
+
+        // Calcular capacidade de bloqueio atual (criaturas que ficaram para trás)
+        const currentBlockPotential = notAttacking.reduce((sum, c) => {
+            const toughness = this.rules.getCreatureToughness(c);
+            // Cada bloqueador pode "absorver" dano igual ao poder do atacante que bloqueia
+            // Simplificação: assumir que cada bloqueador para 1 atacante
+            return sum + toughness;
+        }, 0);
+
+        // Se já temos bloqueio suficiente, atacar conforme planejado
+        if (currentBlockPotential >= damageToBlock) {
+            return selectedAttackers;
+        }
+
+        // Precisamos segurar algumas criaturas como bloqueadores
+        // Ordenar atacantes por prioridade (menor power primeiro = menos impactante remover)
+        const sortedAttackers = [...selectedAttackers].sort((a, b) => {
+            const powerA = this.rules.getCreaturePower(a);
+            const powerB = this.rules.getCreaturePower(b);
+            // Priorizar manter criaturas com evasão como atacantes
+            const evasionA = this.rules.hasKeyword(a, 'flying', true) ? 10 : 0;
+            const evasionB = this.rules.hasKeyword(b, 'flying', true) ? 10 : 0;
+            return (powerA + evasionA) - (powerB + evasionB);
+        });
+
+        // Remover atacantes até ter bloqueio suficiente
+        const finalAttackers = [...sortedAttackers];
+        let blockPotential = currentBlockPotential;
+
+        while (finalAttackers.length > 0 && blockPotential < damageToBlock) {
+            const removed = finalAttackers.shift(); // Remove o de menor prioridade
+            blockPotential += this.rules.getCreatureToughness(removed);
+        }
+
+        return finalAttackers;
     }
 
     // Escolhe bloqueadores
@@ -736,8 +765,8 @@ class AIPlayer {
             const blockerDeaths = (b1Dies ? 1 : 0) + (b2Dies ? 1 : 0);
 
             // Usar thresholds configurados por dificuldade
-            const tradePowerThreshold = this.difficulty.thresholds.tradePower;
-            const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+            const tradePowerThreshold = this.config.thresholds.tradePower;
+            const panicMultiplier = this.config.thresholds.panicMultiplier;
 
             // Bloquear se:
             // 1. Conseguimos matar sem perder nenhum bloqueador
@@ -765,8 +794,8 @@ class AIPlayer {
             const attackerHasTrample = this.rules.hasKeyword(attacker, 'trample', true);
 
             // Usar thresholds configurados por dificuldade
-            const tradePowerThreshold = this.difficulty.thresholds.tradePower;
-            const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+            const tradePowerThreshold = this.config.thresholds.tradePower;
+            const panicMultiplier = this.config.thresholds.panicMultiplier;
             const aiLife = this.game.opponent.life;
 
             // Encontrar o melhor par de bloqueadores que juntos podem matar o atacante
@@ -928,8 +957,8 @@ class AIPlayer {
                     this.rules.hasKeyword(blocker, 'deathtouch', false);
 
                 // Usar thresholds configurados por dificuldade
-                const tradePowerThreshold = this.difficulty.thresholds.tradePower;
-                const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+                const tradePowerThreshold = this.config.thresholds.tradePower;
+                const panicMultiplier = this.config.thresholds.panicMultiplier;
 
                 // Bloquear se:
                 // 1. Matamos o atacante sem morrer
@@ -966,7 +995,7 @@ class AIPlayer {
         // Após bloqueios normais, verificar se dano restante é perigoso
         const unblockeddamage = calculateTotalDamage(attackers, assignments);
         const lifeAfterDamage = aiLife - unblockeddamage;
-        const panicMultiplier = this.difficulty.thresholds.panicMultiplier;
+        const panicMultiplier = this.config.thresholds.panicMultiplier;
 
         // Situações que justificam chump block:
         // 1. Dano seria letal (vida <= 0)
@@ -1065,7 +1094,7 @@ class AIPlayer {
         if (validTargets.length === 0) return null;
 
         // Aprendiz: chance de escolha subótima
-        if (this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+        if (this.config.mistakeRate > 0 && Math.random() < this.config.mistakeRate) {
             const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
             return randomTarget;
         }
@@ -1122,7 +1151,7 @@ class AIPlayer {
 
         // Aprendiz: chance de escolha subótima (mas não para auras negativas em si mesmo)
         const isNegativeAura = aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas';
-        if (!isNegativeAura && this.difficulty.mistakeRate > 0 && Math.random() < this.difficulty.mistakeRate) {
+        if (!isNegativeAura && this.config.mistakeRate > 0 && Math.random() < this.config.mistakeRate) {
             const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
             return randomTarget;
         }
