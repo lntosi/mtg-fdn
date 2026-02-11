@@ -193,7 +193,7 @@ class RulesEngine {
         // Volley - só criaturas com flying do oponente
         if (card.id === 'volley') {
             const hasFlyingCreatures = opponent.battlefield.some(c =>
-                c.type === 'creature' && c.keywords && c.keywords.includes('flying')
+                c.type === 'creature' && this.hasKeyword(c, 'flying', false)
             );
             return hasFlyingCreatures;
         }
@@ -202,7 +202,7 @@ class RulesEngine {
         if (card.id === 'broken_wings') {
             const hasValidTargets = opponent.battlefield.some(c =>
                 c.type === 'artifact' || c.type === 'enchantment' ||
-                (c.type === 'creature' && c.keywords && c.keywords.includes('flying'))
+                (c.type === 'creature' && this.hasKeyword(c, 'flying', false))
             );
             return hasValidTargets;
         }
@@ -371,6 +371,10 @@ class RulesEngine {
                 if (card.produces) {
                     mana[card.produces]++;
                 }
+            }
+            // Treasure tokens (sacrifice for mana of any color)
+            if (card.canSacrificeForMana && card.keywords?.includes('sacrifice_for_mana')) {
+                mana.any++;
             }
         });
 
@@ -947,9 +951,10 @@ class RulesEngine {
                 // Trample: dano que não foi atribuído aos bloqueadores vai pro jogador
                 if (attackerHasTrample) {
                     // Calcular dano mínimo necessário (dano letal para cada bloqueador)
+                    // Considera dano já marcado no bloqueador (regra 702.19c)
                     const minDamageNeeded = blockers.reduce((sum, b) => {
                         if (attackerHasDeathtouch) return sum + 1;
-                        return sum + this.getCreatureToughness(b);
+                        return sum + Math.max(0, this.getCreatureToughness(b) - (b.damage || 0));
                     }, 0);
 
                     // Dano excedente ao dano letal vai para o defensor

@@ -455,6 +455,89 @@ class AIPlayer {
         await this.delay(500);
     }
 
+    /**
+     * Retorna a próxima carta que a IA deve jogar, com toda a lógica de filtragem:
+     * - Valida alvos de aura
+     * - Reserva mana para instants
+     * - Segura cartas para Main Phase 2
+     * - Considera Treasure tokens
+     * @param {number} phase - 1 para Main Phase 1, 2 para Main Phase 2
+     * @returns {{ card: Object|null, useTreasures: boolean, treasureInfo: Object|null }}
+     */
+    getNextCardToPlay(phase = 1) {
+        const opponent = this.game.opponent;
+
+        // Cartas jogáveis com mana normal
+        let playableCards = opponent.hand
+            .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
+            .filter(card => this.hasValidAuraTargets(card))
+            .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+        // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
+        if (phase === 1) {
+            playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
+        }
+
+        // Reservar mana para instants
+        if (this.config.holdManaForInstants) {
+            const instantsInHand = opponent.hand.filter(c => c.type === 'instant');
+            if (instantsInHand.length > 0) {
+                const baseMana = this.rules.calculateAvailableMana(opponent);
+                const totalMana = Object.values(baseMana).reduce((a, b) => a + b, 0);
+                const cheapestCmc = Math.min(...instantsInHand.map(c => c.cmc || 2));
+                const manaToHold = Math.min(cheapestCmc, 3);
+
+                playableCards = playableCards.filter(card => {
+                    const costAfterPlay = totalMana - (card.cmc || 0);
+                    return costAfterPlay >= manaToHold;
+                });
+            }
+        }
+
+        // Verificar se pode jogar algo MELHOR usando Treasures
+        const treasures = this.getTreasureTokens(opponent);
+        let bestTreasureCard = null;
+        let treasureInfo = null;
+
+        if (treasures.length > 0) {
+            let potentialCards = opponent.hand
+                .filter(card => card.type !== 'land')
+                .filter(card => {
+                    const result = this.canPayWithTreasures(card, opponent);
+                    return result.canPay && result.treasuresNeeded > 0;
+                })
+                .filter(card => this.hasValidAuraTargets(card))
+                .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+            if (phase === 1) {
+                potentialCards = potentialCards.filter(card => !this.shouldHoldForMainPhase2(card));
+            }
+
+            if (potentialCards.length > 0) {
+                bestTreasureCard = this.chooseBestCard(potentialCards);
+                if (bestTreasureCard) {
+                    treasureInfo = this.canPayWithTreasures(bestTreasureCard, opponent);
+                }
+            }
+        }
+
+        // Decidir: jogar com mana normal ou usar Treasures para carta melhor?
+        const bestNormalCard = playableCards.length > 0 ? this.chooseBestCard(playableCards) : null;
+
+        if (bestTreasureCard && bestNormalCard) {
+            if ((bestTreasureCard.cmc || 0) > (bestNormalCard.cmc || 0)) {
+                return { card: bestTreasureCard, useTreasures: true, treasureInfo };
+            }
+            return { card: bestNormalCard, useTreasures: false, treasureInfo: null };
+        } else if (bestTreasureCard) {
+            return { card: bestTreasureCard, useTreasures: true, treasureInfo };
+        } else if (bestNormalCard) {
+            return { card: bestNormalCard, useTreasures: false, treasureInfo: null };
+        }
+
+        return { card: null, useTreasures: false, treasureInfo: null };
+    }
+
     // Usa habilidades ativadas quando vale a pena
     async useActivatedAbilities() {
         const opponent = this.game.opponent;
@@ -552,7 +635,22 @@ class AIPlayer {
             return randomCard;
         }
 
-        // Prioridade: criaturas > encantamentos > feitiços
+        // Avaliar se o oponente tem ameaças dominantes no campo
+        const player = this.game.player;
+        const biggestEnemyThreat = player.battlefield
+            .filter(c => c.type === 'creature' && !this.rules.hasPacifism(c))
+            .reduce((max, c) => Math.max(max, this._evaluateCreatureThreat(c)), 0);
+
+        // Se há uma ameaça forte (threat >= 8: ex. flyer 4/4, ou 5/5+), priorizar remoção
+        const removalIds = ['heros_downfall', 'moment_of_craving', 'incinerating_blast',
+            'volley', 'felling_blow', 'broken_wings', 'angelic_edict', 'finishing_blow',
+            'eaten_alive', 'scorching_dragonfire', 'eaten_by_piranhas', 'pacifism'];
+        if (biggestEnemyThreat >= 8) {
+            const removal = playableCards.find(c => removalIds.includes(c.id));
+            if (removal) return removal;
+        }
+
+        // Prioridade padrão: criaturas > encantamentos > feitiços
         const creatures = playableCards.filter(c => c.type === 'creature');
         if (creatures.length > 0) {
             // Preferir criaturas com melhor relação poder/custo
@@ -663,17 +761,32 @@ class AIPlayer {
             const attackerToughness = this.rules.getCreatureToughness(attacker);
 
             // Verificar se algum bloqueador pode matar esta criatura
+            const attackerHasFirstStrike = this.rules.hasKeyword(attacker, 'first_strike', true) ||
+                                           this.rules.hasKeyword(attacker, 'double_strike', true);
+            const attackerHasDeathtouch = this.rules.hasKeyword(attacker, 'deathtouch', true);
+
             const canDie = defenderCreatures.some(blocker => {
                 if (!this.rules.canBlock(blocker, attacker)) return false;
                 const blockerPower = this.rules.getCreaturePower(blocker);
-                return blockerPower >= attackerToughness;
+                const blockerToughness = this.rules.getCreatureToughness(blocker);
+                const blockerHasFirstStrike = this.rules.hasKeyword(blocker, 'first_strike', true) ||
+                                              this.rules.hasKeyword(blocker, 'double_strike', true);
+                const blockerHasDeathtouch = this.rules.hasKeyword(blocker, 'deathtouch', true);
+
+                // Se atacante tem first strike e bloqueador não, atacante mata antes de sofrer dano
+                // (desde que o atacante mate o bloqueador)
+                const attackerKillsFirst = attackerHasFirstStrike && !blockerHasFirstStrike &&
+                    (attackerPower >= blockerToughness || attackerHasDeathtouch);
+                if (attackerKillsFirst) return false; // Bloqueador morre antes de revidar
+
+                return blockerPower >= attackerToughness || blockerHasDeathtouch;
             });
 
             // Verificar se conseguimos matar algum bloqueador
             const canKill = defenderCreatures.some(blocker => {
                 if (!this.rules.canBlock(blocker, attacker)) return false;
                 const blockerToughness = this.rules.getCreatureToughness(blocker);
-                return attackerPower >= blockerToughness;
+                return attackerPower >= blockerToughness || attackerHasDeathtouch;
             });
 
             // Atacar se:
@@ -1075,7 +1188,8 @@ class AIPlayer {
                 const blockerPower = this.rules.getCreaturePower(blocker);
                 const blockerToughness = this.rules.getCreatureToughness(blocker);
 
-                const blockerDies = attackerPower >= blockerToughness;
+                const attackerHasDeathtouch = this.rules.hasKeyword(attacker, 'deathtouch', false);
+                const blockerDies = attackerPower >= blockerToughness || attackerHasDeathtouch;
                 const attackerDies = blockerPower >= attackerToughness ||
                     this.rules.hasKeyword(blocker, 'deathtouch', false);
 
@@ -1240,11 +1354,11 @@ class AIPlayer {
                 // Priorizar ameaças reais - criaturas com Pacifism já estão neutralizadas
                 const targetPool = actualThreats.length > 0 ? actualThreats : neutralizedCreatures;
 
-                // Escolher a criatura com maior poder
+                // Avaliar ameaça considerando keywords, não apenas poder bruto
                 return targetPool.sort((a, b) => {
-                    const aPower = this.rules.getCreaturePower(a);
-                    const bPower = this.rules.getCreaturePower(b);
-                    return bPower - aPower;
+                    const aThreat = this._evaluateCreatureThreat(a);
+                    const bThreat = this._evaluateCreatureThreat(b);
+                    return bThreat - aThreat;
                 })[0];
             }
 
@@ -1399,6 +1513,35 @@ class AIPlayer {
         }
 
         return assignment;
+    }
+
+    /**
+     * Avalia o nível de ameaça de uma criatura considerando poder + keywords
+     */
+    _evaluateCreatureThreat(creature) {
+        const power = this.rules.getCreaturePower(creature);
+        const toughness = this.rules.getCreatureToughness(creature);
+        let threat = power + toughness;
+
+        // Evasion: harder to block = more dangerous
+        if (this.rules.hasKeyword(creature, 'flying', false)) threat += 3;
+        if (this.rules.hasKeyword(creature, 'menace', false)) threat += 2;
+
+        // Damage multipliers
+        if (this.rules.hasKeyword(creature, 'double_strike', false)) threat += power;
+        if (this.rules.hasKeyword(creature, 'deathtouch', false)) threat += 3;
+        if (this.rules.hasKeyword(creature, 'first_strike', false)) threat += 1;
+        if (this.rules.hasKeyword(creature, 'trample', false)) threat += 1;
+
+        // Sustain
+        if (this.rules.hasKeyword(creature, 'lifelink', false)) threat += 2;
+        if (this.rules.hasKeyword(creature, 'indestructible', false)) threat += 4;
+        if (this.rules.hasKeyword(creature, 'hexproof', false)) threat += 2;
+
+        // Lords buff other creatures
+        if (creature.keywords?.some(k => k.includes('lord'))) threat += 4;
+
+        return threat;
     }
 
     // Delay para visualização (com verificação de sessão)

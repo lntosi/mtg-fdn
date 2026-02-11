@@ -1048,7 +1048,8 @@ class GameUI {
 
     setupDropZones() {
         const battlefield = document.getElementById('player-battlefield');
-        if (!battlefield) return;
+        if (!battlefield || battlefield._dropZonesInitialized) return;
+        battlefield._dropZonesInitialized = true;
 
         battlefield.addEventListener('dragover', (e) => {
             e.preventDefault();

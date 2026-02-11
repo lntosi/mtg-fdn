@@ -229,50 +229,56 @@ class TriggerManager {
 
     _createTreasureToken(controller, sourceName) {
         controller.battlefield.push({
-            instanceId: `treasure_token_${Date.now()}`,
+            instanceId: `treasure_token_${globalInstanceCounter++}`,
             name: 'Treasure Token',
             type: 'artifact',
             subtype: 'Treasure',
             text: 'T, Sacrifique este artefato: Adicione uma mana de qualquer cor.',
-            keywords: ['sacrifice_for_mana']
+            keywords: ['sacrifice_for_mana'],
+            produces: 'any',
+            canSacrificeForMana: true,
+            isToken: true
         });
         this.ui.log(`${sourceName} criou um token de Tesouro`);
     }
 
     _createCatToken(controller) {
         controller.battlefield.push({
-            instanceId: `cat_token_${Date.now()}`,
+            instanceId: `cat_token_${globalInstanceCounter++}`,
             name: 'Cat Token',
             type: 'creature',
             subtype: 'Cat',
             power: 1,
             toughness: 1,
-            summoningSickness: true
+            summoningSickness: true,
+            isToken: true
         });
         this.ui.log(`Criado um token Cat 1/1`);
     }
 
     _createElfToken(controller) {
         controller.battlefield.push({
-            instanceId: `elf_token_${Date.now()}`,
+            instanceId: `elf_token_${globalInstanceCounter++}`,
             name: 'Elf Warrior Token',
             type: 'creature',
             subtype: 'Elf Warrior',
             power: 1,
             toughness: 1,
-            summoningSickness: true
+            summoningSickness: true,
+            isToken: true
         });
     }
 
     _createZombieToken(controller) {
         controller.battlefield.push({
-            instanceId: `zombie_token_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            instanceId: `zombie_token_${globalInstanceCounter++}`,
             name: 'Zombie Token',
             type: 'creature',
             subtype: 'Zombie',
             power: 2,
             toughness: 2,
-            summoningSickness: true
+            summoningSickness: true,
+            isToken: true
         });
     }
 
@@ -1105,14 +1111,15 @@ class TriggerManager {
             // Mischievous Mystic - create Faerie token no segundo draw
             if (card.keywords?.includes('second_draw_faerie') && drawCount === 2) {
                 player.battlefield.push({
-                    instanceId: `faerie_token_${Date.now()}`,
+                    instanceId: `faerie_token_${globalInstanceCounter++}`,
                     name: 'Faerie Token',
                     type: 'creature',
                     subtype: 'Faerie',
                     power: 1,
                     toughness: 1,
                     keywords: ['flying'],
-                    summoningSickness: true
+                    summoningSickness: true,
+                    isToken: true
                 });
                 this.ui.log(`${card.name} criou um token Faerie 1/1 com voar`);
                 triggered = true;

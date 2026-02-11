@@ -2528,13 +2528,14 @@ class GameState {
                 // Criar 2 tokens goblin
                 for (let i = 0; i < 2; i++) {
                     caster.battlefield.push({
-                        instanceId: `goblin_token_${Date.now()}_${i}`,
+                        instanceId: `goblin_token_${globalInstanceCounter++}`,
                         name: 'Goblin Token',
                         type: 'creature',
                         subtype: 'Goblin',
                         power: 1,
                         toughness: 1,
-                        summoningSickness: true
+                        summoningSickness: true,
+                        isToken: true
                     });
                 }
                 this.ui.log(`Criados 2 tokens Goblin 1/1`);
@@ -2715,6 +2716,18 @@ class GameState {
     // === UTILITÁRIOS DE ESTADO DE CRIATURAS ===
 
     async checkCreatureDeath(creature, owner) {
+        // markedForDeath: deathtouch via Bite Down ou efeitos similares
+        if (creature.markedForDeath) {
+            delete creature.markedForDeath;
+            if (creature.exileOnDeath) {
+                this.exilePermanent(creature, owner);
+                this.ui.log(`${creature.name} foi exilado`);
+            } else {
+                await this.destroyPermanent(creature, owner);
+            }
+            return;
+        }
+
         const toughness = this.rules.getCreatureToughness(creature);
         const damage = creature.damage || 0;
         const hasIndestructible = this.rules.hasKeyword(creature, 'indestructible', false);
@@ -2770,6 +2783,14 @@ class GameState {
             // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
             this.triggers.onLeaveBattlefield(permanent, owner);
             owner.graveyard.push(permanent);
+
+            // Tokens deixam de existir fora do battlefield (regra 111.7 / 704.5d)
+            if (permanent.isToken) {
+                const tokenIdx = owner.graveyard.indexOf(permanent);
+                if (tokenIdx > -1) {
+                    owner.graveyard.splice(tokenIdx, 1);
+                }
+            }
         }
     }
 
@@ -2797,6 +2818,13 @@ class GameState {
             // Check if creature was returned by undying effect
             if (!creature._returnedByUndying) {
                 owner.graveyard.push(creature);
+                // Tokens deixam de existir fora do battlefield (regra 111.7 / 704.5d)
+                if (creature.isToken) {
+                    const tokenIdx = owner.graveyard.indexOf(creature);
+                    if (tokenIdx > -1) {
+                        owner.graveyard.splice(tokenIdx, 1);
+                    }
+                }
             }
             delete creature._returnedByUndying;
 
@@ -3736,6 +3764,8 @@ class GameState {
                         c.toughnessModifier = 0;
                         c.temporaryKeywords = [];
                         c.mustBeBlocked = false; // Limpar flag de must be blocked
+                        c.exileOnDeath = false; // Limpar flag de exílio (Scorching Dragonfire etc.)
+                        c.markedForDeath = false; // Limpar flag de deathtouch mark
                     });
                 });
 
@@ -3769,7 +3799,7 @@ class GameState {
 
         // Virar atacantes (exceto vigilance)
         attackers.forEach(attacker => {
-            if (!attacker.keywords || !attacker.keywords.includes('vigilance')) {
+            if (!this.rules.hasKeyword(attacker, 'vigilance', true)) {
                 attacker.tapped = true;
             }
         });
@@ -4260,9 +4290,11 @@ class GameState {
 
     /**
      * IA executa main phase com janelas de prioridade após cada mágica
+     * Delega seleção de cartas ao AI (treasure handling, mana reservation, aura validation)
      */
     async executeAIMainPhaseWithPriority() {
         const opponent = this.opponent;
+        const phase = this.phase === PHASES.MAIN1 ? 1 : 2;
 
         // Log inicial
         this.ui.log('IA está pensando...');
@@ -4276,25 +4308,25 @@ class GameState {
             await this.delay(1000);
         }
 
-        // 2. Jogar cartas jogáveis uma por vez, com janelas de prioridade
+        // 2. Jogar cartas uma por vez, delegando seleção ao AI
         let playedSomething = true;
         while (playedSomething) {
             playedSomething = false;
 
-            const playableCards = opponent.hand
-                .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
-                .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+            const { card: cardToPlay, useTreasures, treasureInfo } = this.ai.getNextCardToPlay(phase);
 
-            if (playableCards.length > 0) {
-                const cardToPlay = this.ai.chooseBestCard(playableCards);
-                if (cardToPlay) {
+            if (cardToPlay) {
+                if (useTreasures && treasureInfo) {
+                    await this.ai.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
+                }
+
+                if (this.rules.canPlayCard(cardToPlay, opponent)) {
                     await this.delay(600);
                     const played = await this.playCard(cardToPlay, opponent);
 
                     if (played) {
                         this.ui.render();
                         playedSomething = true;
-                        // Janela de prioridade agora é oferecida dentro de playCard() via offerResponseToOpponent()
                         await this.delay(400);
                     }
                 }
@@ -4302,6 +4334,11 @@ class GameState {
 
             // Verificar game over entre cartas
             if (this.gameOver) return;
+        }
+
+        // 3. Usar habilidades ativadas (Main Phase 2)
+        if (phase === 2 && this.ai.config.useActivatedAbilities) {
+            await this.ai.useActivatedAbilities();
         }
     }
 
