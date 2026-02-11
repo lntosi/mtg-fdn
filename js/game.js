@@ -749,38 +749,27 @@ class GameState {
         const stackTop = this.peekStack();
         if (!stackTop) return false;
 
-        // Verificar se tem Cancel e mana para usar
-        const cancel = this.opponent.hand.find(c =>
-            c.id === 'cancel' && this.rules.canCastSpell(c, this.opponent)
+        // Verificar se tem algum counterspell (Cancel, Essence Scatter, etc.) que pode usar
+        const counterspell = this.opponent.hand.find(c =>
+            this.isCounterspell(c) &&
+            this.rules.canCastSpell(c, this.opponent) &&
+            this.canCounterTarget(c, stackTop)
         );
 
-        if (cancel && this.shouldCounterspell(stackTop.item)) {
-            this.ui.log(`IA: Cancel em ${stackTop.item.name}!`);
+        if (counterspell && this.shouldCounterspell(stackTop.item, counterspell)) {
+            this.ui.log(`IA: ${counterspell.name} em ${stackTop.item.name}!`);
             await this.delay(500);
 
-            // Jogar o Cancel
-            const index = this.opponent.hand.indexOf(cancel);
+            // Jogar o counterspell
+            const index = this.opponent.hand.indexOf(counterspell);
             if (index > -1) this.opponent.hand.splice(index, 1);
 
-            this.rules.payMana(cancel, this.opponent);
+            this.rules.payMana(counterspell, this.opponent);
             window.soundManager?.playMagic();
 
             // Anular o spell do topo da pilha
-            this.resolveCounterspell(cancel, this.opponent, stackTop);
+            this.resolveCounterspell(counterspell, this.opponent, stackTop);
             return true;
-        }
-
-        // Verificar removal instants
-        const removals = this.opponent.hand.filter(c =>
-            c.type === 'instant' &&
-            this.isRemovalSpell(c) &&
-            this.rules.canCastSpell(c, this.opponent)
-        );
-
-        // IA usa removal em ameaças grandes (criaturas CMC >= 4)
-        if (removals.length > 0 && stackTop.item.type === 'creature' && stackTop.item.cmc >= 4) {
-            // Poderia usar removal aqui, mas por simplicidade deixamos para futuro
-            // Por ora a IA só usa Cancel
         }
 
         return false;
@@ -788,22 +777,30 @@ class GameState {
 
     /**
      * Avalia se a IA deve usar counterspell neste spell
+     * @param {Object} spell - O spell a ser anulado
+     * @param {Object} counterCard - O counterspell que a IA está considerando usar
      */
-    shouldCounterspell(spell) {
-        // Cancelar criaturas com CMC alto (>= 4)
+    shouldCounterspell(spell, counterCard) {
+        // Essence Scatter (counterspell_creature): only counter creatures CMC >= 3
+        if (counterCard?.keywords?.includes('counterspell_creature')) {
+            return spell.type === 'creature' && spell.cmc >= 3;
+        }
+
+        // Full counterspells (Cancel): more selective to save for high-value targets
+        // Counter creatures with CMC >= 4
         if (spell.type === 'creature' && spell.cmc >= 4) return true;
 
-        // Cancelar removal que mataria criatura da IA
+        // Counter removal that would kill an AI creature
         if (this.isRemovalSpell(spell)) {
-            // Se IA tem criaturas valiosas no campo, proteger
             const aiCreatures = this.opponent.battlefield.filter(c => c.type === 'creature');
             if (aiCreatures.some(c => c.cmc >= 3)) return true;
         }
 
-        // Cancelar buffs grandes
+        // Counter powerful sorceries/instants
         if (spell.type === 'instant' || spell.type === 'sorcery') {
-            // Joraga Invocation, por exemplo
+            if (spell.cmc >= 4) return true;
             if (spell.id === 'joraga_invocation') return true;
+            if (spell.id === 'rise_again') return true;
         }
 
         return false;
@@ -2884,13 +2881,26 @@ class GameState {
         if (!player.graveyard.includes(card)) return false;
 
         switch (card.id) {
-            case 'reassembling_skeleton':
+            case 'reassembling_skeleton': {
                 // {1}{B}: Return from graveyard to battlefield tapped
                 // Precisa de 1 preto + 1 genérico = 2 mana total com pelo menos 1 preto
                 const mana = this.rules.calculateAvailableMana(player);
                 const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
                 const hasBlack = (mana.B || 0) >= 1 || (mana.any || 0) >= 1;
                 return hasBlack && totalMana >= 2;
+            }
+            case 'suspicious_shambler': {
+                // {4}{B}{B}, Exile from graveyard: Create two 2/2 Zombie tokens
+                // Activate only as a sorcery (main phase, stack empty, active player)
+                if (!this.isPlayerTurn() && player === this.player) return false;
+                if (!this.isStackEmpty()) return false;
+                const phase = this.phase;
+                if (phase !== 'MAIN1' && phase !== 'MAIN2') return false;
+                const mana = this.rules.calculateAvailableMana(player);
+                const blackAvailable = (mana.B || 0) + (mana.any || 0);
+                const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
+                return blackAvailable >= 2 && totalMana >= 6;
+            }
             default:
                 return false;
         }
@@ -3524,6 +3534,27 @@ class GameState {
 
                 this.ui.log(`${card.name} retornou do cemitério para o campo de batalha (virado)`);
                 break;
+
+            case 'suspicious_shambler':
+                // {4}{B}{B}, Exile from graveyard: Create two 2/2 Zombie tokens
+                this.payColoredMana({ B: 2 }, player);
+                this.payGenericMana(4, player);
+
+                // Exilar do cemitério (remover do graveyard, colocar no exile)
+                const shamblerIndex = player.graveyard.indexOf(card);
+                if (shamblerIndex > -1) {
+                    player.graveyard.splice(shamblerIndex, 1);
+                }
+                if (!player.exile) player.exile = [];
+                player.exile.push(card);
+
+                // Criar dois tokens Zumbi 2/2
+                this.triggers._createZombieToken(player);
+                this.triggers._createZombieToken(player);
+
+                this.ui.log(`${card.name}: exilado do cemitério, criou dois tokens Zumbi 2/2`);
+                window.soundManager?.playMagic();
+                break;
         }
 
         this.ui.render();
@@ -4082,9 +4113,15 @@ class GameState {
             this.gainLife(attackingPlayer, results.lifeGained.attacker);
             this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas (lifelink)`);
         }
+        if (results.lifeGained.defender > 0) {
+            this.gainLife(defendingPlayer, results.lifeGained.defender);
+            this.ui.log(`${defendingPlayer.name} ganhou ${results.lifeGained.defender} vidas (lifelink)`);
+        }
 
-        // Remover criaturas mortas (processar mesmo se jogo acabou para estado consistente)
-        for (const creature of results.creaturesDied) {
+        // Remover criaturas mortas em batch (SBA Rule 704.3 - simultaneous)
+        // Deduplicate first (creature may appear multiple times)
+        const uniqueDeaths = [...new Set(results.creaturesDied)];
+        for (const creature of uniqueDeaths) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
             await this.destroyPermanent(creature, owner);
             this.ui.log(`${creature.name} morreu em combate`);

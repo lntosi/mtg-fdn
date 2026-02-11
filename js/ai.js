@@ -339,6 +339,9 @@ class AIPlayer {
         if (phase === 2 && this.config.useActivatedAbilities) {
             await this.useActivatedAbilities();
         }
+
+        // 4. Usar habilidades ativadas do cemitério (ambas main phases)
+        await this.useGraveyardAbilities(opponent);
     }
 
     /**
@@ -564,6 +567,26 @@ class AIPlayer {
                 this.game.ui.render();
                 await this.delay(1000);
             }
+        }
+    }
+
+    /**
+     * AI uses graveyard abilities (e.g., Reassembling Skeleton, Suspicious Shambler)
+     */
+    async useGraveyardAbilities(player) {
+        const activatable = player.graveyard.filter(card =>
+            this.game.canActivateGraveyardAbility(card, player)
+        );
+
+        for (const card of activatable) {
+            // Re-check since mana may have changed
+            if (!this.game.canActivateGraveyardAbility(card, player)) continue;
+
+            this.game.ui.log(`IA ativa habilidade de ${card.name} do cemitério`);
+            await this.delay(800);
+            await this.game.activateGraveyardAbility(card, player);
+            this.game.ui.render();
+            await this.delay(1000);
         }
     }
 

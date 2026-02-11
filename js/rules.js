@@ -811,191 +811,267 @@ class RulesEngine {
      * @param {Object} attackingPlayer - Jogador que está atacando
      * @param {Object} damageAssignments - Mapa de attackerInstanceId -> { blockerInstanceId: dano }
      */
+    /**
+     * Resolve combat damage in two steps per MTG rules 510.1-510.4:
+     * Step 1 (First Strike): Only first_strike/double_strike creatures deal damage
+     * Step 2 (Normal): Non-first_strike creatures + double_strike deal damage again
+     * Creatures killed in step 1 don't deal damage in step 2
+     */
     resolveCombatDamage(attackers, blockerAssignments, defendingPlayer, attackingPlayer, damageAssignments = {}) {
         const results = {
             creaturesDied: [],
             damageToPlayers: { attacker: 0, defender: 0 },
             lifeGained: { attacker: 0, defender: 0 },
-            combatDetails: [] // Detalhes de cada combate para log
+            combatDetails: []
         };
 
-        attackers.forEach(attacker => {
-            // Filtrar apenas bloqueadores que ainda estão no campo de batalha
-            // (podem ter sido removidos por instants como Elspeth's Smite)
+        // Build combat data for each attacker
+        const combats = attackers.map(attacker => {
             const declaredBlockers = blockerAssignments[attacker.instanceId] || [];
-            const blockers = declaredBlockers.filter(blocker =>
-                defendingPlayer.battlefield.includes(blocker)
-            );
+            const blockers = declaredBlockers.filter(b => defendingPlayer.battlefield.includes(b));
+            return {
+                attacker,
+                blockers,
+                aKeywords: this._getCombatKeywords(attacker, true),
+                bKeywordsMap: new Map(blockers.map(b => [b, this._getCombatKeywords(b, false)]))
+            };
+        });
+
+        // Check if any creature has first strike or double strike
+        const hasFirstStrikeStep = combats.some(c =>
+            c.aKeywords.firstStrike ||
+            [...c.bKeywordsMap.values()].some(bk => bk.firstStrike)
+        );
+
+        // Track creatures killed in first strike step
+        const firstStrikeDeaths = new Set();
+
+        // === STEP 1: FIRST STRIKE DAMAGE (Rule 702.7) ===
+        if (hasFirstStrikeStep) {
+            this._dealCombatDamageStep(combats, damageAssignments, results, defendingPlayer, true, firstStrikeDeaths);
+            // Mark deaths from first strike
+            this._checkDeaths(combats, results, firstStrikeDeaths);
+        }
+
+        // === STEP 2: NORMAL DAMAGE ===
+        this._dealCombatDamageStep(combats, damageAssignments, results, defendingPlayer, false, firstStrikeDeaths);
+        // Mark deaths from normal damage
+        this._checkDeaths(combats, results, firstStrikeDeaths);
+
+        return results;
+    }
+
+    /** Get all combat-relevant keywords for a creature */
+    _getCombatKeywords(creature, isAttacking) {
+        return {
+            firstStrike: this.hasKeyword(creature, 'first_strike', isAttacking) || this.hasKeyword(creature, 'double_strike', isAttacking),
+            doubleStrike: this.hasKeyword(creature, 'double_strike', isAttacking),
+            deathtouch: this.hasKeyword(creature, 'deathtouch', isAttacking),
+            lifelink: this.hasKeyword(creature, 'lifelink', isAttacking),
+            trample: this.hasKeyword(creature, 'trample', isAttacking),
+            indestructible: this.hasKeyword(creature, 'indestructible', isAttacking)
+        };
+    }
+
+    /**
+     * Deal damage for one combat step (first strike or normal)
+     * @param {boolean} isFirstStrikeStep - true for first strike step, false for normal
+     * @param {Set} deadCreatures - creatures already dead from prior step
+     */
+    _dealCombatDamageStep(combats, damageAssignments, results, defendingPlayer, isFirstStrikeStep, deadCreatures) {
+        for (const combat of combats) {
+            const { attacker, blockers, aKeywords, bKeywordsMap } = combat;
+
+            // Skip dead attackers
+            if (deadCreatures.has(attacker)) continue;
+
             const attackerPower = this.getCreaturePower(attacker, true);
 
-            // Obter keywords do atacante considerando efeitos condicionais (ex: Crossway Troublemakers)
-            // Conforme regras MTG 611.3a, 702.2b, 702.15b - keywords são verificadas no momento do dano
-            const attackerHasDoubleStrike = this.hasKeyword(attacker, 'double_strike', true);
-            const attackerHasFirstStrike = this.hasKeyword(attacker, 'first_strike', true) || attackerHasDoubleStrike;
-            const attackerHasDeathtouch = this.hasKeyword(attacker, 'deathtouch', true);
-            const attackerHasLifelink = this.hasKeyword(attacker, 'lifelink', true);
-            const attackerHasTrample = this.hasKeyword(attacker, 'trample', true);
+            // Does this attacker deal damage in this step?
+            const attackerDealsThisStep = isFirstStrikeStep
+                ? aKeywords.firstStrike    // Step 1: only first_strike/double_strike
+                : (!aKeywords.firstStrike || aKeywords.doubleStrike); // Step 2: non-FS or double_strike
 
             if (blockers.length === 0) {
-                // Dano direto ao jogador
-                let damage = attackerPower;
-
-                // Double Strike: dobra o dano ao jogador (first strike + normal damage)
-                if (attackerHasDoubleStrike) {
-                    damage *= 2;
-                }
-
-                results.damageToPlayers.defender += damage;
-
-                // Registrar dano direto
-                results.combatDetails.push({
-                    type: 'direct',
-                    attacker: attacker.name,
-                    damage: damage
-                });
-
-                // Lifelink
-                if (attackerHasLifelink) {
-                    results.lifeGained.attacker += damage;
+                // Unblocked - damage to player
+                if (attackerDealsThisStep && attackerPower > 0) {
+                    results.damageToPlayers.defender += attackerPower;
+                    results.combatDetails.push({
+                        type: 'direct',
+                        attacker: attacker.name,
+                        damage: attackerPower
+                    });
+                    if (aKeywords.lifelink) {
+                        results.lifeGained.attacker += attackerPower;
+                    }
                 }
             } else {
-                // Combate com bloqueadores
-                let damageToAttacker = 0;
+                // Blocked combat
+                const aliveBlockers = blockers.filter(b => !deadCreatures.has(b));
+                if (aliveBlockers.length === 0 && !attackerDealsThisStep) continue;
 
-                // Double Strike: dano total é dobrado (first strike + normal)
-                const totalAttackerDamage = attackerHasDoubleStrike ? attackerPower * 2 : attackerPower;
+                let totalAttackerDamageDealt = 0;
 
-                // Obter atribuição de dano para este atacante (ou criar padrão)
-                let damageMap = damageAssignments[attacker.instanceId];
-                if (!damageMap && blockers.length > 0) {
-                    // Sem atribuição específica: dividir dano igualmente (comportamento legado)
-                    // ou todo dano para o único bloqueador
-                    damageMap = {};
-                    if (blockers.length === 1) {
-                        damageMap[blockers[0].instanceId] = totalAttackerDamage;
-                    } else {
-                        // Dividir igualmente como fallback
-                        const damagePerBlocker = Math.floor(totalAttackerDamage / blockers.length);
-                        let remainder = totalAttackerDamage % blockers.length;
-                        blockers.forEach(b => {
-                            damageMap[b.instanceId] = damagePerBlocker + (remainder > 0 ? 1 : 0);
-                            if (remainder > 0) remainder--;
+                // Build damage map for this step
+                let stepDamageMap = null;
+                if (attackerDealsThisStep && aliveBlockers.length > 0) {
+                    stepDamageMap = this._buildStepDamageMap(
+                        attacker, aliveBlockers, attackerPower,
+                        damageAssignments, aKeywords, isFirstStrikeStep
+                    );
+                }
+
+                // Process each alive blocker
+                for (const blocker of aliveBlockers) {
+                    const bKeywords = bKeywordsMap.get(blocker);
+                    const blockerPower = this.getCreaturePower(blocker);
+
+                    // Does this blocker deal damage in this step?
+                    const blockerDealsThisStep = isFirstStrikeStep
+                        ? bKeywords.firstStrike
+                        : (!bKeywords.firstStrike || bKeywords.doubleStrike);
+
+                    // Attacker damage to blocker
+                    let damageToBlocker = 0;
+                    if (attackerDealsThisStep && stepDamageMap) {
+                        damageToBlocker = stepDamageMap[blocker.instanceId] || 0;
+                        totalAttackerDamageDealt += damageToBlocker;
+                    }
+
+                    // Blocker damage to attacker
+                    let damageToAttacker = 0;
+                    if (blockerDealsThisStep && blockerPower > 0) {
+                        damageToAttacker = blockerPower;
+                    }
+
+                    // Apply damage
+                    if (damageToBlocker > 0) {
+                        blocker.damage = (blocker.damage || 0) + damageToBlocker;
+                    }
+                    if (damageToAttacker > 0) {
+                        attacker.damage = (attacker.damage || 0) + damageToAttacker;
+                        if (bKeywords.lifelink) {
+                            results.lifeGained.defender += damageToAttacker;
+                        }
+                    }
+
+                    // Log combat details
+                    if (damageToBlocker > 0 || damageToAttacker > 0) {
+                        results.combatDetails.push({
+                            type: 'blocked',
+                            attacker: attacker.name,
+                            blocker: blocker.name,
+                            damageToBlocker,
+                            damageToAttacker
                         });
                     }
                 }
 
-                let trampleDamage = 0;
-                let totalDamageDealt = 0;
-
-                blockers.forEach(blocker => {
-                    const blockerPower = this.getCreaturePower(blocker);
-                    const blockerToughness = this.getCreatureToughness(blocker);
-
-                    // Keywords do bloqueador (não está atacando, então isAttacking = false)
-                    const blockerHasDoubleStrike = this.hasKeyword(blocker, 'double_strike', false);
-                    const blockerHasFirstStrike = this.hasKeyword(blocker, 'first_strike', false) || blockerHasDoubleStrike;
-                    const blockerHasDeathtouch = this.hasKeyword(blocker, 'deathtouch', false);
-
-                    // Obter dano atribuído a este bloqueador
-                    const damageToBlocker = damageMap[blocker.instanceId] || 0;
-                    totalDamageDealt += damageToBlocker;
-
-                    let damageFromBlocker = 0;
-
-                    // First Strike: se atacante tem e bloqueador não, bloqueador pode morrer antes de causar dano
-                    if (attackerHasFirstStrike && !blockerHasFirstStrike && damageToBlocker >= blockerToughness) {
-                        // Bloqueador morre na fase de first strike, não causa dano
-                        damageFromBlocker = 0;
-                    } else {
-                        // Double Strike: bloqueador causa dano em ambas as fases (first strike + regular)
-                        damageFromBlocker = blockerHasDoubleStrike ? blockerPower * 2 : blockerPower;
-                        damageToAttacker += damageFromBlocker;
-                    }
-
-                    // Registrar combate entre criaturas
-                    results.combatDetails.push({
-                        type: 'blocked',
-                        attacker: attacker.name,
-                        blocker: blocker.name,
-                        damageToBlocker: damageToBlocker,
-                        damageToAttacker: damageFromBlocker
-                    });
-
-                    // Marcar dano no bloqueador
-                    if (damageToBlocker > 0) {
-                        blocker.damage = (blocker.damage || 0) + damageToBlocker;
-                    }
-
-                    // Verificar se bloqueador morre (indestructible previne morte por dano - regra 702.12b)
-                    // Usar dano ACUMULADO (inclui dano de spells anteriores como Elspeth's Smite)
-                    const blockerTotalDamage = blocker.damage || 0;
-                    const blockerHasIndestructible = this.hasKeyword(blocker, 'indestructible', false);
-                    if (!blockerHasIndestructible) {
-                        if (attackerHasDeathtouch && damageToBlocker > 0) {
-                            results.creaturesDied.push(blocker);
-                        } else if (blockerTotalDamage >= blockerToughness) {
-                            results.creaturesDied.push(blocker);
-                        }
-                    }
-
-                    // Deathtouch do bloqueador (indestructible previne morte - regra 702.12b)
-                    const attackerHasIndestructible = this.hasKeyword(attacker, 'indestructible', true);
-                    if (blockerHasDeathtouch && blockerPower > 0 && !attackerHasIndestructible) {
-                        // Só causa dano se não morreu na fase de first strike
-                        if (!attackerHasFirstStrike || blockerHasFirstStrike || damageToBlocker < blockerToughness) {
-                            results.creaturesDied.push(attacker);
-                        }
-                    }
-                });
-
-                // Trample: dano que não foi atribuído aos bloqueadores vai pro jogador
-                if (attackerHasTrample) {
-                    // Calcular dano mínimo necessário (dano letal para cada bloqueador)
-                    // Considera dano já marcado no bloqueador (regra 702.19c)
-                    const minDamageNeeded = blockers.reduce((sum, b) => {
-                        if (attackerHasDeathtouch) return sum + 1;
+                // Trample: excess damage to player (only when attacker deals damage)
+                if (attackerDealsThisStep && aKeywords.trample && aliveBlockers.length > 0) {
+                    const minNeeded = aliveBlockers.reduce((sum, b) => {
+                        if (aKeywords.deathtouch) return sum + 1;
                         return sum + Math.max(0, this.getCreatureToughness(b) - (b.damage || 0));
                     }, 0);
-
-                    // Dano excedente ao dano letal vai para o defensor
-                    const excessDamage = totalAttackerDamage - minDamageNeeded;
-                    if (excessDamage > 0) {
-                        trampleDamage = excessDamage;
-                        results.damageToPlayers.defender += excessDamage;
+                    const excess = attackerPower - minNeeded;
+                    if (excess > 0) {
+                        results.damageToPlayers.defender += excess;
+                        totalAttackerDamageDealt += excess;
+                        results.combatDetails.push({
+                            type: 'trample',
+                            attacker: attacker.name,
+                            damage: excess
+                        });
                     }
                 }
 
-                // Registrar dano de trample se houver
-                if (trampleDamage > 0) {
-                    results.combatDetails.push({
-                        type: 'trample',
-                        attacker: attacker.name,
-                        damage: trampleDamage
-                    });
-                }
-
-                // Marcar dano no atacante
-                if (damageToAttacker > 0) {
-                    attacker.damage = (attacker.damage || 0) + damageToAttacker;
-                }
-
-                // Verificar se atacante morre (indestructible previne morte por dano - regra 702.12b)
-                // Usar dano ACUMULADO (inclui dano de spells anteriores como Elspeth's Smite)
-                const attackerTotalDamage = attacker.damage || 0;
-                const attackerToughness = this.getCreatureToughness(attacker);
-                const attackerIsIndestructible = this.hasKeyword(attacker, 'indestructible', true);
-                if (attackerTotalDamage >= attackerToughness && !results.creaturesDied.includes(attacker) && !attackerIsIndestructible) {
-                    results.creaturesDied.push(attacker);
-                }
-
-                // Lifelink do atacante (considera dano total causado incluindo double strike)
-                if (attackerHasLifelink) {
-                    results.lifeGained.attacker += totalDamageDealt + trampleDamage;
+                // Lifelink for attacker
+                if (aKeywords.lifelink && totalAttackerDamageDealt > 0) {
+                    results.lifeGained.attacker += totalAttackerDamageDealt;
                 }
             }
-        });
+        }
+    }
 
-        return results;
+    /** Build damage distribution map for one step */
+    _buildStepDamageMap(attacker, aliveBlockers, attackerPower, damageAssignments, aKeywords, isFirstStrikeStep) {
+        const map = {};
+
+        // For single blocker, assign full power
+        if (aliveBlockers.length === 1) {
+            map[aliveBlockers[0].instanceId] = attackerPower;
+            return map;
+        }
+
+        // For multiple blockers, use player/AI assignment if available
+        const originalMap = damageAssignments[attacker.instanceId];
+        if (originalMap) {
+            // Scale original assignment proportionally to single-step power
+            // Original was for total damage (possibly 2x with double_strike)
+            const originalTotal = Object.values(originalMap).reduce((a, b) => a + b, 0);
+            if (originalTotal > 0) {
+                let remaining = attackerPower;
+                const aliveIds = new Set(aliveBlockers.map(b => b.instanceId));
+                // Distribute proportionally among alive blockers
+                for (const blocker of aliveBlockers) {
+                    const originalDmg = originalMap[blocker.instanceId] || 0;
+                    const share = Math.min(remaining, Math.round(originalDmg * attackerPower / originalTotal));
+                    map[blocker.instanceId] = share;
+                    remaining -= share;
+                }
+                // Assign any remainder to first alive blocker
+                if (remaining > 0 && aliveBlockers.length > 0) {
+                    map[aliveBlockers[0].instanceId] = (map[aliveBlockers[0].instanceId] || 0) + remaining;
+                }
+                return map;
+            }
+        }
+
+        // Default: divide equally
+        const perBlocker = Math.floor(attackerPower / aliveBlockers.length);
+        let remainder = attackerPower % aliveBlockers.length;
+        aliveBlockers.forEach(b => {
+            map[b.instanceId] = perBlocker + (remainder > 0 ? 1 : 0);
+            if (remainder > 0) remainder--;
+        });
+        return map;
+    }
+
+    /** Check all creatures for lethal damage and add to dead list (SBA batch - Rule 704.3) */
+    _checkDeaths(combats, results, deadCreatures) {
+        for (const { attacker, blockers, aKeywords, bKeywordsMap } of combats) {
+            // Check attacker death
+            if (!deadCreatures.has(attacker) && !aKeywords.indestructible) {
+                const totalDamage = attacker.damage || 0;
+                const toughness = this.getCreatureToughness(attacker);
+                const killedByDeathtouch = [...bKeywordsMap.entries()].some(
+                    ([b, bk]) => bk.deathtouch && !deadCreatures.has(b) && this.getCreaturePower(b) > 0
+                            && (attacker.damage || 0) > 0
+                );
+                if (totalDamage >= toughness || killedByDeathtouch) {
+                    if (!results.creaturesDied.includes(attacker)) {
+                        results.creaturesDied.push(attacker);
+                    }
+                    deadCreatures.add(attacker);
+                }
+            }
+
+            // Check blocker deaths
+            for (const blocker of blockers) {
+                if (deadCreatures.has(blocker)) continue;
+                const bKeywords = bKeywordsMap.get(blocker);
+                if (bKeywords.indestructible) continue;
+                const totalDamage = blocker.damage || 0;
+                const toughness = this.getCreatureToughness(blocker);
+                const killedByDeathtouch = aKeywords.deathtouch && totalDamage > 0;
+                if (totalDamage >= toughness || killedByDeathtouch) {
+                    if (!results.creaturesDied.includes(blocker)) {
+                        results.creaturesDied.push(blocker);
+                    }
+                    deadCreatures.add(blocker);
+                }
+            }
+        }
     }
 
     // Calcula todos os bônus de uma criatura
