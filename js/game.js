@@ -4495,6 +4495,9 @@ class GameState {
             c.mustBeBlocked = false;
         });
 
+        // Descarte da IA (MTG rule: descartar até 7 cartas no cleanup)
+        await this.handleDiscard(this.opponent);
+
         await this.delay(800);
 
         // Passar para o jogador

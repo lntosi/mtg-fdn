@@ -17,18 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
         help() {
             console.log(`
 === MTG Debug Commands ===
+"p/o" = player/opponent (padrão: player)
 
 CARTAS:
   debug.draw("nome")              - Compra carta do seu deck
   debug.drawAny("nome")           - Compra carta de qualquer deck
   debug.addToHand("nome", "p/o")  - Adiciona carta à mão
-  debug.addToBattlefield("nome")  - Coloca carta no campo
+  debug.addToBattlefield("nome", "p/o") - Coloca carta no campo
   debug.listCards("deck?")        - Lista cartas disponíveis
 
 VIDA E MANA:
   debug.setLife(valor, "p/o")     - Define vida
   debug.fullMana()                - Dá 10 de cada mana
-  debug.untapAll()                - Desvira permanentes
+  debug.untapAll("p/o")           - Desvira permanentes
 
 TURNO:
   debug.setPhase("MAIN1")         - Pula para fase
@@ -37,7 +38,7 @@ TURNO:
 
 ESTADO:
   debug.state()                   - Estado do jogo
-  debug.battlefield("p/o/both")   - Criaturas em campo
+  debug.battlefield("p/o/both")   - Permanentes em campo
   debug.hand("p/o")               - Cartas na mão
   debug.kill("nome", "p/o")       - Mata criatura
 

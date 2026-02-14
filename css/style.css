@@ -331,7 +331,7 @@ body {
 .battlefield {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
     padding: 15px 100px 15px 20px; /* Espaço reservado à direita para .other-permanents */
     background: rgba(0, 0, 0, 0.3);
     border-radius: 12px;
@@ -369,7 +369,7 @@ body {
     padding: 5px 10px;
     position: relative;
     overflow-x: auto;
-    overflow-y: clip;
+    overflow-y: visible;
     scrollbar-width: thin;
     scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
 }
@@ -409,7 +409,7 @@ body {
     padding: 3px 10px;
     position: relative;
     overflow-x: auto;
-    overflow-y: clip; /* Evita scrollbar vertical sem cortar transforms */
+    overflow-y: visible;
     scrollbar-width: thin;
     scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
 }
