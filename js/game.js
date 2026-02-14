@@ -462,8 +462,9 @@ class GameState {
 
     /**
      * Hand Smoothing - similar ao MTG Arena
-     * Sorteia 2 mãos e escolhe a com melhor distribuição de terrenos
+     * Sorteia 2 mãos e escolhe a com melhor distribuição de terrenos e cores
      * Ideal: 2-4 terrenos em 7 cartas (closer to 3 is better)
+     * Também penaliza mãos onde os terrenos não cobrem as cores dos spells
      */
     drawSmoothedHand(player, handSize = 7) {
         // Simular duas mãos possíveis
@@ -475,14 +476,34 @@ class GameState {
             return { hand, library, landCount };
         };
 
+        // Calcula penalidade por cores de mana não cobertas pelos terrenos
+        const colorPenalty = (hand) => {
+            const neededColors = new Set();
+            for (const card of hand) {
+                if (card.type === 'land') continue;
+                for (const ch of (card.cost || '')) {
+                    if ('WUBRG'.includes(ch)) neededColors.add(ch);
+                }
+            }
+            const producedColors = new Set();
+            let wildcards = 0;
+            for (const card of hand) {
+                if (card.type !== 'land') continue;
+                if (card.produces === 'any') wildcards++;
+                else if (card.produces) producedColors.add(card.produces);
+            }
+            const missing = [...neededColors].filter(c => !producedColors.has(c));
+            return Math.max(0, missing.length - wildcards) * 2;
+        };
+
         const sim1 = simulateHand();
         const sim2 = simulateHand();
 
         // Pontuação: quanto mais perto de 3 terrenos, melhor (0 = perfeito)
         // Para mãos menores que 7, ajusta o ideal proporcionalmente
         const idealLands = Math.round(handSize * 3 / 7);
-        const score1 = Math.abs(sim1.landCount - idealLands);
-        const score2 = Math.abs(sim2.landCount - idealLands);
+        const score1 = Math.abs(sim1.landCount - idealLands) + colorPenalty(sim1.hand);
+        const score2 = Math.abs(sim2.landCount - idealLands) + colorPenalty(sim2.hand);
 
         // Escolhe a mão com melhor pontuação (menor distância do ideal)
         const chosen = score1 <= score2 ? sim1 : sim2;

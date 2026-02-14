@@ -5521,6 +5521,39 @@ html {
     text-decoration: underline;
 }
 
+/* Fan Content Notice (inside modals) */
+.fan-content-notice {
+    margin-top: 16px;
+    padding: 6px 12px;
+    font-size: 0.7em;
+    color: rgba(150, 140, 160, 0.7);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.fan-content-notice a {
+    color: rgba(180, 160, 200, 0.8);
+    text-decoration: none;
+}
+
+.fan-content-notice a:hover {
+    color: rgba(200, 180, 220, 1);
+    text-decoration: underline;
+}
+
+/* Prominent version for avatar/first screen */
+.fan-content-notice-prominent {
+    margin-top: 20px;
+    padding: 10px 16px;
+    font-size: 0.75em;
+    color: rgba(180, 170, 190, 0.85);
+    border-top: 1px solid rgba(150, 140, 160, 0.25);
+}
+
+.fan-content-notice-prominent a {
+    color: rgba(200, 180, 220, 0.95);
+}
+
 /* === Deck Preview Button === */
 .deck-view-cards-btn {
     position: absolute;
