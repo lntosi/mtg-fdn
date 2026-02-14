@@ -706,21 +706,46 @@ class TriggerManager {
                 await dealDamage(target);
             }
         } else {
-            // AI logic: prioritize killing creatures, then opponent face
+            // AI logic: prioritize lethal > killing creatures > mana dorks > face
             const opponentCreatures = opponent.battlefield.filter(c => c.type === 'creature');
 
-            // Check if any opponent creature can be killed with 1 damage
-            const canKill = opponentCreatures.find(c => {
+            // Priority 1: Check if 1 damage to face is lethal
+            if (opponent.life <= 1) {
+                await dealDamage(playerTargets[0]); // target_opponent
+                return;
+            }
+
+            // Priority 2: Kill creatures with 1 remaining toughness, prefer highest power/CMC
+            const killable = opponentCreatures.filter(c => {
                 const toughness = this.rules.getCreatureToughness(c) - (c.damage || 0);
                 return toughness <= 1;
             });
 
-            if (canKill) {
-                await dealDamage(canKill);
-            } else {
-                // Otherwise, hit opponent's face
-                await dealDamage(playerTargets[0]); // target_opponent
+            if (killable.length > 0) {
+                killable.sort((a, b) => {
+                    const powerA = this.rules.getCreaturePower(a);
+                    const powerB = this.rules.getCreaturePower(b);
+                    if (powerB !== powerA) return powerB - powerA;
+                    return (b.cmc || 0) - (a.cmc || 0);
+                });
+                await dealDamage(killable[0]);
+                return;
             }
+
+            // Priority 3: Snipe mana dorks (even if can't kill, weaken them)
+            const manaDorks = opponentCreatures.filter(c => c.keywords?.includes('tap_for_mana'));
+            if (manaDorks.length > 0) {
+                // Prefer ones we can kill, otherwise pick any
+                const killableDork = manaDorks.find(c => {
+                    const toughness = this.rules.getCreatureToughness(c) - (c.damage || 0);
+                    return toughness <= 1;
+                });
+                await dealDamage(killableDork || manaDorks[0]);
+                return;
+            }
+
+            // Priority 4: Hit opponent's face
+            await dealDamage(playerTargets[0]); // target_opponent
         }
     }
 

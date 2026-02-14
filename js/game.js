@@ -4124,7 +4124,10 @@ class GameState {
         for (const creature of uniqueDeaths) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
             await this.destroyPermanent(creature, owner);
-            this.ui.log(`${creature.name} morreu em combate`);
+            // Only log death if creature actually left the battlefield (not returned by Undying Malice etc.)
+            if (!owner.battlefield.includes(creature)) {
+                this.ui.log(`${creature.name} morreu em combate`);
+            }
         }
 
         // Sacrificar criaturas marcadas com sacrificeOnCombatDamage (Dropkick Bomber ability)
@@ -4136,23 +4139,23 @@ class GameState {
             }
         }
 
-        // Verificar fim de jogo após processar todas as mortes
-        this.checkGameOver();
-        if (this.gameOver) return;
-
-        // Limpar linhas de combate após criaturas morrerem (evita linhas órfãs)
+        // Limpar linhas de combate e dados de combate antes de verificar game over
+        // (senão o render do view mode redesenha as linhas)
         this.blockerAssignments = {};
         this.ui.blockerAssignments = {};
         this.ui.clearCombatLines();
 
-        // Limpar currentAttackers aqui também (além de COMBAT_END) para evitar ghosts visuais
-        // Filtrar apenas atacantes que ainda estão vivos no battlefield
+        // Limpar currentAttackers - filtrar apenas atacantes que ainda estão vivos
         this.currentAttackers = this.currentAttackers.filter(attacker =>
             this.player.battlefield.includes(attacker) || this.opponent.battlefield.includes(attacker)
         );
 
         // Limpar seleção de atacantes da UI
         this.ui.selectedAttackers = [];
+
+        // Verificar fim de jogo após processar todas as mortes
+        this.checkGameOver();
+        if (this.gameOver) return;
 
         this.ui.render();
         } catch (error) {
