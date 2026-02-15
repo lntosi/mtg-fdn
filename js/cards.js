@@ -22,7 +22,7 @@ const CARD_DATABASE = {
             { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
             // Feitiços e Encantamentos (3)
             { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
-            { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
+            { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, keywords: ["enchant"], isDebuff: true, text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
             { id: "elspeths_smite", name: "Elspeth's Smite", type: "instant", cost: "W", cmc: 1, text: "Causa 3 de dano a criatura atacante ou bloqueadora alvo. Se ela morrer neste turno, exile-a.", qty: 1 },
             { id: "angelic_edict", name: "Angelic Edict", type: "sorcery", cost: "4W", cmc: 5, text: "Exile criatura ou encantamento alvo.", qty: 1 }
         ]
@@ -77,7 +77,7 @@ const CARD_DATABASE = {
             { id: "moment_of_craving", name: "Moment of Craving", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo recebe -2/-2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
             { id: "offer_immortality", name: "Offer Immortality", type: "instant", cost: "1B", cmc: 2, text: "Criatura alvo ganha toque mortífero e indestrutível até o fim do turno.", qty: 1 },
             { id: "heros_downfall", name: "Hero's Downfall", type: "instant", cost: "1BB", cmc: 3, text: "Destrua criatura ou planeswalker alvo.", qty: 1 },
-            { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, keywords: ["enchant"], text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
+            { id: "untamed_hunger", name: "Untamed Hunger", type: "enchantment", subtype: "Aura", cost: "2B", cmc: 3, keywords: ["enchant"], isDebuff: false, text: "Encantar criatura. Criatura encantada tem +2/+1 e ameaçar.", qty: 1 }
         ]
     },
 
@@ -130,7 +130,7 @@ const CARD_DATABASE = {
             // Feitiços e Encantamentos (4)
             { id: "opt", name: "Opt", type: "instant", cost: "U", cmc: 1, text: "Vidência 1. Compre uma carta.", keywords: ["scry_1", "draw_1"], qty: 1 },
             { id: "cancel", name: "Cancel", type: "instant", cost: "1UU", cmc: 3, text: "Anule a mágica alvo.", keywords: ["counterspell"], qty: 1 },
-            { id: "eaten_by_piranhas", name: "Eaten by Piranhas", type: "enchantment", subtype: "Aura", cost: "1U", cmc: 2, keywords: ["flash", "enchant"], text: "Lampejo. Encantar criatura. Criatura encantada perde todas as habilidades e é uma criatura preta Esqueleto com poder e resistência base 1/1.", qty: 1 },
+            { id: "eaten_by_piranhas", name: "Eaten by Piranhas", type: "enchantment", subtype: "Aura", cost: "1U", cmc: 2, keywords: ["flash", "enchant"], isDebuff: true, text: "Lampejo. Encantar criatura. Criatura encantada perde todas as habilidades e é uma criatura preta Esqueleto com poder e resistência base 1/1.", qty: 1 },
 
             // Equipamento (1)
             { id: "pirates_cutlass", name: "Pirate's Cutlass", type: "artifact", subtype: "Equipment", cost: "3", cmc: 3, text: "Quando este Equipamento entra, anexe-o ao Pirata alvo que você controla. Criatura equipada recebe +2/+1. Equipar 2.", keywords: ["equipment", "etb_equip_pirate"], qty: 1 }
@@ -227,7 +227,7 @@ const CARD_DATABASE = {
             { id: "biogenic_upgrade", name: "Biogenic Upgrade", type: "sorcery", cost: "4GG", cmc: 6, text: "Distribua três contadores +1/+1 entre uma, duas ou três criaturas alvo, depois dobre o número de contadores +1/+1 em cada uma dessas criaturas.", qty: 1 },
 
             // Enchantment (1)
-            { id: "new_horizons", name: "New Horizons", type: "enchantment", subtype: "Aura", cost: "2G", cmc: 3, keywords: ["enchant"], text: "Encantar terreno. Quando este encantamento entra, coloque um contador +1/+1 em criatura alvo que você controla. Terreno encantado tem '{T}: Adicione dois manas de uma mesma cor.'", qty: 1 }
+            { id: "new_horizons", name: "New Horizons", type: "enchantment", subtype: "Aura", cost: "2G", cmc: 3, keywords: ["enchant"], isDebuff: false, text: "Encantar terreno. Quando este encantamento entra, coloque um contador +1/+1 em criatura alvo que você controla. Terreno encantado tem '{T}: Adicione dois manas de uma mesma cor.'", qty: 1 }
         ]
     },
 
@@ -257,7 +257,7 @@ const CARD_DATABASE = {
             { id: "arcane_epiphany", name: "Arcane Epiphany", type: "instant", cost: "3UU", cmc: 5, keywords: ["wizard_discount", "draw_3"], text: "Esta mágica custa {1} a menos se você controlar um Mago. Compre três cards.", qty: 1 },
 
             // Enchantment (1)
-            { id: "starlight_snare", name: "Starlight Snare", type: "enchantment", subtype: "Aura", cost: "2U", cmc: 3, keywords: ["enchant", "freeze_aura"], text: "Encantar criatura. Quando esta Aura entra, vire a criatura encantada. Criatura encantada não desvira durante a etapa de desvirar de seu controlador.", qty: 1 }
+            { id: "starlight_snare", name: "Starlight Snare", type: "enchantment", subtype: "Aura", cost: "2U", cmc: 3, keywords: ["enchant", "freeze_aura"], isDebuff: true, text: "Encantar criatura. Quando esta Aura entra, vire a criatura encantada. Criatura encantada não desvira durante a etapa de desvirar de seu controlador.", qty: 1 }
         ]
     },
 

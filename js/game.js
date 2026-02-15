@@ -660,8 +660,6 @@ class GameState {
 
             // Anexar aura ao alvo (usar instanceId para consistência)
             card.attachedTo = stackItem.target.instanceId;
-            if (!stackItem.target.attachedAuras) stackItem.target.attachedAuras = [];
-            stackItem.target.attachedAuras.push(card);
             // Auras ainda não estão no battlefield (não passaram por addToStack com preview)
             controller.battlefield.push(card);
             // Registrar efeitos especiais para otimização
@@ -2932,6 +2930,11 @@ class GameState {
         // Treasure tokens podem ser sacrificados a qualquer momento (não requer tap)
         if (card.keywords?.includes('sacrifice_for_mana')) {
             return true; // Sempre pode sacrificar tesouro para mana
+        }
+
+        // Criaturas que perderam todas as habilidades não podem ativar habilidades
+        if (card.type === 'creature' && this.rules.hasLostAllAbilities(card)) {
+            return false;
         }
 
         // Habilidades que não requerem tap podem ser usadas com summoning sickness

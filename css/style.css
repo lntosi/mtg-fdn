@@ -45,6 +45,12 @@ body {
     font-size: 0.45em;
 }
 
+#opponent-hand .card:hover {
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
 /* === Grimório e Cemitério === */
 .library-zone {
     display: flex;
@@ -1016,6 +1022,55 @@ body {
 .card.has-buff-aura.attacking {
     box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6), 0 0 25px 12px rgba(231, 76, 60, 0.8) !important;
     animation: pulse-attack 0.8s infinite;
+}
+
+/* === BADGES DE AURA EM CRIATURAS === */
+
+/* Container para badges de auras em criaturas (top-left, evita colisão com equipment top-center) */
+.creature-aura-indicators {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    display: flex;
+    gap: 2px;
+    z-index: 20;
+}
+
+/* Badge individual de aura em criatura */
+.creature-aura-badge {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.creature-aura-badge.buff {
+    background: linear-gradient(135deg, #228b22 0%, #32cd32 50%, #228b22 100%);
+    border: 2px solid #90ee90;
+    box-shadow: 0 0 6px rgba(50, 205, 50, 0.8);
+}
+
+.creature-aura-badge.debuff {
+    background: linear-gradient(135deg, #8b0000 0%, #dc143c 50%, #8b0000 100%);
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 0 6px rgba(220, 20, 60, 0.8);
+}
+
+.creature-aura-badge:hover {
+    transform: scale(1.2);
+}
+
+.creature-aura-badge.buff:hover {
+    box-shadow: 0 0 12px rgba(50, 205, 50, 1);
+}
+
+.creature-aura-badge.debuff:hover {
+    box-shadow: 0 0 12px rgba(220, 20, 60, 1);
 }
 
 /* === AURAS EM TERRENOS (ex: New Horizons) === */
@@ -2811,6 +2866,10 @@ body {
 
 #game-container.view-mode #player-hand .card:hover {
     transform: scale(1.3) translateY(-15px);
+}
+
+#game-container.view-mode #opponent-hand .card:hover {
+    transform: scale(1.1);
 }
 
 #game-container.view-mode .battlefield .card:hover {

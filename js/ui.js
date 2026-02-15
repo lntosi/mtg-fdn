@@ -621,16 +621,7 @@ class GameUI {
 
                 attachedAuras.forEach(aura => {
                     const statusBadge = document.createElement('span');
-
-                    // Determinar se é debuff
-                    const creatureController = this.game.player.battlefield.includes(card)
-                        ? this.game.player : this.game.opponent;
-                    const auraController = this.game.player.battlefield.includes(aura)
-                        ? this.game.player : this.game.opponent;
-                    const isDebuff = aura.id === 'pacifism' ||
-                        aura.id === 'eaten_by_piranhas' ||
-                        (auraController !== creatureController && !aura.text?.includes('+'));
-
+                    const isDebuff = this.isAuraDebuff(aura);
                     statusBadge.className = isDebuff ? 'status-badge debuff' : 'status-badge buff';
                     statusBadge.textContent = aura.name;
                     statusBadge.title = aura.text || '';
@@ -697,25 +688,60 @@ class GameUI {
     }
 
     /**
-     * Retorna as Auras anexadas a uma criatura
+     * Retorna cartas anexadas a uma permanente por subtipo
      */
-    getAttachedAuras(creature) {
+    getAttachedBySubtype(permanent, subtype) {
         if (!this.game) return [];
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
-        return allBattlefields.filter(card =>
-            card.subtype === 'Aura' && card.attachedTo === creature.instanceId
-        );
+        const all = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return all.filter(card => card.subtype === subtype && card.attachedTo === permanent.instanceId);
+    }
+
+    getAttachedAuras(creature) {
+        return this.getAttachedBySubtype(creature, 'Aura');
+    }
+
+    getAttachedEquipments(creature) {
+        return this.getAttachedBySubtype(creature, 'Equipment');
     }
 
     /**
-     * Retorna os Equipamentos anexados a uma criatura
+     * Determina se uma aura é debuff
      */
-    getAttachedEquipments(creature) {
-        if (!this.game) return [];
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
-        return allBattlefields.filter(card =>
-            card.subtype === 'Equipment' && card.attachedTo === creature.instanceId
-        );
+    isAuraDebuff(aura) {
+        if (aura.isDebuff !== undefined) return aura.isDebuff;
+        // Fallback heurístico para auras sem campo isDebuff
+        const auraController = this.game.player.battlefield.includes(aura)
+            ? this.game.player : this.game.opponent;
+        const target = [...this.game.player.battlefield, ...this.game.opponent.battlefield]
+            .find(c => c.instanceId === aura.attachedTo);
+        if (!target) return true;
+        const targetController = this.game.player.battlefield.includes(target)
+            ? this.game.player : this.game.opponent;
+        return auraController !== targetController && !aura.text?.includes('+');
+    }
+
+    /**
+     * Cria container de badges interativos para cartas anexadas (auras, equipamentos)
+     */
+    createAttachmentBadges(attachments, containerClass, badgeClassFn, iconFn) {
+        const container = document.createElement('div');
+        container.className = containerClass;
+        attachments.forEach((attachment) => {
+            const badge = document.createElement('div');
+            badge.className = typeof badgeClassFn === 'function' ? badgeClassFn(attachment) : badgeClassFn;
+            badge.textContent = typeof iconFn === 'function' ? iconFn(attachment) : iconFn;
+            badge.title = attachment.name;
+            badge.addEventListener('mouseenter', (e) => {
+                e.stopPropagation();
+                this.showCardPreview(attachment);
+            });
+            badge.addEventListener('mouseleave', (e) => {
+                e.stopPropagation();
+                this.hideCardPreview();
+            });
+            container.appendChild(badge);
+        });
+        return container;
     }
 
     async loadPreviewImage(card, element) {
@@ -1263,48 +1289,37 @@ class GameUI {
     }
 
     renderAttachedAuras(creature, creatureEl) {
-        // Buscar auras anexadas a esta criatura em ambos os campos
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
-        const attachedAuras = allBattlefields.filter(card =>
-            card.subtype === 'Aura' && card.attachedTo === creature.instanceId
-        );
+        const attachedAuras = this.getAttachedAuras(creature);
 
         if (attachedAuras.length > 0) {
-            // Determinar se é controlador da criatura
-            const creatureController = this.game.player.battlefield.includes(creature)
-                ? this.game.player
-                : this.game.opponent;
-
             let hasDebuff = false;
             let hasBuff = false;
 
             attachedAuras.forEach((aura) => {
-                // Determinar se é buff ou debuff
-                const auraController = this.game.player.battlefield.includes(aura)
-                    ? this.game.player
-                    : this.game.opponent;
-
-                // Auras negativas: Pacifism, Eaten by Piranhas
-                const isDebuff = aura.id === 'pacifism' ||
-                    aura.id === 'eaten_by_piranhas' ||
-                    (auraController !== creatureController && !aura.text?.includes('+'));
-
-                if (isDebuff) {
+                if (this.isAuraDebuff(aura)) {
                     hasDebuff = true;
                 } else {
                     hasBuff = true;
                 }
             });
 
-            // Borda colorida indica presença de aura (detalhes no preview lateral)
+            // Borda colorida indica presença de aura
             creatureEl.classList.add('has-aura');
-
             if (hasDebuff) {
                 creatureEl.classList.add('has-debuff-aura');
             }
             if (hasBuff && !hasDebuff) {
                 creatureEl.classList.add('has-buff-aura');
             }
+
+            // Badges interativos (hover mostra preview da aura)
+            const badgeContainer = this.createAttachmentBadges(
+                attachedAuras,
+                'creature-aura-indicators',
+                (aura) => `creature-aura-badge ${this.isAuraDebuff(aura) ? 'debuff' : 'buff'}`,
+                () => '✨'
+            );
+            creatureEl.appendChild(badgeContainer);
         }
     }
 
@@ -1314,95 +1329,50 @@ class GameUI {
      * @param {HTMLElement} landEl - O elemento DOM do terreno
      */
     renderAttachedAurasOnLand(land, landEl) {
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
-        const attachedAuras = allBattlefields.filter(card =>
-            card.subtype === 'Aura' && card.attachedTo === land.instanceId
-        );
+        const attachedAuras = this.getAttachedAuras(land);
 
         if (attachedAuras.length > 0) {
-            // Adicionar classe visual indicando que o terreno está encantado
             landEl.classList.add('has-land-aura');
-
-            // Criar container para badges de auras
-            const auraContainer = document.createElement('div');
-            auraContainer.className = 'land-aura-indicators';
-
-            attachedAuras.forEach((aura) => {
-                const auraBadge = document.createElement('div');
-                auraBadge.className = 'land-aura-badge';
-                auraBadge.textContent = '✨';
-                auraBadge.title = `${aura.name}`;
-
-                // Hover mostra preview da aura
-                auraBadge.addEventListener('mouseenter', (e) => {
-                    e.stopPropagation();
-                    this.showCardPreview(aura);
-                });
-                auraBadge.addEventListener('mouseleave', (e) => {
-                    e.stopPropagation();
-                    this.hideCardPreview();
-                });
-
-                auraContainer.appendChild(auraBadge);
-            });
-
-            landEl.appendChild(auraContainer);
+            const badgeContainer = this.createAttachmentBadges(
+                attachedAuras, 'land-aura-indicators', 'land-aura-badge', () => '✨'
+            );
+            landEl.appendChild(badgeContainer);
         }
     }
 
     renderAttachedEquipments(creature, creatureEl, isPlayerCreature) {
-        // Buscar equipamentos anexados a esta criatura
-        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
-        const attachedEquipments = allBattlefields.filter(card =>
-            card.subtype === 'Equipment' && card.attachedTo === creature.instanceId
-        );
+        const attachedEquipments = this.getAttachedEquipments(creature);
 
         if (attachedEquipments.length > 0) {
-            // Adicionar indicador visual de equipamento
             creatureEl.classList.add('has-equipment');
 
-            // Criar container para ícones de equipamento (pequenos badges)
-            const equipContainer = document.createElement('div');
-            equipContainer.className = 'equipment-indicators';
+            const badgeContainer = this.createAttachmentBadges(
+                attachedEquipments, 'equipment-indicators', 'equipment-badge', () => '⚔'
+            );
 
-            attachedEquipments.forEach((equipment) => {
-                const equipBadge = document.createElement('div');
-                equipBadge.className = 'equipment-badge';
-                equipBadge.textContent = '⚔';
-                equipBadge.title = `${equipment.name} - Clique duplo para re-equipar`;
+            // Adicionar lógica extra de re-equip nos badges
+            const badges = badgeContainer.querySelectorAll('.equipment-badge');
+            attachedEquipments.forEach((equipment, i) => {
+                const badge = badges[i];
+                badge.title = `${equipment.name} - Clique duplo para re-equipar`;
 
-                // Adicionar evento de hover para mostrar preview do equipamento
-                equipBadge.addEventListener('mouseenter', (e) => {
-                    e.stopPropagation();
-                    this.showCardPreview(equipment);
-                });
-                equipBadge.addEventListener('mouseleave', (e) => {
-                    e.stopPropagation();
-                    this.hideCardPreview();
-                });
-
-                // Adicionar interação para re-equipar (apenas se for do jogador)
                 const equipmentController = this.game.player.battlefield.includes(equipment)
-                    ? this.game.player
-                    : this.game.opponent;
+                    ? this.game.player : this.game.opponent;
 
                 if (equipmentController === this.game.player && isPlayerCreature) {
-                    // Verificar se pode ativar a habilidade de equip
                     if (this.game.isPlayerTurn() &&
                         this.game.canActivateAbility &&
                         this.game.canActivateAbility(equipment, this.game.player)) {
-                        equipBadge.classList.add('can-reequip');
-                        equipBadge.addEventListener('dblclick', (e) => {
+                        badge.classList.add('can-reequip');
+                        badge.addEventListener('dblclick', (e) => {
                             e.stopPropagation();
                             this.game.activateAbility(equipment, this.game.player);
                         });
                     }
                 }
-
-                equipContainer.appendChild(equipBadge);
             });
 
-            creatureEl.appendChild(equipContainer);
+            creatureEl.appendChild(badgeContainer);
         }
     }
 
