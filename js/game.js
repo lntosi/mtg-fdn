@@ -2925,6 +2925,19 @@ class GameState {
         }
     }
 
+    // Verifica se uma carta TEM habilidade ativada (independente de poder usar agora)
+    hasActivatedAbility(card) {
+        // Criaturas que perderam todas as habilidades não têm habilidades
+        if (card.type === 'creature' && this.rules.hasLostAllAbilities(card)) {
+            return false;
+        }
+        // Mild-Mannered Librarian já transformado não tem mais habilidade ativada
+        if (card.id === 'mild_mannered_librarian' && card.transformed) {
+            return false;
+        }
+        return card.hasActivatedAbility === true;
+    }
+
     // Verifica se uma carta tem habilidade ativada e pode usá-la
     canActivateAbility(card, player) {
         // Treasure tokens podem ser sacrificados a qualquer momento (não requer tap)

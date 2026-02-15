@@ -721,6 +721,51 @@ class GameUI {
     }
 
     /**
+     * Adiciona classe has-ability + badge DOM ⚡ a um card element
+     */
+    addAbilityBadge(cardEl, inactive = false) {
+        cardEl.classList.add('has-ability');
+        if (inactive) cardEl.classList.add('inactive');
+        const badge = document.createElement('span');
+        badge.className = 'ability-badge';
+        badge.textContent = '⚡';
+        cardEl.appendChild(badge);
+    }
+
+    /**
+     * Retorna o motivo pelo qual a habilidade ativada não pode ser usada agora
+     */
+    getInactivationReason(card) {
+        if (card.type === 'creature' && this.game.rules.hasLostAllAbilities(card)) {
+            return 'Habilidade perdida';
+        }
+        if (card.id === 'mild_mannered_librarian' && card.transformed) {
+            return 'Habilidade já utilizada';
+        }
+        if (card.tapped) {
+            return 'Habilidade indisponível: tapado';
+        }
+        if (card.summoningSickness && card.type === 'creature') {
+            // Habilidades que não requerem tap ignoram summoning sickness
+            const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin',
+                                    'wildheart_invoker', 'dropkick_bomber', 'mild_mannered_librarian',
+                                    'thrashing_brontodon', 'mystic_archaeologist'];
+            if (!noTapAbilities.includes(card.id)) {
+                return 'Habilidade indisponível: enjoo de invocação';
+            }
+        }
+        if (card.activationTiming === 'combat') {
+            const inCombat = this.game.phase === PHASES.DECLARE_BLOCKERS ||
+                             this.game.phase === PHASES.COMBAT_DAMAGE ||
+                             this.game.phase === PHASES.DECLARE_ATTACKERS;
+            if (!inCombat) {
+                return 'Habilidade só pode ser ativada durante combate';
+            }
+        }
+        return 'Habilidade indisponível: mana insuficiente';
+    }
+
+    /**
      * Cria container de badges interativos para cartas anexadas (auras, equipamentos)
      */
     createAttachmentBadges(attachments, containerClass, badgeClassFn, iconFn) {
@@ -1127,11 +1172,14 @@ class GameUI {
                 cardEl.classList.add('creature-damaged');
             }
 
-            // Destacar atacantes (do jogador ou da IA) com animação
-            // Usar instanceId para comparação mais robusta (evita problemas de referência)
-            const isAttacking = this.selectedAttackers.some(a => a.instanceId === card.instanceId) ||
-                               this.game.currentAttackers.some(a => a.instanceId === card.instanceId);
-            if (isAttacking) {
+            // Destacar atacantes com animação
+            const isSelected = this.selectedAttackers.some(a => a.instanceId === card.instanceId);
+            const isConfirmed = this.game.currentAttackers.some(a => a.instanceId === card.instanceId);
+            if (isSelected && !isConfirmed) {
+                // Selecionado mas não confirmado: elevação + brilho (como lands)
+                cardEl.classList.add('attacker-selected');
+            } else if (isConfirmed) {
+                // Confirmado: glow vermelho de combate
                 cardEl.classList.add('attacking');
                 cardEl.classList.add('attacking-animation');
             }
@@ -1216,12 +1264,17 @@ class GameUI {
                     }
                     // Verificar habilidades ativadas durante combate (Jazal, Ingenious Leonin)
                     if (hasAbility) {
-                        cardEl.classList.add('has-ability');
+                        this.addAbilityBadge(cardEl);
                         cardEl.addEventListener('dblclick', () => {
                             clearTimeout(this.attackerClickTimeout);
                             this.game.activateAbility(card, this.game.player);
                         });
                         cardEl.title = 'Clique duplo para ativar habilidade';
+                    } else if (this.game.hasActivatedAbility && this.game.hasActivatedAbility(card) &&
+                               !card.keywords?.includes('tap_for_mana')) {
+                        // Badge inativo durante combate
+                        this.addAbilityBadge(cardEl, true);
+                        cardEl.title = this.getInactivationReason(card);
                     }
                 } else if (isPlayer && this.waitingForBlockers) {
                     cardEl.addEventListener('click', () => this.selectBlocker(card));
@@ -1235,18 +1288,40 @@ class GameUI {
                     if (this.selectedLands.some(l => l.instanceId === card.instanceId)) {
                         cardEl.classList.add('mana-producer-selected');
                     }
-                } else if (isPlayer && this.game.isPlayerTurn() && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                } else if (isPlayer && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
                     // Habilidade ativada disponível
-                    cardEl.classList.add('has-ability');
+                    this.addAbilityBadge(cardEl);
                     cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
                     cardEl.title = 'Clique duplo para ativar habilidade';
                 }
+
+                // Badge visual para criaturas com habilidade ativada (sempre visível, ativo ou inativo)
+                if (isPlayer && !cardEl.classList.contains('has-ability') &&
+                    this.game.hasActivatedAbility && this.game.hasActivatedAbility(card) &&
+                    !card.keywords?.includes('tap_for_mana')) {
+                    this.addAbilityBadge(cardEl, true);
+                    cardEl.title = this.getInactivationReason(card);
+                }
             } else if ((card.type === 'artifact' || card.type === 'enchantment') && isPlayer) {
-                // Verificar habilidades ativadas em artefatos/encantamentos
-                if (this.game.isPlayerTurn() && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
-                    cardEl.classList.add('has-ability');
+                // Treasure Token e similares: visual verde de mana-producer
+                if (card.keywords?.includes('sacrifice_for_mana') && this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    cardEl.classList.add('mana-producer-selectable');
+                    cardEl.addEventListener('click', () => this.game.activateAbility(card, this.game.player));
+                    cardEl.style.cursor = 'pointer';
+                    cardEl.title = 'Clique para sacrificar e adicionar mana';
+                }
+                // Outras habilidades ativadas em artefatos/encantamentos
+                else if (this.game.canActivateAbility && this.game.canActivateAbility(card, this.game.player)) {
+                    this.addAbilityBadge(cardEl);
                     cardEl.addEventListener('dblclick', () => this.game.activateAbility(card, this.game.player));
                     cardEl.title = 'Clique duplo para ativar habilidade';
+                }
+
+                // Badge visual para artefatos com habilidade ativada (estado inativo)
+                if (!cardEl.classList.contains('has-ability') && !cardEl.classList.contains('mana-producer-selectable') &&
+                    this.game.hasActivatedAbility && this.game.hasActivatedAbility(card)) {
+                    this.addAbilityBadge(cardEl, true);
+                    cardEl.title = this.getInactivationReason(card);
                 }
             }
 

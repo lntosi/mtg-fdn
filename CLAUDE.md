@@ -103,7 +103,7 @@ flying, lifelink, deathtouch, trample, first_strike, double_strike, vigilance, h
 
 - **Combat keywords**: Add to `keywords` array in cards.js (auto-displayed in preview)
 - **ETB effects**: Add keyword + handler in `triggers.js` → `resolveETB()`
-- **Activated abilities**: Use card `id` in `game.js` → `canActivateAbility()` + `activateAbility()`
+- **Activated abilities**: Add `hasActivatedAbility: true` in `cards.js` + use card `id` in `game.js` → `canActivateAbility()` + `activateAbility()`. Add `activationTiming: "combat"` for combat-only abilities.
 - **Temporary keywords**: Use `card.temporaryKeywords` array, cleared at end of turn
 - **Instant targeting**: Update `rules.js` → `hasValidTargets()` for every instant with targets
 

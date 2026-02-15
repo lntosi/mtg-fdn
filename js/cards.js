@@ -16,10 +16,10 @@ const CARD_DATABASE = {
             { id: "leonin_vanguard", name: "Leonin Vanguard", type: "creature", subtype: "Cat Soldier", cost: "W", cmc: 1, power: 1, toughness: 1, text: "No início do combate em seu turno, se você controla três ou mais criaturas, esta criatura ganha +1/+1 até o fim do turno e você ganha 1 vida.", qty: 1 },
             { id: "helpful_hunter", name: "Helpful Hunter", type: "creature", subtype: "Cat", cost: "1W", cmc: 2, power: 1, toughness: 1, text: "Quando entra, compre uma carta.", keywords: ["etb_draw"], qty: 1 },
             { id: "leonin_skyhunter", name: "Leonin Skyhunter", type: "creature", subtype: "Cat Knight", cost: "WW", cmc: 2, power: 2, toughness: 2, keywords: ["flying"], qty: 1 },
-            { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "4W", cmc: 5, power: 4, toughness: 4, text: "3W: Coloque um contador +1/+1 em outra criatura atacante alvo. Se ela é Cat, ganha iniciativa até o fim do turno.", qty: 1 },
+            { id: "ingenious_leonin", name: "Ingenious Leonin", type: "creature", subtype: "Cat Soldier", cost: "4W", cmc: 5, power: 4, toughness: 4, hasActivatedAbility: true, activationTiming: "combat", text: "3W: Coloque um contador +1/+1 em outra criatura atacante alvo. Se ela é Cat, ganha iniciativa até o fim do turno.", qty: 1 },
             { id: "prideful_parent", name: "Prideful Parent", type: "creature", subtype: "Cat", cost: "2W", cmc: 3, power: 2, toughness: 2, keywords: ["vigilance", "etb_cat_token"], text: "Quando entra, crie um token 1/1 Cat.", qty: 1 },
             { id: "felidar_savior", name: "Felidar Savior", type: "creature", subtype: "Cat Beast", cost: "3W", cmc: 4, power: 2, toughness: 3, keywords: ["lifelink", "etb_counter_two"], text: "Quando entra, coloque um contador +1/+1 em cada uma de até duas outras criaturas alvo que você controla.", qty: 1 },
-            { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
+            { id: "jazal_goldmane", name: "Jazal Goldmane", type: "creature", subtype: "Cat Warrior", cost: "2WW", cmc: 4, power: 4, toughness: 4, legendary: true, keywords: ["first_strike"], hasActivatedAbility: true, activationTiming: "combat", text: "3WW: Criaturas atacantes têm +X/+X até o fim do turno, onde X é o número de criaturas atacantes.", qty: 1 },
             // Feitiços e Encantamentos (3)
             { id: "moment_of_triumph", name: "Moment of Triumph", type: "instant", cost: "W", cmc: 1, text: "Criatura alvo ganha +2/+2 até o fim do turno. Você ganha 2 vidas.", qty: 1 },
             { id: "pacifism", name: "Pacifism", type: "enchantment", subtype: "Aura", cost: "1W", cmc: 2, keywords: ["enchant"], isDebuff: true, text: "Encantar criatura. Criatura encantada não pode atacar nem bloquear.", qty: 1 },
@@ -41,9 +41,9 @@ const CARD_DATABASE = {
             { id: "frenzied_goblin", name: "Frenzied Goblin", type: "creature", subtype: "Goblin Berserker", cost: "R", cmc: 1, power: 1, toughness: 1, text: "Quando ataca, pague R: criatura alvo não pode bloquear neste turno.", qty: 1 },
             { id: "swab_goblin", name: "Swab Goblin", type: "creature", subtype: "Goblin Pirate", cost: "1R", cmc: 2, power: 2, toughness: 2, qty: 1 },
             { id: "raging_redcap", name: "Raging Redcap", type: "creature", subtype: "Goblin Knight", cost: "2R", cmc: 3, power: 1, toughness: 2, keywords: ["double_strike"], qty: 1 },
-            { id: "goblin_smuggler", name: "Goblin Smuggler", type: "creature", subtype: "Goblin Rogue", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["haste"], text: "T: Criatura alvo com poder 2 ou menos não pode ser bloqueada neste turno.", qty: 1 },
+            { id: "goblin_smuggler", name: "Goblin Smuggler", type: "creature", subtype: "Goblin Rogue", cost: "2R", cmc: 3, power: 2, toughness: 2, keywords: ["haste"], hasActivatedAbility: true, text: "T: Criatura alvo com poder 2 ou menos não pode ser bloqueada neste turno.", qty: 1 },
             { id: "battle_rattle_shaman", name: "Battle-Rattle Shaman", type: "creature", subtype: "Goblin Shaman", cost: "3R", cmc: 4, power: 2, toughness: 2, text: "No início do combate, criatura alvo ganha +2/+0 até o fim do turno.", qty: 1 },
-            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin Warrior", cost: "2R", cmc: 3, power: 2, toughness: 3, keywords: ["goblin_lord"], text: "Outros Goblins que você controla recebem +1/+1. R: Até o fim do turno, outro Goblin alvo ganha voar e 'Quando esta criatura causar dano de combate, sacrifique-a.'", qty: 1 },
+            { id: "dropkick_bomber", name: "Dropkick Bomber", type: "creature", subtype: "Goblin Warrior", cost: "2R", cmc: 3, power: 2, toughness: 3, keywords: ["goblin_lord"], hasActivatedAbility: true, text: "Outros Goblins que você controla recebem +1/+1. R: Até o fim do turno, outro Goblin alvo ganha voar e 'Quando esta criatura causar dano de combate, sacrifique-a.'", qty: 1 },
             // Feitiços (5)
             { id: "kindled_fury", name: "Kindled Fury", type: "instant", cost: "R", cmc: 1, text: "Criatura alvo ganha +1/+0 e iniciativa até o fim do turno.", qty: 1 },
             { id: "dragon_fodder", name: "Dragon Fodder", type: "sorcery", cost: "1R", cmc: 2, text: "Crie dois tokens 1/1 Goblin.", qty: 1 },
@@ -51,7 +51,7 @@ const CARD_DATABASE = {
             { id: "incinerating_blast", name: "Incinerating Blast", type: "sorcery", cost: "4R", cmc: 5, text: "Causa 6 de dano a criatura alvo. Você pode descartar uma carta. Se fizer isso, compre uma carta.", qty: 1 },
             // Artefato (1)
             { id: "goblin_oriflamme", name: "Goblin Oriflamme", type: "enchantment", cost: "1R", cmc: 2, text: "Criaturas atacantes que você controla têm +1/+0.", qty: 1 },
-            { id: "goblin_firebomb", name: "Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, keywords: ["flash"], text: "Lampejo. 7, T, Sacrifique este artefato: Destrua permanente alvo.", qty: 1 }
+            { id: "goblin_firebomb", name: "Goblin Firebomb", type: "artifact", cost: "1", cmc: 1, keywords: ["flash"], hasActivatedAbility: true, text: "Lampejo. 7, T, Sacrifique este artefato: Destrua permanente alvo.", qty: 1 }
         ]
     },
 
@@ -65,7 +65,7 @@ const CARD_DATABASE = {
             // Terreno especial (1)
             { id: "vampires_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
             // Criaturas (9)
-            { id: "vampire_neonate", name: "Vampire Neonate", type: "creature", subtype: "Vampire", cost: "B", cmc: 1, power: 0, toughness: 3, text: "2, T: Cada oponente perde 1 vida e você ganha 1 vida.", qty: 1 },
+            { id: "vampire_neonate", name: "Vampire Neonate", type: "creature", subtype: "Vampire", cost: "B", cmc: 1, power: 0, toughness: 3, hasActivatedAbility: true, text: "2, T: Cada oponente perde 1 vida e você ganha 1 vida.", qty: 1 },
             { id: "vampire_interloper", name: "Vampire Interloper", type: "creature", subtype: "Vampire Scout", cost: "1B", cmc: 2, power: 2, toughness: 1, keywords: ["flying"], text: "Não pode bloquear.", qty: 1 },
             { id: "stromkirk_bloodthief", name: "Stromkirk Bloodthief", type: "creature", subtype: "Vampire Rogue", cost: "2B", cmc: 3, power: 2, toughness: 2, text: "No final do turno, coloque um contador +1/+1 em Vampiro alvo que você controla se um oponente perdeu vida neste turno.", qty: 1 },
             { id: "highborn_vampire", name: "Highborn Vampire", type: "creature", subtype: "Vampire", cost: "3B", cmc: 4, power: 4, toughness: 3, qty: 1 },
@@ -96,9 +96,9 @@ const CARD_DATABASE = {
             { id: "dwynenss_elite", name: "Dwynen's Elite", type: "creature", subtype: "Elf Warrior", cost: "1G", cmc: 2, power: 2, toughness: 2, text: "Quando entra, se você controla outro Elfo, crie um token 1/1 Elf Warrior.", qty: 1 },
             { id: "beast_kin_ranger", name: "Beast-Kin Ranger", type: "creature", subtype: "Elf Ranger", cost: "2G", cmc: 3, power: 3, toughness: 3, keywords: ["trample"], text: "Atropelar. Quando outra criatura entra em campo sob seu controle, esta criatura ganha +1/+0 até o fim do turno.", qty: 1 },
             { id: "thornweald_archer", name: "Thornweald Archer", type: "creature", subtype: "Elf Archer", cost: "1G", cmc: 2, power: 2, toughness: 1, keywords: ["reach", "deathtouch"], qty: 1 },
-            { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, keywords: ["elf_lord"], text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
+            { id: "elvish_archdruid", name: "Elvish Archdruid", type: "creature", subtype: "Elf Druid", cost: "1GG", cmc: 3, power: 2, toughness: 2, keywords: ["elf_lord"], hasActivatedAbility: true, text: "Outros Elfos têm +1/+1. T: Adicione G para cada Elfo que você controla.", qty: 1 },
             { id: "tajuru_pathwarden", name: "Tajuru Pathwarden", type: "creature", subtype: "Elf Warrior", cost: "4G", cmc: 5, power: 5, toughness: 4, keywords: ["vigilance", "trample"], qty: 1 },
-            { id: "wildheart_invoker", name: "Wildheart Invoker", type: "creature", subtype: "Elf Shaman", cost: "2GG", cmc: 4, power: 4, toughness: 3, text: "8: Criatura alvo ganha +5/+5 e atropelar até o fim do turno.", qty: 1 },
+            { id: "wildheart_invoker", name: "Wildheart Invoker", type: "creature", subtype: "Elf Shaman", cost: "2GG", cmc: 4, power: 4, toughness: 3, hasActivatedAbility: true, text: "8: Criatura alvo ganha +5/+5 e atropelar até o fim do turno.", qty: 1 },
             // Feitiços (4)
             { id: "snakeskin_veil", name: "Snakeskin Veil", type: "instant", cost: "G", cmc: 1, text: "Coloque um contador +1/+1 em criatura alvo que você controla. Ela ganha resistência a magia até o fim do turno.", qty: 1 },
             { id: "broken_wings", name: "Broken Wings", type: "instant", cost: "2G", cmc: 3, text: "Destrua artefato, encantamento ou criatura com voar alvo.", qty: 1 },
@@ -118,7 +118,7 @@ const CARD_DATABASE = {
             { id: "pirates_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
             // Criaturas (7)
-            { id: "spectral_sailor", name: "Spectral Sailor", type: "creature", subtype: "Spirit Pirate", cost: "U", cmc: 1, power: 1, toughness: 1, keywords: ["flying", "flash"], text: "Lampejo. Voar. 3U: Compre uma carta.", qty: 1 },
+            { id: "spectral_sailor", name: "Spectral Sailor", type: "creature", subtype: "Spirit Pirate", cost: "U", cmc: 1, power: 1, toughness: 1, keywords: ["flying", "flash"], hasActivatedAbility: true, text: "Lampejo. Voar. 3U: Compre uma carta.", qty: 1 },
             { id: "kitesail_corsair", name: "Kitesail Corsair", type: "creature", subtype: "Human Pirate", cost: "1U", cmc: 2, power: 2, toughness: 1, text: "Esta criatura tem voar enquanto estiver atacando.", keywords: ["flying_when_attacking"], qty: 1 },
             { id: "brineborn_cutthroat", name: "Brineborn Cutthroat", type: "creature", subtype: "Merfolk Pirate", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flash"], text: "Lampejo. Sempre que você conjurar uma mágica durante o turno de um oponente, coloque um contador +1/+1 nesta criatura.", qty: 1 },
             { id: "corsair_captain", name: "Corsair Captain", type: "creature", subtype: "Human Pirate", cost: "2U", cmc: 3, power: 2, toughness: 2, text: "Quando entra, crie um token de Tesouro. Outros Piratas que você controla recebem +1/+1.", keywords: ["pirate_lord", "etb_treasure"], qty: 1 },
@@ -211,11 +211,11 @@ const CARD_DATABASE = {
             { id: "primal_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
             // Criaturas (8)
-            { id: "mild_mannered_librarian", name: "Mild-Mannered Librarian", type: "creature", subtype: "Human", cost: "G", cmc: 1, power: 1, toughness: 1, text: "{3}{G}: Esta criatura se torna um Lobisomem. Coloque dois contadores +1/+1 nela e compre um card. Ative apenas uma vez.", qty: 1 },
+            { id: "mild_mannered_librarian", name: "Mild-Mannered Librarian", type: "creature", subtype: "Human", cost: "G", cmc: 1, power: 1, toughness: 1, hasActivatedAbility: true, text: "{3}{G}: Esta criatura se torna um Lobisomem. Coloque dois contadores +1/+1 nela e compre um card. Ative apenas uma vez.", qty: 1 },
             { id: "bear_cub", name: "Bear Cub", type: "creature", subtype: "Bear", cost: "1G", cmc: 2, power: 2, toughness: 2, qty: 1 },
             { id: "druid_of_the_cowl", name: "Druid of the Cowl", type: "creature", subtype: "Elf Druid", cost: "1G", cmc: 2, power: 1, toughness: 3, text: "{T}: Adicione {G}.", keywords: ["tap_for_mana"], produces: "G", qty: 1 },
             { id: "wildwood_scourge", name: "Wildwood Scourge", type: "creature", subtype: "Hydra", cost: "XG", cmc: 1, power: 0, toughness: 0, text: "Esta criatura entra com X contadores +1/+1. Sempre que um ou mais contadores +1/+1 forem colocados em outra criatura não-Hidra que você controla, coloque um contador +1/+1 nesta criatura.", keywords: ["counter_synergy", "etb_x_counters"], qty: 1 },
-            { id: "thrashing_brontodon", name: "Thrashing Brontodon", type: "creature", subtype: "Dinosaur", cost: "1GG", cmc: 3, power: 3, toughness: 4, text: "{1}, Sacrifique esta criatura: Destrua artefato ou encantamento alvo.", qty: 1 },
+            { id: "thrashing_brontodon", name: "Thrashing Brontodon", type: "creature", subtype: "Dinosaur", cost: "1GG", cmc: 3, power: 3, toughness: 4, hasActivatedAbility: true, text: "{1}, Sacrifique esta criatura: Destrua artefato ou encantamento alvo.", qty: 1 },
             { id: "magnigoth_sentry", name: "Magnigoth Sentry", type: "creature", subtype: "Treefolk", cost: "3G", cmc: 4, power: 4, toughness: 4, keywords: ["reach"], qty: 1 },
             { id: "aggressive_mammoth", name: "Aggressive Mammoth", type: "creature", subtype: "Elephant", cost: "3GGG", cmc: 6, power: 8, toughness: 8, keywords: ["trample", "trample_lord"], text: "Atropelar. Outras criaturas que você controla têm atropelar.", qty: 1 },
 
@@ -244,7 +244,7 @@ const CARD_DATABASE = {
             // Criaturas (7)
             { id: "burrog_befuddler", name: "Burrog Befuddler", type: "creature", subtype: "Frog Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flash", "etb_debuff"], text: "Lampejo. Quando esta criatura entra, criatura alvo que um oponente controla recebe -1/-0 até o fim do turno.", qty: 1 },
             { id: "mischievous_mystic", name: "Mischievous Mystic", type: "creature", subtype: "Human Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, keywords: ["flying", "second_draw_faerie"], text: "Voar. Sempre que você comprar seu segundo card em um turno, crie um token de criatura Fadinha 1/1 azul com voar.", qty: 1 },
-            { id: "mystic_archaeologist", name: "Mystic Archaeologist", type: "creature", subtype: "Human Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, text: "{3}{U}{U}: Compre dois cards.", qty: 1 },
+            { id: "mystic_archaeologist", name: "Mystic Archaeologist", type: "creature", subtype: "Human Wizard", cost: "1U", cmc: 2, power: 2, toughness: 1, hasActivatedAbility: true, text: "{3}{U}{U}: Compre dois cards.", qty: 1 },
             { id: "exclusion_mage", name: "Exclusion Mage", type: "creature", subtype: "Human Wizard", cost: "2U", cmc: 3, power: 2, toughness: 2, keywords: ["etb_bounce"], text: "Quando esta criatura entra, devolva criatura alvo que um oponente controla para a mão de seu dono.", qty: 1 },
             { id: "erudite_wizard", name: "Erudite Wizard", type: "creature", subtype: "Human Wizard", cost: "2U", cmc: 3, power: 2, toughness: 3, keywords: ["second_draw_counter"], text: "Sempre que você comprar seu segundo card em um turno, coloque um contador +1/+1 nesta criatura.", qty: 1 },
             { id: "clinquant_skymage", name: "Clinquant Skymage", type: "creature", subtype: "Bird Wizard", cost: "3U", cmc: 4, power: 1, toughness: 1, keywords: ["flying", "draw_counter"], text: "Voar. Sempre que você comprar um card, coloque um contador +1/+1 nesta criatura.", qty: 1 },

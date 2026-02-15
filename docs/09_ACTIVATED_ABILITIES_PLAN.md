@@ -256,25 +256,25 @@ Varredura com 3 agentes + revisão com 3 agentes (UX/Design, Arquitetura de Cód
 ## Critérios de Aceitação
 
 ### Fase 0:
-- [ ] Mystic Archaeologist resolvido (adicionado ao deck ou lógica removida)
+- [x] Mystic Archaeologist resolvido (adicionado ao deck Wizards em sessão anterior)
 
 ### Fase 1:
-- [ ] Todas as cartas com habilidade ativada têm `hasActivatedAbility: true` em `cards.js`
-- [ ] Jazal e Leonin têm `activationTiming: "combat"`
+- [x] Todas as cartas com habilidade ativada têm `hasActivatedAbility: true` em `cards.js`
+- [x] Jazal e Leonin têm `activationTiming: "combat"`
 
 ### Fase 2:
-- [ ] `game.hasActivatedAbility(card)` existe e retorna `true` para cartas corretas
+- [x] `game.hasActivatedAbility(card)` existe e retorna `true` para cartas corretas
 
 ### Fase 3:
-- [ ] Treasure Token usa visual verde, click seleciona para mana
-- [ ] IA continua usando Treasure normalmente (testes passam)
+- [x] Treasure Token usa visual verde, click ativa para mana
+- [x] IA continua usando Treasure normalmente (215 testes passam)
 
 ### Fase 4:
-- [ ] Criatura com habilidade que pode ativar: `⚡` roxo brilhante + glow + dblclick
-- [ ] Criatura com habilidade que não pode ativar: `⚡` cinza opaco + tooltip com motivo
-- [ ] Badge permanece visível em todas as fases
-- [ ] Eaten by Piranhas: sem badge (perdeu habilidades)
-- [ ] Funciona em zoom 70-80%
+- [x] Criatura com habilidade que pode ativar: `⚡` roxo brilhante + glow + dblclick
+- [x] Criatura com habilidade que não pode ativar: `⚡` cinza opaco + tooltip com motivo
+- [x] Badge permanece visível em todas as fases
+- [x] Eaten by Piranhas: sem badge (perdeu habilidades)
+- [ ] Funciona em zoom 70-80% (a verificar manualmente)
 
 ---
 
@@ -329,3 +329,4 @@ Varredura com 3 agentes + revisão com 3 agentes (UX/Design, Arquitetura de Cód
 ---
 
 *Documento gerado em 15/02/2026. Análise: 3 agentes. Revisão: 3 agentes (UX/Design, Arquitetura, Completude).*
+*Implementado em 15/02/2026.*
