@@ -481,8 +481,10 @@ class AIPlayer {
             playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
         }
 
-        // Reservar mana para instants
-        if (this.config.holdManaForInstants) {
+        // Reservar mana para instants apenas na Main Phase 2
+        // Na Main 1, a IA deve gastar mana livremente em criaturas/feitiços
+        // Na Main 2, pode querer manter mana aberta para responder no turno do oponente
+        if (this.config.holdManaForInstants && phase === 2) {
             const instantsInHand = opponent.hand.filter(c => c.type === 'instant');
             if (instantsInHand.length > 0) {
                 const baseMana = this.rules.calculateAvailableMana(opponent);

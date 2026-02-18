@@ -1234,7 +1234,7 @@ class GameUI {
                 }
             }
             // Se há bloqueador selecionado e esta é uma criatura atacante do oponente, permitir clicar
-            else if (!isPlayer && this.selectedBlocker && isAttacking && card.type === 'creature') {
+            else if (!isPlayer && this.selectedBlocker && isConfirmed && card.type === 'creature') {
                 cardEl.classList.add('valid-block-target');
                 cardEl.addEventListener('click', () => this.selectAttackerToBlock(card));
                 cardEl.style.cursor = 'crosshair';

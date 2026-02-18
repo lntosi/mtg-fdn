@@ -899,12 +899,12 @@ body {
 }
 
 .card.mana-producer-selectable:hover {
-    box-shadow: 0 0 15px 5px #2ecc71aa;
+    box-shadow: 0 0 12px 4px rgba(46, 204, 113, 0.4);
 }
 
 /* Criatura produtora de mana selecionada */
 .card.mana-producer-selected {
-    box-shadow: 0 0 20px 8px #2ecc71;
+    box-shadow: 0 0 12px 4px rgba(46, 204, 113, 0.6);
 }
 
 .card.mana-producer-selected::after {
@@ -920,9 +920,7 @@ body {
 
 /* Criatura cogitada como atacante (selecionada, não confirmada) */
 .card.attacker-selected {
-    border: 2px solid #e74c3c;
-    filter: brightness(1.3);
-    transform: translateY(-6px);
+    box-shadow: 0 0 12px 4px rgba(231, 76, 60, 0.6);
     cursor: pointer;
 }
 
@@ -933,62 +931,41 @@ body {
 }
 
 .card.blocking {
-    box-shadow: 0 0 25px 10px #3498db;
+    box-shadow: 0 0 12px 4px rgba(52, 152, 219, 0.6);
 }
 
 /* Bloqueador selecionado aguardando escolha de atacante */
 .card.selected-blocker {
-    box-shadow: 0 0 30px 12px #9b59b6;
-    animation: pulse-selected-blocker 0.6s infinite;
-}
-
-@keyframes pulse-selected-blocker {
-    0%, 100% { box-shadow: 0 0 25px 10px #9b59b6; }
-    50% { box-shadow: 0 0 35px 15px #8e44ad; }
+    box-shadow: 0 0 12px 4px rgba(52, 152, 219, 0.6);
+    cursor: pointer;
 }
 
 /* Atacante válido para bloqueio (quando há bloqueador selecionado) */
 .card.valid-block-target {
-    box-shadow: 0 0 25px 10px #e74c3c;
-    animation: pulse-block-target 0.6s infinite;
-}
-
-@keyframes pulse-block-target {
-    0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
-    50% { box-shadow: 0 0 35px 15px #c0392b; }
+    box-shadow: 0 0 12px 4px rgba(243, 156, 18, 0.6);
+    cursor: crosshair;
 }
 
 .card.playable {
-    box-shadow: 0 0 20px 8px #2ecc71;
+    box-shadow: 0 0 12px 4px rgba(46, 204, 113, 0.6);
 }
 
-/* Carta sendo conjurada (aguardando seleção de alvo) */
+/* Carta sendo conjurada (aguardando seleção de alvo) — ciano para distinguir de bloqueio */
 .card.pending-cast {
-    box-shadow: 0 0 25px 10px #3498db !important;
-    border: 3px solid #3498db !important;
-    animation: pending-cast-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 12px 4px rgba(0, 188, 212, 0.6) !important;
+    border: 3px solid #00bcd4 !important;
     transform: translateY(-8px);
     z-index: 100;
 }
 
-@keyframes pending-cast-pulse {
-    0%, 100% { box-shadow: 0 0 25px 10px #3498db; }
-    50% { box-shadow: 0 0 35px 15px #2980b9; }
-}
-
 .card.valid-target {
-    box-shadow: 0 0 25px 10px #f39c12;
-    animation: pulse-target 0.6s infinite;
-}
-
-@keyframes pulse-target {
-    0%, 100% { box-shadow: 0 0 25px 10px #f39c12; }
-    50% { box-shadow: 0 0 35px 15px #e67e22; }
+    box-shadow: 0 0 12px 4px rgba(243, 156, 18, 0.6);
+    cursor: crosshair;
 }
 
 /* Cartas com habilidades ativadas */
 .card.has-ability {
-    box-shadow: 0 0 15px 5px #9b59b6;
+    box-shadow: 0 0 12px 4px rgba(155, 89, 182, 0.6);
     cursor: pointer;
 }
 
@@ -1012,6 +989,18 @@ body {
     cursor: default;
 }
 
+/* Estados de combate prevalecem sobre habilidade inativa */
+.card.has-ability.inactive.attacker-selected {
+    box-shadow: 0 0 12px 4px rgba(231, 76, 60, 0.6);
+    cursor: pointer;
+}
+.card.has-ability.inactive.attacking {
+    box-shadow: 0 0 12px 3px rgba(231, 76, 60, 0.5);
+}
+.card.has-ability.inactive.blocking {
+    box-shadow: 0 0 12px 4px rgba(52, 152, 219, 0.6);
+}
+
 .card.has-ability.inactive .ability-badge {
     opacity: 0.4;
     filter: grayscale(1);
@@ -1027,19 +1016,19 @@ body {
 /* Usa box-shadow para não cobrir a arte da carta */
 /* Detalhes completos no Preview Lateral */
 
-/* Borda vermelha brilhante para auras negativas (debuffs como Pacifism) */
+/* Aura negativa (debuff como Pacifism) */
 .card.has-debuff-aura {
-    box-shadow: 0 0 0 3px #8b0000, 0 0 12px 3px rgba(139, 0, 0, 0.6) !important;
+    box-shadow: 0 0 12px 4px rgba(139, 0, 0, 0.6) !important;
 }
 
-/* Borda verde brilhante para auras positivas (buffs como Untamed Hunger) */
+/* Aura positiva (buff como Untamed Hunger) */
 .card.has-buff-aura {
-    box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6) !important;
+    box-shadow: 0 0 12px 4px rgba(34, 139, 34, 0.6) !important;
 }
 
-/* Criatura com buff aura E atacando - combina borda verde + sombra vermelha externa */
+/* Criatura com buff aura E atacando */
 .card.has-buff-aura.attacking {
-    box-shadow: 0 0 0 3px #228b22, 0 0 12px 3px rgba(34, 139, 34, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.4) !important;
+    box-shadow: 0 0 12px 4px rgba(34, 139, 34, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.3) !important;
 }
 
 /* === BADGES DE AURA EM CRIATURAS === */
@@ -1093,10 +1082,10 @@ body {
 
 /* === AURAS EM TERRENOS (ex: New Horizons) === */
 
-/* Borda verde/dourada brilhante para terrenos encantados */
+/* Terreno encantado */
 .card.has-land-aura {
     position: relative;
-    box-shadow: 0 0 0 2px #32cd32, 0 0 10px 3px rgba(50, 205, 50, 0.5) !important;
+    box-shadow: 0 0 12px 4px rgba(50, 205, 50, 0.5) !important;
 }
 
 /* Container para badges de auras em terrenos */
@@ -1107,6 +1096,7 @@ body {
     display: flex;
     gap: 2px;
     z-index: 20;
+    pointer-events: none;
 }
 
 /* Badge individual de aura em terreno */
@@ -1123,6 +1113,7 @@ body {
     cursor: pointer;
     box-shadow: 0 0 6px rgba(50, 205, 50, 0.8);
     transition: transform 0.2s, box-shadow 0.2s;
+    pointer-events: auto;
 }
 
 .land-aura-badge:hover {
@@ -1132,15 +1123,15 @@ body {
 
 /* === EQUIPAMENTOS ANEXADOS === */
 
-/* Borda dourada/metálica para criaturas equipadas */
+/* Criatura equipada */
 .card.has-equipment {
     position: relative;
-    box-shadow: 0 0 0 3px #daa520, 0 0 12px 3px rgba(218, 165, 32, 0.6) !important;
+    box-shadow: 0 0 12px 4px rgba(218, 165, 32, 0.6) !important;
 }
 
-/* Criatura equipada E atacando - combina borda dourada + sombra vermelha externa */
+/* Criatura equipada E atacando */
 .card.has-equipment.attacking {
-    box-shadow: 0 0 0 3px #daa520, 0 0 12px 3px rgba(218, 165, 32, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.4) !important;
+    box-shadow: 0 0 12px 4px rgba(218, 165, 32, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.3) !important;
 }
 
 /* Container para badges de equipamento */

@@ -436,11 +436,9 @@ class TriggerManager {
                 if (selected) bounceCreature(selected);
             });
         } else {
-            // IA escolhe a criatura mais forte
+            // IA escolhe a criatura mais forte (usa getCreaturePower para considerar counters, lords, equipment)
             const target = validTargets.sort((a, b) => {
-                const powerA = (a.power || 0) + (a.powerModifier || 0);
-                const powerB = (b.power || 0) + (b.powerModifier || 0);
-                return powerB - powerA;
+                return this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a);
             })[0];
             bounceCreature(target);
         }
@@ -473,12 +471,10 @@ class TriggerManager {
                 if (selected?.length > 0) applyCounters(selected);
             });
         } else {
-            // IA escolhe criaturas menores para bufar
+            // IA escolhe criaturas menores para bufar (usa getCreaturePower para considerar counters, lords, equipment)
             const targets = validTargets
                 .sort((a, b) => {
-                    const powerA = (a.power || 0) + (a.powerModifier || 0) + (a.counters?.plusOnePlusOne || 0);
-                    const powerB = (b.power || 0) + (b.powerModifier || 0) + (b.counters?.plusOnePlusOne || 0);
-                    return powerA - powerB;
+                    return this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b);
                 })
                 .slice(0, 2);
             applyCounters(targets);

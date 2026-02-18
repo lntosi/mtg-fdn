@@ -1128,8 +1128,9 @@ class RulesEngine {
             }
 
             // Elvish Archdruid: outros Elfos têm +1/+1
+            const effectiveSubtype = this.getEffectiveSubtype(creature);
             if (card.id === 'elvish_archdruid' && card !== creature &&
-                creature.subtype && creature.subtype.includes('Elf')) {
+                effectiveSubtype.includes('Elf')) {
                 bonuses.power += 1;
                 bonuses.toughness += 1;
                 bonuses.sources.push({ name: 'Elvish Archdruid', power: 1, toughness: 1 });
@@ -1137,7 +1138,7 @@ class RulesEngine {
 
             // Dropkick Bomber: outros Goblins têm +1/+1
             if (card.id === 'dropkick_bomber' && card !== creature &&
-                creature.subtype && creature.subtype.includes('Goblin')) {
+                effectiveSubtype.includes('Goblin')) {
                 bonuses.power += 1;
                 bonuses.toughness += 1;
                 bonuses.sources.push({ name: 'Dropkick Bomber', power: 1, toughness: 1 });
@@ -1145,7 +1146,7 @@ class RulesEngine {
 
             // Corsair Captain: outros Piratas têm +1/+1
             if (card.id === 'corsair_captain' && card !== creature &&
-                creature.subtype && creature.subtype.includes('Pirate')) {
+                effectiveSubtype.includes('Pirate')) {
                 bonuses.power += 1;
                 bonuses.toughness += 1;
                 bonuses.sources.push({ name: 'Corsair Captain', power: 1, toughness: 1 });
@@ -1153,7 +1154,7 @@ class RulesEngine {
 
             // Death Baron: outros Zombies e Skeletons têm +1/+1
             if (card.id === 'death_baron' && card !== creature &&
-                creature.subtype && (creature.subtype.includes('Zombie') || creature.subtype.includes('Skeleton'))) {
+                (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton'))) {
                 bonuses.power += 1;
                 bonuses.toughness += 1;
                 bonuses.sources.push({ name: 'Death Baron', power: 1, toughness: 1 });
@@ -1253,6 +1254,14 @@ class RulesEngine {
         return Math.max(0, toughness);
     }
 
+    // Retorna o subtipo efetivo da criatura (considerando Eaten by Piranhas)
+    getEffectiveSubtype(creature) {
+        if (this.isAffectedByEatenByPiranhas(creature)) {
+            return 'Skeleton';
+        }
+        return creature.subtype || '';
+    }
+
     // Verifica se uma criatura está afetada por Eaten by Piranhas
     isAffectedByEatenByPiranhas(creature) {
         // Otimização: se não há efeitos de remoção de habilidades em jogo, retorna false imediatamente
@@ -1309,7 +1318,8 @@ class RulesEngine {
         const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
 
         // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
-        if (isAttacking && creature.subtype && creature.subtype.includes('Vampire')) {
+        const effectiveSubtype = this.getEffectiveSubtype(creature);
+        if (isAttacking && effectiveSubtype.includes('Vampire')) {
             // Procurar por id ou por nome como fallback
             const crosswayFound = controller.battlefield.find(c =>
                 c.id === 'crossway_troublemakers' || c.name === 'Crossway Troublemakers'
@@ -1321,7 +1331,7 @@ class RulesEngine {
         }
 
         // Death Baron: outros Zombies e Skeletons têm deathtouch
-        if (creature.subtype && (creature.subtype.includes('Zombie') || creature.subtype.includes('Skeleton'))) {
+        if (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton')) {
             const deathBaronFound = controller.battlefield.find(c =>
                 c.id === 'death_baron' && c !== creature
             );
