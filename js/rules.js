@@ -117,7 +117,9 @@ class RulesEngine {
 
         // Pacifism - mira apenas criaturas do oponente
         if (aura.id === 'pacifism') {
-            return opponent.battlefield.some(c => c.type === 'creature');
+            // MTG: "Enchant creature" — pode encantar qualquer criatura
+            return player.battlefield.some(c => c.type === 'creature') ||
+                   opponent.battlefield.some(c => c.type === 'creature');
         }
 
         // Eaten by Piranhas - pode mirar QUALQUER criatura (tem Flash, pode ser usada defensivamente)
@@ -169,10 +171,17 @@ class RulesEngine {
         }
 
         // Buffs que miram suas próprias criaturas
-        const selfTargetBuffs = ['moment_of_triumph', 'kindled_fury', 'snakeskin_veil', 'offer_immortality', 'adamant_will', 'giant_growth'];
+        const selfTargetBuffs = ['kindled_fury', 'snakeskin_veil', 'offer_immortality', 'adamant_will', 'giant_growth'];
         if (selfTargetBuffs.includes(card.id)) {
             const hasOwnCreatures = player.battlefield.some(c => c.type === 'creature');
             return hasOwnCreatures;
+        }
+
+        // Moment of Triumph - pode mirar qualquer criatura (MTG: "target creature")
+        if (card.id === 'moment_of_triumph') {
+            const hasAnyCreatures = player.battlefield.some(c => c.type === 'creature') ||
+                                    opponent.battlefield.some(c => c.type === 'creature');
+            return hasAnyCreatures;
         }
 
         // Remoção que mira criaturas do oponente
@@ -182,11 +191,10 @@ class RulesEngine {
             return hasOpponentCreatures;
         }
 
-        // Deadly Riposte - só criaturas viradas do oponente
+        // Deadly Riposte - qualquer criatura virada (MTG: "target tapped creature")
         if (card.id === 'deadly_riposte') {
-            const hasTappedCreatures = opponent.battlefield.some(c =>
-                c.type === 'creature' && c.tapped
-            );
+            const hasTappedCreatures = player.battlefield.some(c => c.type === 'creature' && c.tapped) ||
+                                       opponent.battlefield.some(c => c.type === 'creature' && c.tapped);
             return hasTappedCreatures;
         }
 
@@ -353,8 +361,14 @@ class RulesEngine {
             if (card.type === 'land' && !card.tapped) {
                 // Verificar se o terreno está encantado com New Horizons
                 if (landsWithNewHorizons.has(card.instanceId)) {
-                    // New Horizons: terreno produz 2 mana de qualquer cor
-                    mana.any += 2;
+                    // New Horizons: terreno produz 2 mana de uma mesma cor
+                    // Usa 'paired' para indicar que os 2 mana devem ser da mesma cor
+                    // Na prática em decks de 1-2 cores, tratamos como 2 mana da cor que o terreno produz
+                    if (card.produces && card.produces !== 'any') {
+                        mana[card.produces] = (mana[card.produces] || 0) + 2;
+                    } else {
+                        mana.any += 2;
+                    }
                 } else if (card.produces === 'any') {
                     // Uncharted Haven: usa a cor escolhida, ou 'any' se ainda não escolheu
                     if (card.chosenColor) {

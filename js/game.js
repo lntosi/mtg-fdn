@@ -1527,6 +1527,30 @@ class GameState {
 
                 window.soundManager.playMagic();
 
+                // Custo adicional de descarte (Seize the Spoils)
+                if (card.keywords?.includes('discard_cost') && player.hand.length > 0) {
+                    let discardedCard;
+                    if (player === this.player) {
+                        discardedCard = await this.ui.promptTriggerTarget({
+                            title: `${card.name} - Descarte`,
+                            description: 'Escolha uma carta para descartar (custo adicional):',
+                            validTargets: player.hand,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA descarta a carta de menor valor
+                        discardedCard = player.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
+                    }
+                    if (discardedCard) {
+                        const idx = player.hand.indexOf(discardedCard);
+                        if (idx > -1) {
+                            player.hand.splice(idx, 1);
+                            player.graveyard.push(discardedCard);
+                            this.ui.log(`${player.name} descartou ${discardedCard.name} (custo adicional)`);
+                        }
+                    }
+                }
+
                 if (needsTarget && player === this.opponent) {
                     // IA escolhe alvo
                     const validTargets = this.getValidSpellTargets(card, player);
@@ -1777,6 +1801,13 @@ class GameState {
         switch (card.id) {
             // === BUFFS (suas criaturas) ===
             case 'moment_of_triumph':
+                // Pode mirar qualquer criatura (MTG: "target creature")
+                targets = [
+                    ...caster.battlefield.filter(c => c.type === 'creature'),
+                    ...opponent.battlefield.filter(c => c.type === 'creature' && this.rules.canBeTargetedBy(c, caster))
+                ];
+                break;
+
             case 'kindled_fury':
             case 'snakeskin_veil':
             case 'offer_immortality':
@@ -1799,10 +1830,11 @@ class GameState {
                 break;
 
             case 'deadly_riposte':
-                // Só criaturas viradas do oponente
-                targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' && c.tapped && this.rules.canBeTargetedBy(c, caster)
-                );
+                // Qualquer criatura virada (MTG: "target tapped creature")
+                targets = [
+                    ...opponent.battlefield.filter(c => c.type === 'creature' && c.tapped && this.rules.canBeTargetedBy(c, caster)),
+                    ...caster.battlefield.filter(c => c.type === 'creature' && c.tapped)
+                ];
                 break;
 
             // === REMOÇÃO COM RESTRIÇÃO ===
@@ -1968,6 +2000,8 @@ class GameState {
                 if (!target.temporaryKeywords) target.temporaryKeywords = [];
                 target.temporaryKeywords.push('hexproof');
                 this.ui.log(`${target.name} ganhou um contador +1/+1 e resistência a magia`);
+                // Trigger counter synergy (Wildwood Scourge)
+                this.triggers.onCounterPlaced(target, caster, 1);
                 break;
 
             case 'offer_immortality':
@@ -2163,20 +2197,24 @@ class GameState {
                 target.exileOnDeath = true;
                 this.ui.log(`Fiery Annihilation causou 5 de dano a ${target.name}`);
                 // Também pode exilar um equipamento anexado (up to one)
-                const attachedEquipments = caster === this.player
-                    ? targetOwner.battlefield.filter(c =>
-                        c.subtype === 'Equipment' && c.attachedTo === target.instanceId)
-                    : [];
-                if (attachedEquipments.length > 0 && caster === this.player) {
-                    const exileEquip = await this.ui.promptYesNo({
-                        title: 'Fiery Annihilation',
-                        description: `Exilar ${attachedEquipments[0].name} anexado a ${target.name}?`,
-                        yesText: 'Exilar equipamento',
-                        noText: 'Não'
-                    });
+                const annihilationEquipments = targetOwner.battlefield.filter(c =>
+                    c.subtype === 'Equipment' && c.attachedTo === target.instanceId);
+                if (annihilationEquipments.length > 0) {
+                    let exileEquip;
+                    if (caster === this.player) {
+                        exileEquip = await this.ui.promptYesNo({
+                            title: 'Fiery Annihilation',
+                            description: `Exilar ${annihilationEquipments[0].name} anexado a ${target.name}?`,
+                            yesText: 'Exilar equipamento',
+                            noText: 'Não'
+                        });
+                    } else {
+                        // IA sempre exila equipamento quando possível
+                        exileEquip = true;
+                    }
                     if (exileEquip) {
-                        this.exilePermanent(attachedEquipments[0], targetOwner);
-                        this.ui.log(`${attachedEquipments[0].name} foi exilado`);
+                        this.exilePermanent(annihilationEquipments[0], targetOwner);
+                        this.ui.log(`${annihilationEquipments[0].name} foi exilado`);
                     }
                 }
                 await this.checkCreatureDeath(target, targetOwner);
@@ -2627,31 +2665,8 @@ class GameState {
                 break;
 
             case 'seize_the_spoils':
-                // Seize the Spoils - discard a card, draw 2, create treasure
-                // Note: The discard is technically an additional cost (should happen during cast)
-                // For simplicity, we handle it during resolution
-                if (caster.hand.length > 0) {
-                    let discardedCard;
-                    if (caster === this.player) {
-                        discardedCard = await this.ui.promptTriggerTarget({
-                            title: 'Seize the Spoils - Descarte',
-                            description: 'Escolha uma carta para descartar:',
-                            validTargets: caster.hand,
-                            canSkip: false
-                        });
-                    } else {
-                        // IA descarta a carta de menor valor
-                        discardedCard = caster.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
-                    }
-                    if (discardedCard) {
-                        const idx = caster.hand.indexOf(discardedCard);
-                        if (idx > -1) {
-                            caster.hand.splice(idx, 1);
-                            caster.graveyard.push(discardedCard);
-                            this.ui.log(`${caster.name} descartou ${discardedCard.name}`);
-                        }
-                    }
-                }
+                // Seize the Spoils - draw 2, create treasure
+                // Discard cost is paid at cast time (playCard), not at resolution
                 this.rules.drawCard(caster);
                 this.rules.drawCard(caster);
                 this.triggers._createTreasureToken(caster, 'Seize the Spoils');
@@ -2951,7 +2966,7 @@ class GameState {
         }
 
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
-        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin'];
+        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
             // Haste permite usar habilidades de tap mesmo com summoning sickness (regra 702.10)
@@ -3044,13 +3059,21 @@ class GameState {
                 return equipTotalMana >= 2 && hasValidTarget;
 
             case 'thrashing_brontodon':
-                // {1}, Sacrifice: Destroy target artifact or enchantment
-                const brontoOpponent = player === this.player ? this.opponent : this.player;
-                const brontoTargets = brontoOpponent.battlefield.filter(c =>
-                    c.type === 'artifact' || c.type === 'enchantment'
-                );
+                // {1}, Sacrifice: Destroy target artifact or enchantment (any player's)
+                const brontoAllTargets = [
+                    ...this.player.battlefield.filter(c => c.type === 'artifact' || c.type === 'enchantment'),
+                    ...this.opponent.battlefield.filter(c => c.type === 'artifact' || c.type === 'enchantment')
+                ];
                 const brontoMana = Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0);
-                return brontoMana >= 1 && brontoTargets.length > 0;
+                return brontoMana >= 1 && brontoAllTargets.length > 0;
+
+            case 'hungry_ghoul':
+                // {1}, Sacrifice another creature: Put a +1/+1 counter on this creature
+                const ghoulOtherCreatures = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.instanceId
+                );
+                const ghoulMana = Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0);
+                return ghoulMana >= 1 && ghoulOtherCreatures.length > 0;
 
             case 'mild_mannered_librarian':
                 // {3}{G}: Transform, +2 counters, draw a card (activate only once)
@@ -3172,7 +3195,7 @@ class GameState {
                 // 8: criatura alvo ganha +5/+5 e trample até fim do turno
                 this.payGenericMana(8, player);
                 const invokerTargets = player.battlefield.filter(c =>
-                    c.type === 'creature' && c.instanceId !== card.instanceId
+                    c.type === 'creature'
                 );
                 if (invokerTargets.length > 0) {
                     let invokerTarget;
@@ -3469,10 +3492,11 @@ class GameState {
                 break;
 
             case 'thrashing_brontodon':
-                // {1}, Sacrifice: Destroy target artifact or enchantment
-                const brontoValidTargets = opponent.battlefield.filter(c =>
-                    c.type === 'artifact' || c.type === 'enchantment'
-                );
+                // {1}, Sacrifice: Destroy target artifact or enchantment (any player's)
+                const brontoValidTargets = [
+                    ...opponent.battlefield.filter(c => c.type === 'artifact' || c.type === 'enchantment'),
+                    ...player.battlefield.filter(c => c.type === 'artifact' || c.type === 'enchantment')
+                ];
 
                 if (brontoValidTargets.length === 0) {
                     this.ui.log('Não há artefatos ou encantamentos para destruir');
@@ -3504,6 +3528,38 @@ class GameState {
                 const brontoTargetOwner = this.player.battlefield.includes(brontoTarget) ? this.player : this.opponent;
                 await this.destroyPermanent(brontoTarget, brontoTargetOwner);
                 this.ui.log(`Thrashing Brontodon destruiu ${brontoTarget.name}`);
+                break;
+
+            case 'hungry_ghoul':
+                // {1}, Sacrifice another creature: Put a +1/+1 counter on this creature
+                const ghoulSacTargets = player.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.instanceId
+                );
+                if (ghoulSacTargets.length === 0) return false;
+
+                let ghoulSacTarget;
+                if (player === this.player) {
+                    ghoulSacTarget = await this.ui.promptTriggerTarget({
+                        title: 'Hungry Ghoul',
+                        description: 'Escolha uma criatura para sacrificar:',
+                        validTargets: ghoulSacTargets,
+                        canSkip: true
+                    });
+                    if (!ghoulSacTarget) return false;
+                } else {
+                    // IA sacrifica a criatura mais fraca
+                    ghoulSacTarget = ghoulSacTargets.sort((a, b) =>
+                        this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+                    )[0];
+                }
+
+                this.payGenericMana(1, player);
+                await this.destroyPermanent(ghoulSacTarget, player);
+                if (!card.counters) card.counters = {};
+                card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
+                this.ui.log(`Hungry Ghoul sacrificou ${ghoulSacTarget.name} e ganhou um contador +1/+1`);
+                this.triggers.onCounterPlaced(card, player, 1);
+                this.ui.render();
                 break;
 
             case 'mild_mannered_librarian':

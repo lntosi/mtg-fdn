@@ -244,6 +244,42 @@ const CREATURES = {
         subtype: 'Human',
         power: 1,
         toughness: 1
+    }),
+
+    firespitterWhelp: () => createCreature({
+        id: 'firespitter_whelp',
+        name: 'Firespitter Whelp',
+        subtype: 'Dragon',
+        power: 2,
+        toughness: 2,
+        keywords: ['flying', 'spellcast_damage']
+    }),
+
+    hungryGhoul: () => createCreature({
+        id: 'hungry_ghoul',
+        name: 'Hungry Ghoul',
+        subtype: 'Zombie',
+        power: 2,
+        toughness: 2,
+        hasActivatedAbility: true
+    }),
+
+    wildheartInvoker: () => createCreature({
+        id: 'wildheart_invoker',
+        name: 'Wildheart Invoker',
+        subtype: 'Elf Shaman',
+        power: 4,
+        toughness: 3,
+        hasActivatedAbility: true
+    }),
+
+    thrashingBrontodon: () => createCreature({
+        id: 'thrashing_brontodon',
+        name: 'Thrashing Brontodon',
+        subtype: 'Dinosaur',
+        power: 3,
+        toughness: 4,
+        hasActivatedAbility: true
     })
 };
 
@@ -274,6 +310,25 @@ const SPELLS = {
         cost: 'W',
         cmc: 1,
         text: 'Target creature gets +2/+2 until end of turn. You gain 2 life.'
+    }),
+
+    deadlyRiposte: () => createSpell({
+        id: 'deadly_riposte',
+        name: 'Deadly Riposte',
+        type: 'instant',
+        cost: '1W',
+        cmc: 2,
+        text: 'Deadly Riposte deals 3 damage to target tapped creature and you gain 2 life.'
+    }),
+
+    seizeTheSpoils: () => createSpell({
+        id: 'seize_the_spoils',
+        name: 'Seize the Spoils',
+        type: 'sorcery',
+        cost: '2R',
+        cmc: 3,
+        keywords: ['discard_cost'],
+        text: 'As an additional cost, discard a card. Draw two cards and create a Treasure token.'
     })
 };
 

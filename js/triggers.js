@@ -1075,14 +1075,14 @@ class TriggerManager {
             });
         }
 
-        // Firespitter Whelp - sempre que conjura spell que NÃO seja criatura E NÃO seja Dragão
-        // Ou seja: instants, sorceries, artifacts, enchantments (exceto Dragons)
+        // Firespitter Whelp - sempre que conjura spell que NÃO seja criatura OU que seja Dragão
+        // Ou seja: instants, sorceries, artifacts, enchantments + criaturas Dragão
         if (spell) {
             const isCreature = spell.type === 'creature';
             const isDragon = spell.subtype?.includes('Dragon');
 
-            // Dispara apenas para spells que não são criaturas E não são Dragons
-            if (!isCreature && !isDragon) {
+            // Dispara para spells não-criatura OU criaturas Dragão
+            if (!isCreature || isDragon) {
                 caster.battlefield.forEach(card => {
                     if (card.keywords?.includes('spellcast_damage')) {
                         // Causa 1 de dano a cada oponente

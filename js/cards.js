@@ -272,7 +272,7 @@ const CARD_DATABASE = {
 
             // Criaturas (8)
             { id: "diregraf_ghoul", name: "Diregraf Ghoul", type: "creature", subtype: "Zombie", cost: "B", cmc: 1, power: 2, toughness: 2, keywords: ["enters_tapped"], text: "Diregraf Ghoul entra em jogo virado.", qty: 1 },
-            { id: "hungry_ghoul", name: "Hungry Ghoul", type: "creature", subtype: "Zombie", cost: "1B", cmc: 2, power: 2, toughness: 2, text: "{1}, Sacrifique outra criatura: Coloque um contador +1/+1 nesta criatura.", qty: 1 },
+            { id: "hungry_ghoul", name: "Hungry Ghoul", type: "creature", subtype: "Zombie", cost: "1B", cmc: 2, power: 2, toughness: 2, hasActivatedAbility: true, text: "{1}, Sacrifique outra criatura: Coloque um contador +1/+1 nesta criatura.", qty: 1 },
             { id: "reassembling_skeleton", name: "Reassembling Skeleton", type: "creature", subtype: "Skeleton Warrior", cost: "1B", cmc: 2, power: 1, toughness: 1, keywords: ["graveyard_return"], text: "{1}{B}: Devolva este card do seu cemitério para o campo de batalha virado.", qty: 1 },
             { id: "crow_of_dark_tidings", name: "Crow of Dark Tidings", type: "creature", subtype: "Zombie Bird", cost: "2B", cmc: 3, power: 2, toughness: 1, keywords: ["flying", "etb_mill_2", "death_mill_2"], text: "Voar. Quando esta criatura entra ou morre, coloque os dois cards do topo do seu grimório no cemitério.", qty: 1 },
             { id: "death_baron", name: "Death Baron", type: "creature", subtype: "Zombie Wizard", cost: "1BB", cmc: 3, power: 2, toughness: 2, keywords: ["zombie_skeleton_lord", "zombie_skeleton_deathtouch"], text: "Skeletons e outros Zombies que você controla recebem +1/+1 e têm toque mortífero.", qty: 1 },
