@@ -197,8 +197,8 @@ class AIPlayer {
         const player = this.game.player;
         const opponent = this.game.opponent;
 
-        // Auras negativas: precisa de criaturas inimigas
-        if (card.id === 'pacifism' || card.id === 'eaten_by_piranhas') {
+        // Auras negativas (Pacifism, Eaten by Piranhas, Starlight Snare, etc.): precisa de criaturas inimigas
+        if (card.id === 'pacifism' || card.id === 'eaten_by_piranhas' || card.isDebuff) {
             return player.battlefield.some(c => c.type === 'creature');
         }
 
@@ -612,9 +612,14 @@ class AIPlayer {
                 return totalMana >= 4;
 
             case 'goblin_smuggler':
-                // Tornar criatura inbloqueável - útil antes do combate
-                // Na Main Phase 2 não faz sentido
-                return false;
+                // Tornar criatura inbloqueável - útil na Main Phase 1 (antes do combate)
+                if (this.game.phase !== 'MAIN1') return false;
+                // Verificar se há criatura com poder ≤2 para tornar inbloqueável
+                return controller.battlefield.some(c =>
+                    c.type === 'creature' &&
+                    this.rules.getCreaturePower(c) <= 2 &&
+                    c.instanceId !== permanent.instanceId
+                );
 
             case 'goblin_firebomb':
                 // {7}, T, Sacrifice: Destroy target permanent
@@ -1409,7 +1414,7 @@ class AIPlayer {
         if (validTargets.length === 0) return null;
 
         // Aprendiz: chance de escolha subótima (mas não para auras negativas em si mesmo)
-        const isNegativeAura = aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas';
+        const isNegativeAura = aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas' || aura.isDebuff;
         if (!isNegativeAura && this.config.mistakeRate > 0 && Math.random() < this.config.mistakeRate) {
             const randomTarget = validTargets[Math.floor(Math.random() * validTargets.length)];
             return randomTarget;
@@ -1419,7 +1424,7 @@ class AIPlayer {
         const opponent = this.game.opponent;
 
         // Auras de remoção/debuff: colocar na criatura mais forte do oponente
-        if (aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas') {
+        if (aura.id === 'pacifism' || aura.id === 'eaten_by_piranhas' || aura.isDebuff) {
             const enemyCreatures = validTargets.filter(c =>
                 player.battlefield.includes(c)
             );

@@ -385,14 +385,13 @@ class TriggerManager {
         };
 
         if (controller === this.player) {
-            this.ui.promptTriggerTarget({
+            const selected = await this.ui.promptTriggerTarget({
                 title: `Volley Veteran - Selecione um Alvo`,
                 description: `Cause ${goblinCount} de dano a criatura alvo que um oponente controla:`,
                 validTargets: validTargets,
                 canSkip: false
-            }).then(async (selected) => {
-                if (selected) await dealDamage(selected);
             });
+            if (selected) await dealDamage(selected);
         } else {
             // IA escolhe a criatura que pode matar, ou a mais forte
             const target = validTargets.sort((a, b) => {
@@ -1298,7 +1297,7 @@ class TriggerManager {
             const troublemakers = owner.battlefield.filter(c => c.id === 'crossway_troublemakers');
 
             for (const ct of troublemakers) {
-                if (owner.life > 2) {
+                if (owner.life >= 2) {
                     if (owner === this.player) {
                         // Jogador humano - perguntar se quer pagar
                         const shouldPay = await this.ui.promptYesNo({
@@ -1332,11 +1331,13 @@ class TriggerManager {
     // ========================================
 
     /**
-     * Stromkirk Bloodthief - no fim do turno, +1/+1 em vampiro se oponente perdeu vida
-     * @param {Object} controller - Jogador ativo
+     * End step triggers - disparam para AMBOS os jogadores (MTG: "each end step")
+     * @param {Object} activePlayer - Jogador ativo do turno
      */
-    async onEndStep(controller) {
-        await this._handleStromkirkBloodthief(controller);
+    async onEndStep(activePlayer) {
+        const nonActivePlayer = activePlayer === this.player ? this.game.opponent : this.player;
+        await this._handleStromkirkBloodthief(activePlayer);
+        await this._handleStromkirkBloodthief(nonActivePlayer);
     }
 
     async _handleStromkirkBloodthief(controller) {
@@ -1425,12 +1426,12 @@ class TriggerManager {
                     let target;
 
                     if (controller === this.player) {
-                        // Jogador escolhe - habilidade é opcional ("you may")
+                        // Jogador escolhe alvo (trigger obrigatório)
                         target = await this.ui.promptTriggerTarget({
                             title: 'Battle-Rattle Shaman',
-                            description: 'Você pode fazer uma criatura alvo ganhar +2/+0 até o fim do turno:',
+                            description: 'Escolha uma criatura alvo para ganhar +2/+0 até o fim do turno:',
                             validTargets: creatures,
-                            canSkip: true
+                            canSkip: false
                         });
                     } else {
                         // IA sempre usa a habilidade se tiver alvos válidos

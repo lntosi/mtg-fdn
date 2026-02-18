@@ -1871,11 +1871,11 @@ class GameState {
                 break;
 
             case 'broken_wings':
-                // Artefato, encantamento ou criatura com flying (criaturas verificam hexproof)
+                // Artefato, encantamento ou criatura com flying (inclui flying temporário/condicional)
                 targets = opponent.battlefield.filter(c =>
                     c.type === 'artifact' ||
                     c.type === 'enchantment' ||
-                    (c.type === 'creature' && c.keywords && c.keywords.includes('flying') &&
+                    (c.type === 'creature' && this.rules.hasKeyword(c, 'flying', false) &&
                      this.rules.canBeTargetedBy(c, caster))
                 );
                 break;
@@ -2966,7 +2966,7 @@ class GameState {
         }
 
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
-        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul'];
+        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul', 'wildheart_invoker', 'thrashing_brontodon', 'mild_mannered_librarian'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
             // Haste permite usar habilidades de tap mesmo com summoning sickness (regra 702.10)
@@ -3240,10 +3240,15 @@ class GameState {
                 break;
 
             case 'goblin_firebomb':
-                // 7, T, Sacrifice: destroy target permanent
-                const firebombValidTargets = opponent.battlefield.filter(c =>
-                    !c.keywords?.includes('indestructible')
-                );
+                // 7, T, Sacrifice: destroy target permanent (any player's)
+                const firebombValidTargets = [
+                    ...this.player.battlefield.filter(c =>
+                        !c.keywords?.includes('indestructible') && c.instanceId !== card.instanceId
+                    ),
+                    ...this.opponent.battlefield.filter(c =>
+                        !c.keywords?.includes('indestructible')
+                    )
+                ];
 
                 if (firebombValidTargets.length === 0) {
                     this.ui.log('Não há permanentes válidos para destruir');
@@ -3266,14 +3271,20 @@ class GameState {
                         return;
                     }
                 } else {
-                    // IA escolhe: prioriza criaturas por poder, depois outros permanentes
-                    const creatures = firebombValidTargets.filter(c => c.type === 'creature');
-                    if (creatures.length > 0) {
-                        firebombTarget = creatures.sort((a, b) =>
+                    // IA escolhe: prioriza criaturas do oponente por poder
+                    const enemyCreatures = firebombValidTargets.filter(c =>
+                        c.type === 'creature' && this.player.battlefield.includes(c)
+                    );
+                    if (enemyCreatures.length > 0) {
+                        firebombTarget = enemyCreatures.sort((a, b) =>
                             this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
                         )[0];
                     } else {
-                        firebombTarget = firebombValidTargets[0];
+                        // Prioriza permanentes do oponente
+                        const enemyPermanents = firebombValidTargets.filter(c =>
+                            this.player.battlefield.includes(c)
+                        );
+                        firebombTarget = enemyPermanents.length > 0 ? enemyPermanents[0] : firebombValidTargets[0];
                     }
                 }
 
@@ -3282,8 +3293,9 @@ class GameState {
                 card.tapped = true;
                 await this.destroyPermanent(card, player);
 
-                // Destruir o alvo escolhido
-                await this.destroyPermanent(firebombTarget, opponent);
+                // Destruir o alvo escolhido — determinar dono dinamicamente
+                const firebombTargetOwner = this.player.battlefield.includes(firebombTarget) ? this.player : this.opponent;
+                await this.destroyPermanent(firebombTarget, firebombTargetOwner);
                 this.ui.log(`Goblin Firebomb destruiu ${firebombTarget.name}`);
                 break;
 
