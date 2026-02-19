@@ -125,6 +125,13 @@ class TestRulesEngine {
         return creature.keywords && creature.keywords.includes('haste');
     }
 
+    // Verifica se criatura tem uma keyword (base, temporária ou condicional)
+    hasKeyword(creature, keyword, checkConditional = true) {
+        if (creature.keywords && creature.keywords.includes(keyword)) return true;
+        if (creature.temporaryKeywords && creature.temporaryKeywords.includes(keyword)) return true;
+        return false;
+    }
+
     // Verifica se criatura pode bloquear
     canBlock(blocker, attacker) {
         if (blocker.tapped) return false;
