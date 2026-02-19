@@ -2484,7 +2484,7 @@ class GameState {
         target.counters = null;
 
         // Tokens deixam de existir quando saem do battlefield (regra 111.7)
-        const isToken = target.name.toLowerCase().includes('token');
+        const isToken = target.isToken === true;
         const prefix = sourceName ? `${sourceName}: ` : '';
 
         if (isToken) {
@@ -3819,11 +3819,12 @@ class GameState {
                 this.activePlayer.landsPlayedThisTurn = 0;
                 this.rules.removeSummoningSickness(this.activePlayer);
                 // Resetar rastreadores de perda de vida, unblockables e raid
+                // Ambas as flags devem ser resetadas a cada turno (onEndStep dispara para ambos)
+                this.opponentLostLifeThisTurn = false;
+                this.playerLostLifeThisTurn = false;
                 if (this.activePlayer === this.player) {
-                    this.opponentLostLifeThisTurn = false;
                     this.attackedThisTurn.player = false;
                 } else {
-                    this.playerLostLifeThisTurn = false;
                     this.attackedThisTurn.opponent = false;
                 }
                 this.cantBlockThisTurn = [];
@@ -3938,6 +3939,7 @@ class GameState {
                         c.exileOnDeath = false; // Limpar flag de exílio (Scorching Dragonfire etc.)
                         c.markedForDeath = false; // Limpar flag de deathtouch mark
                         c.sacrificeOnCombatDamage = false; // Limpar flag de Dropkick Bomber
+                        c.undyingMalice = false; // Limpar flag de Undying Malice (até fim do turno)
                     });
                 });
 
@@ -4001,6 +4003,11 @@ class GameState {
         }
 
         this.phase = PHASES.DECLARE_BLOCKERS;
+
+        // AI ativa habilidades de combate após declarar atacantes (Jazal Goldmane, Ingenious Leonin)
+        if (attackingPlayer === this.opponent && this.ai.config.useActivatedAbilities) {
+            await this.ai.useActivatedAbilities();
+        }
 
         // Se jogador está sendo atacado, pedir bloqueadores
         if (attackingPlayer === this.opponent) {
@@ -4417,6 +4424,15 @@ class GameState {
         this.rules.untapAll(this.opponent);
         this.opponent.landsPlayedThisTurn = 0;
         this.rules.removeSummoningSickness(this.opponent);
+        // Resetar rastreadores (mesma lógica do handlePhase UNTAP)
+        this.opponentLostLifeThisTurn = false;
+        this.playerLostLifeThisTurn = false;
+        this.attackedThisTurn.opponent = false;
+        this.cantBlockThisTurn = [];
+        this.cantBeBlockedThisTurn = [];
+        if (this.drawsThisTurn) {
+            this.drawsThisTurn['opponent'] = 0;
+        }
         this.ui.render();
         await this.delay(600);
 
@@ -4604,7 +4620,10 @@ class GameState {
             c.toughnessModifier = 0;
             c.temporaryKeywords = [];
             c.mustBeBlocked = false;
+            c.exileOnDeath = false;
+            c.markedForDeath = false;
             c.sacrificeOnCombatDamage = false;
+            c.undyingMalice = false;
         });
 
         // Limpar dano e modificadores temporários das criaturas do jogador também
@@ -4615,7 +4634,10 @@ class GameState {
             c.toughnessModifier = 0;
             c.temporaryKeywords = [];
             c.mustBeBlocked = false;
+            c.exileOnDeath = false;
+            c.markedForDeath = false;
             c.sacrificeOnCombatDamage = false;
+            c.undyingMalice = false;
         });
 
         // Descarte da IA (MTG rule: descartar até 7 cartas no cleanup)

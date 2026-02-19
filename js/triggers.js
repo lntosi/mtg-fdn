@@ -161,7 +161,7 @@ class TriggerManager {
 
         // Elvish Regrower - devolve permanente do cemitério para a mão
         if (card.id === 'elvish_regrower') {
-            this._handleElvishRegrowerETB(card, controller);
+            await this._handleElvishRegrowerETB(card, controller);
         }
 
         // Bloodtithe Collector - força descarte se oponente perdeu vida
@@ -301,7 +301,7 @@ class TriggerManager {
         }
     }
 
-    _handleElvishRegrowerETB(card, controller) {
+    async _handleElvishRegrowerETB(card, controller) {
         // Permanentes = criaturas, artefatos, encantamentos, terrenos (não instants/sorceries)
         const permanentTypes = ['creature', 'artifact', 'enchantment', 'land'];
         const validTargets = controller.graveyard.filter(c => permanentTypes.includes(c.type));
@@ -324,16 +324,15 @@ class TriggerManager {
 
         if (controller === this.player) {
             // Jogador escolhe o alvo
-            this.ui.promptTriggerTarget({
+            const selected = await this.ui.promptTriggerTarget({
                 title: `${card.name} - Recuperar Permanente`,
                 description: 'Escolha uma carta de permanente do seu cemitério para devolver à sua mão:',
                 validTargets: validTargets,
                 canSkip: false
-            }).then(selected => {
-                if (selected) {
-                    returnPermanent(selected);
-                }
             });
+            if (selected) {
+                returnPermanent(selected);
+            }
         } else {
             // IA escolhe automaticamente (prioriza criaturas mais fortes, depois terrenos)
             const target = validTargets.sort((a, b) => {
@@ -1088,6 +1087,7 @@ class TriggerManager {
                     if (!card.counters) card.counters = {};
                     card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                     this.ui.log(`Brineborn Cutthroat ganha um contador +1/+1 (mágica conjurada no turno do oponente)`);
+                    this.onCounterPlaced(card, caster, 1);
                     this.ui.render();
                 }
             });
@@ -1102,7 +1102,7 @@ class TriggerManager {
             // Dispara para spells não-criatura OU criaturas Dragão
             if (!isCreature || isDragon) {
                 caster.battlefield.forEach(card => {
-                    if (card.keywords?.includes('spellcast_damage')) {
+                    if (card.keywords?.includes('spellcast_damage') && !card.pendingResolution) {
                         // Causa 1 de dano a cada oponente
                         this.game.loseLife(opponent, 1);
                         this.ui.log(`${card.name} causou 1 de dano a ${opponent.name}`);
@@ -1136,6 +1136,7 @@ class TriggerManager {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (${player.name} comprou)`);
+                this.onCounterPlaced(card, player, 1);
                 triggered = true;
             }
 
@@ -1144,6 +1145,7 @@ class TriggerManager {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (segundo card comprado)`);
+                this.onCounterPlaced(card, player, 1);
                 triggered = true;
             }
 
@@ -1219,6 +1221,7 @@ class TriggerManager {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (${player.name} ganhou vida)`);
+                this.onCounterPlaced(card, player, 1);
                 triggered = true;
             }
         });
@@ -1242,7 +1245,20 @@ class TriggerManager {
 
         // === UNDEAD DECK DEATH TRIGGERS ===
 
+        // Crow of Dark Tidings - mill 2 when dies
+        if (creature.keywords?.includes('death_mill_2')) {
+            this._handleMill(owner, 2, creature.name);
+        }
+
+        // Maalfeld Twins - create two 2/2 Zombie tokens when dies
+        if (creature.keywords?.includes('death_create_zombies')) {
+            this._createZombieToken(owner);
+            this._createZombieToken(owner);
+            this.ui.log(`${creature.name}: criou dois tokens Zumbi 2/2`);
+        }
+
         // Undying Malice effect - creature stays on battlefield with +1/+1 counter
+        // Checked AFTER other death triggers so they all fire (MTG: all death triggers fire)
         if (creature.undyingMalice) {
             delete creature.undyingMalice;
             // Reset card state (damage, modifiers)
@@ -1257,22 +1273,11 @@ class TriggerManager {
             creature.tapped = true;
             creature.summoningSickness = true;
             this.ui.log(`${creature.name} voltou ao campo de batalha com um contador +1/+1 (Undying Malice)`);
+            this.onCounterPlaced(creature, owner, 1);
             // Set flag so destroyPermanent doesn't remove the creature
             creature._returnedByUndying = true;
             this.ui.render();
             return true; // Signal that creature was returned
-        }
-
-        // Crow of Dark Tidings - mill 2 when dies
-        if (creature.keywords?.includes('death_mill_2')) {
-            this._handleMill(owner, 2, creature.name);
-        }
-
-        // Maalfeld Twins - create two 2/2 Zombie tokens when dies
-        if (creature.keywords?.includes('death_create_zombies')) {
-            this._createZombieToken(owner);
-            this._createZombieToken(owner);
-            this.ui.log(`${creature.name}: criou dois tokens Zumbi 2/2`);
         }
 
         // === VAMPIRES DECK DEATH TRIGGERS ===
@@ -1395,6 +1400,7 @@ class TriggerManager {
                         if (!target.counters) target.counters = {};
                         target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
                         this.ui.log(`Stromkirk Bloodthief: +1/+1 counter em ${target.name}`);
+                        this.onCounterPlaced(target, controller, 1);
                         this.ui.render();
                     }
                 }

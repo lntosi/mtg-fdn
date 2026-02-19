@@ -641,14 +641,14 @@ class AIPlayer {
                 return true;
 
             case 'jazal_goldmane':
-                // Pump atacantes - só útil na Main Phase 1 com 2+ criaturas
-                if (this.game.phase !== PHASES.MAIN1) return false;
-                return controller.battlefield.filter(c => c.type === 'creature').length >= 2;
+                // Pump atacantes - só útil durante combate com atacantes declarados
+                if (this.game.phase !== PHASES.DECLARE_ATTACKERS && this.game.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                return this.game.currentAttackers.length >= 2;
 
             case 'ingenious_leonin':
-                // Pump uma criatura - só útil na Main Phase 1
-                if (this.game.phase !== PHASES.MAIN1) return false;
-                return true;
+                // Pump uma criatura atacante - só útil durante combate com atacantes
+                if (this.game.phase !== PHASES.DECLARE_ATTACKERS && this.game.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                return this.game.currentAttackers.length > 0;
 
             case 'goblin_firebomb':
                 // {7}, T, Sacrifice: Destroy target permanent

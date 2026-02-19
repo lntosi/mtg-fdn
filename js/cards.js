@@ -133,7 +133,7 @@ const CARD_DATABASE = {
             { id: "eaten_by_piranhas", name: "Eaten by Piranhas", type: "enchantment", subtype: "Aura", cost: "1U", cmc: 2, keywords: ["flash", "enchant"], isDebuff: true, text: "Lampejo. Encantar criatura. Criatura encantada perde todas as habilidades e é uma criatura preta Esqueleto com poder e resistência base 1/1.", qty: 1 },
 
             // Equipamento (1)
-            { id: "pirates_cutlass", name: "Pirate's Cutlass", type: "artifact", subtype: "Equipment", cost: "3", cmc: 3, text: "Quando este Equipamento entra, anexe-o ao Pirata alvo que você controla. Criatura equipada recebe +2/+1. Equipar 2.", keywords: ["equipment", "etb_equip_pirate"], qty: 1 }
+            { id: "pirates_cutlass", name: "Pirate's Cutlass", type: "artifact", subtype: "Equipment", cost: "3", cmc: 3, hasActivatedAbility: true, text: "Quando este Equipamento entra, anexe-o ao Pirata alvo que você controla. Criatura equipada recebe +2/+1. Equipar 2.", keywords: ["equipment", "etb_equip_pirate"], qty: 1 }
         ]
     },
 
@@ -165,7 +165,7 @@ const CARD_DATABASE = {
             { id: "prayer_of_binding", name: "Prayer of Binding", type: "enchantment", cost: "3W", cmc: 4, keywords: ["flash"], text: "Lampejo. Quando este encantamento entra, exile permanente alvo que não seja terreno que um oponente controla até que este encantamento deixe o campo de batalha. Você ganha 2 vidas.", qty: 1 },
 
             // Equipment (1)
-            { id: "quick_draw_katana", name: "Quick-Draw Katana", type: "artifact", subtype: "Equipment", cost: "2", cmc: 2, keywords: ["equipment"], text: "Durante seu turno, criatura equipada ganha +2/+0 e tem iniciativa. Equipar 2.", qty: 1 }
+            { id: "quick_draw_katana", name: "Quick-Draw Katana", type: "artifact", subtype: "Equipment", cost: "2", cmc: 2, hasActivatedAbility: true, keywords: ["equipment"], text: "Durante seu turno, criatura equipada ganha +2/+0 e tem iniciativa. Equipar 2.", qty: 1 }
         ]
     },
 
