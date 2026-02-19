@@ -232,6 +232,27 @@ class TestRulesEngine {
         );
     }
 
+    // Verifica se uma criatura pode ser alvo de um jogador
+    canBeTargetedBy(creature, caster) {
+        if (!this.game?.player?.battlefield) {
+            return true;
+        }
+        const playerHasCreature = this.game.player.battlefield.some(c => c.instanceId === creature.instanceId);
+        const creatureController = playerHasCreature ? this.game.player : this.game.opponent;
+
+        // Own creatures can always be targeted
+        if (caster === creatureController) {
+            return true;
+        }
+
+        // Hexproof blocks opponent targeting
+        if (this.hasKeyword(creature, 'hexproof', false)) {
+            return false;
+        }
+
+        return true;
+    }
+
     // Verifica se tem mana suficiente (simplificado)
     hasEnoughMana(cost, availableMana) {
         const parsed = this.parseCost(cost);

@@ -588,7 +588,7 @@ class GameState {
 
         // Se tem alvo, verificar se ainda é válido
         if (stackItem.target) {
-            const targetStillValid = this.isTargetStillValid(stackItem.target);
+            const targetStillValid = this.isTargetStillValid(stackItem.target, stackItem.controller);
             if (!targetStillValid) {
                 this.ui.log(`${card.name} foi anulado (alvo inválido)`);
                 caster.graveyard.push(card);
@@ -681,14 +681,21 @@ class GameState {
     }
 
     // Verifica se um alvo ainda é válido
-    isTargetStillValid(target) {
+    isTargetStillValid(target, caster) {
         if (!target) return true;
 
         // Verificar se o alvo ainda está no campo de batalha
         const inPlayerField = this.player.battlefield.includes(target);
         const inOpponentField = this.opponent.battlefield.includes(target);
 
-        return inPlayerField || inOpponentField;
+        if (!inPlayerField && !inOpponentField) return false;
+
+        // Check hexproof: if caster provided and target is a creature, verify targeting is still legal
+        if (caster && target.type === 'creature' && !this.rules.canBeTargetedBy(target, caster)) {
+            return false;
+        }
+
+        return true;
     }
 
     // Verifica se a pilha está vazia
@@ -1486,8 +1493,12 @@ class GameState {
                         }
                         delete card.pendingCast;
 
-                        await this.resolveSpellWithTarget(card, player, target);
-                        player.graveyard.push(card);
+                        // Route through stack so opponent can respond
+                        const stackItem = this.addToStack(card, player);
+                        stackItem.target = target;
+                        this.ui.log(`${player.name} conjurou ${card.name}`);
+                        this.triggers.onSpellCast(player, card);
+                        await this.offerResponseToOpponent(player);
                         this.ui.render();
                     }
                     return true;
@@ -1501,8 +1512,12 @@ class GameState {
                     }
                     delete card.pendingCast;
 
-                    await this.resolveSpellWithTarget(card, player, target);
-                    player.graveyard.push(card);
+                    // Route through stack so opponent can respond
+                    const stackItem = this.addToStack(card, player);
+                    stackItem.target = target;
+                    this.ui.log(`${player.name} conjurou ${card.name} mirando ${target.name}`);
+                    this.triggers.onSpellCast(player, card);
+                    await this.offerResponseToOpponent(player);
                     this.ui.render();
                 });
                 return true;
@@ -1560,11 +1575,17 @@ class GameState {
                 }
 
                 if (needsTarget && player === this.opponent) {
-                    // IA escolhe alvo
+                    // IA escolhe alvo - route through stack so player can respond
                     const validTargets = this.getValidSpellTargets(card, player);
                     if (validTargets.length > 0) {
                         const target = this.ai.chooseBestSpellTarget(card, validTargets);
-                        await this.resolveSpellWithTarget(card, player, target);
+                        const stackItem = this.addToStack(card, player);
+                        stackItem.target = target;
+                        this.ui.log(`${player.name} conjurou ${card.name} mirando ${target.name}`);
+                        this.triggers.onSpellCast(player, card);
+                        await this.offerResponseToOpponent(player);
+                        // Card goes to graveyard during resolveStackedSpell
+                        return true;
                     }
                 } else {
                     await this.resolveSpell(card, player);
