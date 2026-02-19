@@ -1031,6 +1031,11 @@ body {
     box-shadow: 0 0 12px 4px rgba(34, 139, 34, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.3) !important;
 }
 
+/* Criatura com debuff aura E atacando */
+.card.has-debuff-aura.attacking {
+    box-shadow: 0 0 12px 4px rgba(139, 0, 0, 0.6), 0 0 12px 6px rgba(231, 76, 60, 0.3) !important;
+}
+
 /* === BADGES DE AURA EM CRIATURAS === */
 
 /* Container para badges de auras em criaturas (top-left, evita colisão com equipment top-center) */
@@ -1250,11 +1255,6 @@ body {
 
 .target-choice-option.target-choice-aura:hover {
     background: rgba(155, 89, 182, 0.3);
-}
-
-@keyframes pulse-attack {
-    0%, 100% { box-shadow: 0 0 25px 10px #e74c3c; }
-    50% { box-shadow: 0 0 35px 15px #ff6b6b; }
 }
 
 /* === Cartas com Imagem === */
@@ -2907,7 +2907,8 @@ body {
 /* View mode: remover estilos de combate, interação e seleção */
 #game-container.view-mode .card.attacking,
 #game-container.view-mode .card.attacker-selected,
-#game-container.view-mode .card.pending-cast {
+#game-container.view-mode .card.pending-cast,
+#game-container.view-mode .card.playable {
     border: none;
     filter: none;
     box-shadow: none;
