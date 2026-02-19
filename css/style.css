@@ -4932,10 +4932,6 @@ html {
     display: none;
 }
 
-@keyframes prioritySlideIn {
-    from { transform: translateY(-50%) translateX(100px); opacity: 0; }
-    to { transform: translateY(-50%) translateX(0); opacity: 1; }
-}
 
 .priority-indicator-content {
     display: flex;
