@@ -790,8 +790,8 @@ class RulesEngine {
         // Verificar se tem Pacifism anexado
         if (this.hasPacifism(blocker)) return false;
 
-        // Vampire Interloper não pode bloquear
-        if (blocker.id === 'vampire_interloper') return false;
+        // Criaturas com cant_block não podem bloquear (Vampire Interloper, etc.)
+        if (this.hasKeyword(blocker, 'cant_block', false)) return false;
 
         // Verificar se o BLOQUEADOR não pode bloquear neste turno (Frenzied Goblin)
         if (this.game.cantBlockThisTurn && this.game.cantBlockThisTurn.includes(blocker.instanceId)) {
@@ -836,7 +836,8 @@ class RulesEngine {
             creaturesDied: [],
             damageToPlayers: { attacker: 0, defender: 0 },
             lifeGained: { attacker: 0, defender: 0 },
-            combatDetails: []
+            combatDetails: [],
+            attackersDealtDamage: new Set()
         };
 
         // Build combat data for each attacker
@@ -910,6 +911,7 @@ class RulesEngine {
                 // Unblocked - damage to player
                 if (attackerDealsThisStep && attackerPower > 0) {
                     results.damageToPlayers.defender += attackerPower;
+                    results.attackersDealtDamage.add(attacker);
                     results.combatDetails.push({
                         type: 'direct',
                         attacker: attacker.name,
@@ -981,13 +983,16 @@ class RulesEngine {
                     }
                 }
 
+                // Track if attacker dealt damage to blockers
+                if (totalAttackerDamageDealt > 0) {
+                    results.attackersDealtDamage.add(attacker);
+                }
+
                 // Trample: excess damage to player (only when attacker deals damage)
+                // Damage map already assigns only lethal to blockers when trample is active,
+                // so excess = attackerPower - damage assigned to blockers
                 if (attackerDealsThisStep && aKeywords.trample && aliveBlockers.length > 0) {
-                    const minNeeded = aliveBlockers.reduce((sum, b) => {
-                        if (aKeywords.deathtouch) return sum + 1;
-                        return sum + Math.max(0, this.getCreatureToughness(b) - (b.damage || 0));
-                    }, 0);
-                    const excess = attackerPower - minNeeded;
+                    const excess = attackerPower - totalAttackerDamageDealt;
                     if (excess > 0) {
                         results.damageToPlayers.defender += excess;
                         totalAttackerDamageDealt += excess;
@@ -1011,7 +1016,20 @@ class RulesEngine {
     _buildStepDamageMap(attacker, aliveBlockers, attackerPower, damageAssignments, aKeywords, isFirstStrikeStep) {
         const map = {};
 
-        // For single blocker, assign full power
+        // Trample: assign only lethal damage to each blocker, excess tramples through
+        if (aKeywords.trample) {
+            let remaining = attackerPower;
+            for (const blocker of aliveBlockers) {
+                const lethal = aKeywords.deathtouch ? 1 :
+                    Math.max(0, this.getCreatureToughness(blocker) - (blocker.damage || 0));
+                const assigned = Math.min(remaining, lethal);
+                map[blocker.instanceId] = assigned;
+                remaining -= assigned;
+            }
+            return map;
+        }
+
+        // For single blocker (no trample), assign full power
         if (aliveBlockers.length === 1) {
             map[aliveBlockers[0].instanceId] = attackerPower;
             return map;
@@ -1141,37 +1159,42 @@ class RulesEngine {
                 bonuses.sources.push({ name: 'Goblin Oriflamme', power: 1, toughness: 0 });
             }
 
-            // Elvish Archdruid: outros Elfos têm +1/+1
-            const effectiveSubtype = this.getEffectiveSubtype(creature);
-            if (card.id === 'elvish_archdruid' && card !== creature &&
-                effectiveSubtype.includes('Elf')) {
-                bonuses.power += 1;
-                bonuses.toughness += 1;
-                bonuses.sources.push({ name: 'Elvish Archdruid', power: 1, toughness: 1 });
-            }
+            // Lords com hasLostAllAbilities não concedem bônus
+            if (card.type === 'creature' && this.hasLostAllAbilities(card)) {
+                // Skip lord bonuses for this card
+            } else {
+                // Elvish Archdruid: outros Elfos têm +1/+1
+                const effectiveSubtype = this.getEffectiveSubtype(creature);
+                if (card.id === 'elvish_archdruid' && card !== creature &&
+                    effectiveSubtype.includes('Elf')) {
+                    bonuses.power += 1;
+                    bonuses.toughness += 1;
+                    bonuses.sources.push({ name: 'Elvish Archdruid', power: 1, toughness: 1 });
+                }
 
-            // Dropkick Bomber: outros Goblins têm +1/+1
-            if (card.id === 'dropkick_bomber' && card !== creature &&
-                effectiveSubtype.includes('Goblin')) {
-                bonuses.power += 1;
-                bonuses.toughness += 1;
-                bonuses.sources.push({ name: 'Dropkick Bomber', power: 1, toughness: 1 });
-            }
+                // Dropkick Bomber: outros Goblins têm +1/+1
+                if (card.id === 'dropkick_bomber' && card !== creature &&
+                    effectiveSubtype.includes('Goblin')) {
+                    bonuses.power += 1;
+                    bonuses.toughness += 1;
+                    bonuses.sources.push({ name: 'Dropkick Bomber', power: 1, toughness: 1 });
+                }
 
-            // Corsair Captain: outros Piratas têm +1/+1
-            if (card.id === 'corsair_captain' && card !== creature &&
-                effectiveSubtype.includes('Pirate')) {
-                bonuses.power += 1;
-                bonuses.toughness += 1;
-                bonuses.sources.push({ name: 'Corsair Captain', power: 1, toughness: 1 });
-            }
+                // Corsair Captain: outros Piratas têm +1/+1
+                if (card.id === 'corsair_captain' && card !== creature &&
+                    effectiveSubtype.includes('Pirate')) {
+                    bonuses.power += 1;
+                    bonuses.toughness += 1;
+                    bonuses.sources.push({ name: 'Corsair Captain', power: 1, toughness: 1 });
+                }
 
-            // Death Baron: outros Zombies e Skeletons têm +1/+1
-            if (card.id === 'death_baron' && card !== creature &&
-                (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton'))) {
-                bonuses.power += 1;
-                bonuses.toughness += 1;
-                bonuses.sources.push({ name: 'Death Baron', power: 1, toughness: 1 });
+                // Death Baron: outros Zombies e Skeletons têm +1/+1
+                if (card.id === 'death_baron' && card !== creature &&
+                    (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton'))) {
+                    bonuses.power += 1;
+                    bonuses.toughness += 1;
+                    bonuses.sources.push({ name: 'Death Baron', power: 1, toughness: 1 });
+                }
             }
 
             // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
@@ -1416,7 +1439,7 @@ class RulesEngine {
 
         // Aggressive Mammoth (trample_lord): outras criaturas têm trample
         controller.battlefield.forEach(card => {
-            if (card.keywords?.includes('trample_lord') && card !== creature) {
+            if (card.keywords?.includes('trample_lord') && card !== creature && !this.hasLostAllAbilities(card)) {
                 if (!keywords.includes('trample')) {
                     keywords.push('trample');
                 }

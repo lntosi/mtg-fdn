@@ -67,17 +67,17 @@ class TriggerManager {
 
         // ETB Bounce (Bigfin Bouncer, etc.)
         if (card.keywords?.includes('etb_bounce')) {
-            this._handleBounceETB(card, controller, opponent);
+            await this._handleBounceETB(card, controller, opponent);
         }
 
         // ETB Counter Two (Felidar Savior, etc.)
         if (card.keywords?.includes('etb_counter_two')) {
-            this._handleCounterTwoETB(card, controller);
+            await this._handleCounterTwoETB(card, controller);
         }
 
         // ETB Equip Pirate (Pirate's Cutlass)
         if (card.keywords?.includes('etb_equip_pirate')) {
-            this._handleEquipPirateETB(card, controller);
+            await this._handleEquipPirateETB(card, controller);
         }
 
         // Raid Draw (Storm Fleet Spy, Skyship Buccaneer)
@@ -166,7 +166,7 @@ class TriggerManager {
 
         // Bloodtithe Collector - força descarte se oponente perdeu vida
         if (card.id === 'bloodtithe_collector') {
-            this._handleBloodtitheCollectorETB(controller, opponent);
+            await this._handleBloodtitheCollectorETB(controller, opponent);
         }
 
         // Volley Veteran - dano igual ao número de Goblins
@@ -351,16 +351,34 @@ class TriggerManager {
         }
     }
 
-    _handleBloodtitheCollectorETB(controller, opponent) {
+    async _handleBloodtitheCollectorETB(controller, opponent) {
         const opponentLostLife = controller === this.player
             ? this.game.opponentLostLifeThisTurn
             : this.game.playerLostLifeThisTurn;
 
         if (opponentLostLife && opponent.hand.length > 0) {
-            const randomIndex = Math.floor(Math.random() * opponent.hand.length);
-            const discarded = opponent.hand.splice(randomIndex, 1)[0];
-            opponent.graveyard.push(discarded);
-            this.ui.log(`${opponent.name} descartou ${discarded.name}`);
+            let discarded;
+            if (opponent === this.player) {
+                // Jogador humano escolhe qual carta descartar
+                const selected = await this.ui.promptTriggerTarget({
+                    title: 'Bloodtithe Collector',
+                    description: 'Escolha uma carta da sua mão para descartar:',
+                    validTargets: opponent.hand,
+                    canSkip: false
+                });
+                if (selected) {
+                    const idx = opponent.hand.indexOf(selected);
+                    if (idx > -1) discarded = opponent.hand.splice(idx, 1)[0];
+                }
+            } else {
+                // IA descarta aleatoriamente
+                const randomIndex = Math.floor(Math.random() * opponent.hand.length);
+                discarded = opponent.hand.splice(randomIndex, 1)[0];
+            }
+            if (discarded) {
+                opponent.graveyard.push(discarded);
+                this.ui.log(`${opponent.name} descartou ${discarded.name}`);
+            }
         }
     }
 
@@ -415,7 +433,7 @@ class TriggerManager {
         }
     }
 
-    _handleBounceETB(card, controller, opponent) {
+    async _handleBounceETB(card, controller, opponent) {
         // Excluir criaturas com pendingResolution (ainda na pilha, não são permanentes)
         const validTargets = opponent.battlefield.filter(c => c.type === 'creature' && !c.pendingResolution);
         if (validTargets.length === 0) return;
@@ -426,14 +444,13 @@ class TriggerManager {
         };
 
         if (controller === this.player) {
-            this.ui.promptTriggerTarget({
+            const selected = await this.ui.promptTriggerTarget({
                 title: `${card.name} - Selecione um Alvo`,
                 description: 'Devolva uma criatura que um oponente controla para a mão de seu dono:',
                 validTargets: validTargets,
                 canSkip: false
-            }).then(selected => {
-                if (selected) bounceCreature(selected);
             });
+            if (selected) bounceCreature(selected);
         } else {
             // IA escolhe a criatura mais forte (usa getCreaturePower para considerar counters, lords, equipment)
             const target = validTargets.sort((a, b) => {
@@ -443,7 +460,7 @@ class TriggerManager {
         }
     }
 
-    _handleCounterTwoETB(card, controller) {
+    async _handleCounterTwoETB(card, controller) {
         const validTargets = controller.battlefield.filter(c =>
             c.type === 'creature' && c.instanceId !== card.instanceId
         );
@@ -455,20 +472,23 @@ class TriggerManager {
                 target.counters.plusOnePlusOne = (target.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} colocou um contador +1/+1 em ${target.name}`);
             });
+            // Trigger counter synergies (Wildwood Scourge, etc.)
+            targets.forEach(target => {
+                this.onCounterPlaced(target, controller, 1);
+            });
             this.ui.render();
         };
 
         if (controller === this.player) {
-            this.ui.promptMultiTarget({
+            const selected = await this.ui.promptMultiTarget({
                 title: `${card.name} - Selecione Alvos`,
                 description: 'Coloque um contador +1/+1 em até duas outras criaturas que você controla:',
                 validTargets: validTargets,
                 maxTargets: 2,
                 minTargets: 0,
                 canSkip: true
-            }).then(selected => {
-                if (selected?.length > 0) applyCounters(selected);
             });
+            if (selected?.length > 0) applyCounters(selected);
         } else {
             // IA escolhe criaturas menores para bufar (usa getCreaturePower para considerar counters, lords, equipment)
             const targets = validTargets
@@ -480,7 +500,7 @@ class TriggerManager {
         }
     }
 
-    _handleEquipPirateETB(card, controller) {
+    async _handleEquipPirateETB(card, controller) {
         const validPirates = controller.battlefield.filter(c =>
             c.type === 'creature' && c.subtype?.includes('Pirate')
         );
@@ -501,14 +521,13 @@ class TriggerManager {
             attachEquipment(validPirates[0]);
         } else if (controller === this.player) {
             // Jogador escolhe qual Pirata equipar
-            this.ui.promptTriggerTarget({
+            const selected = await this.ui.promptTriggerTarget({
                 title: `Pirate's Cutlass`,
                 description: 'Escolha um Pirata para equipar:',
                 validTargets: validPirates,
                 canSkip: false
-            }).then(selected => {
-                if (selected) attachEquipment(selected);
             });
+            if (selected) attachEquipment(selected);
         } else {
             // IA escolhe o Pirata mais forte
             const target = validPirates.sort((a, b) =>
@@ -1065,7 +1084,7 @@ class TriggerManager {
 
         if (isOpponentsTurn) {
             caster.battlefield.forEach(card => {
-                if (card.id === 'brineborn_cutthroat') {
+                if (card.id === 'brineborn_cutthroat' && !card.pendingResolution) {
                     if (!card.counters) card.counters = {};
                     card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                     this.ui.log(`Brineborn Cutthroat ganha um contador +1/+1 (mágica conjurada no turno do oponente)`);
@@ -1307,14 +1326,14 @@ class TriggerManager {
                             noText: 'Não pagar'
                         });
                         if (shouldPay) {
-                            this.game.loseLife(owner, 2, { silent: true }); // Custo, não dano
+                            this.game.loseLife(owner, 2, { silent: true, isLifePayment: true }); // Custo, não dano
                             this.rules.drawCard(owner);
                             this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                         }
                     } else {
                         // IA sempre paga se tiver vida suficiente (> 4 para ser seguro)
                         if (owner.life > 4) {
-                            this.game.loseLife(owner, 2, { silent: true }); // Custo, não dano
+                            this.game.loseLife(owner, 2, { silent: true, isLifePayment: true }); // Custo, não dano
                             this.rules.drawCard(owner);
                             this.ui.log(`Crossway Troublemakers: ${owner.name} pagou 2 vidas e comprou uma carta`);
                         }
@@ -1356,7 +1375,10 @@ class TriggerManager {
                 if (vampires.length > 0) {
                     let target;
 
-                    if (controller === this.player) {
+                    if (vampires.length === 1) {
+                        // Auto-seleciona se só há um vampiro
+                        target = vampires[0];
+                    } else if (controller === this.player) {
                         target = await this.ui.promptTriggerTarget({
                             title: 'Stromkirk Bloodthief',
                             description: 'Escolha um Vampiro para receber um contador +1/+1:',

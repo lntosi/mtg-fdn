@@ -335,8 +335,10 @@ class AIPlayer {
             }
         }
 
-        // 3. Usar habilidades ativadas (Main Phase 2, quando sobra mana)
-        if (phase === 2 && this.config.useActivatedAbilities) {
+        // 3. Usar habilidades ativadas (ambas Main Phases)
+        // Main Phase 1: mana e prep de combate (Elvish Archdruid, Goblin Smuggler, Dropkick Bomber)
+        // Main Phase 2: habilidades restantes (Spectral Sailor, Vampire Neonate, etc.)
+        if (this.config.useActivatedAbilities) {
             await this.useActivatedAbilities();
         }
 
@@ -613,13 +615,40 @@ class AIPlayer {
 
             case 'goblin_smuggler':
                 // Tornar criatura inbloqueável - útil na Main Phase 1 (antes do combate)
-                if (this.game.phase !== 'MAIN1') return false;
+                if (this.game.phase !== PHASES.MAIN1) return false;
                 // Verificar se há criatura com poder ≤2 para tornar inbloqueável
                 return controller.battlefield.some(c =>
                     c.type === 'creature' &&
                     this.rules.getCreaturePower(c) <= 2 &&
                     c.instanceId !== permanent.instanceId
                 );
+
+            case 'dropkick_bomber':
+                // Dar flying a um Goblin - só útil antes do combate (Main Phase 1)
+                if (this.game.phase !== PHASES.MAIN1) return false;
+                return controller.battlefield.some(c =>
+                    c.type === 'creature' && c.subtype?.includes('Goblin') &&
+                    c.instanceId !== permanent.instanceId
+                );
+
+            case 'elvish_archdruid':
+                // Gerar mana - sempre útil
+                return true;
+
+            case 'mystic_archaeologist':
+                // Comprar 2 cartas por 5 mana - apenas na Main Phase 2 (gastar mana sobrando)
+                if (this.game.phase !== PHASES.MAIN2) return false;
+                return true;
+
+            case 'jazal_goldmane':
+                // Pump atacantes - só útil na Main Phase 1 com 2+ criaturas
+                if (this.game.phase !== PHASES.MAIN1) return false;
+                return controller.battlefield.filter(c => c.type === 'creature').length >= 2;
+
+            case 'ingenious_leonin':
+                // Pump uma criatura - só útil na Main Phase 1
+                if (this.game.phase !== PHASES.MAIN1) return false;
+                return true;
 
             case 'goblin_firebomb':
                 // {7}, T, Sacrifice: Destroy target permanent

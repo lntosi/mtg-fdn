@@ -8,7 +8,7 @@ const SPECIAL_EFFECT_CARDS = {
     // Cartas que impedem ataque/bloqueio (estilo Pacifism)
     pacifism: ['pacifism'],
     // Cartas que reduzem custo de outras cartas
-    costReduction: ['dragonlords_servant', 'goblin_electromancer'],
+    costReduction: ['dragonlords_servant'],
 };
 
 class GameState {
@@ -148,11 +148,13 @@ class GameState {
         if (amount <= 0) return;
         player.life -= amount;
 
-        // Rastrear perda de vida para triggers
-        if (player === this.player) {
-            this.playerLostLifeThisTurn = true;
-        } else {
-            this.opponentLostLifeThisTurn = true;
+        // Rastrear perda de vida para triggers (custos de vida não contam como perda)
+        if (!options.isLifePayment) {
+            if (player === this.player) {
+                this.playerLostLifeThisTurn = true;
+            } else {
+                this.opponentLostLifeThisTurn = true;
+            }
         }
 
         // Som de dano (exceto para custos de vida)
@@ -1350,6 +1352,12 @@ class GameState {
                     enemyTarget.damage = (enemyTarget.damage || 0) + damage;
                     this.ui.log(`${ownTarget.name} causou ${damage} de dano a ${enemyTarget.name}`);
 
+                    // Deathtouch check (como Bite Down)
+                    const hasDT = this.rules.hasKeyword(ownTarget, 'deathtouch', false);
+                    if (hasDT && damage > 0) {
+                        enemyTarget.markedForDeath = true;
+                    }
+
                     // Verifica se a criatura alvo morreu
                     await this.checkCreatureDeath(enemyTarget, opponent);
 
@@ -1913,16 +1921,15 @@ class GameState {
 
             case 'deadly_plot':
                 // Modal: destroy creature OR return zombie from graveyard
-                // For targeting, we show opponent creatures (destroy mode will be handled in resolution)
-                targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
-                );
-                // If no opponent creatures but has zombies in graveyard, those are valid
-                if (targets.length === 0) {
-                    targets = caster.graveyard.filter(c =>
+                // Show BOTH modes: opponent creatures AND graveyard zombies
+                targets = [
+                    ...opponent.battlefield.filter(c =>
+                        c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
+                    ),
+                    ...caster.graveyard.filter(c =>
                         c.type === 'creature' && c.subtype?.includes('Zombie')
-                    );
-                }
+                    )
+                ];
                 break;
 
             case 'eaten_alive':
@@ -2170,6 +2177,12 @@ class GameState {
                         const damage = this.rules.getCreaturePower(ownTarget);
                         target.damage = (target.damage || 0) + damage;
                         this.ui.log(`${ownTarget.name} causou ${damage} de dano a ${target.name}`);
+
+                        // Deathtouch check (como Bite Down)
+                        const hasFellingDeathtouch = this.rules.hasKeyword(ownTarget, 'deathtouch', false);
+                        if (hasFellingDeathtouch && damage > 0) {
+                            target.markedForDeath = true;
+                        }
 
                         // Verifica se a criatura alvo morreu
                         await this.checkCreatureDeath(target, targetOwner);
@@ -2929,7 +2942,7 @@ class GameState {
                 if (!this.isPlayerTurn() && player === this.player) return false;
                 if (!this.isStackEmpty()) return false;
                 const phase = this.phase;
-                if (phase !== 'MAIN1' && phase !== 'MAIN2') return false;
+                if (phase !== PHASES.MAIN1 && phase !== PHASES.MAIN2) return false;
                 const mana = this.rules.calculateAvailableMana(player);
                 const blackAvailable = (mana.B || 0) + (mana.any || 0);
                 const totalMana = Object.values(mana).reduce((a, b) => a + b, 0);
@@ -2977,8 +2990,7 @@ class GameState {
         switch (card.id) {
             case 'vampire_neonate':
                 // 2, T: drena 1 vida
-                return this.rules.calculateAvailableMana(player).B >= 2 ||
-                       Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 2;
+                return Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0) >= 2;
 
             case 'goblin_smuggler':
                 // T: criatura com poder ≤2 não pode ser bloqueada
@@ -3183,7 +3195,7 @@ class GameState {
                 // T: adiciona G para cada Elfo que você controla
                 card.tapped = true;
                 const elfCount = player.battlefield.filter(c =>
-                    c.type === 'creature' && c.subtype && c.subtype.includes('Elf')
+                    c.type === 'creature' && this.rules.getEffectiveSubtype(c).includes('Elf')
                 ).length;
                 // Adicionar floating mana verde
                 const playerKey = player === this.player ? 'player' : 'opponent';
@@ -3527,9 +3539,11 @@ class GameState {
                         return false; // Cancelou
                     }
                 } else {
-                    // IA prioriza equipamentos anexados, depois outros
-                    const attached = brontoValidTargets.filter(c => c.attachedTo);
-                    brontoTarget = attached.length > 0 ? attached[0] : brontoValidTargets[0];
+                    // IA apenas mira permanentes do oponente
+                    const opponentTargets = brontoValidTargets.filter(c => opponent.battlefield.includes(c));
+                    if (opponentTargets.length === 0) return false;
+                    const attached = opponentTargets.filter(c => c.attachedTo);
+                    brontoTarget = attached.length > 0 ? attached[0] : opponentTargets[0];
                 }
 
                 // Pagar custo e sacrificar o Brontodon
@@ -3902,6 +3916,7 @@ class GameState {
                         c.mustBeBlocked = false; // Limpar flag de must be blocked
                         c.exileOnDeath = false; // Limpar flag de exílio (Scorching Dragonfire etc.)
                         c.markedForDeath = false; // Limpar flag de deathtouch mark
+                        c.sacrificeOnCombatDamage = false; // Limpar flag de Dropkick Bomber
                     });
                 });
 
@@ -4236,8 +4251,9 @@ class GameState {
         }
 
         // Sacrificar criaturas marcadas com sacrificeOnCombatDamage (Dropkick Bomber ability)
+        // Só sacrifica se a criatura realmente causou dano de combate
         for (const attacker of this.currentAttackers) {
-            if (attacker.sacrificeOnCombatDamage && !results.creaturesDied.includes(attacker)) {
+            if (attacker.sacrificeOnCombatDamage && !results.creaturesDied.includes(attacker) && results.attackersDealtDamage?.has(attacker)) {
                 const owner = this.player.battlefield.includes(attacker) ? this.player : this.opponent;
                 await this.destroyPermanent(attacker, owner);
                 this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
@@ -4567,6 +4583,7 @@ class GameState {
             c.toughnessModifier = 0;
             c.temporaryKeywords = [];
             c.mustBeBlocked = false;
+            c.sacrificeOnCombatDamage = false;
         });
 
         // Limpar dano e modificadores temporários das criaturas do jogador também
@@ -4577,6 +4594,7 @@ class GameState {
             c.toughnessModifier = 0;
             c.temporaryKeywords = [];
             c.mustBeBlocked = false;
+            c.sacrificeOnCombatDamage = false;
         });
 
         // Descarte da IA (MTG rule: descartar até 7 cartas no cleanup)
