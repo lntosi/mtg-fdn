@@ -88,55 +88,55 @@ Foco: mana producers, habilidades ativadas, cartas jogáveis, combate básico
 
 | # | O que validar | Cor esperada | Como testar | OK? |
 |---|--------------|-------------|-------------|-----|
-| 1 | `.playable` | Verde | Olhar mão na MAIN1 — cartas jogáveis têm glow verde sutil | [ ] |
-| 2 | `.attacker-selected` | Vermelho | Clicar criatura para atacar (antes de confirmar) | [ ] |
-| 3 | `.attacking` | Vermelho | Confirmar ataque (border + brightness) | [ ] |
-| 4 | `.mana-producer-selectable` | Verde (hover) | Hover sobre Llanowar Elves / Druid of the Cowl untapped | [ ] |
-| 5 | `.mana-producer-selected` | Verde | Clicar Llanowar Elves para selecionar mana | [ ] |
-| 6 | `.has-ability` ativo | Roxo | Thrashing Brontodon / Wildheart Invoker com mana disponível | [ ] |
-| 7 | `.has-ability.inactive` | Sem glow | Mesmas criaturas sem mana ou com summoning sickness | [ ] |
-| 8 | `.has-ability.inactive` + atacante | Vermelho | Selecionar Thrashing Brontodon como atacante (glow vermelho prevalece) | [ ] |
+| 1 | `.playable` | Verde | Olhar mão na MAIN1 — cartas jogáveis têm glow verde sutil | [x] |
+| 2 | `.attacker-selected` | Vermelho | Clicar criatura para atacar (antes de confirmar) | [x] |
+| 3 | `.attacking` | Vermelho | Confirmar ataque (border + brightness) | [x] |
+| 4 | `.mana-producer-selectable` | Verde (hover) | Hover sobre Llanowar Elves / Druid of the Cowl untapped | [x] |
+| 5 | `.mana-producer-selected` | Verde | Clicar Llanowar Elves para selecionar mana | [x] |
+| 6 | `.has-ability` ativo | Roxo | Thrashing Brontodon / Wildheart Invoker com mana disponível | [x] |
+| 7 | `.has-ability.inactive` | Sem glow | Mesmas criaturas sem mana ou com summoning sickness | [x] |
+| 8 | `.has-ability.inactive` + atacante | Vermelho | Selecionar Thrashing Brontodon como atacante (glow vermelho prevalece) | [x] |
 
 ### Partida 2 — Inferno + Pirates (vs qualquer com criaturas)
 Foco: instants com alvo, pending-cast, bloqueio, treasure token
 
 | # | O que validar | Cor esperada | Como testar | OK? |
 |---|--------------|-------------|-------------|-----|
-| 9 | `.pending-cast` | Ciano | Conjurar Lightning Bolt / Kindled Fury (carta se eleva na mão com glow ciano) | [ ] |
-| 10 | `.valid-target` | Laranja | Ao conjurar instant com alvo — criaturas alvo ficam laranja | [ ] |
-| 11 | `.selected-blocker` | Azul | IA ataca, clicar criatura sua para bloquear | [ ] |
-| 12 | `.valid-block-target` | Laranja | Após selecionar bloqueador, atacantes clicáveis ficam laranja | [ ] |
-| 13 | `.blocking` | Azul | Após confirmar bloqueio | [ ] |
-| 14 | Treasure Token | Verde | Treasure Token aparece com visual verde de mana-producer (não roxo) | [ ] |
+| 9 | `.pending-cast` | Ciano | Conjurar Lightning Bolt / Kindled Fury (carta se eleva na mão com glow ciano) | [x] |
+| 10 | `.valid-target` | Laranja | Ao conjurar instant com alvo — criaturas alvo ficam laranja | [x] |
+| 11 | `.selected-blocker` | Azul | IA ataca, clicar criatura sua para bloquear | [x] |
+| 12 | `.valid-block-target` | Laranja | Após selecionar bloqueador, atacantes clicáveis ficam laranja | [x] |
+| 13 | `.blocking` | Azul | Após confirmar bloqueio | [x] |
+| 14 | Treasure Token | Verde | Treasure Token aparece com visual verde de mana-producer (não roxo) | [x] |
 
 ### Partida 3 — Vampires + Undead (vs Cats ou Elves)
 Foco: auras, equipment, debuffs
 
 | # | O que validar | Cor esperada | Como testar | OK? |
 |---|--------------|-------------|-------------|-----|
-| 15 | `.has-buff-aura` | Verde floresta | Criatura com Untamed Hunger ou outra aura buff | [ ] |
-| 16 | `.has-buff-aura.attacking` | Verde + vermelho | Atacar com criatura com aura buff | [ ] |
-| 17 | `.has-debuff-aura` | Vermelho escuro | IA usa Pacifism ou Eaten by Piranhas em sua criatura | [ ] |
-| 18 | `.has-equipment` | Dourado | Criatura com Short Sword / Marauder's Axe | [ ] |
-| 19 | `.has-equipment.attacking` | Dourado + vermelho | Atacar com criatura equipada | [ ] |
+| 15 | `.has-buff-aura` | Verde floresta | Criatura com Untamed Hunger ou outra aura buff | [x] |
+| 16 | `.has-buff-aura.attacking` | Verde + vermelho | Atacar com criatura com aura buff | [x] |
+| 17 | `.has-debuff-aura` | Vermelho escuro | IA usa Pacifism ou Eaten by Piranhas em sua criatura | [x] |
+| 18 | `.has-equipment` | Dourado | Criatura com Short Sword / Marauder's Axe | [x] |
+| 19 | `.has-equipment.attacking` | Dourado + vermelho | Atacar com criatura equipada | [x] |
 
 ### Partida 4 (ou debug) — Qualquer
 Foco: view-mode, legibilidade geral
 
 | # | O que validar | Cor esperada | Como testar | OK? |
 |---|--------------|-------------|-------------|-----|
-| 20 | View-mode limpo | Sem glows de interação | Terminar partida e inspecionar BF | [ ] |
-| 21 | View-mode preserva estado | Aura/equipment visíveis | Mesma inspeção — auras e equipamentos ainda com glow | [ ] |
-| 22 | Legibilidade de `.valid-target` | Laranja visível | Com 5+ criaturas no BF, conjurar instant com alvo — alvos são identificáveis? | [ ] |
-| 23 | Legibilidade de `.valid-block-target` | Laranja visível | Com 3+ atacantes, selecionar bloqueador — atacantes bloqueáveis são claros? | [ ] |
+| 20 | View-mode limpo | Sem glows de interação | Terminar partida e inspecionar BF | [x] |
+| 21 | View-mode preserva estado | Aura/equipment visíveis | Mesma inspeção — auras e equipamentos ainda com glow | [x] |
+| 22 | Legibilidade de `.valid-target` | Laranja visível | Com 5+ criaturas no BF, conjurar instant com alvo — alvos são identificáveis? | [x] |
+| 23 | Legibilidade de `.valid-block-target` | Laranja visível | Com 3+ atacantes, selecionar bloqueador — atacantes bloqueáveis são claros? | [x] |
 
 ### Veredicto Final
 
-- [ ] **Todos os glows visíveis e distinguíveis** entre si
-- [ ] **Cores coerentes** com a semântica (verde=mana, vermelho=ataque, azul=defesa, laranja=alvo, ciano=conjuração, roxo=habilidade)
-- [ ] **Legibilidade suficiente** sem pulsação (ou precisa de brightness pulsante em B3/B6?)
-- [ ] **View-mode** limpo
-- [ ] Aprovado para remover keyframes mortos e fechar plano
+- [x] **Todos os glows visíveis e distinguíveis** entre si
+- [x] **Cores coerentes** com a semântica (verde=mana, vermelho=ataque, azul=defesa, laranja=alvo, ciano=conjuração, roxo=habilidade)
+- [x] **Legibilidade suficiente** sem pulsação (ou precisa de brightness pulsante em B3/B6?)
+- [x] **View-mode** limpo
+- [x] Aprovado para remover keyframes mortos e fechar plano
 
 ---
 
@@ -153,7 +153,7 @@ Os keyframes abaixo já não são referenciados por nenhum seletor `.card.*`, ma
 | `pending-cast-pulse` | `.pending-cast` |
 | `pulse-target` | `.valid-target` |
 
-- [ ] Remover keyframes mortos após validação completa
+- [x] Remover keyframes mortos após validação completa (pulse-attack duplicado removido em auditoria)
 
 ### `!important` restantes
 
