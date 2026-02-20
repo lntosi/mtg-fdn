@@ -29,8 +29,13 @@ class SoundManager {
             defeat: 'assets/sounds/defeat.ogg'            // Derrota
         };
 
-        // Música de fundo
-        this.musicUrl = 'assets/sounds/Ambience_Cave_00.ogg';
+        // Faixas de música disponíveis
+        this.musicTracks = {
+            heroic: { url: 'assets/sounds/heroic-suspenseful.ogg', label: 'Heroica' },
+            cave: { url: 'assets/sounds/Ambience_Cave_00.ogg', label: 'Caverna' }
+        };
+        this.currentTrack = 'heroic'; // Faixa padrão
+        this.musicUrl = this.musicTracks[this.currentTrack].url;
 
         this.init();
     }
@@ -105,7 +110,7 @@ class SoundManager {
     // === MÚSICA DE FUNDO (Sistema de Crossfade) ===
 
     playMusic() {
-        if (!this.enabled || this.musicPlaying) return;
+        if (!this.enabled || this.musicPlaying || this.currentTrack === 'none') return;
 
         const player = this.musicPlayers[this.activePlayer];
         if (!player) return;
@@ -270,6 +275,48 @@ class SoundManager {
                 this._setupCrossfadeLoop();
             }).catch(() => {});
         }
+    }
+
+    // === SELEÇÃO DE FAIXA ===
+
+    /**
+     * Troca a faixa de música. 'none' para desativar música.
+     * @param {string} trackId - ID da faixa ('heroic', 'cave', 'none')
+     */
+    setMusicTrack(trackId) {
+        if (trackId === 'none') {
+            this.currentTrack = 'none';
+            this.stopMusic();
+            return;
+        }
+
+        const track = this.musicTracks[trackId];
+        if (!track) return;
+
+        const wasPlaying = this.musicPlaying;
+        this.stopMusic();
+
+        this.currentTrack = trackId;
+        this.musicUrl = track.url;
+
+        // Recarregar players com nova URL
+        for (let i = 0; i < 2; i++) {
+            this.musicPlayers[i].src = this.musicUrl;
+            this.musicPlayers[i].load();
+        }
+
+        // Retomar se estava tocando
+        if (wasPlaying) {
+            this.playMusic();
+        }
+    }
+
+    getMusicTrack() {
+        return this.currentTrack;
+    }
+
+    getMusicTracks() {
+        return this.musicTracks;
     }
 
     // === CONTROLE DE VOLUME ===

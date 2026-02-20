@@ -5336,6 +5336,27 @@ html {
     min-width: 55px;
 }
 
+.settings-select {
+    flex: 1;
+    background: #333;
+    color: #e0d0f0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.85em;
+    cursor: pointer;
+    outline: none;
+}
+
+.settings-select:hover {
+    border-color: #b432a8;
+}
+
+.settings-select:focus {
+    border-color: #b432a8;
+    box-shadow: 0 0 4px rgba(180, 50, 168, 0.3);
+}
+
 #volume-slider {
     flex: 1;
     height: 6px;

@@ -243,7 +243,7 @@ class TriggerManager {
     }
 
     _createCatToken(controller) {
-        controller.battlefield.push({
+        const token = {
             instanceId: `cat_token_${globalInstanceCounter++}`,
             name: 'Cat Token',
             type: 'creature',
@@ -252,12 +252,14 @@ class TriggerManager {
             toughness: 1,
             summoningSickness: true,
             isToken: true
-        });
+        };
+        controller.battlefield.push(token);
         this.ui.log(`Criado um token Cat 1/1`);
+        this.onOtherCreatureEnters(token, controller);
     }
 
     _createElfToken(controller) {
-        controller.battlefield.push({
+        const token = {
             instanceId: `elf_token_${globalInstanceCounter++}`,
             name: 'Elf Warrior Token',
             type: 'creature',
@@ -266,11 +268,13 @@ class TriggerManager {
             toughness: 1,
             summoningSickness: true,
             isToken: true
-        });
+        };
+        controller.battlefield.push(token);
+        this.onOtherCreatureEnters(token, controller);
     }
 
     _createZombieToken(controller) {
-        controller.battlefield.push({
+        const token = {
             instanceId: `zombie_token_${globalInstanceCounter++}`,
             name: 'Zombie Token',
             type: 'creature',
@@ -279,7 +283,9 @@ class TriggerManager {
             toughness: 2,
             summoningSickness: true,
             isToken: true
-        });
+        };
+        controller.battlefield.push(token);
+        this.onOtherCreatureEnters(token, controller);
     }
 
     _handleDrain2ETB(controller, opponent) {
@@ -1151,7 +1157,7 @@ class TriggerManager {
 
             // Mischievous Mystic - create Faerie token no segundo draw
             if (card.keywords?.includes('second_draw_faerie') && drawCount === 2) {
-                player.battlefield.push({
+                const faerieToken = {
                     instanceId: `faerie_token_${globalInstanceCounter++}`,
                     name: 'Faerie Token',
                     type: 'creature',
@@ -1161,8 +1167,10 @@ class TriggerManager {
                     keywords: ['flying'],
                     summoningSickness: true,
                     isToken: true
-                });
+                };
+                player.battlefield.push(faerieToken);
                 this.ui.log(`${card.name} criou um token Faerie 1/1 com voar`);
+                this.onOtherCreatureEnters(faerieToken, player);
                 triggered = true;
             }
         });
@@ -1359,9 +1367,7 @@ class TriggerManager {
      * @param {Object} activePlayer - Jogador ativo do turno
      */
     async onEndStep(activePlayer) {
-        const nonActivePlayer = activePlayer === this.player ? this.game.opponent : this.player;
         await this._handleStromkirkBloodthief(activePlayer);
-        await this._handleStromkirkBloodthief(nonActivePlayer);
     }
 
     async _handleStromkirkBloodthief(controller) {
@@ -1454,12 +1460,12 @@ class TriggerManager {
                     let target;
 
                     if (controller === this.player) {
-                        // Jogador escolhe alvo (trigger obrigatório)
+                        // Jogador escolhe alvo (habilidade opcional: "you may")
                         target = await this.ui.promptTriggerTarget({
                             title: 'Battle-Rattle Shaman',
                             description: 'Escolha uma criatura alvo para ganhar +2/+0 até o fim do turno:',
                             validTargets: creatures,
-                            canSkip: false
+                            canSkip: true
                         });
                     } else {
                         // IA sempre usa a habilidade se tiver alvos válidos
@@ -1554,7 +1560,7 @@ class TriggerManager {
      * @param {Object} card - Carta que saiu do campo
      * @param {Object} owner - Dono da carta
      */
-    onLeaveBattlefield(card, owner) {
+    async onLeaveBattlefield(card, owner) {
         // Verificar se há cartas exiladas por este permanente
         // Procurar nas zonas de exílio de ambos os jogadores
         const allExile = [
@@ -1568,7 +1574,7 @@ class TriggerManager {
 
         if (toReturn.length === 0) return;
 
-        toReturn.forEach(exiledCard => {
+        for (const exiledCard of toReturn) {
             // Determinar o dono original da carta exilada
             const cardOwner = this._findCardOwner(exiledCard);
 
@@ -1584,6 +1590,13 @@ class TriggerManager {
                 // Limpar a referência de exílio
                 delete exiledCard.exiledBy;
 
+                // Resetar estado antes de retornar (nova instância no battlefield)
+                exiledCard.damage = 0;
+                exiledCard.powerModifier = 0;
+                exiledCard.toughnessModifier = 0;
+                exiledCard.temporaryKeywords = [];
+                exiledCard.counters = null;
+
                 // Retornar ao campo de batalha
                 cardOwner.battlefield.push(exiledCard);
 
@@ -1593,8 +1606,11 @@ class TriggerManager {
                 }
 
                 this.ui.log(`${exiledCard.name} retornou ao campo de batalha`);
+
+                // Disparar ETB triggers (criatura "entrou" no campo de batalha)
+                await this.resolveETB(exiledCard, cardOwner);
             }
-        });
+        }
 
         this.ui.render();
     }

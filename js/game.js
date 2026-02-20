@@ -780,7 +780,7 @@ class GameState {
         // Verificar se tem algum counterspell (Cancel, Essence Scatter, etc.) que pode usar
         const counterspell = this.opponent.hand.find(c =>
             this.isCounterspell(c) &&
-            this.rules.canCastSpell(c, this.opponent) &&
+            this.rules.canCastInstant(c, this.opponent) &&
             this.canCounterTarget(c, stackTop)
         );
 
@@ -1461,7 +1461,7 @@ class GameState {
                     // Pagar colorido primeiro
                     const coloredCost = {};
                     ['W', 'U', 'B', 'R', 'G'].forEach(color => {
-                        if (kickerCostParsed[color]) coloredCost[color] = kickerCostParsed[color];
+                        if (kickerCostParsed.colored?.[color]) coloredCost[color] = kickerCostParsed.colored[color];
                     });
                     if (Object.keys(coloredCost).length > 0) {
                         this.payColoredMana(coloredCost, player);
@@ -1537,7 +1537,7 @@ class GameState {
                     const kickerCostParsed = this.rules.parseCost(card.kickerCost);
                     const coloredCost = {};
                     ['W', 'U', 'B', 'R', 'G'].forEach(color => {
-                        if (kickerCostParsed[color]) coloredCost[color] = kickerCostParsed[color];
+                        if (kickerCostParsed.colored?.[color]) coloredCost[color] = kickerCostParsed.colored[color];
                     });
                     if (Object.keys(coloredCost).length > 0) {
                         this.payColoredMana(coloredCost, player);
@@ -1872,6 +1872,8 @@ class GameState {
                 targets = [...this.currentAttackers];
                 const blockersFlat = Object.values(this.blockerAssignments).flat();
                 targets.push(...blockersFlat);
+                // Filtrar hexproof (canBeTargetedBy verifica se caster pode mirar)
+                targets = targets.filter(c => this.rules.canBeTargetedBy(c, caster));
                 break;
 
             case 'volley':
@@ -1889,6 +1891,16 @@ class GameState {
                 targets = opponent.battlefield.filter(c =>
                     c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
                 );
+                break;
+
+            case 'bite_down':
+                // Bite Down: sua criatura causa dano = poder a criatura do oponente
+                // Requer pelo menos 1 criatura própria E 1 criatura do oponente
+                if (caster.battlefield.some(c => c.type === 'creature')) {
+                    targets = opponent.battlefield.filter(c =>
+                        c.type === 'creature' && this.rules.canBeTargetedBy(c, caster)
+                    );
+                }
                 break;
 
             case 'angelic_edict':
@@ -2211,6 +2223,42 @@ class GameState {
                 }
                 break;
 
+            case 'bite_down': {
+                // Bite Down: sua criatura causa dano = poder a criatura do oponente
+                // "target" é a criatura do oponente; precisamos escolher nossa criatura
+                const biteOwnCreatures = caster.battlefield.filter(c => c.type === 'creature');
+                if (biteOwnCreatures.length > 0) {
+                    let biteSource;
+                    if (caster === this.player) {
+                        biteSource = await this.ui.promptTriggerTarget({
+                            title: 'Bite Down',
+                            description: 'Escolha sua criatura para causar dano:',
+                            validTargets: biteOwnCreatures,
+                            canSkip: false
+                        });
+                    } else {
+                        // IA: escolhe a criatura com maior poder
+                        biteSource = biteOwnCreatures.sort((a, b) =>
+                            this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
+                        )[0];
+                    }
+
+                    if (biteSource) {
+                        const biteDamage = this.rules.getCreaturePower(biteSource);
+                        target.damage = (target.damage || 0) + biteDamage;
+                        this.ui.log(`${biteSource.name} causou ${biteDamage} de dano a ${target.name}`);
+
+                        // Deathtouch check
+                        if (this.rules.hasKeyword(biteSource, 'deathtouch', false) && biteDamage > 0) {
+                            target.markedForDeath = true;
+                        }
+
+                        await this.checkCreatureDeath(target, targetOwner);
+                    }
+                }
+                break;
+            }
+
             case 'broken_wings':
                 await this.destroyPermanent(target, targetOwner);
                 this.ui.log(`${target.name} foi destruído`);
@@ -2395,7 +2443,7 @@ class GameState {
     }
 
     // Exilar permanente (vai para a zona de exílio do dono)
-    exilePermanent(permanent, owner) {
+    async exilePermanent(permanent, owner) {
         const index = owner.battlefield.indexOf(permanent);
         if (index > -1) {
             // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
@@ -2406,7 +2454,7 @@ class GameState {
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
             // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
-            this.triggers.onLeaveBattlefield(permanent, owner);
+            await this.triggers.onLeaveBattlefield(permanent, owner);
             // Adiciona à zona de exílio do dono
             owner.exile.push(permanent);
         }
@@ -2458,7 +2506,7 @@ class GameState {
      * @param {string} sourceName - Nome da carta/efeito que causou o bounce (para log)
      * @returns {boolean} - true se foi devolvido para mão, false se era token
      */
-    bounceToHand(target, owner, sourceName = '') {
+    async bounceToHand(target, owner, sourceName = '') {
         const index = owner.battlefield.indexOf(target);
         if (index === -1) return false;
 
@@ -2472,7 +2520,7 @@ class GameState {
 
         // Desregistrar efeitos especiais e trigger LTB
         this.unregisterSpecialEffect(target);
-        this.triggers.onLeaveBattlefield(target, owner);
+        await this.triggers.onLeaveBattlefield(target, owner);
 
         // Reset card state
         target.damage = 0;
@@ -2615,7 +2663,7 @@ class GameState {
             case 'dragon_fodder':
                 // Criar 2 tokens goblin
                 for (let i = 0; i < 2; i++) {
-                    caster.battlefield.push({
+                    const goblinToken = {
                         instanceId: `goblin_token_${globalInstanceCounter++}`,
                         name: 'Goblin Token',
                         type: 'creature',
@@ -2624,7 +2672,9 @@ class GameState {
                         toughness: 1,
                         summoningSickness: true,
                         isToken: true
-                    });
+                    };
+                    caster.battlefield.push(goblinToken);
+                    this.triggers.onOtherCreatureEnters(goblinToken, caster);
                 }
                 this.ui.log(`Criados 2 tokens Goblin 1/1`);
                 break;
@@ -2784,12 +2834,9 @@ class GameState {
         // markedForDeath: deathtouch via Bite Down ou efeitos similares
         if (creature.markedForDeath) {
             delete creature.markedForDeath;
-            if (creature.exileOnDeath) {
-                this.exilePermanent(creature, owner);
-                this.ui.log(`${creature.name} foi exilado`);
-            } else {
-                await this.destroyPermanent(creature, owner);
-            }
+            // Sempre via destroyPermanent para disparar death triggers
+            // destroyPermanent verifica exileOnDeath internamente
+            await this.destroyPermanent(creature, owner);
             return;
         }
 
@@ -2799,12 +2846,7 @@ class GameState {
 
         // Toughness <= 0: criatura morre mesmo com indestructible (regra 704.5f)
         if (toughness <= 0) {
-            if (creature.exileOnDeath) {
-                this.exilePermanent(creature, owner);
-                this.ui.log(`${creature.name} foi exilado`);
-            } else {
-                await this.destroyPermanent(creature, owner);
-            }
+            await this.destroyPermanent(creature, owner);
             return;
         }
 
@@ -2814,12 +2856,7 @@ class GameState {
                 // Criatura sobrevive - indestructible previne destruição por dano
                 return;
             }
-            if (creature.exileOnDeath) {
-                this.exilePermanent(creature, owner);
-                this.ui.log(`${creature.name} foi exilado`);
-            } else {
-                await this.destroyPermanent(creature, owner);
-            }
+            await this.destroyPermanent(creature, owner);
         }
     }
 
@@ -2846,14 +2883,20 @@ class GameState {
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
             // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
-            this.triggers.onLeaveBattlefield(permanent, owner);
-            owner.graveyard.push(permanent);
+            await this.triggers.onLeaveBattlefield(permanent, owner);
+            // exileOnDeath: criatura vai para exílio em vez de cemitério (Scorching Dragonfire etc.)
+            if (permanent.exileOnDeath) {
+                owner.exile.push(permanent);
+            } else {
+                owner.graveyard.push(permanent);
+            }
 
             // Tokens deixam de existir fora do battlefield (regra 111.7 / 704.5d)
             if (permanent.isToken) {
-                const tokenIdx = owner.graveyard.indexOf(permanent);
+                const zone = permanent.exileOnDeath ? owner.exile : owner.graveyard;
+                const tokenIdx = zone.indexOf(permanent);
                 if (tokenIdx > -1) {
-                    owner.graveyard.splice(tokenIdx, 1);
+                    zone.splice(tokenIdx, 1);
                 }
             }
         }
@@ -2878,7 +2921,7 @@ class GameState {
 
             owner.battlefield.splice(index, 1);
             this.unregisterSpecialEffect(creature);
-            this.triggers.onLeaveBattlefield(creature, owner);
+            await this.triggers.onLeaveBattlefield(creature, owner);
 
             // Check if creature was returned by undying effect
             if (!creature._returnedByUndying) {
@@ -2960,7 +3003,7 @@ class GameState {
             case 'suspicious_shambler': {
                 // {4}{B}{B}, Exile from graveyard: Create two 2/2 Zombie tokens
                 // Activate only as a sorcery (main phase, stack empty, active player)
-                if (!this.isPlayerTurn() && player === this.player) return false;
+                if (this.activePlayer !== player) return false;
                 if (!this.isStackEmpty()) return false;
                 const phase = this.phase;
                 if (phase !== PHASES.MAIN1 && phase !== PHASES.MAIN2) return false;
@@ -3000,7 +3043,7 @@ class GameState {
         }
 
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
-        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul', 'wildheart_invoker', 'thrashing_brontodon', 'mild_mannered_librarian'];
+        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul', 'wildheart_invoker', 'thrashing_brontodon', 'mild_mannered_librarian', 'mystic_archaeologist'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
             // Haste permite usar habilidades de tap mesmo com summoning sickness (regra 702.10)
@@ -3044,7 +3087,8 @@ class GameState {
                 // 7, T, Sacrifice: destroy target permanent
                 const firebombMana = Object.values(this.rules.calculateAvailableMana(player)).reduce((a,b) => a+b, 0);
                 const firebombOpponent = player === this.player ? this.opponent : this.player;
-                const hasTargetPermanent = firebombOpponent.battlefield.length > 0;
+                const hasTargetPermanent = firebombOpponent.battlefield.length > 0 ||
+                    player.battlefield.some(c => c.instanceId !== card.instanceId);
                 return firebombMana >= 7 && hasTargetPermanent;
 
             case 'dropkick_bomber':
@@ -3673,6 +3717,9 @@ class GameState {
                 player.battlefield.push(card);
 
                 this.ui.log(`${card.name} retornou do cemitério para o campo de batalha (virado)`);
+
+                // Disparar triggers de "outra criatura entrou" (Beast-Kin Ranger etc.)
+                await this.triggers.resolveETB(card, player);
                 break;
 
             case 'suspicious_shambler':
@@ -3940,6 +3987,7 @@ class GameState {
                         c.markedForDeath = false; // Limpar flag de deathtouch mark
                         c.sacrificeOnCombatDamage = false; // Limpar flag de Dropkick Bomber
                         c.undyingMalice = false; // Limpar flag de Undying Malice (até fim do turno)
+                        c.hasHasteFromOrb = false; // Limpar haste do Dragon's Hoard/Orb
                     });
                 });
 
@@ -4116,7 +4164,7 @@ class GameState {
         const potentialBlockers = defendingPlayer.battlefield.filter(c =>
             c.type === 'creature' &&
             !c.tapped &&
-            !Object.values(assignments).flat().includes(c.instanceId)
+            !Object.values(assignments).flat().some(b => b.instanceId === c.instanceId)
         );
 
         // Verificar se algum bloqueador pode legalmente bloquear algum atacante mustBeBlocked
@@ -4609,6 +4657,9 @@ class GameState {
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
         this.ui.render();
 
+        // Disparar triggers de end step da IA (Stromkirk Bloodthief etc.)
+        await this.triggers.onEndStep(this.opponent);
+
         // Arena-style: aguardar jogador clicar "Continuar" no end step
         // Momento clássico para jogar instants
         await this.waitForPlayerContinue('Fim do turno do oponente');
@@ -4624,6 +4675,7 @@ class GameState {
             c.markedForDeath = false;
             c.sacrificeOnCombatDamage = false;
             c.undyingMalice = false;
+            c.hasHasteFromOrb = false;
         });
 
         // Limpar dano e modificadores temporários das criaturas do jogador também
@@ -4638,6 +4690,7 @@ class GameState {
             c.markedForDeath = false;
             c.sacrificeOnCombatDamage = false;
             c.undyingMalice = false;
+            c.hasHasteFromOrb = false;
         });
 
         // Descarte da IA (MTG rule: descartar até 7 cartas no cleanup)

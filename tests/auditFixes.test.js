@@ -416,8 +416,8 @@ describe('Bug 7: Seize the Spoils - Discard at Cast Time', () => {
 // ============================================================
 // Bug 8: New Horizons — produces specific color mana
 // ============================================================
-describe('Bug 8: New Horizons - Specific Color Mana', () => {
-    test('enchanted Forest produces 2 green mana (not generic)', () => {
+describe('Bug 8: New Horizons - Any Color Mana (Oracle fix)', () => {
+    test('enchanted Forest produces 2 mana of any one color', () => {
         const forest = createLand({ name: 'Forest', produces: 'G' });
         const newHorizons = {
             id: 'new_horizons',
@@ -426,46 +426,35 @@ describe('Bug 8: New Horizons - Specific Color Mana', () => {
             attachedTo: forest.instanceId
         };
 
-        // Simular calculateAvailableMana para terreno com New Horizons
+        // New Horizons Oracle: "{T}: Add two mana of any one color."
+        // Terreno encantado produz 2 mana de qualquer cor (não apenas sua cor original)
         const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
         const landsWithNewHorizons = new Set([forest.instanceId]);
 
         if (landsWithNewHorizons.has(forest.instanceId)) {
-            if (forest.produces && forest.produces !== 'any') {
-                mana[forest.produces] = (mana[forest.produces] || 0) + 2;
-            } else {
-                mana.any += 2;
-            }
+            mana.any += 2;
         }
 
-        expect(mana.G).toBe(2);
-        expect(mana.any).toBe(0); // Não deve ir para "any"
+        expect(mana.any).toBe(2); // Vai para "any" (qualquer cor)
+        expect(mana.G).toBe(0); // Não mais restrito à cor do terreno
     });
 
-    test('enchanted Mountain produces 2 red mana', () => {
+    test('enchanted Mountain produces 2 mana of any one color', () => {
         const mountain = createLand({ name: 'Mountain', produces: 'R' });
         const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
 
-        if (mountain.produces && mountain.produces !== 'any') {
-            mana[mountain.produces] = (mana[mountain.produces] || 0) + 2;
-        } else {
-            mana.any += 2;
-        }
+        // New Horizons replaces the land's ability
+        mana.any += 2;
 
-        expect(mana.R).toBe(2);
-        expect(mana.G).toBe(0);
-        expect(mana.any).toBe(0);
+        expect(mana.any).toBe(2);
+        expect(mana.R).toBe(0); // Não mais restrito à cor do terreno
     });
 
-    test('enchanted dual-land (produces "any") gives 2 generic mana', () => {
+    test('enchanted dual-land (produces "any") gives 2 any mana', () => {
         const dualLand = createLand({ name: 'Uncharted Haven', produces: 'any' });
         const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0, any: 0 };
 
-        if (dualLand.produces && dualLand.produces !== 'any') {
-            mana[dualLand.produces] = (mana[dualLand.produces] || 0) + 2;
-        } else {
-            mana.any += 2;
-        }
+        mana.any += 2;
 
         expect(mana.any).toBe(2);
     });

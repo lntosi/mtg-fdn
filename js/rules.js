@@ -361,14 +361,9 @@ class RulesEngine {
             if (card.type === 'land' && !card.tapped) {
                 // Verificar se o terreno está encantado com New Horizons
                 if (landsWithNewHorizons.has(card.instanceId)) {
-                    // New Horizons: terreno produz 2 mana de uma mesma cor
-                    // Usa 'paired' para indicar que os 2 mana devem ser da mesma cor
-                    // Na prática em decks de 1-2 cores, tratamos como 2 mana da cor que o terreno produz
-                    if (card.produces && card.produces !== 'any') {
-                        mana[card.produces] = (mana[card.produces] || 0) + 2;
-                    } else {
-                        mana.any += 2;
-                    }
+                    // New Horizons: "{T}: Add two mana of any one color"
+                    // Terreno encantado produz 2 mana de qualquer cor (não apenas sua cor original)
+                    mana.any += 2;
                 } else if (card.produces === 'any') {
                     // Uncharted Haven: usa a cor escolhida, ou 'any' se ainda não escolheu
                     if (card.chosenColor) {

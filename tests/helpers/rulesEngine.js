@@ -253,6 +253,42 @@ class TestRulesEngine {
         return true;
     }
 
+    // Calcula mana disponível (simplificado)
+    calculateAvailableMana(player) {
+        const mana = { W: 0, U: 0, B: 0, R: 0, G: 0, any: 0 };
+        if (!player?.battlefield) return mana;
+        player.battlefield.forEach(card => {
+            if (card.type === 'land' && !card.tapped && card.produces) {
+                if (card.produces === 'any') {
+                    mana.any++;
+                } else if (mana[card.produces] !== undefined) {
+                    mana[card.produces]++;
+                }
+            }
+        });
+        return mana;
+    }
+
+    // Verifica se jogador pode pagar o custo de mana de uma carta (simplificado)
+    canAfford(card, player) {
+        const mana = this.calculateAvailableMana(player);
+        const totalAvailable = Object.values(mana).reduce((a, b) => a + b, 0);
+        return totalAvailable >= (card.cmc || 0);
+    }
+
+    // canCastSpell: requer main phase + active player + mana
+    canCastSpell(card, player) {
+        if (!this.game) return false;
+        const isMainPhase = this.game.phase === 'main1' || this.game.phase === 'main2';
+        const isActivePlayer = this.game.activePlayer === player;
+        return isMainPhase && isActivePlayer && this.canAfford(card, player);
+    }
+
+    // canCastInstant: só requer mana (pode ser no turno do oponente)
+    canCastInstant(card, player) {
+        return this.canAfford(card, player);
+    }
+
     // Verifica se tem mana suficiente (simplificado)
     hasEnoughMana(cost, availableMana) {
         const parsed = this.parseCost(cost);

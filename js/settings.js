@@ -7,6 +7,7 @@ class SettingsManager {
             soundEnabled: true,
             sfxVolume: 50,          // Volume dos efeitos sonoros (50%)
             musicVolume: 80,        // Volume da música de fundo (80%)
+            musicTrack: 'heroic',   // Faixa de música padrão
             logPanelEnabled: false  // Histórico desabilitado por padrão
         };
 
@@ -182,6 +183,15 @@ class SettingsManager {
                 const vol = parseInt(e.target.value);
                 this.setMusicVolume(vol);
                 if (musicVolumeValue) musicVolumeValue.textContent = `${vol}%`;
+            });
+        }
+
+        // Music Track selector
+        const musicTrackSelect = document.getElementById('music-track-select');
+        if (musicTrackSelect) {
+            musicTrackSelect.value = this.settings.musicTrack || 'heroic';
+            musicTrackSelect.addEventListener('change', (e) => {
+                this.setMusicTrack(e.target.value);
             });
         }
 
@@ -433,6 +443,12 @@ class SettingsManager {
             if (musicVolumeValue) musicVolumeValue.textContent = `${this.settings.musicVolume}%`;
         }
 
+        // Sincronizar faixa de música
+        const musicTrackSelect = document.getElementById('music-track-select');
+        if (musicTrackSelect) {
+            musicTrackSelect.value = this.settings.musicTrack || 'heroic';
+        }
+
         // Sincronizar priority stops
         this.syncPriorityStops();
     }
@@ -481,6 +497,7 @@ class SettingsManager {
         this.setSoundEnabled(this.defaults.soundEnabled);
         this.setSfxVolume(this.defaults.sfxVolume);
         this.setMusicVolume(this.defaults.musicVolume);
+        this.setMusicTrack(this.defaults.musicTrack);
 
         // Aplicar configurações de exibição
         this.setLogPanelEnabled(this.defaults.logPanelEnabled);
@@ -558,6 +575,14 @@ class SettingsManager {
         this.saveSettings();
     }
 
+    setMusicTrack(trackId) {
+        this.settings.musicTrack = trackId;
+        if (window.soundManager) {
+            window.soundManager.setMusicTrack(trackId);
+        }
+        this.saveSettings();
+    }
+
     applySoundSettings() {
         if (window.soundManager) {
             if (this.settings.soundEnabled) {
@@ -567,6 +592,9 @@ class SettingsManager {
             }
             window.soundManager.setSfxVolume(this.settings.sfxVolume / 100);
             window.soundManager.setMusicVolume(this.settings.musicVolume / 100);
+            // Aplicar faixa de música salva
+            const track = this.settings.musicTrack || 'heroic';
+            window.soundManager.setMusicTrack(track);
         }
     }
 
