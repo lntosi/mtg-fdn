@@ -961,6 +961,10 @@ class RulesEngine {
                     }
                     if (damageToAttacker > 0) {
                         attacker.damage = (attacker.damage || 0) + damageToAttacker;
+                        // Rastrear se o atacante recebeu dano de fonte com deathtouch
+                        if (bKeywords.deathtouch) {
+                            attacker._tookDeathtouchDamage = true;
+                        }
                         if (bKeywords.lifelink) {
                             results.lifeGained.defender += damageToAttacker;
                         }
@@ -1071,10 +1075,8 @@ class RulesEngine {
             if (!deadCreatures.has(attacker) && !aKeywords.indestructible) {
                 const totalDamage = attacker.damage || 0;
                 const toughness = this.getCreatureToughness(attacker);
-                const killedByDeathtouch = [...bKeywordsMap.entries()].some(
-                    ([b, bk]) => bk.deathtouch && !deadCreatures.has(b) && this.getCreaturePower(b) > 0
-                            && (attacker.damage || 0) > 0
-                );
+                // Flag precisa: setada em _dealCombatDamageStep quando blocker com deathtouch causa dano
+                const killedByDeathtouch = !!attacker._tookDeathtouchDamage;
                 if (totalDamage >= toughness || killedByDeathtouch) {
                     if (!results.creaturesDied.includes(attacker)) {
                         results.creaturesDied.push(attacker);

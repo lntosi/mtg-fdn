@@ -415,6 +415,7 @@ class GameState {
             this.ui.log(`${this.opponent.name} começa primeiro!`);
         }
 
+        this.startingPlayer = this.activePlayer; // Rastrear quem começa (para lógica de draw skip)
         this.phase = PHASES.MAIN1; // Pular untap/upkeep/draw no primeiro turno
 
         this.ui.render();
@@ -2846,7 +2847,7 @@ class GameState {
 
         // Toughness <= 0: criatura morre mesmo com indestructible (regra 704.5f)
         if (toughness <= 0) {
-            await this.destroyPermanent(creature, owner);
+            await this.destroyPermanent(creature, owner, { bypassIndestructible: true });
             return;
         }
 
@@ -2860,9 +2861,16 @@ class GameState {
         }
     }
 
-    async destroyPermanent(permanent, owner) {
+    async destroyPermanent(permanent, owner, { bypassIndestructible = false } = {}) {
         const index = owner.battlefield.indexOf(permanent);
         if (index > -1) {
+            // Indestructible previne destruição (exceto SBA por toughness <= 0)
+            if (!bypassIndestructible && permanent.type === 'creature' &&
+                this.rules.hasKeyword(permanent, 'indestructible', false)) {
+                this.ui.log(`${permanent.name} é indestrutível!`);
+                return;
+            }
+
             // Chamar death triggers ANTES de mover para o cemitério (criatura ainda "vê" o campo)
             if (permanent.type === 'creature' && this.triggers) {
                 await this.triggers.onCreatureDeath(permanent, owner);
@@ -3320,10 +3328,10 @@ class GameState {
                 // 7, T, Sacrifice: destroy target permanent (any player's)
                 const firebombValidTargets = [
                     ...this.player.battlefield.filter(c =>
-                        !c.keywords?.includes('indestructible') && c.instanceId !== card.instanceId
+                        !this.rules.hasKeyword(c, 'indestructible', false) && c.instanceId !== card.instanceId
                     ),
                     ...this.opponent.battlefield.filter(c =>
-                        !c.keywords?.includes('indestructible')
+                        !this.rules.hasKeyword(c, 'indestructible', false)
                     )
                 ];
 
@@ -3440,6 +3448,7 @@ class GameState {
                         // Colocar contador +1/+1
                         if (!leoninTarget.counters) leoninTarget.counters = {};
                         leoninTarget.counters.plusOnePlusOne = (leoninTarget.counters.plusOnePlusOne || 0) + 1;
+                        this.triggers.onCounterPlaced(leoninTarget, player, 1);
                         this.ui.log(`Ingenious Leonin: ${leoninTarget.name} ganhou um contador +1/+1`);
 
                         // Se é Cat, ganha iniciativa até o fim do turno
@@ -3645,10 +3654,10 @@ class GameState {
                 }
 
                 this.payGenericMana(1, player);
-                await this.destroyPermanent(ghoulSacTarget, player);
+                await this.sacrificeCreature(ghoulSacTarget, player);
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
-                this.ui.log(`Hungry Ghoul sacrificou ${ghoulSacTarget.name} e ganhou um contador +1/+1`);
+                this.ui.log(`Hungry Ghoul: ganhou um contador +1/+1`);
                 this.triggers.onCounterPlaced(card, player, 1);
                 this.ui.render();
                 break;
@@ -3988,6 +3997,7 @@ class GameState {
                         c.sacrificeOnCombatDamage = false; // Limpar flag de Dropkick Bomber
                         c.undyingMalice = false; // Limpar flag de Undying Malice (até fim do turno)
                         c.hasHasteFromOrb = false; // Limpar haste do Dragon's Hoard/Orb
+                        delete c._tookDeathtouchDamage; // Limpar flag de dano deathtouch
                     });
                 });
 
@@ -4317,11 +4327,42 @@ class GameState {
         // Remover criaturas mortas em batch (SBA Rule 704.3 - simultaneous)
         // Deduplicate first (creature may appear multiple times)
         const uniqueDeaths = [...new Set(results.creaturesDied)];
+
+        // Fase 1: Disparar TODOS os death triggers enquanto todas as criaturas morrendo
+        // ainda se veem no campo de batalha (MTG CR 603.10: mortes simultâneas)
         for (const creature of uniqueDeaths) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
-            await this.destroyPermanent(creature, owner);
-            // Only log death if creature actually left the battlefield (not returned by Undying Malice etc.)
-            if (!owner.battlefield.includes(creature)) {
+            if (creature.type === 'creature' && this.triggers) {
+                await this.triggers.onCreatureDeath(creature, owner);
+            }
+        }
+
+        // Fase 2: Remover criaturas do campo (pular se retornada por Undying Malice)
+        for (const creature of uniqueDeaths) {
+            if (creature._returnedByUndying) {
+                delete creature._returnedByUndying;
+                continue;
+            }
+            const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
+            const index = owner.battlefield.indexOf(creature);
+            if (index > -1) {
+                if (creature.type === 'creature') {
+                    this.detachFromCreature(creature, owner);
+                }
+                owner.battlefield.splice(index, 1);
+                this.unregisterSpecialEffect(creature);
+                await this.triggers.onLeaveBattlefield(creature, owner);
+                if (creature.exileOnDeath) {
+                    owner.exile.push(creature);
+                } else {
+                    owner.graveyard.push(creature);
+                }
+                // Tokens deixam de existir fora do battlefield (regra 111.7 / 704.5d)
+                if (creature.isToken) {
+                    const zone = creature.exileOnDeath ? owner.exile : owner.graveyard;
+                    const tokenIdx = zone.indexOf(creature);
+                    if (tokenIdx > -1) zone.splice(tokenIdx, 1);
+                }
                 this.ui.log(`${creature.name} morreu em combate`);
             }
         }
@@ -4484,11 +4525,21 @@ class GameState {
         this.ui.render();
         await this.delay(600);
 
+        // Upkeep (mantém paridade com handlePhase)
+        this.phase = PHASES.UPKEEP;
+        // Futuro: triggers de upkeep aqui
+        // Janela de prioridade para jogador durante upkeep do oponente
+        if (this.shouldStopForPriority('upkeep') && this.playerHasResponses()) {
+            await this.waitForPlayerContinue('Upkeep do oponente');
+        }
+
         // Draw
         this.phase = PHASES.DRAW;
         this.ui.log('Fase: Draw');
-        // Regra 103.7a: o jogador que começa pula a compra do primeiro turno
-        if (this.turnNumber > 1) {
+        // Regra 103.7a: APENAS o jogador que começa pula a compra do primeiro turno
+        // Se IA não é o starting player, deve comprar mesmo no turnNumber === 1
+        const aiIsStartingPlayer = this.startingPlayer === this.opponent;
+        if (this.turnNumber > 1 || !aiIsStartingPlayer) {
             const drawn = this.rules.drawCard(this.opponent);
             if (drawn) {
                 this.ui.log(`Oponente comprou uma carta`);
@@ -4512,6 +4563,9 @@ class GameState {
         this.phase = PHASES.COMBAT_BEGIN;
         this.ui.log('Fase: Beginning of Combat');
         this.ui.render();
+
+        // CR 507: Beginning of combat triggers (Leonin Vanguard, Battle-Rattle Shaman)
+        await this.triggers.onBeginCombat(this.opponent);
 
         // Arena-style: aguardar jogador clicar "Continuar" no início do combate
         await this.waitForPlayerContinue('Início do combate do oponente');
@@ -4545,6 +4599,11 @@ class GameState {
         // Log inicial
         this.ui.log('IA está pensando...');
         await this.delay(800);
+
+        // 0. Usar habilidades ativadas de mana ANTES de jogar cartas (Elvish Archdruid gera floating mana)
+        if (this.ai.config.useActivatedAbilities) {
+            await this.ai.useActivatedAbilities();
+        }
 
         // 1. Jogar terreno se possível
         const landInHand = opponent.hand.find(card => card.type === 'land');
@@ -4582,8 +4641,8 @@ class GameState {
             if (this.gameOver) return;
         }
 
-        // 3. Usar habilidades ativadas (Main Phase 2)
-        if (phase === 2 && this.ai.config.useActivatedAbilities) {
+        // 3. Usar habilidades ativadas (ambas as fases: pre-combate em Main1, pós-combate em Main2)
+        if (this.ai.config.useActivatedAbilities) {
             await this.ai.useActivatedAbilities();
         }
     }
@@ -4619,7 +4678,8 @@ class GameState {
             // Delay maior para ver resultado do combate
             await this.delay(1200);
 
-            // Limpar atacantes
+            // End of Combat (mantém paridade com handlePhase COMBAT_END)
+            this.phase = PHASES.COMBAT_END;
             this.currentAttackers = [];
             this.blockerAssignments = {};
 
@@ -4676,6 +4736,7 @@ class GameState {
             c.sacrificeOnCombatDamage = false;
             c.undyingMalice = false;
             c.hasHasteFromOrb = false;
+            delete c._tookDeathtouchDamage;
         });
 
         // Limpar dano e modificadores temporários das criaturas do jogador também
@@ -4691,6 +4752,7 @@ class GameState {
             c.sacrificeOnCombatDamage = false;
             c.undyingMalice = false;
             c.hasHasteFromOrb = false;
+            delete c._tookDeathtouchDamage;
         });
 
         // Descarte da IA (MTG rule: descartar até 7 cartas no cleanup)
