@@ -1913,13 +1913,20 @@ class GameState {
                 break;
 
             case 'broken_wings':
-                // Artefato, encantamento ou criatura com flying (inclui flying temporário/condicional)
-                targets = opponent.battlefield.filter(c =>
-                    c.type === 'artifact' ||
-                    c.type === 'enchantment' ||
-                    (c.type === 'creature' && this.rules.hasKeyword(c, 'flying', false) &&
-                     this.rules.canBeTargetedBy(c, caster))
-                );
+                // Artefato, encantamento ou criatura com flying (Oracle: qualquer, não só oponente)
+                targets = [
+                    ...opponent.battlefield.filter(c =>
+                        c.type === 'artifact' ||
+                        c.type === 'enchantment' ||
+                        (c.type === 'creature' && this.rules.hasKeyword(c, 'flying', false) &&
+                         this.rules.canBeTargetedBy(c, caster))
+                    ),
+                    ...caster.battlefield.filter(c =>
+                        c.type === 'artifact' ||
+                        c.type === 'enchantment' ||
+                        (c.type === 'creature' && this.rules.hasKeyword(c, 'flying', false))
+                    )
+                ];
                 break;
 
             case 'fleeting_distraction':
@@ -1967,11 +1974,16 @@ class GameState {
                 break;
 
             case 'eaten_alive':
-                // Target opponent creature or planeswalker
-                targets = opponent.battlefield.filter(c =>
-                    (c.type === 'creature' || c.type === 'planeswalker') &&
-                    this.rules.canBeTargetedBy(c, caster)
-                );
+                // Target any creature or planeswalker (Oracle: "Exile target creature or planeswalker")
+                targets = [
+                    ...opponent.battlefield.filter(c =>
+                        (c.type === 'creature' || c.type === 'planeswalker') &&
+                        this.rules.canBeTargetedBy(c, caster)
+                    ),
+                    ...caster.battlefield.filter(c =>
+                        c.type === 'creature' || c.type === 'planeswalker'
+                    )
+                ];
                 break;
 
             default:
@@ -4514,6 +4526,9 @@ class GameState {
         this.ui.log('--- Turno do Oponente ---');
         await this.delay(600);
 
+        // Esvaziar floating mana no início do turno da IA (regra MTG: mana esvazia entre fases)
+        this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+
         // Untap
         this.phase = PHASES.UNTAP;
         this.ui.log('Fase: Untap');
@@ -4654,6 +4669,9 @@ class GameState {
         if (this.ai.config.useActivatedAbilities) {
             await this.ai.useActivatedAbilities();
         }
+
+        // 4. Usar habilidades ativadas do cemitério (Reassembling Skeleton, Suspicious Shambler)
+        await this.ai.useGraveyardAbilities(this.opponent);
     }
 
     async continueAfterBlocking() {
@@ -4732,6 +4750,9 @@ class GameState {
         // Arena-style: aguardar jogador clicar "Continuar" no end step
         // Momento clássico para jogar instants
         await this.waitForPlayerContinue('Fim do turno do oponente');
+
+        // Cleanup (paridade com handlePhase CLEANUP)
+        this.phase = PHASES.CLEANUP;
 
         // Limpar dano e modificadores temporários (criaturas da IA)
         this.opponent.battlefield.forEach(c => {

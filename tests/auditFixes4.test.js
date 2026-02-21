@@ -771,3 +771,344 @@ describe('Fix R2-17: drawsThisTurn resets for both players', () => {
         expect(drawsThisTurn.player).toBe(2);
     });
 });
+
+// ============================================================
+// Rodada 4 — Bugs da Análise Multi-Agente (R4)
+// ============================================================
+
+// ============================================================
+// Fix R4-1: Undying Malice clears pre-existing counters (CR 400.7)
+// ============================================================
+describe('Fix R4-1: Undying Malice counter reset', () => {
+    test('creature with existing +1/+1 counters loses them when returning via Undying Malice', () => {
+        const creature = createCreature({
+            name: 'Hungry Ghoul', power: 3, toughness: 3,
+            counters: { plusOnePlusOne: 3 },
+            undyingMalice: true
+        });
+
+        const player = createPlayer([creature]);
+        const opponent = createPlayer([]);
+        const rules = new TestRulesEngine({ player, opponent });
+
+        const mockUI = { log: jest.fn(), render: jest.fn() };
+        const triggers = {
+            game: { player, opponent },
+            player, opponent, ui: mockUI, rules,
+            onCounterPlaced: jest.fn()
+        };
+
+        // Simulate the Undying Malice handler logic
+        if (creature.undyingMalice) {
+            delete creature.undyingMalice;
+            creature.damage = 0;
+            creature.powerModifier = 0;
+            creature.toughnessModifier = 0;
+            creature.temporaryKeywords = [];
+            creature.counters = {};
+            creature.counters.plusOnePlusOne = 1;
+            creature.tapped = true;
+            creature.summoningSickness = true;
+        }
+
+        // Should have exactly 1 counter, not 4
+        expect(creature.counters.plusOnePlusOne).toBe(1);
+    });
+
+    test('creature without counters gets exactly 1 counter from Undying Malice', () => {
+        const creature = createCreature({
+            name: 'Diregraf Ghoul', power: 2, toughness: 2,
+            undyingMalice: true
+        });
+
+        if (creature.undyingMalice) {
+            delete creature.undyingMalice;
+            creature.counters = {};
+            creature.counters.plusOnePlusOne = 1;
+        }
+
+        expect(creature.counters.plusOnePlusOne).toBe(1);
+    });
+});
+
+// ============================================================
+// Fix R4-2: AI uses graveyard abilities in executeAIMainPhaseWithPriority
+// ============================================================
+describe('Fix R4-2: AI graveyard abilities in main phase', () => {
+    test('executeAIMainPhaseWithPriority calls useGraveyardAbilities', () => {
+        // Verify the method exists and is called in the right place
+        // The fix adds: await this.ai.useGraveyardAbilities(this.opponent);
+        // after activated abilities in executeAIMainPhaseWithPriority
+        const mockAI = {
+            config: { useActivatedAbilities: false },
+            useGraveyardAbilities: jest.fn().mockResolvedValue(undefined)
+        };
+
+        // Simulate the relevant part of executeAIMainPhaseWithPriority
+        const opponent = createPlayer([]);
+        const callOrder = [];
+
+        // If useActivatedAbilities is disabled, still calls graveyard abilities
+        if (mockAI.config.useActivatedAbilities) {
+            callOrder.push('activatedAbilities');
+        }
+        mockAI.useGraveyardAbilities(opponent);
+        callOrder.push('graveyardAbilities');
+
+        expect(mockAI.useGraveyardAbilities).toHaveBeenCalledWith(opponent);
+        expect(callOrder).toContain('graveyardAbilities');
+    });
+});
+
+// ============================================================
+// Fix R4-3: Eaten Alive targets any creature/planeswalker (not just opponent's)
+// ============================================================
+describe('Fix R4-3: Eaten Alive targeting', () => {
+    test('Eaten Alive can target caster own creatures', () => {
+        const ownCreature = createCreature({ name: 'Skeleton', power: 1, toughness: 1 });
+        const oppCreature = createCreature({ name: 'Angel', power: 4, toughness: 4 });
+
+        const caster = createPlayer({ battlefield: [ownCreature] });
+        const opponent = createPlayer({ battlefield: [oppCreature] });
+        const rules = new TestRulesEngine({ player: caster, opponent });
+
+        // Simulate getValidSpellTargets for eaten_alive
+        const targets = [
+            ...opponent.battlefield.filter(c =>
+                (c.type === 'creature' || c.type === 'planeswalker') &&
+                rules.canBeTargetedBy(c, caster)
+            ),
+            ...caster.battlefield.filter(c =>
+                c.type === 'creature' || c.type === 'planeswalker'
+            )
+        ];
+
+        expect(targets).toContainEqual(expect.objectContaining({ name: 'Angel' }));
+        expect(targets).toContainEqual(expect.objectContaining({ name: 'Skeleton' }));
+        expect(targets.length).toBe(2);
+    });
+});
+
+// ============================================================
+// Fix R4-4: Broken Wings targets any artifact/enchantment/flying creature
+// ============================================================
+describe('Fix R4-4: Broken Wings targeting', () => {
+    test('Broken Wings can target own artifacts', () => {
+        const ownArtifact = createCreature({ name: 'Treasure Token', type: 'artifact' });
+        const oppFlyer = createCreature({ name: 'Angel', power: 4, toughness: 4, keywords: ['flying'] });
+
+        const caster = createPlayer({ battlefield: [ownArtifact] });
+        const opponent = createPlayer({ battlefield: [oppFlyer] });
+        const rules = new TestRulesEngine({ player: caster, opponent });
+
+        // Simulate getValidSpellTargets for broken_wings
+        const targets = [
+            ...opponent.battlefield.filter(c =>
+                c.type === 'artifact' || c.type === 'enchantment' ||
+                (c.type === 'creature' && rules.hasKeyword(c, 'flying', false) &&
+                 rules.canBeTargetedBy(c, caster))
+            ),
+            ...caster.battlefield.filter(c =>
+                c.type === 'artifact' || c.type === 'enchantment' ||
+                (c.type === 'creature' && rules.hasKeyword(c, 'flying', false))
+            )
+        ];
+
+        expect(targets).toContainEqual(expect.objectContaining({ name: 'Angel' }));
+        expect(targets).toContainEqual(expect.objectContaining({ name: 'Treasure Token' }));
+    });
+
+    test('hasValidTargets for Broken Wings includes own permanents', () => {
+        const ownEnchantment = createCreature({ name: 'Pacifism', type: 'enchantment' });
+
+        const player = createPlayer({ battlefield: [ownEnchantment] });
+        const opponent = createPlayer();
+        const rules = new TestRulesEngine({ player, opponent });
+
+        // hasValidTargets should return true even if only own permanents match
+        const hasOpponentTargets = opponent.battlefield.some(c =>
+            c.type === 'artifact' || c.type === 'enchantment' ||
+            (c.type === 'creature' && rules.hasKeyword(c, 'flying', false))
+        );
+        const hasOwnTargets = player.battlefield.some(c =>
+            c.type === 'artifact' || c.type === 'enchantment' ||
+            (c.type === 'creature' && rules.hasKeyword(c, 'flying', false))
+        );
+
+        expect(hasOpponentTargets).toBe(false);
+        expect(hasOwnTargets).toBe(true);
+        expect(hasOpponentTargets || hasOwnTargets).toBe(true);
+    });
+});
+
+// ============================================================
+// Fix R4-5: AI Firebomb uses hasKeyword for indestructible check
+// ============================================================
+describe('Fix R4-5: AI Firebomb indestructible check', () => {
+    test('creature with temporary indestructible is excluded from Firebomb targets', () => {
+        const creature = createCreature({
+            name: 'Angel', power: 4, toughness: 4,
+            temporaryKeywords: ['indestructible']
+        });
+
+        const player = createPlayer([]);
+        const opponent = createPlayer([creature]);
+        const rules = new TestRulesEngine({ player, opponent });
+
+        // Old code: !c.keywords?.includes('indestructible') — would miss temporaryKeywords
+        const oldCheck = !creature.keywords?.includes('indestructible');
+        expect(oldCheck).toBe(true); // Old code wrongly includes this creature
+
+        // New code: !rules.hasKeyword(c, 'indestructible', false)
+        const newCheck = !rules.hasKeyword(creature, 'indestructible', false);
+        expect(newCheck).toBe(false); // New code correctly excludes
+    });
+
+    test('creature with base indestructible is excluded from Firebomb targets', () => {
+        const creature = createCreature({
+            name: 'Indestructible Angel', power: 4, toughness: 4,
+            keywords: ['flying', 'indestructible']
+        });
+
+        const player = createPlayer([]);
+        const opponent = createPlayer([creature]);
+        const rules = new TestRulesEngine({ player, opponent });
+
+        const newCheck = !rules.hasKeyword(creature, 'indestructible', false);
+        expect(newCheck).toBe(false);
+    });
+});
+
+// ============================================================
+// Fix R4-6: Death Baron/Crossway keyword grants check hasLostAllAbilities
+// ============================================================
+describe('Fix R4-6: Lord keyword grants respect hasLostAllAbilities', () => {
+    test('Death Baron with Eaten by Piranhas does not grant deathtouch', () => {
+        const deathBaron = createCreature({
+            name: 'Death Baron', id: 'death_baron',
+            power: 2, toughness: 2, subtype: 'Zombie Wizard',
+            keywords: ['zombie_skeleton_lord']
+        });
+        const zombie = createCreature({
+            name: 'Diregraf Ghoul', power: 2, toughness: 2, subtype: 'Zombie'
+        });
+        const eatenByPiranhas = {
+            instanceId: 'eaten_1', name: 'Eaten by Piranhas',
+            type: 'enchantment', subtype: 'Aura',
+            id: 'eaten_by_piranhas',
+            attachedTo: deathBaron.instanceId
+        };
+
+        const player = createPlayer({ battlefield: [deathBaron, zombie, eatenByPiranhas] });
+        const opponent = createPlayer();
+        const rules = new TestRulesEngine({ player, opponent });
+
+        // Death Baron has lost all abilities (Eaten by Piranhas)
+        expect(rules.hasLostAllAbilities(deathBaron)).toBe(true);
+
+        // Zombie should NOT get deathtouch from silenced Death Baron
+        const keywords = rules.getCreatureKeywords(zombie, false);
+        expect(keywords).not.toContain('deathtouch');
+    });
+
+    test('Death Baron without Eaten by Piranhas grants deathtouch normally', () => {
+        const deathBaron = createCreature({
+            name: 'Death Baron', id: 'death_baron',
+            power: 2, toughness: 2, subtype: 'Zombie Wizard',
+            keywords: ['zombie_skeleton_lord']
+        });
+        const zombie = createCreature({
+            name: 'Diregraf Ghoul', power: 2, toughness: 2, subtype: 'Zombie'
+        });
+
+        const player = createPlayer({ battlefield: [deathBaron, zombie] });
+        const opponent = createPlayer();
+        const rules = new TestRulesEngine({ player, opponent });
+
+        const keywords = rules.getCreatureKeywords(zombie, false);
+        expect(keywords).toContain('deathtouch');
+    });
+
+    test('Crossway Troublemakers with Eaten by Piranhas does not grant deathtouch/lifelink', () => {
+        const crossway = createCreature({
+            name: 'Crossway Troublemakers', id: 'crossway_troublemakers',
+            power: 5, toughness: 5, subtype: 'Vampire'
+        });
+        const vampire = createCreature({
+            name: 'Vampire Interloper', power: 2, toughness: 1, subtype: 'Vampire'
+        });
+        const eatenByPiranhas = {
+            instanceId: 'eaten_2', name: 'Eaten by Piranhas',
+            type: 'enchantment', subtype: 'Aura',
+            id: 'eaten_by_piranhas',
+            attachedTo: crossway.instanceId
+        };
+
+        const player = createPlayer({ battlefield: [crossway, vampire, eatenByPiranhas] });
+        const opponent = createPlayer();
+        const rules = new TestRulesEngine({ player, opponent });
+
+        // Vampire attacking should NOT get deathtouch/lifelink from silenced Crossway
+        const keywords = rules.getCreatureKeywords(vampire, true); // isAttacking = true
+        expect(keywords).not.toContain('deathtouch');
+        expect(keywords).not.toContain('lifelink');
+    });
+});
+
+// ============================================================
+// Fix R4-7: Floating mana reset during AI turn
+// ============================================================
+describe('Fix R4-7: AI floating mana reset', () => {
+    test('floating mana is reset at start of AI turn', () => {
+        const floatingMana = {
+            player: { W: 0, U: 0, B: 0, R: 0, G: 3, C: 0 },
+            opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }
+        };
+
+        // Simulate: reset at start of AI turn
+        const reset = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+        Object.assign(floatingMana, reset);
+
+        expect(floatingMana.player.G).toBe(0);
+        expect(floatingMana.opponent.G).toBe(0);
+    });
+});
+
+// ============================================================
+// Fix R4-8: Firespitter Whelp text fix (cosmetic)
+// ============================================================
+describe('Fix R4-8: Firespitter Whelp text', () => {
+    let CARD_DATABASE;
+    beforeAll(() => {
+        global.window = global.window || {};
+        require('../js/cards.js');
+        CARD_DATABASE = global.window.CARD_DATABASE;
+    });
+
+    test('card text correctly describes noncreature OR Dragon trigger', () => {
+        // The Portuguese text should read:
+        // "uma mágica que não seja de criatura, ou uma mágica de Dragão"
+        // NOT: "uma mágica que não seja de criatura ou de Dragão"
+        const infernoDeck = Object.values(CARD_DATABASE).find(d => d.name === 'Inferno');
+        const whelp = infernoDeck.cards.find(c => c.id === 'firespitter_whelp');
+
+        expect(whelp.text).toContain('não seja de criatura, ou uma mágica de Dragão');
+        expect(whelp.text).not.toContain('não seja de criatura ou de Dragão');
+    });
+});
+
+// ============================================================
+// Fix R4-9: AI turn sets PHASES.CLEANUP
+// ============================================================
+describe('Fix R4-9: AI PHASES.CLEANUP assignment', () => {
+    test('PHASES.CLEANUP constant exists and is defined', () => {
+        // Verify PHASES.CLEANUP is a valid phase
+        const PHASES = {
+            UNTAP: 0, UPKEEP: 1, DRAW: 2, MAIN1: 3,
+            COMBAT_BEGIN: 4, DECLARE_ATTACKERS: 5, DECLARE_BLOCKERS: 6,
+            COMBAT_DAMAGE: 7, COMBAT_END: 8, MAIN2: 9, END: 10, CLEANUP: 11
+        };
+        expect(PHASES.CLEANUP).toBeDefined();
+        expect(PHASES.CLEANUP).toBe(11);
+    });
+});

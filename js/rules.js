@@ -211,13 +211,17 @@ class RulesEngine {
             return hasFlyingCreatures;
         }
 
-        // Broken Wings - artefatos, encantamentos ou criaturas com flying do oponente
+        // Broken Wings - artefatos, encantamentos ou criaturas com flying (qualquer jogador)
         if (card.id === 'broken_wings') {
-            const hasValidTargets = opponent.battlefield.some(c =>
+            const hasOpponentTargets = opponent.battlefield.some(c =>
                 c.type === 'artifact' || c.type === 'enchantment' ||
                 (c.type === 'creature' && this.hasKeyword(c, 'flying', false))
             );
-            return hasValidTargets;
+            const hasOwnTargets = player.battlefield.some(c =>
+                c.type === 'artifact' || c.type === 'enchantment' ||
+                (c.type === 'creature' && this.hasKeyword(c, 'flying', false))
+            );
+            return hasOpponentTargets || hasOwnTargets;
         }
 
         // Felling Blow - precisa de criatura sua E criatura do oponente
@@ -1359,9 +1363,10 @@ class RulesEngine {
         // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
         const effectiveSubtype = this.getEffectiveSubtype(creature);
         if (isAttacking && effectiveSubtype.includes('Vampire')) {
-            // Procurar por id ou por nome como fallback
+            // Procurar por id ou por nome como fallback (respeitar hasLostAllAbilities)
             const crosswayFound = controller.battlefield.find(c =>
-                c.id === 'crossway_troublemakers' || c.name === 'Crossway Troublemakers'
+                (c.id === 'crossway_troublemakers' || c.name === 'Crossway Troublemakers') &&
+                !this.hasLostAllAbilities(c)
             );
             if (crosswayFound) {
                 if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
@@ -1372,7 +1377,7 @@ class RulesEngine {
         // Death Baron: outros Zombies e Skeletons têm deathtouch
         if (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton')) {
             const deathBaronFound = controller.battlefield.find(c =>
-                c.id === 'death_baron' && c !== creature
+                c.id === 'death_baron' && c !== creature && !this.hasLostAllAbilities(c)
             );
             if (deathBaronFound) {
                 if (!keywords.includes('deathtouch')) keywords.push('deathtouch');

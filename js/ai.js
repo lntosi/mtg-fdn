@@ -654,7 +654,7 @@ class AIPlayer {
                 // {7}, T, Sacrifice: Destroy target permanent
                 // Alto custo - só usar para ameaças significativas
                 const firebombTargets = opponent.battlefield.filter(c =>
-                    !c.keywords?.includes('indestructible')
+                    !this.rules.hasKeyword(c, 'indestructible', false)
                 );
 
                 if (firebombTargets.length === 0) return false;

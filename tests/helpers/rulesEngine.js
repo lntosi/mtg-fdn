@@ -232,6 +232,70 @@ class TestRulesEngine {
         );
     }
 
+    // Verifica se criatura está afetada por Eaten by Piranhas
+    isAffectedByEatenByPiranhas(creature) {
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return false;
+        }
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.some(card =>
+            card.id === 'eaten_by_piranhas' &&
+            card.subtype === 'Aura' &&
+            card.attachedTo === creature.instanceId
+        );
+    }
+
+    // Verifica se criatura perdeu todas as habilidades
+    hasLostAllAbilities(creature) {
+        return this.isAffectedByEatenByPiranhas(creature);
+    }
+
+    // Retorna subtipo efetivo (Eaten by Piranhas muda para Skeleton)
+    getEffectiveSubtype(creature) {
+        if (this.isAffectedByEatenByPiranhas(creature)) {
+            return 'Skeleton';
+        }
+        return creature.subtype || '';
+    }
+
+    // Retorna keywords de uma criatura incluindo efeitos de lords
+    getCreatureKeywords(creature, isAttacking = false) {
+        const keywords = [...(creature.keywords || [])];
+
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return keywords;
+        }
+
+        const playerHasCreature = this.game.player.battlefield.some(c => c.instanceId === creature.instanceId);
+        const controller = playerHasCreature ? this.game.player : this.game.opponent;
+
+        const effectiveSubtype = this.getEffectiveSubtype(creature);
+
+        // Crossway Troublemakers: Vampiros atacantes têm deathtouch e lifelink
+        if (isAttacking && effectiveSubtype.includes('Vampire')) {
+            const crosswayFound = controller.battlefield.find(c =>
+                (c.id === 'crossway_troublemakers' || c.name === 'Crossway Troublemakers') &&
+                !this.hasLostAllAbilities(c)
+            );
+            if (crosswayFound) {
+                if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
+                if (!keywords.includes('lifelink')) keywords.push('lifelink');
+            }
+        }
+
+        // Death Baron: outros Zombies e Skeletons têm deathtouch
+        if (effectiveSubtype.includes('Zombie') || effectiveSubtype.includes('Skeleton')) {
+            const deathBaronFound = controller.battlefield.find(c =>
+                c.id === 'death_baron' && c !== creature && !this.hasLostAllAbilities(c)
+            );
+            if (deathBaronFound) {
+                if (!keywords.includes('deathtouch')) keywords.push('deathtouch');
+            }
+        }
+
+        return keywords;
+    }
+
     // Verifica se uma criatura pode ser alvo de um jogador
     canBeTargetedBy(creature, caster) {
         if (!this.game?.player?.battlefield) {

@@ -1278,14 +1278,15 @@ class TriggerManager {
         // Checked AFTER other death triggers so they all fire (MTG: all death triggers fire)
         if (creature.undyingMalice) {
             delete creature.undyingMalice;
-            // Reset card state (damage, modifiers)
+            // Reset card state (damage, modifiers, counters)
+            // MTG CR 400.7: zone change = new object, old counters are gone
             creature.damage = 0;
             creature.powerModifier = 0;
             creature.toughnessModifier = 0;
             creature.temporaryKeywords = [];
-            // Add +1/+1 counter
-            if (!creature.counters) creature.counters = {};
-            creature.counters.plusOnePlusOne = (creature.counters.plusOnePlusOne || 0) + 1;
+            creature.counters = {};
+            // Add +1/+1 counter (the only counter on the "new" creature)
+            creature.counters.plusOnePlusOne = 1;
             // Creature stays tapped and gets summoning sickness
             creature.tapped = true;
             creature.summoningSickness = true;
