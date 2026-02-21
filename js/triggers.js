@@ -224,6 +224,12 @@ class TriggerManager {
         card.mustBeBlocked = false;
         card.pendingResolution = false;
         card.counters = null; // Counters are lost when changing zones
+        // Restaurar subtype original se transformado (MTG 400.7: zona nova = objeto novo)
+        if (card._originalSubtype) {
+            card.subtype = card._originalSubtype;
+            delete card._originalSubtype;
+        }
+        delete card.transformed;
         // Note: summoningSickness is set when entering battlefield, not here
     }
 
@@ -1137,6 +1143,9 @@ class TriggerManager {
         let triggered = false;
 
         player.battlefield.forEach(card => {
+            // Ignorar criaturas pendentes de resolução (ainda na stack)
+            if (card.pendingResolution) return;
+
             // Clinquant Skymage - +1/+1 counter em qualquer draw
             if (card.keywords?.includes('draw_counter')) {
                 if (!card.counters) card.counters = {};

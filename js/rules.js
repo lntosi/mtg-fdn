@@ -122,6 +122,11 @@ class RulesEngine {
                    opponent.battlefield.some(c => c.type === 'creature');
         }
 
+        // New Horizons - enchant land (não criatura)
+        if (aura.id === 'new_horizons') {
+            return player.battlefield.some(c => c.type === 'land');
+        }
+
         // Eaten by Piranhas - pode mirar QUALQUER criatura (tem Flash, pode ser usada defensivamente)
         if (aura.id === 'eaten_by_piranhas') {
             const allCreatures = [

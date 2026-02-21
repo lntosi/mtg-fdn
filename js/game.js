@@ -2523,7 +2523,7 @@ class GameState {
         this.unregisterSpecialEffect(target);
         await this.triggers.onLeaveBattlefield(target, owner);
 
-        // Reset card state
+        // Reset card state (MTG rule 400.7: zona nova = objeto novo, perde todo estado)
         target.damage = 0;
         target.powerModifier = 0;
         target.toughnessModifier = 0;
@@ -2531,6 +2531,12 @@ class GameState {
         target.tapped = false;
         target.summoningSickness = false;
         target.counters = null;
+        // Restaurar subtype original se transformado (Mild-Mannered Librarian)
+        if (target._originalSubtype) {
+            target.subtype = target._originalSubtype;
+            delete target._originalSubtype;
+        }
+        delete target.transformed;
 
         // Tokens deixam de existir quando saem do battlefield (regra 111.7)
         const isToken = target.isToken === true;
@@ -3668,6 +3674,7 @@ class GameState {
 
                 // Transform (mark as transformed, change subtype)
                 card.transformed = true;
+                card._originalSubtype = card.subtype; // Salvar para restaurar ao trocar de zona
                 card.subtype = 'Werewolf';
 
                 // Add 2 +1/+1 counters
@@ -3885,10 +3892,10 @@ class GameState {
                 }
                 this.cantBlockThisTurn = [];
                 this.cantBeBlockedThisTurn = [];
-                // Resetar contador de draws para o jogador ativo (para triggers de segundo draw)
+                // Resetar contadores de draws para AMBOS os jogadores (MTG: "each turn" = cada turno do jogo)
                 if (this.drawsThisTurn) {
-                    const playerKey = this.activePlayer === this.player ? 'player' : 'opponent';
-                    this.drawsThisTurn[playerKey] = 0;
+                    this.drawsThisTurn['player'] = 0;
+                    this.drawsThisTurn['opponent'] = 0;
                 }
                 await this.nextPhase();
                 break;
@@ -4519,7 +4526,9 @@ class GameState {
         this.attackedThisTurn.opponent = false;
         this.cantBlockThisTurn = [];
         this.cantBeBlockedThisTurn = [];
+        // Resetar contadores de draws para AMBOS os jogadores (MTG: "each turn" = cada turno do jogo)
         if (this.drawsThisTurn) {
+            this.drawsThisTurn['player'] = 0;
             this.drawsThisTurn['opponent'] = 0;
         }
         this.ui.render();
