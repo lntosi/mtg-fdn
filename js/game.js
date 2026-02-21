@@ -841,8 +841,10 @@ class GameState {
     isRemovalSpell(card) {
         const removalIds = [
             'murder', 'lightning_bolt', 'doom_blade', 'go_for_the_throat',
-            'eaten_by_piranhas', 'finishing_blow', 'elspeth_smite',
-            'disfigure', 'cut_down', 'fatal_push', 'unholy_heat'
+            'eaten_by_piranhas', 'finishing_blow', 'elspeths_smite',
+            'disfigure', 'cut_down', 'fatal_push', 'unholy_heat',
+            'deadly_riposte', 'prayer_of_binding', 'angelic_edict',
+            'heros_downfall', 'eaten_alive', 'deadly_plot'
         ];
         return removalIds.includes(card.id);
     }
@@ -2367,7 +2369,7 @@ class GameState {
                 const ownCreaturesEA = caster.battlefield.filter(c => c.type === 'creature');
                 const availableManaEA = this.rules.calculateAvailableMana(caster);
                 const totalManaEA = availableManaEA.W + availableManaEA.U + availableManaEA.B +
-                                   availableManaEA.R + availableManaEA.G + availableManaEA.any;
+                                   availableManaEA.R + availableManaEA.G + (availableManaEA.C || 0) + availableManaEA.any;
                 const canPayExtra = totalManaEA >= 4 && availableManaEA.B >= 1; // {3}{B} extra
 
                 let paidCost = false;
@@ -3069,7 +3071,7 @@ class GameState {
         }
 
         // Habilidades que não requerem tap podem ser usadas com summoning sickness
-        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul', 'wildheart_invoker', 'thrashing_brontodon', 'mild_mannered_librarian', 'mystic_archaeologist'];
+        const noTapAbilities = ['spectral_sailor', 'jazal_goldmane', 'ingenious_leonin', 'hungry_ghoul', 'wildheart_invoker', 'thrashing_brontodon', 'mild_mannered_librarian', 'mystic_archaeologist', 'dropkick_bomber'];
         if (!noTapAbilities.includes(card.id)) {
             if (card.tapped) return false;
             // Haste permite usar habilidades de tap mesmo com summoning sickness (regra 702.10)
@@ -4278,7 +4280,7 @@ class GameState {
 
             if (blockers.length > 1) {
                 // Múltiplos bloqueadores - precisa dividir dano
-                const hasDoubleStrike = attacker.keywords && attacker.keywords.includes('double_strike');
+                const hasDoubleStrike = this.rules.hasKeyword(attacker, 'double_strike', true);
                 const attackerPower = this.rules.getCreaturePower(attacker, true);
                 const totalDamage = hasDoubleStrike ? attackerPower * 2 : attackerPower;
 
@@ -4333,13 +4335,17 @@ class GameState {
             this.loseLife(defendingPlayer, results.damageToPlayers.defender);
         }
 
-        // Aplicar vida ganha (lifelink)
-        if (results.lifeGained.attacker > 0) {
-            this.gainLife(attackingPlayer, results.lifeGained.attacker);
+        // Aplicar vida ganha (lifelink) — cada criatura é um evento separado (CR 118.9)
+        if (results.lifelinkEvents && results.lifelinkEvents.attacker.length > 0) {
+            for (const amount of results.lifelinkEvents.attacker) {
+                this.gainLife(attackingPlayer, amount);
+            }
             this.ui.log(`${attackingPlayer.name} ganhou ${results.lifeGained.attacker} vidas (lifelink)`);
         }
-        if (results.lifeGained.defender > 0) {
-            this.gainLife(defendingPlayer, results.lifeGained.defender);
+        if (results.lifelinkEvents && results.lifelinkEvents.defender.length > 0) {
+            for (const amount of results.lifelinkEvents.defender) {
+                this.gainLife(defendingPlayer, amount);
+            }
             this.ui.log(`${defendingPlayer.name} ganhou ${results.lifeGained.defender} vidas (lifelink)`);
         }
 
@@ -4383,6 +4389,44 @@ class GameState {
                     if (tokenIdx > -1) zone.splice(tokenIdx, 1);
                 }
                 this.ui.log(`${creature.name} morreu em combate`);
+            }
+        }
+
+        // SBA re-check: após lords morrerem, criaturas que perderam bônus podem ter dano >= toughness (CR 704.3)
+        const sbaDeaths = [];
+        for (const p of [this.player, this.opponent]) {
+            for (const creature of [...p.battlefield]) {
+                if (creature.type !== 'creature') continue;
+                if (uniqueDeaths.includes(creature)) continue; // já morreu
+                const toughness = this.rules.getCreatureToughness(creature);
+                const damage = creature.damage || 0;
+                if (toughness <= 0 || (damage >= toughness && !this.rules.hasKeyword(creature, 'indestructible', false))) {
+                    sbaDeaths.push({ creature, owner: p });
+                }
+            }
+        }
+        for (const { creature, owner } of sbaDeaths) {
+            if (creature.type === 'creature' && this.triggers) {
+                await this.triggers.onCreatureDeath(creature, owner);
+            }
+        }
+        for (const { creature, owner } of sbaDeaths) {
+            if (creature._returnedByUndying) {
+                delete creature._returnedByUndying;
+                continue;
+            }
+            const idx = owner.battlefield.indexOf(creature);
+            if (idx > -1) {
+                this.detachFromCreature(creature, owner);
+                owner.battlefield.splice(idx, 1);
+                this.unregisterSpecialEffect(creature);
+                await this.triggers.onLeaveBattlefield(creature, owner);
+                owner.graveyard.push(creature);
+                if (creature.isToken) {
+                    const tokenIdx = owner.graveyard.indexOf(creature);
+                    if (tokenIdx > -1) owner.graveyard.splice(tokenIdx, 1);
+                }
+                this.ui.log(`${creature.name} morreu (perdeu bônus de lord)`);
             }
         }
 
@@ -4583,6 +4627,9 @@ class GameState {
         // IA joga cartas na main phase - com janelas de prioridade
         await this.executeAIMainPhaseWithPriority();
 
+        // Esvaziar floating mana entre fases (CR 500.4)
+        this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+
         // Início do combate - janela de prioridade
         this.phase = PHASES.COMBAT_BEGIN;
         this.ui.log('Fase: Beginning of Combat');
@@ -4592,7 +4639,9 @@ class GameState {
         await this.triggers.onBeginCombat(this.opponent);
 
         // Arena-style: aguardar jogador clicar "Continuar" no início do combate
-        await this.waitForPlayerContinue('Início do combate do oponente');
+        if (this.shouldStopForPriority('beginCombat') && this.playerHasResponses()) {
+            await this.waitForPlayerContinue('Início do combate do oponente');
+        }
 
         // Combat - Declarar atacantes
         this.phase = PHASES.DECLARE_ATTACKERS;
@@ -4730,6 +4779,9 @@ class GameState {
         try {
             await this.delay(600);
 
+            // Esvaziar floating mana entre fases (CR 500.4)
+            this.floatingMana = { player: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 }, opponent: { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 } };
+
             // Main Phase 2
             this.phase = PHASES.MAIN2;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);
@@ -4749,7 +4801,9 @@ class GameState {
 
         // Arena-style: aguardar jogador clicar "Continuar" no end step
         // Momento clássico para jogar instants
-        await this.waitForPlayerContinue('Fim do turno do oponente');
+        if (this.shouldStopForPriority('endStep') && this.playerHasResponses()) {
+            await this.waitForPlayerContinue('Fim do turno do oponente');
+        }
 
         // Cleanup (paridade com handlePhase CLEANUP)
         this.phase = PHASES.CLEANUP;

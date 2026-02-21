@@ -1064,13 +1064,13 @@ class TriggerManager {
             if (card.instanceId === enteringCreature.instanceId) return;
 
             // Beast-Kin Ranger - ganha +1/+0 quando outra criatura entra
-            if (card.id === 'beast_kin_ranger') {
+            if (card.id === 'beast_kin_ranger' && !this.rules.hasLostAllAbilities(card)) {
                 card.powerModifier = (card.powerModifier || 0) + 1;
                 this.ui.log(`Beast-Kin Ranger ganha +1/+0 (${enteringCreature.name} entrou em campo)`);
             }
 
             // Hinterland Sanctifier / Dazzling Angel - ganha 1 vida quando outra criatura entra
-            if (card.keywords?.includes('creature_etb_lifegain')) {
+            if (card.keywords?.includes('creature_etb_lifegain') && !this.rules.hasLostAllAbilities(card)) {
                 this.game.gainLife(controller, 1);
                 this.ui.log(`${card.name}: ${controller.name} ganhou 1 vida (${enteringCreature.name} entrou em campo)`);
             }
@@ -1095,7 +1095,7 @@ class TriggerManager {
 
         if (isOpponentsTurn) {
             caster.battlefield.forEach(card => {
-                if (card.id === 'brineborn_cutthroat' && !card.pendingResolution) {
+                if (card.id === 'brineborn_cutthroat' && !card.pendingResolution && !this.rules.hasLostAllAbilities(card)) {
                     if (!card.counters) card.counters = {};
                     card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                     this.ui.log(`Brineborn Cutthroat ganha um contador +1/+1 (mágica conjurada no turno do oponente)`);
@@ -1114,7 +1114,7 @@ class TriggerManager {
             // Dispara para spells não-criatura OU criaturas Dragão
             if (!isCreature || isDragon) {
                 caster.battlefield.forEach(card => {
-                    if (card.keywords?.includes('spellcast_damage') && !card.pendingResolution) {
+                    if (card.keywords?.includes('spellcast_damage') && !card.pendingResolution && !this.rules.hasLostAllAbilities(card)) {
                         // Causa 1 de dano a cada oponente
                         this.game.loseLife(opponent, 1);
                         this.ui.log(`${card.name} causou 1 de dano a ${opponent.name}`);
@@ -1147,7 +1147,7 @@ class TriggerManager {
             if (card.pendingResolution) return;
 
             // Clinquant Skymage - +1/+1 counter em qualquer draw
-            if (card.keywords?.includes('draw_counter')) {
+            if (card.keywords?.includes('draw_counter') && !this.rules.hasLostAllAbilities(card)) {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (${player.name} comprou)`);
@@ -1156,7 +1156,7 @@ class TriggerManager {
             }
 
             // Erudite Wizard - +1/+1 counter no segundo draw
-            if (card.keywords?.includes('second_draw_counter') && drawCount === 2) {
+            if (card.keywords?.includes('second_draw_counter') && drawCount === 2 && !this.rules.hasLostAllAbilities(card)) {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (segundo card comprado)`);
@@ -1165,7 +1165,7 @@ class TriggerManager {
             }
 
             // Mischievous Mystic - create Faerie token no segundo draw
-            if (card.keywords?.includes('second_draw_faerie') && drawCount === 2) {
+            if (card.keywords?.includes('second_draw_faerie') && drawCount === 2 && !this.rules.hasLostAllAbilities(card)) {
                 const faerieToken = {
                     instanceId: `faerie_token_${globalInstanceCounter++}`,
                     name: 'Faerie Token',
@@ -1204,7 +1204,7 @@ class TriggerManager {
 
         controller.battlefield.forEach(card => {
             // Wildwood Scourge - ganha +1/+1 quando outra criatura não-Hidra ganha contador
-            if (card.keywords?.includes('counter_synergy') && card !== creature) {
+            if (card.keywords?.includes('counter_synergy') && card !== creature && !this.rules.hasLostAllAbilities(card)) {
                 // Não dispara se a criatura que recebeu é uma Hidra
                 if (creature.subtype?.includes('Hydra')) return;
 
@@ -1234,7 +1234,7 @@ class TriggerManager {
 
         player.battlefield.forEach(card => {
             // Ajani's Pridemate / Twinblade Paladin - +1/+1 counter quando ganha vida
-            if (card.keywords?.includes('lifegain_counter')) {
+            if (card.keywords?.includes('lifegain_counter') && !this.rules.hasLostAllAbilities(card)) {
                 if (!card.counters) card.counters = {};
                 card.counters.plusOnePlusOne = (card.counters.plusOnePlusOne || 0) + 1;
                 this.ui.log(`${card.name} ganha um contador +1/+1 (${player.name} ganhou vida)`);
@@ -1506,7 +1506,7 @@ class TriggerManager {
 
         // Herald of Faith - ganha 2 vidas quando ataca
         attackers.forEach(attacker => {
-            if (attacker.keywords?.includes('attack_gain_life_2')) {
+            if (attacker.keywords?.includes('attack_gain_life_2') && !this.rules.hasLostAllAbilities(attacker)) {
                 this.game.gainLife(attackingPlayer, 2);
                 this.ui.log(`${attacker.name}: ${attackingPlayer.name} ganhou 2 vidas (atacou)`);
             }
@@ -1514,7 +1514,7 @@ class TriggerManager {
 
         // Ancestor Dragon - ganha 1 vida para cada atacante
         attackingPlayer.battlefield.forEach(card => {
-            if (card.keywords?.includes('mass_attack_lifegain')) {
+            if (card.keywords?.includes('mass_attack_lifegain') && !this.rules.hasLostAllAbilities(card)) {
                 const lifeGain = attackers.length;
                 this.game.gainLife(attackingPlayer, lifeGain);
                 this.ui.log(`${card.name}: ${attackingPlayer.name} ganhou ${lifeGain} vida(s) (${attackers.length} atacante(s))`);

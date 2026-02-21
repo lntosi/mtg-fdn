@@ -1514,7 +1514,7 @@ class AIPlayer {
         blockers.forEach(b => assignment[b.instanceId] = 0);
 
         let remainingDamage = totalDamage;
-        const hasDeathtouch = attacker.keywords && attacker.keywords.includes('deathtouch');
+        const hasDeathtouch = this.rules.hasKeyword(attacker, 'deathtouch', true);
 
         // Ordenar bloqueadores por prioridade de eliminação
         // - Primeiro: criaturas que podemos matar com dano disponível

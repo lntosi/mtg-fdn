@@ -327,7 +327,7 @@ class RulesEngine {
             // Check if can sacrifice or pay extra mana
             const hasCreatureToSacrifice = player.battlefield.some(c => c.type === 'creature');
             const availableMana = this.calculateAvailableMana(player);
-            const totalMana = availableMana.W + availableMana.U + availableMana.B + availableMana.R + availableMana.G + availableMana.any;
+            const totalMana = availableMana.W + availableMana.U + availableMana.B + availableMana.R + availableMana.G + (availableMana.C || 0) + availableMana.any;
             const canPayExtra = totalMana >= 5 && availableMana.B >= 2; // {3}{B} + {B} base = 5 total, 2B
 
             return hasCreatureToSacrifice || canPayExtra;
@@ -840,6 +840,7 @@ class RulesEngine {
             creaturesDied: [],
             damageToPlayers: { attacker: 0, defender: 0 },
             lifeGained: { attacker: 0, defender: 0 },
+            lifelinkEvents: { attacker: [], defender: [] }, // Per-creature lifelink events (CR 118.9)
             combatDetails: [],
             attackersDealtDamage: new Set()
         };
@@ -923,6 +924,7 @@ class RulesEngine {
                     });
                     if (aKeywords.lifelink) {
                         results.lifeGained.attacker += attackerPower;
+                        results.lifelinkEvents.attacker.push(attackerPower);
                     }
                 }
             } else {
@@ -976,6 +978,7 @@ class RulesEngine {
                         }
                         if (bKeywords.lifelink) {
                             results.lifeGained.defender += damageToAttacker;
+                            results.lifelinkEvents.defender.push(damageToAttacker);
                         }
                     }
 
@@ -999,15 +1002,27 @@ class RulesEngine {
                 // Trample: excess damage to player (only when attacker deals damage)
                 // Damage map already assigns only lethal to blockers when trample is active,
                 // so excess = attackerPower - damage assigned to blockers
-                if (attackerDealsThisStep && aKeywords.trample && aliveBlockers.length > 0) {
-                    const excess = attackerPower - totalAttackerDamageDealt;
-                    if (excess > 0) {
-                        results.damageToPlayers.defender += excess;
-                        totalAttackerDamageDealt += excess;
+                if (attackerDealsThisStep && aKeywords.trample) {
+                    if (aliveBlockers.length > 0) {
+                        // Blockers alive: excess over lethal tramples through
+                        const excess = attackerPower - totalAttackerDamageDealt;
+                        if (excess > 0) {
+                            results.damageToPlayers.defender += excess;
+                            totalAttackerDamageDealt += excess;
+                            results.combatDetails.push({
+                                type: 'trample',
+                                attacker: attacker.name,
+                                damage: excess
+                            });
+                        }
+                    } else if (blockers.length > 0) {
+                        // All blockers died in first strike step: full damage tramples through (CR 702.19c)
+                        results.damageToPlayers.defender += attackerPower;
+                        totalAttackerDamageDealt += attackerPower;
                         results.combatDetails.push({
                             type: 'trample',
                             attacker: attacker.name,
-                            damage: excess
+                            damage: attackerPower
                         });
                     }
                 }
@@ -1015,6 +1030,7 @@ class RulesEngine {
                 // Lifelink for attacker
                 if (aKeywords.lifelink && totalAttackerDamageDealt > 0) {
                     results.lifeGained.attacker += totalAttackerDamageDealt;
+                    results.lifelinkEvents.attacker.push(totalAttackerDamageDealt);
                 }
             }
         }
@@ -1618,8 +1634,15 @@ class RulesEngine {
     }
 }
 
-// Exportar
-window.PHASES = PHASES;
-window.PHASE_NAMES = PHASE_NAMES;
-window.PHASE_ORDER = PHASE_ORDER;
-window.RulesEngine = RulesEngine;
+// Exportar para browser
+if (typeof window !== 'undefined') {
+    window.PHASES = PHASES;
+    window.PHASE_NAMES = PHASE_NAMES;
+    window.PHASE_ORDER = PHASE_ORDER;
+    window.RulesEngine = RulesEngine;
+}
+
+// Exportar para testes
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { RulesEngine, PHASES, PHASE_NAMES, PHASE_ORDER };
+}

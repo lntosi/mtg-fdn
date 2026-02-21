@@ -147,7 +147,7 @@ const CARD_DATABASE = {
             // Terreno especial (1)
             { id: "healing_haven", name: "Uncharted Haven", type: "land", produces: "any", enters_tapped: true, qty: 1 },
 
-            // Criaturas (10)
+            // Criaturas (8)
             { id: "hinterland_sanctifier", name: "Hinterland Sanctifier", type: "creature", subtype: "Rabbit Cleric", cost: "W", cmc: 1, power: 1, toughness: 2, text: "Sempre que outra criatura entra sob seu controle, você ganha 1 vida.", keywords: ["creature_etb_lifegain"], qty: 1 },
             { id: "bishops_soldier", name: "Bishop's Soldier", type: "creature", subtype: "Vampire Soldier", cost: "1W", cmc: 2, power: 2, toughness: 2, keywords: ["lifelink"], qty: 1 },
             { id: "ajanis_pridemate", name: "Ajani's Pridemate", type: "creature", subtype: "Cat Soldier", cost: "1W", cmc: 2, power: 2, toughness: 2, text: "Sempre que você ganhar vida, coloque um contador +1/+1 nesta criatura.", keywords: ["lifegain_counter"], qty: 1 },
