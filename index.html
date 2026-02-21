@@ -165,6 +165,7 @@
                 </div>
             </div>
             <button id="btn-continue-to-decks" class="btn-continue">Continuar</button>
+            <button id="btn-open-stats" class="btn-stats" type="button">Estatísticas</button>
             <div class="fan-content-notice fan-content-notice-prominent">
                 Unofficial Fan Content permitted under the <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener">Wizards of the Coast Fan Content Policy</a>. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. &copy;Wizards of the Coast LLC.
             </div>
@@ -867,6 +868,76 @@
         </div>
     </div>
 
+    <!-- Modal de Estatísticas do Jogador -->
+    <div id="stats-modal" class="modal hidden">
+        <div class="modal-content stats-content">
+            <div class="stats-header">
+                <h2 id="stats-player-name">Estatísticas</h2>
+                <button id="btn-close-stats" class="btn-close-settings">&times;</button>
+            </div>
+
+            <!-- Overview -->
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <span class="stat-card-value" id="stats-total-games">0</span>
+                    <span class="stat-card-label">Partidas</span>
+                </div>
+                <div class="stat-card stat-card-win">
+                    <span class="stat-card-value" id="stats-wins">0</span>
+                    <span class="stat-card-label">Vitórias</span>
+                </div>
+                <div class="stat-card stat-card-loss">
+                    <span class="stat-card-value" id="stats-losses">0</span>
+                    <span class="stat-card-label">Derrotas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-value" id="stats-winrate">0%</span>
+                    <span class="stat-card-label">Win Rate</span>
+                </div>
+            </div>
+
+            <!-- Recordes -->
+            <div class="stats-section-title">Recordes</div>
+            <div class="stats-records-grid">
+                <div class="stat-card">
+                    <span class="stat-card-value" id="stats-streak">0</span>
+                    <span class="stat-card-label">Maior Sequência</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-value" id="stats-fastest-win">-</span>
+                    <span class="stat-card-label">Vitória Mais Rápida</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-card-value" id="stats-max-damage">0</span>
+                    <span class="stat-card-label">Max Dano</span>
+                </div>
+            </div>
+
+            <!-- Decks Favoritos -->
+            <div class="stats-section-title">Decks Favoritos</div>
+            <div id="stats-deck-bars" class="stats-deck-bars">
+                <p class="stats-empty">Nenhuma partida registrada</p>
+            </div>
+
+            <!-- Últimas Partidas -->
+            <div class="stats-section-title">Últimas Partidas</div>
+            <div id="stats-match-history" class="stats-match-history">
+                <p class="stats-empty">Nenhuma partida registrada</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="stats-footer">
+                <div class="stats-profile-selector">
+                    <label for="stats-profile-select">Perfil:</label>
+                    <select id="stats-profile-select" class="stats-select"></select>
+                </div>
+                <button id="btn-clear-stats" class="btn-setting btn-danger btn-compact">
+                    <span>Limpar Stats</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Fan Content Policy Disclaimer -->
     <div id="fan-content-disclaimer" class="fan-content-disclaimer">
         Unofficial Fan Content permitted under the <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener">Fan Content Policy</a>. Not approved/endorsed by Wizards.
@@ -877,6 +948,7 @@
     <script src="js/cards.js"></script>
     <script src="js/sounds.js"></script>
     <script src="js/images.js"></script>
+    <script src="js/stats.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/rules.js"></script>
     <script src="js/ai.js"></script>

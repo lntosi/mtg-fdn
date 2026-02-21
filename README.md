@@ -67,6 +67,7 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 <table>
 <tr>
 <td align="center"><strong>Preview de Carta</strong><br><img src="screenshots/card-preview.png" width="280"></td>
+<td align="center"><strong>Estatísticas</strong><br><img src="screenshots/statistics.png" width="280"></td>
 </tr>
 </table>
 

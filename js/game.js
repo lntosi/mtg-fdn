@@ -4867,6 +4867,21 @@ class GameState {
 
         // Mostrar tela de fim de jogo melhorada
         this.ui.showGameOverScreen(winner, reason);
+
+        // Registrar estatísticas da partida
+        if (window.statsManager) {
+            window.statsManager.recordMatch({
+                playerName: this.playerName || 'Jogador',
+                result: winner === 'player' ? 'win' : 'loss',
+                reason,
+                playerDecks: this.playerDeckKeys,
+                aiDecks: this.aiDeckKeys,
+                turns: this.turnNumber,
+                playerLife: this.player.life,
+                opponentLife: this.opponent.life,
+                startingLife: this.startingLife
+            });
+        }
     }
 
     // Ver campo de batalha após fim do jogo

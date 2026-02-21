@@ -149,6 +149,9 @@ class GameUI {
             this.btnContinueToDecks.addEventListener('click', () => this.continueToDecks());
         }
 
+        // Botão de estatísticas na tela de customização
+        this.bindStatsEvents();
+
         // Seleção de decks do jogador
         const checkboxes = document.querySelectorAll('input[name="deck"]');
         checkboxes.forEach(cb => {
@@ -4574,6 +4577,212 @@ class GameUI {
         `;
         document.body.appendChild(modal);
         return modal;
+    }
+    // === Stats Modal ===
+
+    bindStatsEvents() {
+        const btnOpenStats = document.getElementById('btn-open-stats');
+        if (btnOpenStats) {
+            btnOpenStats.addEventListener('click', () => this.openStatsModal());
+        }
+
+        const btnCloseStats = document.getElementById('btn-close-stats');
+        if (btnCloseStats) {
+            btnCloseStats.addEventListener('click', () => this.closeStatsModal());
+        }
+
+        const statsModal = document.getElementById('stats-modal');
+        if (statsModal) {
+            statsModal.addEventListener('click', (e) => {
+                if (e.target === statsModal) this.closeStatsModal();
+            });
+        }
+
+        const profileSelect = document.getElementById('stats-profile-select');
+        if (profileSelect) {
+            profileSelect.addEventListener('change', (e) => {
+                this.renderStatsForProfile(e.target.value);
+            });
+        }
+
+        const btnClearStats = document.getElementById('btn-clear-stats');
+        if (btnClearStats) {
+            btnClearStats.addEventListener('click', () => {
+                const profileSelect = document.getElementById('stats-profile-select');
+                const selectedKey = profileSelect?.value;
+                if (!selectedKey || !window.statsManager) return;
+
+                if (confirm('Tem certeza que deseja limpar as estatísticas deste perfil?')) {
+                    window.statsManager.deleteProfile(selectedKey);
+                    // Se não restam perfis, fechar modal
+                    if (window.statsManager.getAllProfiles().length === 0) {
+                        this.closeStatsModal();
+                    } else {
+                        this.openStatsModal();
+                    }
+                }
+            });
+        }
+    }
+
+    openStatsModal() {
+        if (!window.statsManager) return;
+
+        const nameInput = document.getElementById('player-name-input');
+        const currentName = nameInput?.value?.trim() || '';
+        const key = window.statsManager.getProfileKey(currentName);
+
+        const allProfiles = window.statsManager.getAllProfiles();
+
+        // Se não há perfis e o nome atual não tem dados, mostrar vazio
+        if (allProfiles.length === 0 && !key) {
+            this._showEmptyStats();
+            return;
+        }
+
+        // Determinar qual perfil mostrar: o do nome atual, ou o primeiro disponível
+        let activeKey = key && window.statsManager.getProfile(currentName) ? key : null;
+        if (!activeKey && allProfiles.length > 0) {
+            activeKey = allProfiles[0].key;
+        }
+
+        if (!activeKey) {
+            this._showEmptyStats();
+            return;
+        }
+
+        // Preencher dropdown de perfis
+        const profileSelect = document.getElementById('stats-profile-select');
+        if (profileSelect) {
+            profileSelect.innerHTML = '';
+            allProfiles.forEach(({ key: k, profile }) => {
+                const option = document.createElement('option');
+                option.value = k;
+                option.textContent = profile.displayName;
+                if (k === activeKey) option.selected = true;
+                profileSelect.appendChild(option);
+            });
+        }
+
+        this.renderStatsForProfile(activeKey);
+
+        const modal = document.getElementById('stats-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    _showEmptyStats() {
+        // Mostrar modal com mensagem vazia
+        document.getElementById('stats-player-name').textContent = 'Estatísticas';
+        document.getElementById('stats-total-games').textContent = '0';
+        document.getElementById('stats-wins').textContent = '0';
+        document.getElementById('stats-losses').textContent = '0';
+        document.getElementById('stats-winrate').textContent = '0%';
+        document.getElementById('stats-streak').textContent = '0';
+        document.getElementById('stats-fastest-win').textContent = '-';
+        document.getElementById('stats-max-damage').textContent = '0';
+        document.getElementById('stats-deck-bars').innerHTML = '<p class="stats-empty">Nenhuma partida registrada</p>';
+        document.getElementById('stats-match-history').innerHTML = '<p class="stats-empty">Nenhuma partida registrada</p>';
+
+        const profileSelect = document.getElementById('stats-profile-select');
+        if (profileSelect) profileSelect.innerHTML = '';
+
+        const modal = document.getElementById('stats-modal');
+        if (modal) modal.classList.remove('hidden');
+    }
+
+    renderStatsForProfile(key) {
+        if (!window.statsManager) return;
+        const profile = window.statsManager.profiles[key];
+        if (!profile) return;
+
+        // Header
+        document.getElementById('stats-player-name').textContent = profile.displayName;
+
+        // Overview
+        document.getElementById('stats-total-games').textContent = profile.totalGames;
+        document.getElementById('stats-wins').textContent = profile.wins;
+        document.getElementById('stats-losses').textContent = profile.losses;
+        const winRate = profile.totalGames > 0 ? Math.round((profile.wins / profile.totalGames) * 100) : 0;
+        document.getElementById('stats-winrate').textContent = winRate + '%';
+
+        // Recordes
+        document.getElementById('stats-streak').textContent = profile.longestWinStreak;
+        document.getElementById('stats-fastest-win').textContent = profile.fastestWin !== null ? (profile.fastestWin + 'T') : '-';
+        document.getElementById('stats-max-damage').textContent = profile.maxDamageDealt;
+
+        // Deck bars
+        this._renderDeckBars(profile);
+
+        // Match history
+        this._renderMatchHistory(profile);
+    }
+
+    _renderDeckBars(profile) {
+        const container = document.getElementById('stats-deck-bars');
+        if (!container) return;
+
+        const entries = Object.entries(profile.deckUsage).sort((a, b) => b[1] - a[1]);
+        if (entries.length === 0) {
+            container.innerHTML = '<p class="stats-empty">Nenhuma partida registrada</p>';
+            return;
+        }
+
+        const maxUsage = entries[0][1];
+        const deckColors = {
+            cats: 'white', healing: 'white',
+            goblins: 'red', inferno: 'red',
+            vampires: 'black', undead: 'black',
+            elves: 'green', primal: 'green',
+            pirates: 'blue', wizards: 'blue'
+        };
+
+        container.innerHTML = entries.map(([deck, count]) => {
+            const wins = profile.deckWins[deck] || 0;
+            const widthPct = Math.round((count / maxUsage) * 100);
+            const color = deckColors[deck] || 'white';
+
+            return `<div class="deck-stat-row">
+                <span class="deck-stat-name">${deck}</span>
+                <div class="deck-stat-bar-container">
+                    <div class="deck-stat-bar" data-color="${color}" style="width: ${widthPct}%"></div>
+                </div>
+                <span class="deck-stat-count">${wins}W / ${count}</span>
+            </div>`;
+        }).join('');
+    }
+
+    _renderMatchHistory(profile) {
+        const container = document.getElementById('stats-match-history');
+        if (!container) return;
+
+        if (!profile.matches || profile.matches.length === 0) {
+            container.innerHTML = '<p class="stats-empty">Nenhuma partida registrada</p>';
+            return;
+        }
+
+        // Mostrar mais recentes primeiro
+        const matches = [...profile.matches].reverse();
+
+        container.innerHTML = matches.map(m => {
+            const isWin = m.result === 'win';
+            const rowClass = isWin ? 'match-row-win' : 'match-row-loss';
+            const resultClass = isWin ? 'match-result-win' : 'match-result-loss';
+            const resultText = isWin ? 'W' : 'L';
+            const decks = (m.playerDecks || []).join(' + ');
+            const vs = (m.aiDecks || []).join(' + ');
+
+            return `<div class="match-row ${rowClass}">
+                <span class="match-result ${resultClass}">${resultText}</span>
+                <span class="match-decks">${decks} vs ${vs}</span>
+                <span class="match-info-col">${m.turns}T</span>
+                <span class="match-info-col">${m.playerLife} HP</span>
+            </div>`;
+        }).join('');
+    }
+
+    closeStatsModal() {
+        const modal = document.getElementById('stats-modal');
+        if (modal) modal.classList.add('hidden');
     }
 }
 
