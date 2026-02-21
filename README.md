@@ -24,7 +24,7 @@ Um projeto educacional para aprender desenvolvimento de jogos, implementando mec
 Este projeto foi criado para:
 - 📚 **Aprender JavaScript** — manipulação de DOM, classes ES6+, async/await
 - 🎮 **Estudar game design** — máquinas de estado, sistemas de turnos, IA básica
-- 🧪 **Praticar TDD** — 210+ testes automatizados com Jest
+- 🧪 **Praticar TDD** — 500+ testes automatizados com Jest
 - 🃏 **Entender MTG** — regras, interações de cartas, sistema de prioridade
 
 **Não é um produto para distribuição.** É código-fonte para estudo.
@@ -122,6 +122,7 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 - 3 temas visuais
 - Efeitos sonoros e música de fundo (volumes independentes)
 - Histórico de partida exportável
+- Estatísticas persistentes por perfil de jogador
 - Modo tela cheia
 
 ### IA Inteligente
@@ -137,7 +138,7 @@ Jogo offline de MTG baseado nos decks Jumpstart do **Foundations Beginner Box**.
 - **CSS3** com animações e transições
 - **HTML5**
 - **[Scryfall API](https://scryfall.com/)** para imagens
-- **LocalStorage** para configurações
+- **LocalStorage** para configurações e estatísticas
 - **[Jest](https://jestjs.io/)** para testes automatizados
 
 ## Estrutura do Projeto
@@ -156,7 +157,9 @@ mtg/
 │   ├── ui.js               # Interface e renderização
 │   ├── cards.js            # Base de dados das cartas
 │   ├── sounds.js           # Efeitos sonoros
-│   └── images.js           # Imagens das cartas (Scryfall API)
+│   ├── images.js           # Imagens das cartas (Scryfall API)
+│   ├── stats.js            # Estatísticas do jogador (localStorage)
+│   └── settings.js         # Configurações (som, prioridade, etc.)
 ├── tests/                  # Testes automatizados (Jest)
 ├── tools/
 │   └── validate-cards.js   # Validação de cartas via Scryfall
@@ -175,12 +178,13 @@ mtg/
 
 ## Testes Automatizados
 
-O projeto inclui **215+ testes** cobrindo:
+O projeto inclui **500+ testes** (13 suites) cobrindo:
 - Mecânicas de combate (first strike, trample, deathtouch)
 - Keywords e interações
 - Triggers de criaturas (ETB, death, combat)
 - Habilidades de lords
 - Feitiços e efeitos
+- Sistema de estatísticas do jogador
 
 ```bash
 # Instalar dependências
