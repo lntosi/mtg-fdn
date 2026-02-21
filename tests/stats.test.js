@@ -474,4 +474,202 @@ describe('StatsManager', () => {
             expect(date.getTime()).toBeGreaterThan(0);
         });
     });
+
+    describe('Match ID', () => {
+        test('cada partida recebe um id único', () => {
+            const sm = createStatsManager();
+            sm.recordMatch(makeMatch());
+            sm.recordMatch(makeMatch());
+
+            const profile = sm.getProfile('lucas');
+            expect(profile.matches[0].id).toBeDefined();
+            expect(profile.matches[1].id).toBeDefined();
+            expect(profile.matches[0].id).not.toBe(profile.matches[1].id);
+        });
+    });
+
+    describe('Import/Export', () => {
+        function makeMatchWithId(id, overrides = {}) {
+            return {
+                id,
+                result: 'win',
+                reason: 'Oponente ficou sem vida',
+                playerDecks: ['cats'],
+                aiDecks: ['goblins'],
+                turns: 10,
+                playerLife: 15,
+                opponentLife: 0,
+                date: '2026-01-15T12:00:00.000Z',
+                ...overrides
+            };
+        }
+
+        test('importFromData importa perfis novos', () => {
+            const sm = createStatsManager();
+            const data = {
+                version: 1,
+                profiles: {
+                    lucas: {
+                        displayName: 'Lucas', totalGames: 2, wins: 2, losses: 0,
+                        currentStreak: 2, longestWinStreak: 2, fastestWin: 8, maxDamageDealt: 20,
+                        deckUsage: { cats: 2 }, deckWins: { cats: 2 }, lastPlayed: '2026-01-15T12:00:00.000Z',
+                        matches: [makeMatchWithId('a1'), makeMatchWithId('a2')]
+                    },
+                    tosi: {
+                        displayName: 'Tosi', totalGames: 1, wins: 0, losses: 1,
+                        currentStreak: -1, longestWinStreak: 0, fastestWin: null, maxDamageDealt: 15,
+                        deckUsage: {}, deckWins: {}, lastPlayed: '2026-01-14T12:00:00.000Z',
+                        matches: [makeMatchWithId('b1', { result: 'loss' })]
+                    }
+                }
+            };
+
+            const result = sm.importFromData(data);
+            expect(result.imported).toBe(2);
+            expect(result.newMatches).toBe(3);
+            expect(sm.getProfile('lucas').totalGames).toBe(2);
+            expect(sm.getProfile('tosi').totalGames).toBe(1);
+        });
+
+        test('importar mesmo arquivo duas vezes não duplica partidas', () => {
+            const sm = createStatsManager();
+            sm.recordMatch(makeMatch({ playerName: 'Lucas' }));
+            const matchId = sm.getProfile('lucas').matches[0].id;
+
+            // Exportar
+            const exported = { version: 1, profiles: JSON.parse(JSON.stringify(sm.profiles)) };
+
+            // Importar o mesmo — nenhuma partida nova
+            const result = sm.importFromData(exported);
+            expect(result.merged).toBe(0);
+            expect(result.newMatches).toBe(0);
+            expect(sm.getProfile('lucas').totalGames).toBe(1);
+            expect(sm.getProfile('lucas').matches.length).toBe(1);
+        });
+
+        test('merge real: combina partidas de dois exports diferentes', () => {
+            // Simula: jogar 2 partidas, exportar, limpar, jogar 3 partidas, exportar
+            const sm = createStatsManager();
+
+            // Sessão 1: 2 partidas
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', result: 'win', turns: 10 }));
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', result: 'loss', turns: 12 }));
+            const export1 = { version: 1, profiles: JSON.parse(JSON.stringify(sm.profiles)) };
+
+            // Limpar e criar sessão 2: 3 partidas
+            sm.clearAllStats();
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', result: 'win', turns: 8 }));
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', result: 'win', turns: 15 }));
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', result: 'loss', turns: 20 }));
+            const export2 = { version: 1, profiles: JSON.parse(JSON.stringify(sm.profiles)) };
+
+            // Novo browser: importar os dois
+            sm.clearAllStats();
+            sm.importFromData(export1);
+            const result2 = sm.importFromData(export2);
+
+            expect(result2.merged).toBe(1);
+            expect(result2.newMatches).toBe(3);
+
+            const profile = sm.getProfile('lucas');
+            expect(profile.totalGames).toBe(5); // 2 + 3
+            expect(profile.wins).toBe(3);
+            expect(profile.losses).toBe(2);
+        });
+
+        test('merge recalcula streaks e recordes corretamente', () => {
+            const sm = createStatsManager();
+
+            const data = {
+                version: 1,
+                profiles: {
+                    lucas: {
+                        displayName: 'Lucas', totalGames: 0, wins: 0, losses: 0,
+                        currentStreak: 0, longestWinStreak: 0, fastestWin: null, maxDamageDealt: 0,
+                        deckUsage: {}, deckWins: {}, lastPlayed: null,
+                        matches: [
+                            makeMatchWithId('m1', { result: 'win', turns: 15, date: '2026-01-01T01:00:00Z' }),
+                            makeMatchWithId('m2', { result: 'win', turns: 8, date: '2026-01-01T02:00:00Z' }),
+                            makeMatchWithId('m3', { result: 'loss', turns: 20, date: '2026-01-01T03:00:00Z' }),
+                        ]
+                    }
+                }
+            };
+
+            sm.importFromData(data);
+            const profile = sm.getProfile('lucas');
+
+            // Recalculado a partir das matches
+            expect(profile.totalGames).toBe(3);
+            expect(profile.wins).toBe(2);
+            expect(profile.losses).toBe(1);
+            expect(profile.longestWinStreak).toBe(2);
+            expect(profile.currentStreak).toBe(-1); // última foi loss
+            expect(profile.fastestWin).toBe(8);
+        });
+
+        test('merge recalcula deck usage corretamente', () => {
+            const sm = createStatsManager();
+            sm.recordMatch(makeMatch({ playerName: 'Lucas', playerDecks: ['cats'], result: 'win' }));
+
+            const data = {
+                version: 1,
+                profiles: {
+                    lucas: {
+                        displayName: 'Lucas', totalGames: 0, wins: 0, losses: 0,
+                        currentStreak: 0, longestWinStreak: 0, fastestWin: null, maxDamageDealt: 0,
+                        deckUsage: {}, deckWins: {}, lastPlayed: null,
+                        matches: [
+                            makeMatchWithId('ext1', { playerDecks: ['goblins'], result: 'win', date: '2026-01-02T00:00:00Z' }),
+                            makeMatchWithId('ext2', { playerDecks: ['cats'], result: 'loss', date: '2026-01-03T00:00:00Z' }),
+                        ]
+                    }
+                }
+            };
+
+            sm.importFromData(data);
+            const profile = sm.getProfile('lucas');
+
+            expect(profile.deckUsage.cats).toBe(2);
+            expect(profile.deckUsage.goblins).toBe(1);
+            expect(profile.deckWins.cats).toBe(1); // 1 win com cats
+            expect(profile.deckWins.goblins).toBe(1);
+        });
+
+        test('importFromData rejeita dados inválidos', () => {
+            const sm = createStatsManager();
+            expect(() => sm.importFromData(null)).toThrow('Formato inválido');
+            expect(() => sm.importFromData({})).toThrow('Formato inválido');
+            expect(() => sm.importFromData({ profiles: 'not-object' })).toThrow('Formato inválido');
+        });
+
+        test('importFromData combina perfis novos e existentes', () => {
+            const sm = createStatsManager();
+            sm.recordMatch(makeMatch({ playerName: 'Lucas' }));
+
+            const data = {
+                version: 1,
+                profiles: {
+                    lucas: {
+                        displayName: 'Lucas', totalGames: 0, wins: 0, losses: 0,
+                        currentStreak: 0, longestWinStreak: 0, fastestWin: null, maxDamageDealt: 0,
+                        deckUsage: {}, deckWins: {}, lastPlayed: null,
+                        matches: [] // sem partidas novas
+                    },
+                    knight: {
+                        displayName: 'Knight', totalGames: 2, wins: 2, losses: 0,
+                        currentStreak: 2, longestWinStreak: 2, fastestWin: 9, maxDamageDealt: 20,
+                        deckUsage: { elves: 2 }, deckWins: { elves: 2 }, lastPlayed: '2026-01-10T00:00:00Z',
+                        matches: [makeMatchWithId('k1'), makeMatchWithId('k2')]
+                    }
+                }
+            };
+
+            const result = sm.importFromData(data);
+            expect(result.imported).toBe(1);  // knight é novo
+            expect(result.merged).toBe(0);    // lucas sem partidas novas
+            expect(sm.getProfile('knight').totalGames).toBe(2);
+            expect(sm.getProfile('lucas').totalGames).toBe(1); // inalterado
+        });
+    });
 });

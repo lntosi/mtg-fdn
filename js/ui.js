@@ -4623,6 +4623,47 @@ class GameUI {
                 }
             });
         }
+
+        const btnExportStats = document.getElementById('btn-export-stats');
+        if (btnExportStats) {
+            btnExportStats.addEventListener('click', () => {
+                if (window.statsManager) {
+                    window.statsManager.exportToFile();
+                }
+            });
+        }
+
+        const statsFileInput = document.getElementById('stats-file-input');
+        if (statsFileInput) {
+            statsFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file || !window.statsManager) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        const result = window.statsManager.importFromData(data);
+                        const parts = [];
+                        if (result.imported > 0) parts.push(`${result.imported} perfil(s) novo(s)`);
+                        if (result.merged > 0) parts.push(`${result.merged} perfil(s) atualizado(s)`);
+                        if (result.newMatches > 0) parts.push(`${result.newMatches} partida(s) importada(s)`);
+                        const msg = parts.length > 0 ? parts.join(', ') : 'Nenhuma partida nova encontrada';
+                        if (window.settingsManager) {
+                            window.settingsManager.showToast(msg);
+                        } else {
+                            alert(msg);
+                        }
+                        this.openStatsModal();
+                    } catch (err) {
+                        alert('Erro ao importar: arquivo inválido.');
+                    }
+                    // Reset input para permitir reimportar o mesmo arquivo
+                    statsFileInput.value = '';
+                };
+                reader.readAsText(file);
+            });
+        }
     }
 
     openStatsModal() {

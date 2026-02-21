@@ -931,9 +931,18 @@
                     <label for="stats-profile-select">Perfil:</label>
                     <select id="stats-profile-select" class="stats-select"></select>
                 </div>
-                <button id="btn-clear-stats" class="btn-setting btn-danger btn-compact">
-                    <span>Limpar Stats</span>
-                </button>
+                <div class="stats-actions">
+                    <button id="btn-export-stats" class="btn-setting btn-compact" title="Exportar estatísticas como JSON">
+                        <span>Exportar</span>
+                    </button>
+                    <label id="btn-import-stats" class="btn-setting btn-compact" title="Importar estatísticas de arquivo JSON">
+                        <span>Importar</span>
+                        <input type="file" id="stats-file-input" accept=".json" hidden>
+                    </label>
+                    <button id="btn-clear-stats" class="btn-setting btn-danger btn-compact">
+                        <span>Limpar Stats</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
