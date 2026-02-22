@@ -168,7 +168,6 @@ mtg/
 │   ├── 01_TESTING.md       # Guia de testes
 │   ├── 02_DEBUG.md         # Comandos de debug
 │   ├── 03_CARD_VALIDATION.md # Status das cartas
-│   ├── 04_FUTURE_DECKS_PLAN.md # Plano para decks (arquivado)
 │   ├── 06_SPELL_TARGETING_CHECKLIST.md # Verificação de spells com alvo
 │   └── 07_CARD_IMPLEMENTATION_CHECKLIST.md # Checklist de implementação
 ├── screenshots/            # Screenshots da aplicação
@@ -178,7 +177,7 @@ mtg/
 
 ## Testes Automatizados
 
-O projeto inclui **500+ testes** (13 suites) cobrindo:
+O projeto inclui **615+ testes** (16 suites) cobrindo:
 - Mecânicas de combate (first strike, trample, deathtouch)
 - Keywords e interações
 - Triggers de criaturas (ETB, death, combat)

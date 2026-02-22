@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Detailed guides** (consult when needed):
 - `docs/07_CARD_IMPLEMENTATION_CHECKLIST.md` — Step-by-step guide for adding new cards
 - `docs/06_SPELL_TARGETING_CHECKLIST.md` — Instant/sorcery targeting validation
+- `docs/08_AURA_ENCHANTMENT_PLAN.md` — Aura/equipment visual system plan (partially implemented)
 - `docs/PITFALLS.md` — Common bugs and their fixes (library convention, counterspells, async/await, etc.)
 - `docs/AUDIT_REPORT.md` — Code audit findings and fix status
 
@@ -38,6 +39,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `ai.js` - AI opponent logic for playing cards and combat decisions
 - `ui.js` - DOM manipulation, rendering, event handling (GameUI class)
 - `cards.js` - Card database (CARD_DATABASE) with all 10 decks
+- `stats.js` - StatsManager: player statistics per profile (localStorage)
 - `sounds.js` - SoundManager (Pixabay audio)
 - `images.js` - ImageManager (Scryfall API for card images and avatars)
 
@@ -46,7 +48,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `TriggerManager` - **All card triggers centralized here** (ETBs, death triggers, combat triggers)
 - `RulesEngine` - Validates plays, calculates mana, resolves combat damage (two-step first strike)
 - `GameUI` - Renders cards, handles clicks, manages graveyard/exile modals
-- `AIPlayer` - Decides which cards to play, attackers, blockers, mulligan decisions, instant-speed responses
+- `AIPlayer` - Decides which cards to play, attackers, blockers, mulligan decisions, instant-speed responses (`getInstantSpeedAction()`, `_evaluateCardToPlay()`, `_evaluateCreatureThreat()`)
 
 **Game Flow:**
 1. Player selects 1-2 decks → 20 or 40-card library (AI mirrors player's deck count)
