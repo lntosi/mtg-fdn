@@ -597,10 +597,16 @@ class TriggerManager {
             });
             if (target) applyDebuff(target);
         } else {
-            // IA escolhe criatura com menor toughness (para potencial morte)
-            const target = validTargets.sort((a, b) =>
-                this.rules.getCreatureToughness(a) - this.rules.getCreatureToughness(b)
-            )[0];
+            // IA escolhe criatura cuja power ficaria 0 (unable to deal damage), ou maior power
+            const target = validTargets.sort((a, b) => {
+                const aPower = this.rules.getCreaturePower(a);
+                const bPower = this.rules.getCreaturePower(b);
+                // Prefer targets where -1/-0 reduces power to 0
+                if (aPower === 1 && bPower !== 1) return -1;
+                if (bPower === 1 && aPower !== 1) return 1;
+                // Otherwise prefer highest power (reduce biggest threat)
+                return bPower - aPower;
+            })[0];
             applyDebuff(target);
         }
     }
@@ -759,16 +765,18 @@ class TriggerManager {
                 return;
             }
 
-            // Priority 3: Snipe mana dorks (even if can't kill, weaken them)
+            // Priority 3: Snipe mana dorks ONLY if we can kill them (1 damage = toughness)
             const manaDorks = opponentCreatures.filter(c => c.keywords?.includes('tap_for_mana'));
             if (manaDorks.length > 0) {
-                // Prefer ones we can kill, otherwise pick any
                 const killableDork = manaDorks.find(c => {
                     const toughness = this.rules.getCreatureToughness(c) - (c.damage || 0);
                     return toughness <= 1;
                 });
-                await dealDamage(killableDork || manaDorks[0]);
-                return;
+                if (killableDork) {
+                    await dealDamage(killableDork);
+                    return;
+                }
+                // If no dork can be killed, fall through to face damage
             }
 
             // Priority 4: Hit opponent's face

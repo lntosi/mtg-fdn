@@ -55,8 +55,8 @@ Este documento rastreia o fluxo completo de cada spell com alvo: mão → valida
 
 | Spell | needsTarget | hasValid | getTargets | resolve | Status |
 |-------|:-----------:|:--------:|:----------:|:-------:|:------:|
-| fleeting_distraction | ✅ | ✅ | ❌ FALTA | ✅ | ❌ **BUG** |
-| into_the_roil | ✅ | ✅ | ❌ FALTA | ✅ | ❌ **BUG** |
+| fleeting_distraction | ✅ | ✅ | ✅ | ✅ | ✅ OK (corrigido) |
+| into_the_roil | ✅ | ✅ | ✅ | ✅ | ✅ OK (corrigido) |
 
 ### Dois Alvos (Tratamento Especial)
 
@@ -87,60 +87,11 @@ Este documento rastreia o fluxo completo de cada spell com alvo: mão → valida
 
 ---
 
-## GAPS ENCONTRADOS
+## GAPS ENCONTRADOS (TODOS CORRIGIDOS)
 
-### ❌ BUG 1: `fleeting_distraction`
-- **Problema:** Falta em `getValidSpellTargets()`
-- **Sintoma:** Jogador não consegue selecionar alvo
-- **Correção:** Adicionar case para retornar criaturas de ambos os campos
-
-### ❌ BUG 2: `into_the_roil`
-- **Problema:** Falta em `getValidSpellTargets()`
-- **Sintoma:** Jogador não consegue selecionar alvo
-- **Correção:** Adicionar case para retornar permanentes não-terreno
-
-### ⚠️ MELHORIA: `angelic_edict`
-- **Problema:** Falta em `hasValidTargets()` (usa default true)
-- **Sintoma:** Janela de prioridade aparece mesmo sem alvos válidos
-- **Correção:** Adicionar validação explícita
-
----
-
-## Correções Necessárias
-
-### game.js - `getValidSpellTargets()`
-
-```javascript
-// Adicionar antes do 'default':
-
-case 'fleeting_distraction':
-    // -1/-0 em qualquer criatura
-    targets = [
-        ...caster.battlefield.filter(c => c.type === 'creature'),
-        ...opponent.battlefield.filter(c => c.type === 'creature' && this.rules.canBeTargetedBy(c, caster))
-    ];
-    break;
-
-case 'into_the_roil':
-    // Bounce qualquer permanente não-terreno
-    targets = [
-        ...caster.battlefield.filter(c => c.type !== 'land'),
-        ...opponent.battlefield.filter(c => c.type !== 'land' && this.rules.canBeTargetedBy(c, caster))
-    ];
-    break;
-```
-
-### rules.js - `hasValidTargets()`
-
-```javascript
-// Adicionar validação para angelic_edict:
-
-if (card.id === 'angelic_edict') {
-    return opponent.battlefield.some(c =>
-        c.type === 'creature' || c.type === 'enchantment'
-    );
-}
-```
+- ~~**BUG 1:** `fleeting_distraction` faltava em `getValidSpellTargets()`~~ → **CORRIGIDO** ✅
+- ~~**BUG 2:** `into_the_roil` faltava em `getValidSpellTargets()`~~ → **CORRIGIDO** ✅
+- ~~**MELHORIA:** `angelic_edict` faltava em `hasValidTargets()`~~ → **CORRIGIDO** ✅
 
 ---
 

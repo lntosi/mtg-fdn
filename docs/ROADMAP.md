@@ -23,7 +23,7 @@ Todas as funcionalidades foram implementadas. O projeto está em fase de testes 
 | Wizards | U | ✅ | Fev 2026 |
 | Undead | B | ✅ | Fev 2026 |
 
-**Testes**: 140 testes unitários passando ✅
+**Testes**: 615 testes unitários passando (16 suites) ✅
 
 ---
 
@@ -82,11 +82,14 @@ Beta testers com acesso ao repositório podem:
 - ✅ Exílio com retorno condicional
 
 ### IA
-- ✅ IA inteligente com avaliação de trades
+- ✅ IA inteligente com avaliação de trades e ameaças
 - ✅ Habilidades ativadas
 - ✅ Reserva de mana para instantes
 - ✅ Verificação de sobrevivência (crack-back check)
 - ✅ Mulligan inteligente (London Mulligan com avaliação de mão)
+- ✅ Respostas instant-speed (flash, remoção, combat tricks, proteção)
+- ✅ Detecção de lethal alpha-strike
+- ✅ Avaliação de ameaças por keywords (flying, deathtouch, lords, etc.)
 
 ### UI/UX
 - ✅ Preview de carta ampliado
@@ -120,7 +123,7 @@ Funcionalidades que podem ser consideradas após a versão estável:
 - Todos os 10 decks validados contra listas oficiais do Beginner Box
 - Deck Undead completamente reescrito com cartas oficiais
 - UI de seleção de alvo melhorada (agrupamento + avatares)
-- 140 testes unitários passando
+- 615 testes unitários passando (16 suites)
 
 ### Fevereiro 2026 - Melhorias de IA
 
@@ -129,6 +132,17 @@ Funcionalidades que podem ser consideradas após a versão estável:
 - Reserva mana para instantes
 - Avalia trades de forma equilibrada
 - Verificação de sobrevivência ao contra-ataque
+
+### Fevereiro 2026 - Auditoria de Qualidade da IA (R7)
+
+**20 melhorias na IA** implementadas via 6 agentes especializados:
+- Reescrita do `chooseBestCard()` com avaliação por keywords, ETBs, lords, mana dorks
+- Detecção de alpha-strike lethal (atacar para vitória garantida)
+- Sistema instant-speed: IA joga flash, remoção e combat tricks no turno do jogador
+- Avaliação de ameaças por keywords (flying +3, deathtouch +3, lords +4, etc.)
+- First strike awareness em decisões de bloqueio
+- Fix: treasure double-counting, aura targeting, ability timing
+- 36 novos testes (615 total)
 
 ### Fevereiro 2026 - Auditoria Completa de Decks
 
@@ -195,7 +209,7 @@ Funcionalidades que podem ser consideradas após a versão estável:
 - ✅ Priority stops configuráveis
 
 ### Técnico
-- ✅ Testes unitários (Jest) - 140 testes
+- ✅ Testes unitários (Jest) - 615 testes (16 suites)
 - ✅ Validação de cartas via Scryfall
 - ✅ Modo Debug completo
 - ✅ Sistema de logs exportável

@@ -382,7 +382,7 @@ Ver documento separado: [06_SPELL_TARGETING_CHECKLIST.md](06_SPELL_TARGETING_CHE
 ```markdown
 [ ] 1. Testar manualmente no jogo
 [ ] 2. Verificar se IA consegue usar a carta
-[ ] 3. Rodar `npm test` (140 testes devem passar)
+[ ] 3. Rodar `npm test` (todos os testes devem passar)
 [ ] 4. Atualizar este documento se necessário
 ```
 

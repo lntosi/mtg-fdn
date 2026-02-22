@@ -145,18 +145,6 @@ class AIPlayer {
 
     // === FIM MULLIGAN ===
 
-    // Executa a vez da IA
-    async takeTurn() {
-        // Main Phase 1 - segura cartas com condições pós-combate
-        await this.playMainPhase(1);
-
-        // Combat
-        await this.doCombat();
-
-        // Main Phase 2 - joga cartas seguradas
-        await this.playMainPhase(2);
-    }
-
     /**
      * Verifica se uma carta deve ser segurada para a Main Phase 2
      * Cartas com ETBs condicionais que dependem de "oponente perdeu vida" ou "atacou este turno"
@@ -207,143 +195,15 @@ class AIPlayer {
             return opponent.battlefield.some(c => c.type === 'creature');
         }
 
+        // New Horizons enchants a land, not a creature
+        if (card.id === 'new_horizons') {
+            return opponent.battlefield.some(c => c.type === 'land');
+        }
+
         // Outras auras: verificar se há qualquer criatura
         const allCreatures = [...player.battlefield, ...opponent.battlefield]
             .filter(c => c.type === 'creature');
         return allCreatures.length > 0;
-    }
-
-    // Fase principal: jogar terrenos e criaturas
-    // phase: 1 = Main Phase 1, 2 = Main Phase 2
-    async playMainPhase(phase = 1) {
-        const opponent = this.game.opponent;
-
-        // Delay inicial para mostrar que a IA está "pensando"
-        this.game.ui.log('IA está pensando...');
-        await this.delay(800);
-
-        // 1. Jogar terreno se possível (apenas na Main Phase 1)
-        if (phase === 1) {
-            const landInHand = opponent.hand.find(card => card.type === 'land');
-            if (landInHand && this.rules.canPlayLand(opponent)) {
-                await this.game.playCard(landInHand, opponent);
-                this.game.ui.render();
-                await this.delay(1000); // Delay para ver o terreno jogado
-            }
-        }
-
-        // 2. Jogar criaturas/feitiços (do mais caro pro mais barato que conseguir pagar)
-        let playedSomething = true;
-        while (playedSomething) {
-            playedSomething = false;
-
-            // Cartas jogáveis com mana normal
-            let playableCards = opponent.hand
-                .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
-                .filter(card => this.hasValidAuraTargets(card))
-                .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
-
-            // Na Main Phase 1, filtrar cartas que devem ser seguradas para depois do combate
-            if (phase === 1) {
-                playableCards = playableCards.filter(card => !this.shouldHoldForMainPhase2(card));
-            }
-
-            // Planeswalker: reservar mana para instants
-            if (this.config.holdManaForInstants) {
-                const instantsInHand = opponent.hand.filter(c => c.type === 'instant');
-                if (instantsInHand.length > 0) {
-                    const baseMana = this.rules.calculateAvailableMana(opponent);
-                    const totalMana = Object.values(baseMana).reduce((a, b) => a + b, 0);
-                    const cheapestCmc = Math.min(...instantsInHand.map(c => c.cmc || 2));
-                    const manaToHold = Math.min(cheapestCmc, 3);
-
-                    const originalCount = playableCards.length;
-                    playableCards = playableCards.filter(card => {
-                        const costAfterPlay = totalMana - (card.cmc || 0);
-                        return costAfterPlay >= manaToHold;
-                    });
-
-                    if (playableCards.length < originalCount && playableCards.length === 0) {
-                        this.game.ui.log(`IA reservando mana para respostas`);
-                    }
-                }
-            }
-
-            // Verificar se pode jogar algo MELHOR usando Treasures
-            const treasures = this.getTreasureTokens(opponent);
-            let bestTreasureCard = null;
-            let treasureInfo = null;
-
-            if (treasures.length > 0) {
-                // Encontrar cartas que precisam de Treasures para serem jogadas
-                let potentialCards = opponent.hand
-                    .filter(card => card.type !== 'land')
-                    .filter(card => {
-                        const result = this.canPayWithTreasures(card, opponent);
-                        return result.canPay && result.treasuresNeeded > 0;
-                    })
-                    .filter(card => this.hasValidAuraTargets(card))
-                    .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
-
-                if (phase === 1) {
-                    potentialCards = potentialCards.filter(card => !this.shouldHoldForMainPhase2(card));
-                }
-
-                if (potentialCards.length > 0) {
-                    bestTreasureCard = this.chooseBestCard(potentialCards);
-                    if (bestTreasureCard) {
-                        treasureInfo = this.canPayWithTreasures(bestTreasureCard, opponent);
-                    }
-                }
-            }
-
-            // Decidir: jogar com mana normal ou usar Treasures para carta melhor?
-            const bestNormalCard = playableCards.length > 0 ? this.chooseBestCard(playableCards) : null;
-            let cardToPlay = null;
-            let useTreasures = false;
-
-            if (bestTreasureCard && bestNormalCard) {
-                // Comparar: se a carta com Treasure tem CMC maior, vale usar Treasures
-                const treasureCmc = bestTreasureCard.cmc || 0;
-                const normalCmc = bestNormalCard.cmc || 0;
-                if (treasureCmc > normalCmc) {
-                    cardToPlay = bestTreasureCard;
-                    useTreasures = true;
-                } else {
-                    cardToPlay = bestNormalCard;
-                }
-            } else if (bestTreasureCard) {
-                cardToPlay = bestTreasureCard;
-                useTreasures = true;
-            } else if (bestNormalCard) {
-                cardToPlay = bestNormalCard;
-            }
-
-            if (cardToPlay) {
-                if (useTreasures && treasureInfo) {
-                    // Sacrificar treasures necessários
-                    await this.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
-                }
-                // Verificar se pode jogar após usar treasures (se aplicável)
-                if (this.rules.canPlayCard(cardToPlay, opponent)) {
-                    await this.delay(600);
-                    await this.game.playCard(cardToPlay, opponent);
-                    this.game.ui.render();
-                    await this.delay(1200);
-                    playedSomething = true;
-                }
-            }
-        }
-
-        // 3. Usar habilidades ativadas (ambas Main Phases)
-        // Main Phase 1: mana e prep de combate (Elvish Archdruid, Goblin Smuggler, Dropkick Bomber)
-        // Main Phase 2: habilidades restantes (Spectral Sailor, Vampire Neonate, etc.)
-        if (this.config.useActivatedAbilities) {
-            await this.useActivatedAbilities();
-        }
-
-        // 4. Usar habilidades ativadas do cemitério (ambas main phases)
-        await this.useGraveyardAbilities(opponent);
     }
 
     /**
@@ -389,6 +249,9 @@ class AIPlayer {
 
         // Simular pagamento com treasures
         let remainingMana = { ...baseMana };
+        // Remove treasure any-mana from baseMana to avoid double-counting
+        // (calculateAvailableMana already counts treasures as mana.any)
+        remainingMana.any = Math.max(0, (remainingMana.any || 0) - treasures.length);
         let treasuresNeeded = 0;
         let colorsNeeded = [];
 
@@ -603,9 +466,15 @@ class AIPlayer {
 
         switch (permanent.id) {
             case 'vampire_neonate':
-                // Sempre vale ativar: drena 1 vida por 2 mana
-                // Melhor que atacar com 0 de power
-                return true;
+                // Drain 1 life for 2 mana - only in Main Phase 2 (don't steal mana from card plays)
+                if (this.game.phase === PHASES.MAIN2) return true;
+                // In Main Phase 1, only activate if no playable cards in hand
+                const neonateMana = this.rules.calculateAvailableMana(controller);
+                const neonateTotalMana = Object.values(neonateMana).reduce((a, b) => a + b, 0);
+                const hasPlayableCards = controller.hand.some(c =>
+                    c.type !== 'land' && (c.cmc || 0) <= neonateTotalMana && this.rules.canPlayCard(c, controller)
+                );
+                return !hasPlayableCards;
 
             case 'spectral_sailor':
                 // Comprar carta por 4 mana - só se tiver mana sobrando
@@ -690,39 +559,145 @@ class AIPlayer {
     chooseBestCard(playableCards) {
         if (playableCards.length === 0) return null;
 
-        // Aprendiz: chance de escolha subótima
+        // Mistake rate for difficulty
         if (this.config.mistakeRate > 0 && Math.random() < this.config.mistakeRate) {
-            const randomCard = playableCards[Math.floor(Math.random() * playableCards.length)];
-            return randomCard;
+            return playableCards[Math.floor(Math.random() * playableCards.length)];
         }
 
-        // Avaliar se o oponente tem ameaças dominantes no campo
         const player = this.game.player;
         const biggestEnemyThreat = player.battlefield
             .filter(c => c.type === 'creature' && !this.rules.hasPacifism(c))
             .reduce((max, c) => Math.max(max, this._evaluateCreatureThreat(c)), 0);
 
-        // Se há uma ameaça forte (threat >= 8: ex. flyer 4/4, ou 5/5+), priorizar remoção
+        // If big threat exists (>= 7), prioritize removal
         const removalIds = ['heros_downfall', 'moment_of_craving', 'incinerating_blast',
             'felling_blow', 'broken_wings', 'angelic_edict', 'finishing_blow',
-            'eaten_alive', 'scorching_dragonfire', 'eaten_by_piranhas', 'pacifism'];
-        if (biggestEnemyThreat >= 8) {
+            'eaten_alive', 'scorching_dragonfire', 'eaten_by_piranhas', 'pacifism',
+            'murder', 'deadly_plot', 'prayer_of_binding', 'starlight_snare',
+            'fiery_annihilation', 'bite_down', 'elspeths_smite'];
+        if (biggestEnemyThreat >= 7) {
             const removal = playableCards.find(c => removalIds.includes(c.id));
             if (removal) return removal;
         }
 
-        // Prioridade padrão: criaturas > encantamentos > feitiços
-        const creatures = playableCards.filter(c => c.type === 'creature');
-        if (creatures.length > 0) {
-            // Preferir criaturas com melhor relação poder/custo
-            return creatures.sort((a, b) => {
-                const aValue = (a.power || 0) + (a.toughness || 0);
-                const bValue = (b.power || 0) + (b.toughness || 0);
-                return bValue - aValue;
-            })[0];
+        // Sort ALL playable cards by evaluation (not just creatures)
+        return playableCards.sort((a, b) => {
+            return this._evaluateCardToPlay(b) - this._evaluateCardToPlay(a);
+        })[0];
+    }
+
+    /**
+     * Evaluates a card's value for the AI to play.
+     * Considers card type, keywords, synergies, and board state.
+     */
+    _evaluateCardToPlay(card) {
+        let value = 0;
+        const opponent = this.game.opponent;
+        const player = this.game.player;
+
+        if (card.type === 'creature') {
+            // Base stats using effective power/toughness
+            value = (card.power || 0) + (card.toughness || 0);
+
+            // Keywords bonus
+            if (card.keywords) {
+                if (card.keywords.includes('flying')) value += 3;
+                if (card.keywords.includes('deathtouch')) value += 3;
+                if (card.keywords.includes('lifelink')) value += 2;
+                if (card.keywords.includes('first_strike')) value += 1;
+                if (card.keywords.includes('double_strike')) value += 3;
+                if (card.keywords.includes('trample')) value += 1;
+                if (card.keywords.includes('menace')) value += 2;
+                if (card.keywords.includes('vigilance')) value += 1;
+                if (card.keywords.includes('haste')) value += 2;
+                if (card.keywords.includes('hexproof')) value += 2;
+                if (card.keywords.includes('flash')) value += 1;
+            }
+
+            // Mana dorks: high priority early game (turn 1-3)
+            if (card.keywords?.includes('tap_for_mana')) {
+                value += this.game.turnNumber <= 3 ? 8 : 2;
+            }
+
+            // Lords: bonus based on creatures of that type already on battlefield
+            if (card.keywords?.some(k => k.includes('lord'))) {
+                const lordType = this._getLordCreatureType(card);
+                const friendlyCount = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && c.instanceId !== card.instanceId &&
+                    c.subtype?.includes(lordType)
+                ).length;
+                value += 4 + (friendlyCount * 2); // base lord value + per-creature bonus
+            }
+
+            // ETB effects
+            if (card.keywords) {
+                if (card.keywords.includes('etb_draw')) value += 3;
+                if (card.keywords.includes('etb_bounce')) value += 3;
+                if (card.keywords.includes('etb_cat_token')) value += 2;
+                if (card.keywords.includes('etb_drain_2')) value += 2;
+                if (card.keywords.includes('etb_treasure')) value += 2;
+                if (card.keywords.includes('etb_counter_two')) value += 2;
+                if (card.keywords.includes('etb_discard_opponent')) value += 2;
+                if (card.keywords.includes('etb_return_zombie')) value += 2;
+                if (card.keywords.includes('etb_return_creature')) value += 3;
+                if (card.keywords.includes('etb_return_zombie_battlefield')) value += 4;
+            }
+
+            // Dragon cost reduction already on field? Bonus for dragons
+            if (card.keywords?.includes('dragon_cost_reduction')) value += 3;
+
+        } else if (card.type === 'sorcery') {
+            // Sorceries: evaluate by effect
+            value = (card.cmc || 0) + 2; // Base: CMC as proxy + bonus for being a spell
+
+            // Token generators with lords on field
+            if (card.id === 'dragon_fodder') {
+                const hasGoblinLord = opponent.battlefield.some(c =>
+                    c.keywords?.some(k => k === 'goblin_lord')
+                );
+                value = hasGoblinLord ? 12 : 5; // Two 2/2s with lord vs two 1/1s
+            }
+
+            // Board-wide buffs scale with board presence
+            if (card.id === 'joraga_invocation') {
+                const creatureCount = opponent.battlefield.filter(c => c.type === 'creature').length;
+                value = creatureCount * 4; // +3/+3 and must-be-blocked per creature
+            }
+            if (card.id === 'biogenic_upgrade') {
+                value = 8; // Always strong: +3/+3 in counters, permanent
+            }
+            if (card.id === 'cemetery_recruitment') {
+                const zombiesInGrave = opponent.graveyard.filter(c => c.subtype?.includes('Zombie')).length;
+                value = zombiesInGrave > 0 ? 6 : 4; // Better with zombie bonus draw
+            }
+
+        } else if (card.type === 'enchantment' && card.subtype !== 'Aura') {
+            // Non-aura enchantments
+            value = (card.cmc || 0) + 2;
+            if (card.id === 'goblin_oriflamme') {
+                const attackerCount = opponent.battlefield.filter(c =>
+                    c.type === 'creature' && this.rules.canAttack(c)
+                ).length;
+                value = attackerCount * 2 + 3; // +1/+0 per attacker
+            }
+        } else if (card.type === 'instant') {
+            value = (card.cmc || 0) + 1;
+        } else {
+            value = card.cmc || 0;
         }
 
-        return playableCards[0];
+        return value;
+    }
+
+    /**
+     * Returns the creature type that a lord card buffs
+     */
+    _getLordCreatureType(card) {
+        if (card.keywords?.includes('goblin_lord')) return 'Goblin';
+        if (card.keywords?.includes('elf_lord')) return 'Elf';
+        if (card.keywords?.includes('pirate_lord')) return 'Pirate';
+        if (card.keywords?.includes('zombie_skeleton_lord')) return 'Zombie';
+        return '';
     }
 
     /**
@@ -808,6 +783,61 @@ class AIPlayer {
         const defenderCreatures = defendingPlayer.battlefield.filter(c =>
             c.type === 'creature' && !c.tapped
         );
+
+        // === ALPHA-STRIKE LETHAL CHECK ===
+        // If total possible damage exceeds opponent's life, attack with everything
+        const totalPossibleDamage = possibleAttackers.reduce((sum, c) => {
+            let power = this.rules.getCreaturePower(c);
+            if (this.rules.hasKeyword(c, 'double_strike', true)) power *= 2;
+            return sum + power;
+        }, 0);
+
+        // Calculate maximum damage opponent can block
+        const maxBlockable = defenderCreatures.reduce((count) => count + 1, 0);
+        // If we have more attackers than they have blockers, excess damage gets through
+        const excessAttackers = possibleAttackers.length - maxBlockable;
+        if (excessAttackers > 0) {
+            // Sort our attackers by power (ascending) - weakest get blocked, strongest get through
+            const sorted = [...possibleAttackers].sort((a, b) =>
+                this.rules.getCreaturePower(a) - this.rules.getCreaturePower(b)
+            );
+            // Damage that WILL get through (from unblockable excess)
+            let guaranteedDamage = 0;
+            for (let i = maxBlockable; i < sorted.length; i++) {
+                let power = this.rules.getCreaturePower(sorted[i]);
+                if (this.rules.hasKeyword(sorted[i], 'double_strike', true)) power *= 2;
+                guaranteedDamage += power;
+            }
+            // Add damage from evasive creatures that can't be blocked
+            for (let i = 0; i < maxBlockable; i++) {
+                const attacker = sorted[i];
+                const canBeBlocked = defenderCreatures.some(b => this.rules.canBlock(b, attacker));
+                if (!canBeBlocked) {
+                    let power = this.rules.getCreaturePower(attacker);
+                    if (this.rules.hasKeyword(attacker, 'double_strike', true)) power *= 2;
+                    guaranteedDamage += power;
+                }
+            }
+
+            if (guaranteedDamage >= defendingPlayer.life) {
+                // Lethal! Attack with everything that has power > 0
+                return possibleAttackers.filter(a => this.rules.getCreaturePower(a) > 0);
+            }
+        }
+
+        // Also check: if ALL unblockable/evasive attackers alone can kill
+        const evasiveDamage = possibleAttackers.reduce((sum, c) => {
+            const canBeBlocked = defenderCreatures.some(b => this.rules.canBlock(b, c));
+            if (!canBeBlocked) {
+                let power = this.rules.getCreaturePower(c);
+                if (this.rules.hasKeyword(c, 'double_strike', true)) power *= 2;
+                return sum + power;
+            }
+            return sum;
+        }, 0);
+        if (evasiveDamage >= defendingPlayer.life) {
+            return possibleAttackers.filter(a => this.rules.getCreaturePower(a) > 0);
+        }
 
         // Estratégia simples: atacar se temos vantagem ou se oponente não pode bloquear
         const attackers = [];
@@ -899,8 +929,11 @@ class AIPlayer {
         const playerLife = defendingPlayer.life;
 
         // Calcular dano máximo que podemos causar (assumindo sem bloqueios)
-        const ourMaxDamage = selectedAttackers.reduce((sum, c) =>
-            sum + this.rules.getCreaturePower(c), 0);
+        const ourMaxDamage = selectedAttackers.reduce((sum, c) => {
+            let power = this.rules.getCreaturePower(c);
+            if (this.rules.hasKeyword(c, 'double_strike', true)) power *= 2;
+            return sum + power;
+        }, 0);
 
         // Se nosso ataque mata o oponente, atacar sem medo
         if (ourMaxDamage >= playerLife) {
@@ -999,9 +1032,8 @@ class AIPlayer {
             // Criaturas 1/1 sem habilidades especiais são descartáveis
             const power = this.rules.getCreaturePower(creature);
             const toughness = this.rules.getCreatureToughness(creature);
-            const hasValuableKeyword = creature.keywords?.some(k =>
-                ['deathtouch', 'lifelink', 'flying', 'first_strike', 'double_strike'].includes(k)
-            );
+            const hasValuableKeyword = ['deathtouch', 'lifelink', 'flying', 'first_strike', 'double_strike']
+                .some(k => this.rules.hasKeyword(creature, k, false));
             if (power <= 1 && toughness <= 1 && !hasValuableKeyword) return true;
             return false;
         };
@@ -1010,9 +1042,10 @@ class AIPlayer {
         const creatureValue = (creature) => {
             if (creature.instanceId?.startsWith('token_')) return 0;
             let value = this.rules.getCreaturePower(creature) + this.rules.getCreatureToughness(creature);
-            if (creature.keywords?.includes('deathtouch')) value += 3;
-            if (creature.keywords?.includes('lifelink')) value += 2;
-            if (creature.keywords?.includes('flying')) value += 2;
+            if (this.rules.hasKeyword(creature, 'deathtouch', false)) value += 3;
+            if (this.rules.hasKeyword(creature, 'lifelink', false)) value += 2;
+            if (this.rules.hasKeyword(creature, 'flying', false)) value += 2;
+            if (this.rules.hasKeyword(creature, 'first_strike', false)) value += 1;
             return value;
         };
 
@@ -1250,9 +1283,23 @@ class AIPlayer {
                 const blockerToughness = this.rules.getCreatureToughness(blocker);
 
                 const attackerHasDeathtouch = this.rules.hasKeyword(attacker, 'deathtouch', false);
-                const blockerDies = attackerPower >= blockerToughness || attackerHasDeathtouch;
-                const attackerDies = blockerPower >= attackerToughness ||
-                    this.rules.hasKeyword(blocker, 'deathtouch', false);
+
+                const blockerHasFirstStrike = this.rules.hasKeyword(blocker, 'first_strike', false) ||
+                    this.rules.hasKeyword(blocker, 'double_strike', false);
+                const attackerHasFirstStrikeHere = this.rules.hasKeyword(attacker, 'first_strike', false) ||
+                    this.rules.hasKeyword(attacker, 'double_strike', false);
+
+                // If blocker has first strike and attacker doesn't, and blocker can kill attacker,
+                // then blocker kills before taking damage — blocker survives!
+                const blockerKillsFirst = blockerHasFirstStrike && !attackerHasFirstStrikeHere &&
+                    (blockerPower >= attackerToughness || this.rules.hasKeyword(blocker, 'deathtouch', false));
+
+                const blockerDies = blockerKillsFirst ? false : (attackerPower >= blockerToughness || attackerHasDeathtouch);
+
+                const attackerKillsFirst = attackerHasFirstStrikeHere && !blockerHasFirstStrike &&
+                    (attackerPower >= blockerToughness || attackerHasDeathtouch);
+                const attackerDies = attackerKillsFirst ? false : (blockerPower >= attackerToughness ||
+                    this.rules.hasKeyword(blocker, 'deathtouch', false));
 
                 // Usar thresholds configurados por dificuldade
                 const tradePowerThreshold = this.config.thresholds.tradePower;
@@ -1436,6 +1483,61 @@ class AIPlayer {
             })[0];
         }
 
+        // All removal/destruction: use threat evaluation
+        if (['scorching_dragonfire', 'fiery_annihilation', 'murder',
+             'finishing_blow', 'deadly_riposte', 'bite_down',
+             'eaten_alive', 'deadly_plot', 'prayer_of_binding',
+             'starlight_snare', 'fleeting_distraction'].includes(spell.id)) {
+
+            const enemyCreatures = validTargets.filter(c =>
+                player.battlefield.includes(c) && c.type === 'creature'
+            );
+
+            if (enemyCreatures.length > 0) {
+                const actualThreats = enemyCreatures.filter(c => !this.rules.hasPacifism(c));
+                const targetPool = actualThreats.length > 0 ? actualThreats : enemyCreatures;
+
+                return targetPool.sort((a, b) => {
+                    return this._evaluateCreatureThreat(b) - this._evaluateCreatureThreat(a);
+                })[0];
+            }
+            return validTargets[0];
+        }
+
+        // Self-targeting buffs: prefer evasive creatures
+        if (['giant_growth', 'snakeskin_veil', 'adamant_will',
+             'undying_malice', 'biogenic_upgrade'].includes(spell.id)) {
+            return validTargets.sort((a, b) => {
+                let aVal = this.rules.getCreaturePower(a);
+                let bVal = this.rules.getCreaturePower(b);
+                if (this.rules.hasKeyword(a, 'flying', true)) aVal += 3;
+                if (this.rules.hasKeyword(b, 'flying', true)) bVal += 3;
+                if (this.rules.hasKeyword(a, 'trample', true)) aVal += 2;
+                if (this.rules.hasKeyword(b, 'trample', true)) bVal += 2;
+                return bVal - aVal;
+            })[0];
+        }
+
+        // Into the Roil (bounce): highest threat
+        if (spell.id === 'into_the_roil') {
+            const enemies = validTargets.filter(c => player.battlefield.includes(c));
+            if (enemies.length > 0) {
+                return enemies.sort((a, b) =>
+                    this._evaluateCreatureThreat(b) - this._evaluateCreatureThreat(a)
+                )[0];
+            }
+            return validTargets[0];
+        }
+
+        // Cemetery Recruitment: prefer zombies (bonus draw), then highest CMC
+        if (spell.id === 'cemetery_recruitment') {
+            const zombies = validTargets.filter(c => c.subtype?.includes('Zombie'));
+            if (zombies.length > 0) {
+                return zombies.sort((a, b) => (b.cmc || 0) - (a.cmc || 0))[0];
+            }
+            return validTargets.sort((a, b) => (b.cmc || 0) - (a.cmc || 0))[0];
+        }
+
         // Padrão: primeiro alvo
         return validTargets[0];
     }
@@ -1604,6 +1706,188 @@ class AIPlayer {
 
         return threat;
     }
+
+    // === INSTANT-SPEED ACTIONS ===
+
+    /**
+     * Evaluates what instant-speed action the AI should take
+     * @param {string} context - 'end_step', 'after_attackers', 'after_blockers', 'response_to_spell'
+     * @returns {Object|null} { card, target (optional), action: 'play' } or null
+     */
+    getInstantSpeedAction(context) {
+        const opponent = this.game.opponent; // AI is always opponent
+
+        // Get all instant-speed cards AI can play
+        const instantSpeedCards = opponent.hand.filter(card => {
+            const hasFlash = card.keywords?.includes('flash');
+            return (card.type === 'instant' || hasFlash) &&
+                   this.rules.canCastInstant(card, opponent);
+        });
+
+        if (instantSpeedCards.length === 0) return null;
+
+        switch (context) {
+            case 'end_step':
+                return this._evaluateEndStepPlay(instantSpeedCards);
+            case 'after_attackers':
+                return this._evaluateAfterAttackersPlay(instantSpeedCards);
+            case 'after_blockers':
+                return this._evaluateAfterBlockersPlay(instantSpeedCards);
+            case 'response_to_spell':
+                return this._evaluateProtectionPlay(instantSpeedCards);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * End of player's turn: flash creatures and draw spells
+     */
+    _evaluateEndStepPlay(cards) {
+        // Flash creatures at end of opponent's turn = best timing
+        const flashCreatures = cards.filter(c => c.type === 'creature' && c.keywords?.includes('flash'));
+        if (flashCreatures.length > 0) {
+            // Brineborn Cutthroat gets +1/+1 counter when cast on opponent's turn - top priority
+            const cutthroat = flashCreatures.find(c => c.id === 'brineborn_cutthroat');
+            if (cutthroat) return { card: cutthroat, action: 'play' };
+
+            // Play best flash creature
+            const best = flashCreatures.sort((a, b) =>
+                this._evaluateCardToPlay(b) - this._evaluateCardToPlay(a))[0];
+            return { card: best, action: 'play' };
+        }
+
+        // Draw spells at end of turn (Opt, Quick Study, etc.)
+        const drawSpells = cards.filter(c => c.type === 'instant' &&
+            ['opt', 'quick_study', 'arcane_epiphany'].includes(c.id));
+        if (drawSpells.length > 0) {
+            // Prefer cheapest draw spell
+            return { card: drawSpells.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0], action: 'play' };
+        }
+
+        return null;
+    }
+
+    /**
+     * After player declares attackers: removal on scary attackers, flash blockers
+     */
+    _evaluateAfterAttackersPlay(cards) {
+        const attackers = this.game.currentAttackers || [];
+        if (attackers.length === 0) return null;
+
+        // Use removal on high-threat attackers
+        const removalCards = cards.filter(c => this.game.isRemovalSpell(c) && c.type === 'instant');
+        if (removalCards.length > 0) {
+            // Find scariest attacker
+            const scariestAttacker = [...attackers].sort((a, b) =>
+                this._evaluateCreatureThreat(b) - this._evaluateCreatureThreat(a))[0];
+
+            if (this._evaluateCreatureThreat(scariestAttacker) >= 6) {
+                for (const removal of removalCards) {
+                    // Check if this removal can target the attacker
+                    if (this.rules.hasValidTargets(removal, this.game.opponent, this.game)) {
+                        const validTargets = this.game.getValidSpellTargets(removal, this.game.opponent);
+                        if (validTargets && validTargets.includes(scariestAttacker)) {
+                            return { card: removal, target: scariestAttacker, action: 'play' };
+                        }
+                    }
+                }
+            }
+        }
+
+        // Flash blockers as surprise defenders
+        const flashCreatures = cards.filter(c => c.type === 'creature' && c.keywords?.includes('flash'));
+        if (flashCreatures.length > 0) {
+            // Only flash in a creature if there's a meaningful attacker we can't handle
+            const totalAttackDamage = attackers.reduce((sum, a) => sum + this.rules.getCreaturePower(a), 0);
+            if (totalAttackDamage >= this.game.opponent.life * 0.4) {
+                const best = flashCreatures.sort((a, b) =>
+                    this._evaluateCardToPlay(b) - this._evaluateCardToPlay(a))[0];
+                return { card: best, action: 'play' };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * After AI assigns blockers: combat tricks to save blockers or kill attackers
+     */
+    _evaluateAfterBlockersPlay(cards) {
+        const combatTrickIds = ['moment_of_triumph', 'kindled_fury', 'giant_growth',
+                                'adamant_will', 'offer_immortality', 'snakeskin_veil'];
+        const combatTricks = cards.filter(c => combatTrickIds.includes(c.id));
+
+        if (combatTricks.length === 0) return null;
+
+        const assignments = this.game.blockerAssignments;
+        if (!assignments) return null;
+
+        // Look through blocker assignments for a blocker that would benefit from a trick
+        for (const [attackerInstanceId, blockers] of Object.entries(assignments)) {
+            for (const blocker of blockers) {
+                // Must be our blocker
+                if (!this.game.opponent.battlefield.includes(blocker)) continue;
+
+                const attacker = this.game.currentAttackers?.find(a => a.instanceId === attackerInstanceId);
+                if (!attacker) continue;
+
+                const blockerPower = this.rules.getCreaturePower(blocker);
+                const blockerToughness = this.rules.getCreatureToughness(blocker);
+                const attackerPower = this.rules.getCreaturePower(attacker);
+                const attackerToughness = this.rules.getCreatureToughness(attacker);
+
+                // Blocker would die - can we save it with a trick?
+                const blockerWouldDie = attackerPower >= blockerToughness;
+                // Blocker can't kill attacker - can a trick help?
+                const cantKillAttacker = blockerPower < attackerToughness;
+
+                if (blockerWouldDie || cantKillAttacker) {
+                    for (const trick of combatTricks) {
+                        if (this.rules.hasValidTargets(trick, this.game.opponent, this.game)) {
+                            const validTargets = this.game.getValidSpellTargets(trick, this.game.opponent);
+                            if (validTargets && validTargets.includes(blocker)) {
+                                return { card: trick, target: blocker, action: 'play' };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Protect AI creature from removal spell on the stack
+     */
+    _evaluateProtectionPlay(cards) {
+        const stackTop = this.game.peekStack();
+        if (!stackTop || !stackTop.target) return null;
+
+        // Is the target one of our creatures?
+        if (!this.game.opponent.battlefield.includes(stackTop.target)) return null;
+
+        const targetThreat = this._evaluateCreatureThreat(stackTop.target);
+        if (targetThreat < 4) return null; // Not worth protecting cheap creatures
+
+        // Protection spells (hexproof, indestructible, return from death)
+        const protectionIds = ['snakeskin_veil', 'adamant_will', 'undying_malice', 'offer_immortality'];
+        const protectionSpells = cards.filter(c => protectionIds.includes(c.id));
+
+        for (const spell of protectionSpells) {
+            if (this.rules.hasValidTargets(spell, this.game.opponent, this.game)) {
+                const validTargets = this.game.getValidSpellTargets(spell, this.game.opponent);
+                if (validTargets && validTargets.includes(stackTop.target)) {
+                    return { card: spell, target: stackTop.target, action: 'play' };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // === END INSTANT-SPEED ACTIONS ===
 
     // Delay para visualização (com verificação de sessão)
     delay(ms) {

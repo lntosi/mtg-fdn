@@ -777,7 +777,16 @@ class GameState {
         const stackTop = this.peekStack();
         if (!stackTop) return false;
 
-        // Verificar se tem algum counterspell (Cancel, Essence Scatter, etc.) que pode usar
+        // 1. Check protection spells first (cheaper and more efficient than counterspelling)
+        if (this.isRemovalSpell(stackTop.item) && stackTop.target) {
+            const protection = this.ai.getInstantSpeedAction('response_to_spell');
+            if (protection) {
+                const played = await this.aiPlayInstantSpeed(protection);
+                if (played) return true;
+            }
+        }
+
+        // 2. Then check counterspells (existing logic)
         const counterspell = this.opponent.hand.find(c =>
             this.isCounterspell(c) &&
             this.rules.canCastInstant(c, this.opponent) &&
@@ -804,26 +813,84 @@ class GameState {
     }
 
     /**
+     * AI plays an instant-speed card (instant or flash creature) outside its turn
+     * @param {Object} action - { card, target (optional), action: 'play' }
+     * @returns {boolean} true if card was played
+     */
+    async aiPlayInstantSpeed(action) {
+        if (!action || !action.card) return false;
+
+        const card = action.card;
+        const opponent = this.opponent;
+
+        // Verify card is still in hand and can be cast
+        if (!opponent.hand.includes(card)) return false;
+        if (!this.rules.canCastInstant(card, opponent)) return false;
+
+        this.ui.log(`IA joga ${card.name}!`);
+        await this.delay(500);
+
+        // Play the card through the normal system
+        // playCard() already handles AI targeting via chooseBestSpellTarget()/chooseBestAuraTarget()
+        const played = await this.playCard(card, opponent);
+
+        if (played) {
+            this.ui.render();
+            await this.delay(600);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Avalia se a IA deve usar counterspell neste spell
      * @param {Object} spell - O spell a ser anulado
      * @param {Object} counterCard - O counterspell que a IA está considerando usar
      */
     shouldCounterspell(spell, counterCard) {
-        // Full counterspells (Cancel): more selective to save for high-value targets
-        // Counter creatures with CMC >= 4
-        if (spell.type === 'creature' && spell.cmc >= 4) return true;
+        // Get the stack top to check target
+        const stackTop = this.peekStack();
 
-        // Counter removal that would kill an AI creature
-        if (this.isRemovalSpell(spell)) {
-            const aiCreatures = this.opponent.battlefield.filter(c => c.type === 'creature');
-            if (aiCreatures.some(c => c.cmc >= 3)) return true;
+        // Counter high-threat creatures (evaluate threat, not just CMC)
+        if (spell.type === 'creature') {
+            // Use threat evaluation if AI has it
+            const threat = this.ai._evaluateCreatureThreat(spell);
+            if (threat >= 8) return true;
+            if (spell.cmc >= 4) return true;
+            // Lords are always worth countering
+            if (spell.keywords?.some(k => k.includes('lord'))) return true;
+            return false;
         }
 
-        // Counter powerful sorceries/instants
-        if (spell.type === 'instant' || spell.type === 'sorcery') {
+        // Counter removal that targets a valuable AI creature
+        if (this.isRemovalSpell(spell)) {
+            // Check if we know what's being targeted
+            if (stackTop && stackTop.target) {
+                const targetThreat = this.ai._evaluateCreatureThreat(stackTop.target);
+                return targetThreat >= 6; // Counter if target is valuable
+            }
+            // Unknown target: counter if we have any valuable creature
+            const aiCreatures = this.opponent.battlefield.filter(c => c.type === 'creature');
+            const bestThreat = aiCreatures.reduce((max, c) =>
+                Math.max(max, this.ai._evaluateCreatureThreat(c)), 0);
+            return bestThreat >= 6;
+        }
+
+        // Counter powerful spells (instants, sorceries, AND enchantments)
+        if (spell.type === 'instant' || spell.type === 'sorcery' || spell.type === 'enchantment') {
             if (spell.cmc >= 4) return true;
             if (spell.id === 'joraga_invocation') return true;
             if (spell.id === 'rise_again') return true;
+            // Counter enchantment-based removal too
+            if (spell.id === 'prayer_of_binding') return true;
+            if (spell.id === 'pacifism' || spell.id === 'eaten_by_piranhas') {
+                // Counter if we have a valuable target
+                const aiCreatures = this.opponent.battlefield.filter(c => c.type === 'creature');
+                const bestThreat = aiCreatures.reduce((max, c) =>
+                    Math.max(max, this.ai._evaluateCreatureThreat(c)), 0);
+                return bestThreat >= 6;
+            }
         }
 
         return false;
@@ -2138,11 +2205,21 @@ class GameState {
                             }
                         }
                     } else {
-                        // IA faz loot automaticamente
-                        const discarded = caster.hand.shift();
-                        caster.graveyard.push(discarded);
-                        this.rules.drawCard(caster);
-                        this.ui.log(`${caster.name} descartou ${discarded.name} e comprou uma carta`);
+                        // IA faz loot automaticamente - descarta carta de menor valor
+                        const sortedHand = [...caster.hand].sort((a, b) => {
+                            // Prefer discarding lands
+                            if (a.type === 'land' && b.type !== 'land') return -1;
+                            if (a.type !== 'land' && b.type === 'land') return 1;
+                            return (a.cmc || 0) - (b.cmc || 0);
+                        });
+                        const discarded = sortedHand[0];
+                        const discardIndex = caster.hand.indexOf(discarded);
+                        if (discardIndex > -1) {
+                            caster.hand.splice(discardIndex, 1);
+                            caster.graveyard.push(discarded);
+                            this.rules.drawCard(caster);
+                            this.ui.log(`${caster.name} descartou ${discarded.name} e comprou uma carta`);
+                        }
                     }
                 }
                 break;
@@ -3967,6 +4044,14 @@ class GameState {
                 // CR 513: End step triggers disparam, depois ambos jogadores têm prioridade
                 await this.triggers.onEndStep(this.activePlayer);
 
+                // AI plays instants/flash at end of player's turn
+                if (this.isPlayerTurn()) {
+                    const endStepAction = this.ai.getInstantSpeedAction('end_step');
+                    if (endStepAction) {
+                        await this.aiPlayInstantSpeed(endStepAction);
+                    }
+                }
+
                 // Janela de prioridade no end step
                 // Última chance antes do cleanup (onde normalmente não há prioridade)
                 if (this.shouldStopForPriority('endStep') && this.playerHasResponses()) {
@@ -4086,6 +4171,14 @@ class GameState {
 
             this.ui.promptForBlockers(attackers);
         } else {
+            // AI can use instant-speed removal on player's attackers before choosing blockers
+            if (attackingPlayer === this.player) {
+                const afterAttackAction = this.ai.getInstantSpeedAction('after_attackers');
+                if (afterAttackAction) {
+                    await this.aiPlayInstantSpeed(afterAttackAction);
+                }
+            }
+
             // IA escolhe bloqueadores
             const blockers = this.opponent.battlefield.filter(c =>
                 c.type === 'creature' && !c.tapped
@@ -4100,6 +4193,14 @@ class GameState {
                 await this.delay(800);
             } else {
                 this.ui.log('Oponente não bloqueou');
+            }
+
+            // AI can use combat tricks on its blockers before damage
+            if (attackingPlayer === this.player && Object.keys(this.blockerAssignments).length > 0) {
+                const afterBlockAction = this.ai.getInstantSpeedAction('after_blockers');
+                if (afterBlockAction) {
+                    await this.aiPlayInstantSpeed(afterBlockAction);
+                }
             }
 
             // Arena-style: aguardar jogador clicar "Continuar" após bloqueadores
@@ -4497,8 +4598,19 @@ class GameState {
             this.ui.log(`Você tem ${player.hand.length} cartas. Descarte ${cardsToDiscard}.`);
             await this.ui.promptForDiscard(cardsToDiscard);
         } else {
-            // IA descarta automaticamente (cartas mais caras primeiro)
-            const sorted = [...player.hand].sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+            // IA descarta automaticamente (terrenos extras > cartas de menor valor)
+            const sorted = [...player.hand].sort((a, b) => {
+                // Extra lands are lowest priority (discard first)
+                const aIsLand = a.type === 'land';
+                const bIsLand = b.type === 'land';
+                if (aIsLand && !bIsLand) return -1; // lands first to discard
+                if (!aIsLand && bIsLand) return 1;
+                // Among non-lands, discard lowest value first
+                // Keep removal, bombs, and creatures over cheap spells
+                const aValue = this._evaluateCardForDiscard(a);
+                const bValue = this._evaluateCardForDiscard(b);
+                return aValue - bValue;
+            });
             for (let i = 0; i < cardsToDiscard; i++) {
                 const cardToDiscard = sorted[i];
                 const index = player.hand.indexOf(cardToDiscard);
@@ -4509,6 +4621,21 @@ class GameState {
                 }
             }
         }
+    }
+
+    /**
+     * Evaluates card value for discard decisions (higher = keep, lower = discard)
+     */
+    _evaluateCardForDiscard(card) {
+        if (card.type === 'land') return 0;
+        let value = card.cmc || 0;
+        // Removal is high value
+        if (this.isRemovalSpell(card)) value += 5;
+        // Creatures with keywords are valuable
+        if (card.type === 'creature' && card.keywords?.length > 0) value += 2;
+        // Lords are very valuable
+        if (card.keywords?.some(k => k.includes('lord'))) value += 4;
+        return value;
     }
 
     // Descarta cartas específicas do jogador
@@ -4651,20 +4778,27 @@ class GameState {
         this.ui.log('IA está pensando...');
         await this.delay(800);
 
-        // 0. Usar habilidades ativadas de mana ANTES de jogar cartas (Elvish Archdruid gera floating mana)
-        if (this.ai.config.useActivatedAbilities) {
-            await this.ai.useActivatedAbilities();
-        }
-
-        // 1. Jogar terreno se possível
-        const landInHand = opponent.hand.find(card => card.type === 'land');
+        // 1. Jogar terreno se possível (ANTES de ativar habilidades de mana)
+        // Prefer untapped lands in early turns for tempo
+        const landsInHand = opponent.hand.filter(card => card.type === 'land');
+        const landInHand = landsInHand.length > 0 ? landsInHand.sort((a, b) => {
+            // Prefer untapped lands (enters_tapped at end)
+            if (a.enters_tapped && !b.enters_tapped) return 1;
+            if (!a.enters_tapped && b.enters_tapped) return -1;
+            return 0;
+        })[0] : null;
         if (landInHand && this.rules.canPlayLand(opponent)) {
             await this.playCard(landInHand, opponent);
             this.ui.render();
             await this.delay(1000);
         }
 
-        // 2. Jogar cartas uma por vez, delegando seleção ao AI
+        // 2. Usar habilidades ativadas de mana APÓS jogar terreno (Elvish Archdruid gera floating mana)
+        if (this.ai.config.useActivatedAbilities) {
+            await this.ai.useActivatedAbilities();
+        }
+
+        // 3. Jogar cartas uma por vez, delegando seleção ao AI
         let playedSomething = true;
         while (playedSomething) {
             playedSomething = false;
@@ -4672,18 +4806,22 @@ class GameState {
             const { card: cardToPlay, useTreasures, treasureInfo } = this.ai.getNextCardToPlay(phase);
 
             if (cardToPlay) {
-                if (useTreasures && treasureInfo) {
-                    await this.ai.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
-                }
+                // Verify card is still in hand and basic preconditions met before sacrificing treasures
+                const stillInHand = opponent.hand.includes(cardToPlay);
+                if (stillInHand) {
+                    if (useTreasures && treasureInfo) {
+                        await this.ai.useTreasuresForCard(opponent, treasureInfo.treasuresNeeded, treasureInfo.colorsNeeded);
+                    }
 
-                if (this.rules.canPlayCard(cardToPlay, opponent)) {
-                    await this.delay(600);
-                    const played = await this.playCard(cardToPlay, opponent);
+                    if (this.rules.canPlayCard(cardToPlay, opponent)) {
+                        await this.delay(600);
+                        const played = await this.playCard(cardToPlay, opponent);
 
-                    if (played) {
-                        this.ui.render();
-                        playedSomething = true;
-                        await this.delay(400);
+                        if (played) {
+                            this.ui.render();
+                            playedSomething = true;
+                            await this.delay(400);
+                        }
                     }
                 }
             }
@@ -4692,12 +4830,12 @@ class GameState {
             if (this.gameOver) return;
         }
 
-        // 3. Usar habilidades ativadas (ambas as fases: pre-combate em Main1, pós-combate em Main2)
+        // 4. Usar habilidades ativadas (ambas as fases: pre-combate em Main1, pós-combate em Main2)
         if (this.ai.config.useActivatedAbilities) {
             await this.ai.useActivatedAbilities();
         }
 
-        // 4. Usar habilidades ativadas do cemitério (Reassembling Skeleton, Suspicious Shambler)
+        // 5. Usar habilidades ativadas do cemitério (Reassembling Skeleton, Suspicious Shambler)
         await this.ai.useGraveyardAbilities(this.opponent);
     }
 

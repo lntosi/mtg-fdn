@@ -46,7 +46,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `TriggerManager` - **All card triggers centralized here** (ETBs, death triggers, combat triggers)
 - `RulesEngine` - Validates plays, calculates mana, resolves combat damage (two-step first strike)
 - `GameUI` - Renders cards, handles clicks, manages graveyard/exile modals
-- `AIPlayer` - Decides which cards to play, attackers, blockers, mulligan decisions
+- `AIPlayer` - Decides which cards to play, attackers, blockers, mulligan decisions, instant-speed responses
 
 **Game Flow:**
 1. Player selects 1-2 decks → 20 or 40-card library (AI mirrors player's deck count)
@@ -56,7 +56,8 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 
 **Stack System:** Basic stack implementation for spells/abilities with priority passing:
 - `addToStack(item, controller)` / `resolveTopOfStack()` / `passPriority()`
-- AI responds via `aiDecideResponse()` → supports all counterspells (Cancel, Essence Scatter, etc.)
+- AI responds via `aiDecideResponse()` → supports counterspells, protection spells, and combat tricks
+- AI plays instant-speed cards during player's turn via `getInstantSpeedAction()` (flash, removal, combat tricks)
 
 **Library Convention:** `player.library` uses END as top of deck. `pop()` draws, `unshift()` puts on bottom. See `docs/PITFALLS.md` for details.
 
@@ -68,7 +69,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 | `triggers.js` | ETBs, death triggers, combat triggers, end-step triggers | Spell resolution, combat damage |
 | `game.js` | Game flow, spell resolution, activated abilities, combat flow | Static effects, mana calculation |
 | `rules.js` | Mana calculation, damage calculation, keyword checks, lord bonuses, hasValidTargets | Triggers, game state changes |
-| `ai.js` | AI decisions for playing cards, attacking, blocking | Rule enforcement |
+| `ai.js` | AI decisions for playing cards, attacking, blocking, instant-speed responses | Rule enforcement |
 | `ui.js` | DOM rendering, event handlers, modals, prompts | Game logic |
 
 ## MTG Keywords Implemented
@@ -159,7 +160,7 @@ if (controller === this.player) {
 ## Testing
 
 ```bash
-npm test                           # Run all 215+ unit tests
+npm test                           # Run all 615+ unit tests
 node tools/validate-cards.js       # Validate cards against Scryfall
 node tools/validate-cards.js --missing  # Check cards without tests
 ```

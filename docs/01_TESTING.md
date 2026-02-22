@@ -103,7 +103,17 @@ mtg/
 │   ├── lords.test.js         # Testes de lords (Dropkick Bomber, Elvish Archdruid)
 │   ├── newFeatures.test.js   # Testes de features recentes (temporaryKeywords, etc.)
 │   ├── spells.test.js        # Testes de feitiços e targeting
-│   └── triggers.test.js      # Testes de triggers (ETB, fim de turno, etc.)
+│   ├── triggers.test.js      # Testes de triggers (ETB, fim de turno, etc.)
+│   ├── counterMechanics.test.js  # Testes de counters e mecânicas de counter
+│   ├── stackTargeting.test.js    # Testes de stack e targeting
+│   ├── auditFixes.test.js    # Fixes da auditoria R2
+│   ├── auditFixes2.test.js   # Fixes da auditoria R3
+│   ├── auditFixes3.test.js   # Fixes da auditoria R4
+│   ├── auditFixes4.test.js   # Fixes da auditoria R5
+│   ├── auditFixes5.test.js   # Fixes da auditoria R5 (continuação)
+│   ├── auditFixes6.test.js   # Fixes da auditoria R6
+│   ├── aiImprovements.test.js # Melhorias de IA (R7)
+│   └── stats.test.js         # Testes do StatsManager
 └── package.json              # Configuração do projeto e Jest
 ```
 
@@ -223,8 +233,8 @@ $ npm test
  PASS  tests/spells.test.js
  PASS  tests/triggers.test.js
 
-Test Suites: 6 passed, 6 total
-Tests:       140 passed, 140 total
+Test Suites: 16 passed, 16 total
+Tests:       615 passed, 615 total
 Snapshots:   0 total
 Time:        0.2 s
 ```

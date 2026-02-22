@@ -211,8 +211,8 @@ Some methods use try/catch (resolveCombat), most have none. Some errors are logg
 | L1 | **AI deathtouch not valued in attack decisions** — 1/1 deathtouch trading with 5/5 is excellent but AI won't attack | AI Analyst |
 | L2 | **AI trample excess damage not leveraged** — trampler that dies but deals 5+ damage might be worth sending | AI Analyst |
 | L3 | **AI chump blocks too aggressively at high life** — chump blocks 3/3 at 20 life with token | AI Analyst |
-| L4 | **AI doesn't play lands in Main Phase 2** — land drop only checked in phase 1 | AI Analyst |
-| L5 | **AI mana dork priority not handled** — plays big creatures over ramp in early turns | AI Analyst |
+| L4 | ~~**AI doesn't play lands in Main Phase 2**~~ — land drop only checked in phase 1 | AI Analyst | **FIXED** ✅ (R7 — AI now plays lands in Main Phase 2 before abilities) |
+| L5 | ~~**AI mana dork priority not handled**~~ — plays big creatures over ramp in early turns | AI Analyst | **FIXED** ✅ (R7 — `_evaluateCardToPlay()` prioritizes mana dorks in early turns) |
 | L6 | **Floating mana empties per phase not per step** — should empty between combat sub-steps (Rule 106.4) | Rules Auditor |
 | L7 | **Bloodtithe Collector** missing "Noble" subtype (cosmetic) | Card Checker |
 | L8 | **Highborn Vampire** missing "Warrior" subtype (cosmetic) | Card Checker |
@@ -256,7 +256,7 @@ Some methods use try/catch (resolveCombat), most have none. Some errors are logg
 
 5. ~~**Fix AI deathtouch blocking** (H3)~~ ✅ **DONE** — `blockerDies` now includes `attackerHasDeathtouch` check.
 
-All 5 quick wins implemented. Tier 1-3 fixes complete (20 of 36 findings resolved: 19 fixed + 1 reclassified as NOT A BUG). 215/215 tests passing. Remaining: H6 (ward), M2/M3 (god file), M6/M10/M12/M14, L1-L9.
+All 5 quick wins implemented. Tier 1-3 fixes complete (22 of 36 findings resolved: 21 fixed + 1 reclassified as NOT A BUG). 615/615 tests passing. Remaining: H6 (ward), M2/M3 (god file), M6/M10/M12/M14, L1-L3, L6-L9.
 
 ---
 
@@ -269,3 +269,4 @@ All 5 quick wins implemented. Tier 1-3 fixes complete (20 of 36 findings resolve
 | 2026-02-11 | M11 reclassified as NOT A BUG | — (already guarded by `_dragInitialized`) |
 | 2026-02-11 | H4, M1, M7, M8 | `ai.js`, `game.js` |
 | 2026-02-11 | C1, C2, H7, M9, L10 | `rules.js`, `game.js`, `ai.js` |
+| 2026-02-22 | L4, L5 + 20 AI quality improvements (R7) | `ai.js`, `game.js`, `triggers.js` |

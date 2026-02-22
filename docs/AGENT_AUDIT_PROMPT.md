@@ -29,6 +29,7 @@
 | R4 | Goblins vs Undead, Cats vs Wizards, Elves vs Inferno | Wizards (re-audit) | Sim |
 | R5 | Vampires vs Wizards, Healing vs Pirates, Primal vs Goblins, Undead vs Cats | Combat & Keywords (deep audit) | Sim |
 | R6 | Elves vs Vampires, Cats vs Inferno, Pirates vs Undead, Healing vs Goblins | Equipment & Auras, Stack & Counterspells | Sim |
+| R7 | — (foco em qualidade da IA) | AI Resource Mgmt, Combat Decisions, Card Priority, Targeting, Mulligan, Instant-Speed | Sim |
 
 \* = agente bateu no rate limit (resultado parcial ou sem resultado)
 
@@ -52,4 +53,5 @@
 | R4 (6 agentes) | 9 | 14 |
 | R5 (6 agentes) | 13 | 22 |
 | R6 (6 agentes) | 11 | 32 |
-| **Total agentes** | **50** | **112** |
+| R7 (6 agentes — AI quality) | 20 | 36 |
+| **Total agentes** | **70** | **148** |
