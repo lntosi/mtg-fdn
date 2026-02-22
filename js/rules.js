@@ -203,14 +203,6 @@ class RulesEngine {
             return hasTappedCreatures;
         }
 
-        // Volley - só criaturas com flying do oponente
-        if (card.id === 'volley') {
-            const hasFlyingCreatures = opponent.battlefield.some(c =>
-                c.type === 'creature' && this.hasKeyword(c, 'flying', false)
-            );
-            return hasFlyingCreatures;
-        }
-
         // Broken Wings - artefatos, encantamentos ou criaturas com flying (qualquer jogador)
         if (card.id === 'broken_wings') {
             const hasOpponentTargets = opponent.battlefield.some(c =>
@@ -259,13 +251,6 @@ class RulesEngine {
         if (card.id === 'angelic_edict') {
             return opponent.battlefield.some(c =>
                 c.type === 'creature' || c.type === 'enchantment'
-            );
-        }
-
-        // Essence Scatter - counter creature spell only
-        if (card.id === 'essence_scatter' || card.keywords?.includes('counterspell_creature')) {
-            return this.game.stack.some(item =>
-                item.controller !== player && item.item.type === 'creature'
             );
         }
 
@@ -1450,16 +1435,6 @@ class RulesEngine {
             }
         });
 
-        // Eaten by Piranhas: criatura perde todas as habilidades
-        allBattlefields.forEach(card => {
-            if (card.subtype === 'Aura' && card.attachedTo === creature.instanceId) {
-                if (card.id === 'eaten_by_piranhas') {
-                    // Remove todas as keywords
-                    keywords.length = 0;
-                }
-            }
-        });
-
         // Aggressive Mammoth (trample_lord): outras criaturas têm trample
         controller.battlefield.forEach(card => {
             if (card.keywords?.includes('trample_lord') && card !== creature && !this.hasLostAllAbilities(card)) {
@@ -1477,6 +1452,18 @@ class RulesEngine {
                 }
             });
         }
+
+        // Eaten by Piranhas: criatura perde todas as habilidades
+        // Per MTG Layer 6 dependency: wipe happens AFTER external continuous effects
+        // (trample_lord, temporaryKeywords) so it suppresses everything
+        allBattlefields.forEach(card => {
+            if (card.subtype === 'Aura' && card.attachedTo === creature.instanceId) {
+                if (card.id === 'eaten_by_piranhas') {
+                    // Remove todas as keywords
+                    keywords.length = 0;
+                }
+            }
+        });
 
         return keywords;
     }

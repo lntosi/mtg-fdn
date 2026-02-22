@@ -642,12 +642,14 @@ class AIPlayer {
 
             case 'jazal_goldmane':
                 // Pump atacantes - só útil durante combate com atacantes declarados
-                if (this.game.phase !== PHASES.DECLARE_ATTACKERS && this.game.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                // Deve coincidir com game.js canActivateAbility: DECLARE_BLOCKERS e COMBAT_DAMAGE
+                if (this.game.phase !== PHASES.DECLARE_BLOCKERS && this.game.phase !== PHASES.COMBAT_DAMAGE) return false;
                 return this.game.currentAttackers.length >= 2;
 
             case 'ingenious_leonin':
                 // Pump uma criatura atacante - só útil durante combate com atacantes
-                if (this.game.phase !== PHASES.DECLARE_ATTACKERS && this.game.phase !== PHASES.DECLARE_BLOCKERS) return false;
+                // Deve coincidir com game.js canActivateAbility: DECLARE_BLOCKERS e COMBAT_DAMAGE
+                if (this.game.phase !== PHASES.DECLARE_BLOCKERS && this.game.phase !== PHASES.COMBAT_DAMAGE) return false;
                 return this.game.currentAttackers.length > 0;
 
             case 'goblin_firebomb':
@@ -702,7 +704,7 @@ class AIPlayer {
 
         // Se há uma ameaça forte (threat >= 8: ex. flyer 4/4, ou 5/5+), priorizar remoção
         const removalIds = ['heros_downfall', 'moment_of_craving', 'incinerating_blast',
-            'volley', 'felling_blow', 'broken_wings', 'angelic_edict', 'finishing_blow',
+            'felling_blow', 'broken_wings', 'angelic_edict', 'finishing_blow',
             'eaten_alive', 'scorching_dragonfire', 'eaten_by_piranhas', 'pacifism'];
         if (biggestEnemyThreat >= 8) {
             const removal = playableCards.find(c => removalIds.includes(c.id));
@@ -1397,7 +1399,7 @@ class AIPlayer {
         // Para remoções: escolher a criatura mais forte do oponente
         // Nota: felling_blow agora é one-sided fight, não remoção direta
         if (['heros_downfall', 'moment_of_craving', 'incinerating_blast',
-             'volley', 'felling_blow', 'broken_wings', 'angelic_edict',
+             'felling_blow', 'broken_wings', 'angelic_edict',
              'elspeths_smite'].includes(spell.id)) {
 
             // Filtrar criaturas do jogador (oponente da IA)

@@ -148,13 +148,12 @@ class GameState {
         if (amount <= 0) return;
         player.life -= amount;
 
-        // Rastrear perda de vida para triggers (custos de vida não contam como perda)
-        if (!options.isLifePayment) {
-            if (player === this.player) {
-                this.playerLostLifeThisTurn = true;
-            } else {
-                this.opponentLostLifeThisTurn = true;
-            }
+        // Rastrear perda de vida para triggers (CR 119.4: paying life causes that much life to be lost)
+        // Sempre rastrear, inclusive para custos de vida
+        if (player === this.player) {
+            this.playerLostLifeThisTurn = true;
+        } else {
+            this.opponentLostLifeThisTurn = true;
         }
 
         // Som de dano (exceto para custos de vida)
@@ -810,11 +809,6 @@ class GameState {
      * @param {Object} counterCard - O counterspell que a IA está considerando usar
      */
     shouldCounterspell(spell, counterCard) {
-        // Essence Scatter (counterspell_creature): only counter creatures CMC >= 3
-        if (counterCard?.keywords?.includes('counterspell_creature')) {
-            return spell.type === 'creature' && spell.cmc >= 3;
-        }
-
         // Full counterspells (Cancel): more selective to save for high-value targets
         // Counter creatures with CMC >= 4
         if (spell.type === 'creature' && spell.cmc >= 4) return true;
@@ -840,11 +834,11 @@ class GameState {
      */
     isRemovalSpell(card) {
         const removalIds = [
-            'murder', 'lightning_bolt', 'doom_blade', 'go_for_the_throat',
             'eaten_by_piranhas', 'finishing_blow', 'elspeths_smite',
-            'disfigure', 'cut_down', 'fatal_push', 'unholy_heat',
             'deadly_riposte', 'prayer_of_binding', 'angelic_edict',
-            'heros_downfall', 'eaten_alive', 'deadly_plot'
+            'heros_downfall', 'eaten_alive', 'deadly_plot',
+            'moment_of_craving', 'scorching_dragonfire', 'fiery_annihilation',
+            'incinerating_blast', 'pacifism', 'starlight_snare'
         ];
         return removalIds.includes(card.id);
     }
@@ -1356,6 +1350,7 @@ class GameState {
                     if (!ownTarget.counters) ownTarget.counters = {};
                     ownTarget.counters.plusOnePlusOne = (ownTarget.counters.plusOnePlusOne || 0) + 1;
                     this.ui.log(`${ownTarget.name} ganhou um contador +1/+1`);
+                    this.triggers.onCounterPlaced(ownTarget, this.player, 1);
 
                     // Calcula dano (após o counter)
                     const damage = this.rules.getCreaturePower(ownTarget);
@@ -1743,6 +1738,9 @@ class GameState {
 
     // Anexar Aura a uma criatura
     async attachAura(aura, target, controller) {
+        // Trigger onSpellCast ANTES de entrar no campo (Brineborn Cutthroat, Firespitter Whelp)
+        this.triggers.onSpellCast(controller, aura);
+
         aura.attachedTo = target.instanceId;
         aura.controlledBy = controller === this.player ? 'player' : 'opponent';
         controller.battlefield.push(aura);
@@ -1789,7 +1787,7 @@ class GameState {
             'offer_immortality', 'adamant_will', 'giant_growth',
             // Remoção (alvo: criatura do oponente)
             'moment_of_craving', 'heros_downfall', 'elspeths_smite',
-            'angelic_edict', 'volley', 'incinerating_blast', 'broken_wings',
+            'angelic_edict', 'incinerating_blast', 'broken_wings',
             'scorching_dragonfire', 'fiery_annihilation', 'murder', 'deadly_riposte',
             // Dois alvos
             'felling_blow', 'bite_down',
@@ -1809,18 +1807,11 @@ class GameState {
 
     // Verifica se feitiço é um counterspell (mira na stack)
     isCounterspell(card) {
-        return card.keywords && (
-            card.keywords.includes('counterspell') ||
-            card.keywords.includes('counterspell_creature')
-        );
+        return card.keywords && card.keywords.includes('counterspell');
     }
 
     // Check if a counterspell can target a specific stack item
     canCounterTarget(counterCard, stackTarget) {
-        // Essence Scatter can only counter creature spells
-        if (counterCard.keywords?.includes('counterspell_creature')) {
-            return stackTarget.item.type === 'creature';
-        }
         // Regular counterspells can counter any spell
         return true;
     }
@@ -1877,15 +1868,6 @@ class GameState {
                 targets.push(...blockersFlat);
                 // Filtrar hexproof (canBeTargetedBy verifica se caster pode mirar)
                 targets = targets.filter(c => this.rules.canBeTargetedBy(c, caster));
-                break;
-
-            case 'volley':
-                // Só criaturas com flying que podem ser alvo
-                targets = opponent.battlefield.filter(c =>
-                    c.type === 'creature' &&
-                    c.keywords && c.keywords.includes('flying') &&
-                    this.rules.canBeTargetedBy(c, caster)
-                );
                 break;
 
             case 'felling_blow':
@@ -2108,12 +2090,6 @@ class GameState {
                 target.toughnessModifier = (target.toughnessModifier || 0) - 2;
                 this.gainLife(caster, 2);
                 this.ui.log(`${target.name} recebeu -2/-2. ${caster.name} ganhou 2 vidas`);
-                await this.checkCreatureDeath(target, targetOwner);
-                break;
-
-            case 'volley':
-                target.damage = (target.damage || 0) + 3;
-                this.ui.log(`Volley causou 3 de dano a ${target.name}`);
                 await this.checkCreatureDeath(target, targetOwner);
                 break;
 
@@ -2551,6 +2527,8 @@ class GameState {
             delete target._originalSubtype;
         }
         delete target.transformed;
+        delete target.attachedTo;
+        delete target.controlledBy;
 
         // Tokens deixam de existir quando saem do battlefield (regra 111.7)
         const isToken = target.isToken === true;

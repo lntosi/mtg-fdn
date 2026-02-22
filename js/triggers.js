@@ -230,6 +230,8 @@ class TriggerManager {
             delete card._originalSubtype;
         }
         delete card.transformed;
+        delete card.attachedTo;
+        delete card.controlledBy;
         // Note: summoningSickness is set when entering battlefield, not here
     }
 
@@ -1263,12 +1265,12 @@ class TriggerManager {
         // === UNDEAD DECK DEATH TRIGGERS ===
 
         // Crow of Dark Tidings - mill 2 when dies
-        if (creature.keywords?.includes('death_mill_2')) {
+        if (creature.keywords?.includes('death_mill_2') && !this.rules.hasLostAllAbilities(creature)) {
             this._handleMill(owner, 2, creature.name);
         }
 
         // Maalfeld Twins - create two 2/2 Zombie tokens when dies
-        if (creature.keywords?.includes('death_create_zombies')) {
+        if (creature.keywords?.includes('death_create_zombies') && !this.rules.hasLostAllAbilities(creature)) {
             this._createZombieToken(owner);
             this._createZombieToken(owner);
             this.ui.log(`${creature.name}: criou dois tokens Zumbi 2/2`);
@@ -1332,7 +1334,7 @@ class TriggerManager {
         // você pode pagar 2 vidas. Se fizer isso, compre uma carta.
         // NOTA: onCreatureDeath é chamado ANTES da criatura sair do campo,
         // então CT ainda está no battlefield quando morre (se vê morrendo).
-        const isVampire = creature.subtype?.includes('Vampire');
+        const isVampire = (this.rules.getEffectiveSubtype(creature) || creature.subtype)?.includes('Vampire');
         if (isVampire) {
             // Encontrar todos os Crossway Troublemakers do dono
             // (inclui o próprio CT se ele está morrendo - ele vê sua própria morte)

@@ -10,7 +10,7 @@
 >
 > **1 análise de paridade player/AI** — compara `handlePhase()` vs `executeAITurn`/`finishAITurn` fase por fase, verificando que triggers, priority windows e resets existem em ambos os caminhos.
 >
-> Output de cada agente: **BUGS** (card, expected vs actual, file:line, severidade) + **VERIFIED CORRECT**. Ao receber os resultados, consolide bugs únicos, corrija, adicione testes, e apresente para minha confirmação antes de commit.
+> Output de cada agente: **BUGS** (card, expected vs actual, file:line, severidade) + **VERIFIED CORRECT**. Ao receber os resultados, consolide bugs únicos, corrija, adicione testes, e apresente para minha confirmação antes de commit. **Após o commit, atualize este arquivo** (`docs/AGENT_AUDIT_PROMPT.md`) com os matchups testados, bugs encontrados e testes adicionados na nova rodada.
 
 ## Dicas de Uso
 
@@ -27,6 +27,8 @@
 | R2 | Cats vs Vampires, Goblins vs Elves | Cats+Healing+Inferno, Goblins+Pirates, Elves+Vampires+Undead | Sim |
 | R3 | Wizards vs Primal, Healing vs Undead*, Pirates vs Inferno* | Wizards*, Primal | Sim* |
 | R4 | Goblins vs Undead, Cats vs Wizards, Elves vs Inferno | Wizards (re-audit) | Sim |
+| R5 | Vampires vs Wizards, Healing vs Pirates, Primal vs Goblins, Undead vs Cats | Combat & Keywords (deep audit) | Sim |
+| R6 | Elves vs Vampires, Cats vs Inferno, Pirates vs Undead, Healing vs Goblins | Equipment & Auras, Stack & Counterspells | Sim |
 
 \* = agente bateu no rate limit (resultado parcial ou sem resultado)
 
@@ -48,4 +50,6 @@
 | R2 (6 agentes) | 13 | 34 |
 | R3 (6 agentes) | 4 | 10 |
 | R4 (6 agentes) | 9 | 14 |
-| **Total agentes** | **26** | **58** |
+| R5 (6 agentes) | 13 | 22 |
+| R6 (6 agentes) | 11 | 32 |
+| **Total agentes** | **50** | **112** |
