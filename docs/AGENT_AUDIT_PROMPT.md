@@ -32,6 +32,7 @@
 | R7 | — (foco em qualidade da IA) | AI Resource Mgmt, Combat Decisions, Card Priority, Targeting, Mulligan, Instant-Speed | Sim |
 | R8 | Wizards vs Cats, Primal vs Undead, Vampires vs Inferno | Goblins+Healing, Pirates+Elves | Sim |
 | R9 | Goblins vs Wizards, Cats vs Primal, Healing vs Vampires | Undead+Inferno, Cats+Wizards, Stack & Counterspells | Sim |
+| R10 | Elves vs Undead, Goblins vs Inferno, Pirates vs Wizards | Vampires+Primal (re-audit), Healing+Cats (lifegain/token synergies) | Sim |
 
 \* = agente bateu no rate limit (resultado parcial ou sem resultado)
 
@@ -58,4 +59,5 @@
 | R7 (6 agentes — AI quality) | 20 | 36 |
 | R8 (6 agentes) | 0 | 0 |
 | R9 (6 agentes) | 4 | 4 |
-| **Total agentes** | **74** | **152** |
+| R10 (6 agentes) | 5 | 16 |
+| **Total agentes** | **79** | **168** |

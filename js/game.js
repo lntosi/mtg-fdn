@@ -660,6 +660,15 @@ class GameState {
                 return;
             }
 
+            // Ward check para auras que target criaturas oponentes
+            if (stackItem.target.type === 'creature') {
+                if (!await this.checkAndPayWard(stackItem.target, controller, card.name)) {
+                    this.ui.log(`${card.name} foi anulado por Ward!`);
+                    controller.graveyard.push(card);
+                    return;
+                }
+            }
+
             // Anexar aura ao alvo (usar instanceId para consistência)
             card.attachedTo = stackItem.target.instanceId;
             // Auras ainda não estão no battlefield (não passaram por addToStack com preview)
@@ -678,6 +687,44 @@ class GameState {
 
         this.ui.log(`${card.name} entrou no battlefield`);
         this.ui.render();
+    }
+
+    /**
+     * Verifica Ward em um alvo e tenta pagar o custo.
+     * Retorna true se a ação pode prosseguir, false se Ward anulou.
+     * @param {Object} target - Criatura alvo
+     * @param {Object} sourceController - Controlador da fonte (spell/ability)
+     * @param {string} sourceName - Nome da fonte para log
+     */
+    async checkAndPayWard(target, sourceController, sourceName) {
+        if (!target || target.type !== 'creature') return true;
+
+        const targetOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
+        if (targetOwner === sourceController) return true; // Ward só se aplica contra oponentes
+
+        const wardCost = this.rules.getWardCost(target);
+        if (wardCost === null) return true;
+
+        const canPay = this.rules.canPayWard(wardCost, sourceController);
+        let willPay = false;
+
+        if (sourceController === this.player) {
+            willPay = await this.ui.promptWardPayment(target, wardCost, canPay);
+        } else {
+            willPay = canPay;
+            if (willPay) {
+                this.ui.log(`IA paga ${wardCost} mana pelo Ward de ${target.name}`);
+            }
+        }
+
+        if (!willPay || !canPay) {
+            this.ui.log(`${sourceName} foi anulado por Ward de ${target.name}!`);
+            return false;
+        }
+
+        this.payGenericMana(wardCost, sourceController);
+        this.ui.log(`${sourceController.name} pagou ${wardCost} mana pelo Ward`);
+        return true;
     }
 
     // Verifica se um alvo ainda é válido
@@ -3573,7 +3620,7 @@ class GameState {
                         this.ui.log(`Ingenious Leonin: ${leoninTarget.name} ganhou um contador +1/+1`);
 
                         // Se é Cat, ganha iniciativa até o fim do turno
-                        if (leoninTarget.subtype && leoninTarget.subtype.includes('Cat')) {
+                        if (this.rules.getEffectiveSubtype(leoninTarget).includes('Cat')) {
                             if (!leoninTarget.temporaryKeywords) leoninTarget.temporaryKeywords = [];
                             leoninTarget.temporaryKeywords.push('first_strike');
                             this.ui.log(`Ingenious Leonin: ${leoninTarget.name} ganhou iniciativa até o fim do turno`);

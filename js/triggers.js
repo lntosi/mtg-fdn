@@ -431,7 +431,10 @@ class TriggerManager {
                 validTargets: validTargets,
                 canSkip: false
             });
-            if (selected) await dealDamage(selected);
+            if (selected) {
+                if (!await this.game.checkAndPayWard(selected, controller, card.name)) return;
+                await dealDamage(selected);
+            }
         } else {
             // IA escolhe a criatura que pode matar, ou a mais forte
             const target = validTargets.sort((a, b) => {
@@ -451,6 +454,7 @@ class TriggerManager {
                 // Se não pode matar nenhuma, prefere causar dano na mais forte
                 return this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a);
             })[0];
+            if (!await this.game.checkAndPayWard(target, controller, card.name)) return;
             await dealDamage(target);
         }
     }
@@ -472,12 +476,16 @@ class TriggerManager {
                 validTargets: validTargets,
                 canSkip: false
             });
-            if (selected) bounceCreature(selected);
+            if (selected) {
+                if (!await this.game.checkAndPayWard(selected, controller, card.name)) return;
+                bounceCreature(selected);
+            }
         } else {
             // IA escolhe a criatura mais forte (usa getCreaturePower para considerar counters, lords, equipment)
             const target = validTargets.sort((a, b) => {
                 return this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a);
             })[0];
+            if (!await this.game.checkAndPayWard(target, controller, card.name)) return;
             bounceCreature(target);
         }
     }
@@ -605,7 +613,10 @@ class TriggerManager {
                 validTargets: validTargets,
                 canSkip: false
             });
-            if (target) applyDebuff(target);
+            if (target) {
+                if (!await this.game.checkAndPayWard(target, controller, card.name)) return;
+                applyDebuff(target);
+            }
         } else {
             // IA escolhe criatura cuja power ficaria 0 (unable to deal damage), ou maior power
             const target = validTargets.sort((a, b) => {
@@ -617,6 +628,7 @@ class TriggerManager {
                 // Otherwise prefer highest power (reduce biggest threat)
                 return bPower - aPower;
             })[0];
+            if (!await this.game.checkAndPayWard(target, controller, card.name)) return;
             applyDebuff(target);
         }
     }
@@ -728,7 +740,13 @@ class TriggerManager {
                     targetOwner = opponent;
                 }
                 if (actualCreature) {
+                    // Ward check para criaturas oponentes
+                    if (!await this.game.checkAndPayWard(actualCreature, controller, card.name)) return;
                     actualCreature.damage = (actualCreature.damage || 0) + 1;
+                    // Deathtouch: qualquer dano de fonte com deathtouch é letal (MTG 702.2b)
+                    if (this.rules.hasKeyword(card, 'deathtouch', false)) {
+                        actualCreature.markedForDeath = true;
+                    }
                     this.ui.log(`${card.name} causou 1 de dano a ${actualCreature.name}`);
                     await this.game.checkCreatureDeath(actualCreature, targetOwner);
                 }
@@ -1489,12 +1507,17 @@ class TriggerManager {
     }
 
     async _handleBattleRattleShaman(controller) {
+        const opponent = controller === this.player ? this.game.opponent : this.game.player;
         for (const card of controller.battlefield) {
             // Bug fix: verificar hasLostAllAbilities
             if (card.id === 'battle_rattle_shaman' && !this.rules.hasLostAllAbilities(card)) {
-                const creatures = controller.battlefield.filter(c => c.type === 'creature');
+                // Oracle: "target creature" — pode ser qualquer criatura no campo
+                const allCreatures = [
+                    ...controller.battlefield.filter(c => c.type === 'creature'),
+                    ...opponent.battlefield.filter(c => c.type === 'creature')
+                ];
 
-                if (creatures.length > 0) {
+                if (allCreatures.length > 0) {
                     let target;
 
                     if (controller === this.player) {
@@ -1502,13 +1525,13 @@ class TriggerManager {
                         target = await this.ui.promptTriggerTarget({
                             title: 'Battle-Rattle Shaman',
                             description: 'Escolha uma criatura alvo para ganhar +2/+0 até o fim do turno:',
-                            validTargets: creatures,
+                            validTargets: allCreatures,
                             canSkip: true
                         });
                     } else {
-                        // IA sempre usa a habilidade se tiver alvos válidos
-                        // Prefere outras criaturas, mas pode escolher a si mesmo
-                        const others = creatures.filter(c => c.instanceId !== card.instanceId);
+                        // IA sempre usa a habilidade em criaturas próprias
+                        const ownCreatures = controller.battlefield.filter(c => c.type === 'creature');
+                        const others = ownCreatures.filter(c => c.instanceId !== card.instanceId);
                         target = others.length > 0
                             ? others.sort((a, b) => this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a))[0]
                             : card;
