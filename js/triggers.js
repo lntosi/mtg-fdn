@@ -245,7 +245,8 @@ class TriggerManager {
             keywords: ['sacrifice_for_mana'],
             produces: 'any',
             canSacrificeForMana: true,
-            isToken: true
+            isToken: true,
+            cmc: 0
         });
         this.ui.log(`${sourceName} criou um token de Tesouro`);
     }
@@ -258,8 +259,10 @@ class TriggerManager {
             subtype: 'Cat',
             power: 1,
             toughness: 1,
+            keywords: [],
             summoningSickness: true,
-            isToken: true
+            isToken: true,
+            cmc: 0
         };
         controller.battlefield.push(token);
         this.ui.log(`Criado um token Cat 1/1`);
@@ -274,8 +277,10 @@ class TriggerManager {
             subtype: 'Elf Warrior',
             power: 1,
             toughness: 1,
+            keywords: [],
             summoningSickness: true,
-            isToken: true
+            isToken: true,
+            cmc: 0
         };
         controller.battlefield.push(token);
         this.onOtherCreatureEnters(token, controller);
@@ -289,8 +294,10 @@ class TriggerManager {
             subtype: 'Zombie',
             power: 2,
             toughness: 2,
+            keywords: [],
             summoningSickness: true,
-            isToken: true
+            isToken: true,
+            cmc: 0
         };
         controller.battlefield.push(token);
         this.onOtherCreatureEnters(token, controller);
@@ -304,9 +311,10 @@ class TriggerManager {
     }
 
     _handleDwynensEliteETB(card, controller) {
+        // Bug fix: usar getEffectiveSubtype para considerar Eaten by Piranhas
         const hasOtherElf = controller.battlefield.some(c =>
             c.type === 'creature' &&
-            c.subtype?.includes('Elf') &&
+            this.rules.getEffectiveSubtype(c)?.includes('Elf') &&
             c.instanceId !== card.instanceId
         );
         if (hasOtherElf) {
@@ -399,9 +407,10 @@ class TriggerManager {
         const validTargets = opponent.battlefield.filter(c => c.type === 'creature');
         if (validTargets.length === 0) return;
 
+        // Bug fix: usar getEffectiveSubtype para considerar Eaten by Piranhas
         // Contar Goblins (incluindo o próprio Volley Veteran)
         const goblinCount = controller.battlefield.filter(c =>
-            c.type === 'creature' && c.subtype && c.subtype.includes('Goblin')
+            c.type === 'creature' && this.rules.getEffectiveSubtype(c)?.includes('Goblin')
         ).length;
 
         if (goblinCount === 0) return;
@@ -514,8 +523,9 @@ class TriggerManager {
     }
 
     async _handleEquipPirateETB(card, controller) {
+        // Bug fix: usar getEffectiveSubtype para considerar Eaten by Piranhas
         const validPirates = controller.battlefield.filter(c =>
-            c.type === 'creature' && c.subtype?.includes('Pirate')
+            c.type === 'creature' && this.rules.getEffectiveSubtype(c)?.includes('Pirate')
         );
 
         if (validPirates.length === 0) {
@@ -1185,7 +1195,8 @@ class TriggerManager {
                     toughness: 1,
                     keywords: ['flying'],
                     summoningSickness: true,
-                    isToken: true
+                    isToken: true,
+                    cmc: 0
                 };
                 player.battlefield.push(faerieToken);
                 this.ui.log(`${card.name} criou um token Faerie 1/1 com voar`);
@@ -1316,8 +1327,9 @@ class TriggerManager {
 
         // Procura por Vengeful Bloodwitches no campo do dono da criatura que morreu
         // IMPORTANTE: Exclui a própria criatura morrendo do loop (tratada separadamente abaixo)
+        // Bug fix: verificar hasLostAllAbilities
         owner.battlefield.forEach(card => {
-            if (card.id === 'vengeful_bloodwitch' && card !== creature) {
+            if (card.id === 'vengeful_bloodwitch' && card !== creature && !this.rules.hasLostAllAbilities(card)) {
                 this.game.loseLife(opponent, 1);
                 this.game.gainLife(owner, 1);
                 this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
@@ -1326,7 +1338,8 @@ class TriggerManager {
         });
 
         // Se a própria Bloodwitch morreu, ela também dispara uma vez (antes de ir pro cemitério)
-        if (creature.id === 'vengeful_bloodwitch') {
+        // Bug fix: verificar hasLostAllAbilities
+        if (creature.id === 'vengeful_bloodwitch' && !this.rules.hasLostAllAbilities(creature)) {
             this.game.loseLife(opponent, 1);
             this.game.gainLife(owner, 1);
             this.ui.log(`Vengeful Bloodwitch: ${opponent.name} perdeu 1 vida, ${owner.name} ganhou 1 vida`);
@@ -1346,7 +1359,8 @@ class TriggerManager {
         if (isVampire) {
             // Encontrar todos os Crossway Troublemakers do dono
             // (inclui o próprio CT se ele está morrendo - ele vê sua própria morte)
-            const troublemakers = owner.battlefield.filter(c => c.id === 'crossway_troublemakers');
+            // Bug fix: verificar hasLostAllAbilities
+            const troublemakers = owner.battlefield.filter(c => c.id === 'crossway_troublemakers' && !this.rules.hasLostAllAbilities(c));
 
             for (const ct of troublemakers) {
                 if (owner.life >= 2) {
@@ -1398,9 +1412,11 @@ class TriggerManager {
         if (!opponentLostLife) return;
 
         for (const card of controller.battlefield) {
-            if (card.id === 'stromkirk_bloodthief') {
+            // Bug fix: verificar hasLostAllAbilities
+            if (card.id === 'stromkirk_bloodthief' && !this.rules.hasLostAllAbilities(card)) {
+                // Bug fix: usar getEffectiveSubtype para considerar Eaten by Piranhas
                 const vampires = controller.battlefield.filter(c =>
-                    c.type === 'creature' && c.subtype?.includes('Vampire')
+                    c.type === 'creature' && this.rules.getEffectiveSubtype(c)?.includes('Vampire')
                 );
 
                 if (vampires.length > 0) {
@@ -1456,7 +1472,8 @@ class TriggerManager {
         const creatures = controller.battlefield.filter(c => c.type === 'creature');
 
         controller.battlefield.forEach(card => {
-            if (card.id === 'leonin_vanguard') {
+            // Bug fix: verificar hasLostAllAbilities
+            if (card.id === 'leonin_vanguard' && !this.rules.hasLostAllAbilities(card)) {
                 // Condição: controlar 3 ou mais criaturas (incluindo o próprio Leonin Vanguard)
                 if (creatures.length >= 3) {
                     // +1/+1 até o fim do turno
@@ -1473,7 +1490,8 @@ class TriggerManager {
 
     async _handleBattleRattleShaman(controller) {
         for (const card of controller.battlefield) {
-            if (card.id === 'battle_rattle_shaman') {
+            // Bug fix: verificar hasLostAllAbilities
+            if (card.id === 'battle_rattle_shaman' && !this.rules.hasLostAllAbilities(card)) {
                 const creatures = controller.battlefield.filter(c => c.type === 'creature');
 
                 if (creatures.length > 0) {
@@ -1540,7 +1558,8 @@ class TriggerManager {
     async onFrenziedGoblinAttacks(attackers, attackingPlayer) {
         const opponent = attackingPlayer === this.player ? this.opponent : this.player;
 
-        const frenziedGoblin = attackers.find(a => a.id === 'frenzied_goblin');
+        // Bug fix: verificar hasLostAllAbilities
+        const frenziedGoblin = attackers.find(a => a.id === 'frenzied_goblin' && !this.rules.hasLostAllAbilities(a));
         if (!frenziedGoblin) return;
 
         const availableMana = this.rules.calculateAvailableMana(attackingPlayer);

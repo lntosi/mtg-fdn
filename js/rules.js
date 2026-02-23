@@ -190,16 +190,20 @@ class RulesEngine {
         }
 
         // Remoção que mira criaturas do oponente
+        // Bug fix: verificar hexproof - criaturas com hexproof não podem ser alvo
         const opponentTargetRemoval = ['moment_of_craving', 'heros_downfall', 'incinerating_blast', 'scorching_dragonfire', 'fiery_annihilation', 'murder'];
         if (opponentTargetRemoval.includes(card.id)) {
-            const hasOpponentCreatures = opponent.battlefield.some(c => c.type === 'creature');
-            return hasOpponentCreatures;
+            const hasTargetableCreatures = opponent.battlefield.some(c =>
+                c.type === 'creature' && this.canBeTargetedBy(c, player)
+            );
+            return hasTargetableCreatures;
         }
 
         // Deadly Riposte - qualquer criatura virada (MTG: "target tapped creature")
+        // Bug fix: verificar hexproof
         if (card.id === 'deadly_riposte') {
             const hasTappedCreatures = player.battlefield.some(c => c.type === 'creature' && c.tapped) ||
-                                       opponent.battlefield.some(c => c.type === 'creature' && c.tapped);
+                                       opponent.battlefield.some(c => c.type === 'creature' && c.tapped && this.canBeTargetedBy(c, player));
             return hasTappedCreatures;
         }
 
@@ -236,8 +240,9 @@ class RulesEngine {
         }
 
         // Fleeting Distraction - mira criatura (qualquer, exceto spells na pilha)
+        // Bug fix: verificar hexproof para criaturas do oponente
         if (card.id === 'fleeting_distraction') {
-            return opponent.battlefield.some(c => c.type === 'creature' && !c.pendingResolution) ||
+            return opponent.battlefield.some(c => c.type === 'creature' && !c.pendingResolution && this.canBeTargetedBy(c, player)) ||
                    player.battlefield.some(c => c.type === 'creature' && !c.pendingResolution);
         }
 
@@ -255,18 +260,17 @@ class RulesEngine {
         }
 
         // Counterspells - precisam de spell do oponente na stack
-        if (card.keywords && card.keywords.includes('counterspell')) {
-            // Verificar se há spells do oponente na pilha
-            return this.game.stack.some(item =>
-                item.controller !== player && item.item.type !== 'land'
-            );
-        }
-
-        // Cancel por ID específico (caso não tenha keyword)
-        if (card.id === 'cancel') {
-            return this.game.stack.some(item =>
-                item.controller !== player && item.item.type !== 'land'
-            );
+        // Bug fix R9: Removido código duplicado para 'cancel' (já tem keyword 'counterspell')
+        if (card.keywords && (card.keywords.includes('counterspell') || card.keywords.includes('counterspell_creature'))) {
+            // Verificar se há spells do oponente na pilha que podem ser anulados
+            return this.game.stack.some(item => {
+                if (item.controller === player || item.item.type === 'land') return false;
+                // counterspell_creature só pode anular criaturas
+                if (card.keywords.includes('counterspell_creature')) {
+                    return item.item.type === 'creature';
+                }
+                return true;
+            });
         }
 
         // Seize the Spoils - precisa de uma carta na mão para descartar
@@ -370,7 +374,8 @@ class RulesEngine {
                 }
             }
             // Criaturas que produzem mana (ex: Llanowar Elves)
-            if (card.keywords && card.keywords.includes('tap_for_mana') && !card.tapped && !card.summoningSickness) {
+            // Bug fix: verificar hasLostAllAbilities - criaturas com Eaten by Piranhas não podem tapar por mana
+            if (card.keywords && card.keywords.includes('tap_for_mana') && !card.tapped && !card.summoningSickness && !this.hasLostAllAbilities(card)) {
                 if (card.produces) {
                     mana[card.produces]++;
                 }
@@ -588,8 +593,9 @@ class RulesEngine {
         );
 
         // Criaturas que produzem mana (tap_for_mana)
+        // Bug fix: verificar hasLostAllAbilities - criaturas com Eaten by Piranhas não podem tapar por mana
         const allManaCreatures = player.battlefield.filter(c =>
-            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
+            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness && !this.hasLostAllAbilities(c)
         );
 
         // Separar criaturas pré-selecionadas das demais

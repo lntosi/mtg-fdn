@@ -725,10 +725,19 @@ class AIPlayer {
         }
 
         // 3. Cartas jogáveis (do mais caro pro mais barato)
+        // Bug fix: verificar enters_tapped ao simular mana
         const playableNonLands = opponent.hand
             .filter(card => card.type !== 'land' && this.rules.canPlayCard(card, opponent))
             .filter(card => this.hasValidAuraTargets(card))
             .sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+
+        // Bug fix: se terreno entra virado, não adicionar mana simulada
+        if (landInHand && landInHand.enters_tapped) {
+            // Reverter a mana adicionada acima
+            if (landInHand.produces) {
+                simulatedMana[landInHand.produces] = Math.max(0, (simulatedMana[landInHand.produces] || 0) - 1);
+            }
+        }
 
         // Adicionar cartas na ordem de prioridade
         for (const card of playableNonLands) {
@@ -1294,12 +1303,16 @@ class AIPlayer {
                 const blockerKillsFirst = blockerHasFirstStrike && !attackerHasFirstStrikeHere &&
                     (blockerPower >= attackerToughness || this.rules.hasKeyword(blocker, 'deathtouch', false));
 
-                const blockerDies = blockerKillsFirst ? false : (attackerPower >= blockerToughness || attackerHasDeathtouch);
+                // Bug fix: verificar indestructible
+                const blockerHasIndestructible = this.rules.hasKeyword(blocker, 'indestructible', false);
+                const blockerDies = blockerHasIndestructible ? false : (blockerKillsFirst ? false : (attackerPower >= blockerToughness || attackerHasDeathtouch));
 
                 const attackerKillsFirst = attackerHasFirstStrikeHere && !blockerHasFirstStrike &&
                     (attackerPower >= blockerToughness || attackerHasDeathtouch);
-                const attackerDies = attackerKillsFirst ? false : (blockerPower >= attackerToughness ||
-                    this.rules.hasKeyword(blocker, 'deathtouch', false));
+                // Bug fix: verificar indestructible do atacante
+                const attackerHasIndestructible = this.rules.hasKeyword(attacker, 'indestructible', false);
+                const attackerDies = attackerHasIndestructible ? false : (attackerKillsFirst ? false : (blockerPower >= attackerToughness ||
+                    this.rules.hasKeyword(blocker, 'deathtouch', false)));
 
                 // Usar thresholds configurados por dificuldade
                 const tradePowerThreshold = this.config.thresholds.tradePower;
@@ -1519,6 +1532,7 @@ class AIPlayer {
         }
 
         // Into the Roil (bounce): highest threat
+        // Bug fix: não devolver próprias criaturas como fallback
         if (spell.id === 'into_the_roil') {
             const enemies = validTargets.filter(c => player.battlefield.includes(c));
             if (enemies.length > 0) {
@@ -1526,7 +1540,8 @@ class AIPlayer {
                     this._evaluateCreatureThreat(b) - this._evaluateCreatureThreat(a)
                 )[0];
             }
-            return validTargets[0];
+            // Não há alvos inimigos - não devolver nossa própria criatura
+            return null;
         }
 
         // Cemetery Recruitment: prefer zombies (bonus draw), then highest CMC
@@ -1703,6 +1718,9 @@ class AIPlayer {
 
         // Lords buff other creatures
         if (creature.keywords?.some(k => k.includes('lord'))) threat += 4;
+
+        // Bug fix: criaturas que geram mana são muito valiosas
+        if (creature.keywords?.includes('tap_for_mana')) threat += 3;
 
         return threat;
     }

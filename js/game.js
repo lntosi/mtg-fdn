@@ -837,10 +837,41 @@ class GameState {
         if (played) {
             this.ui.render();
             await this.delay(600);
+
+            // Bug fix R9: Give player priority to respond to AI's instant
+            if (this.playerHasResponses()) {
+                const response = await this.offerPriorityWindow(`IA jogou ${card.name} - deseja responder?`);
+                if (response === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                }
+            }
+
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * AI plays instant-speed cards in a loop until it has no more actions
+     * Bug fix R9: Allows AI to chain multiple instants
+     * @param {string} timing - The timing context (end_step, after_attackers, after_blockers)
+     */
+    async aiPlayInstantSpeedChain(timing) {
+        let actionsPlayed = 0;
+        const maxActions = 5; // Safety limit to prevent infinite loops
+
+        while (actionsPlayed < maxActions) {
+            const action = this.ai.getInstantSpeedAction(timing);
+            if (!action) break;
+
+            const played = await this.aiPlayInstantSpeed(action);
+            if (!played) break;
+
+            actionsPlayed++;
+        }
+
+        return actionsPlayed > 0;
     }
 
     /**
@@ -1879,8 +1910,22 @@ class GameState {
 
     // Check if a counterspell can target a specific stack item
     canCounterTarget(counterCard, stackTarget) {
-        // Regular counterspells can counter any spell
-        return true;
+        if (!stackTarget || !stackTarget.item) return false;
+
+        const targetSpell = stackTarget.item;
+
+        // Check for uncounterable spells (none in current card pool, but future-proof)
+        if (targetSpell.keywords && targetSpell.keywords.includes('uncounterable')) {
+            return false;
+        }
+
+        // counterspell_creature can only counter creature spells
+        if (counterCard.keywords && counterCard.keywords.includes('counterspell_creature')) {
+            return targetSpell.type === 'creature';
+        }
+
+        // Regular counterspells can counter any spell (except lands, but those aren't cast)
+        return targetSpell.type !== 'land';
     }
 
     // Retorna alvos válidos para um feitiço
@@ -2516,7 +2561,7 @@ class GameState {
         if (index > -1) {
             // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
             if (permanent.type === 'creature') {
-                this.detachFromCreature(permanent, owner);
+                await this.detachFromCreature(permanent, owner);
             }
             owner.battlefield.splice(index, 1);
             // Desregistrar efeitos especiais
@@ -2531,13 +2576,14 @@ class GameState {
     // Desanexa equipamentos e auras de uma criatura que está saindo do campo
     // Equipamentos: ficam no campo, desanexados (regra 704.5n)
     // Auras: vão pro cemitério (regra 704.5m)
-    detachFromCreature(creature, owner) {
+    // Bug fix: tornar async para await onLeaveBattlefield (Prayer of Binding)
+    async detachFromCreature(creature, owner) {
         const allPlayers = [this.player, this.opponent];
 
-        allPlayers.forEach(player => {
+        for (const player of allPlayers) {
             const toRemove = [];
 
-            player.battlefield.forEach(card => {
+            for (const card of player.battlefield) {
                 if (card.attachedTo === creature.instanceId) {
                     if (card.subtype === 'Equipment') {
                         // Equipamento fica no campo, apenas desanexa
@@ -2548,22 +2594,22 @@ class GameState {
                         toRemove.push(card);
                     }
                 }
-            });
+            }
 
             // Remover auras e colocar no cemitério
-            toRemove.forEach(aura => {
+            for (const aura of toRemove) {
                 const idx = player.battlefield.indexOf(aura);
                 if (idx > -1) {
                     player.battlefield.splice(idx, 1);
                     // Desregistrar efeitos especiais
                     this.unregisterSpecialEffect(aura);
-                    // Trigger de "leaves the battlefield" (ex: Prayer of Binding)
-                    this.triggers.onLeaveBattlefield(aura, player);
+                    // Bug fix: await trigger de "leaves the battlefield" (ex: Prayer of Binding)
+                    await this.triggers.onLeaveBattlefield(aura, player);
                     player.graveyard.push(aura);
                     this.ui.log(`${aura.name} foi para o cemitério`);
                 }
-            });
-        });
+            }
+        }
     }
 
     /**
@@ -2580,7 +2626,7 @@ class GameState {
 
         // Desanexar auras e equipamentos se for criatura
         if (target.type === 'creature') {
-            this.detachFromCreature(target, owner);
+            await this.detachFromCreature(target, owner);
         }
 
         // Remover do battlefield
@@ -2959,7 +3005,7 @@ class GameState {
 
             // Se for criatura, desanexar equipamentos (ficam no campo) e auras (vão pro cemitério)
             if (permanent.type === 'creature') {
-                this.detachFromCreature(permanent, owner);
+                await this.detachFromCreature(permanent, owner);
             }
 
             owner.battlefield.splice(index, 1);
@@ -3000,7 +3046,7 @@ class GameState {
             }
 
             // Desanexar equipamentos e auras
-            this.detachFromCreature(creature, owner);
+            await this.detachFromCreature(creature, owner);
 
             owner.battlefield.splice(index, 1);
             this.unregisterSpecialEffect(creature);
@@ -3834,13 +3880,27 @@ class GameState {
     }
 
     // Paga mana genérico (tapa terrenos)
+    // Bug fix: usar floating mana primeiro (de Treasure tokens, Elvish Archdruid, etc.)
     payGenericMana(amount, player) {
+        const playerKey = player === this.player ? 'player' : 'opponent';
+        let remaining = amount;
+
+        // Primeiro usar floating mana (qualquer cor serve para genérico)
+        const colors = ['W', 'U', 'B', 'R', 'G', 'C'];
+        for (const color of colors) {
+            while (remaining > 0 && this.floatingMana[playerKey][color] > 0) {
+                this.floatingMana[playerKey][color]--;
+                remaining--;
+            }
+        }
+
+        if (remaining <= 0) return;
+
+        // Depois tapar terrenos e criaturas
         const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
         const manaCreatures = player.battlefield.filter(c =>
-            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
+            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness && !this.rules.hasLostAllAbilities(c)
         );
-
-        let remaining = amount;
 
         for (const land of lands) {
             if (remaining <= 0) break;
@@ -3860,16 +3920,24 @@ class GameState {
     }
 
     // Paga mana colorido
+    // Bug fix: usar floating mana primeiro (de Treasure tokens, Elvish Archdruid, etc.)
     payColoredMana(cost, player) {
+        const playerKey = player === this.player ? 'player' : 'opponent';
         const lands = player.battlefield.filter(c => c.type === 'land' && !c.tapped);
         const manaCreatures = player.battlefield.filter(c =>
-            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness
+            c.keywords && c.keywords.includes('tap_for_mana') && !c.tapped && !c.summoningSickness && !this.rules.hasLostAllAbilities(c)
         );
 
         // Pagar custos coloridos primeiro
         for (const color in cost) {
             if (color === 'generic') continue;
             let needed = cost[color];
+
+            // Primeiro usar floating mana da cor correta
+            while (needed > 0 && this.floatingMana[playerKey][color] > 0) {
+                this.floatingMana[playerKey][color]--;
+                needed--;
+            }
 
             for (const land of lands) {
                 if (needed <= 0) break;
@@ -4044,12 +4112,9 @@ class GameState {
                 // CR 513: End step triggers disparam, depois ambos jogadores têm prioridade
                 await this.triggers.onEndStep(this.activePlayer);
 
-                // AI plays instants/flash at end of player's turn
+                // AI plays instants/flash at end of player's turn (can chain multiple)
                 if (this.isPlayerTurn()) {
-                    const endStepAction = this.ai.getInstantSpeedAction('end_step');
-                    if (endStepAction) {
-                        await this.aiPlayInstantSpeed(endStepAction);
-                    }
+                    await this.aiPlayInstantSpeedChain('end_step');
                 }
 
                 // Janela de prioridade no end step
@@ -4171,12 +4236,9 @@ class GameState {
 
             this.ui.promptForBlockers(attackers);
         } else {
-            // AI can use instant-speed removal on player's attackers before choosing blockers
+            // AI can use instant-speed removal on player's attackers before choosing blockers (can chain)
             if (attackingPlayer === this.player) {
-                const afterAttackAction = this.ai.getInstantSpeedAction('after_attackers');
-                if (afterAttackAction) {
-                    await this.aiPlayInstantSpeed(afterAttackAction);
-                }
+                await this.aiPlayInstantSpeedChain('after_attackers');
             }
 
             // IA escolhe bloqueadores
@@ -4195,12 +4257,9 @@ class GameState {
                 this.ui.log('Oponente não bloqueou');
             }
 
-            // AI can use combat tricks on its blockers before damage
+            // AI can use combat tricks on its blockers before damage (can chain)
             if (attackingPlayer === this.player && Object.keys(this.blockerAssignments).length > 0) {
-                const afterBlockAction = this.ai.getInstantSpeedAction('after_blockers');
-                if (afterBlockAction) {
-                    await this.aiPlayInstantSpeed(afterBlockAction);
-                }
+                await this.aiPlayInstantSpeedChain('after_blockers');
             }
 
             // Arena-style: aguardar jogador clicar "Continuar" após bloqueadores
@@ -4451,7 +4510,7 @@ class GameState {
             const index = owner.battlefield.indexOf(creature);
             if (index > -1) {
                 if (creature.type === 'creature') {
-                    this.detachFromCreature(creature, owner);
+                    await this.detachFromCreature(creature, owner);
                 }
                 owner.battlefield.splice(index, 1);
                 this.unregisterSpecialEffect(creature);
@@ -4496,7 +4555,7 @@ class GameState {
             }
             const idx = owner.battlefield.indexOf(creature);
             if (idx > -1) {
-                this.detachFromCreature(creature, owner);
+                await this.detachFromCreature(creature, owner);
                 owner.battlefield.splice(idx, 1);
                 this.unregisterSpecialEffect(creature);
                 await this.triggers.onLeaveBattlefield(creature, owner);
@@ -4544,6 +4603,8 @@ class GameState {
             // Tentar continuar o jogo mesmo com erro
             this.currentAttackers = [];
             this.blockerAssignments = {};
+            // Bug fix: limpar também ui.blockerAssignments para evitar linhas fantasma
+            this.ui.blockerAssignments = {};
         }
     }
 

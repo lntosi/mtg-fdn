@@ -485,14 +485,20 @@ describe('Fix R6-10: isRemovalSpell correct card list', () => {
 });
 
 // ============================================================
-// Fix R6-11: No counterspell_creature dead code
+// Fix R6-11: counterspell_creature properly supported (R9 update)
 // ============================================================
-describe('Fix R6-11: counterspell_creature dead code removed', () => {
-    test('rules.js hasValidTargets has no essence_scatter/counterspell_creature check', () => {
+describe('Fix R6-11: counterspell_creature properly supported', () => {
+    test('rules.js hasValidTargets has no essence_scatter check', () => {
         const rulesSource = fs.readFileSync('./js/rules.js', 'utf-8');
-        // The old code had: if (card.id === 'essence_scatter' || card.keywords?.includes('counterspell_creature'))
+        // essence_scatter was dead code and should not exist
         expect(rulesSource).not.toContain("'essence_scatter'");
-        expect(rulesSource).not.toContain('counterspell_creature');
+    });
+
+    test('rules.js hasValidTargets properly supports counterspell_creature', () => {
+        const rulesSource = fs.readFileSync('./js/rules.js', 'utf-8');
+        // R9 fix: counterspell_creature is now properly supported for future cards
+        const counterspellSection = rulesSource.match(/counterspell.*counterspell_creature[\s\S]*?return true/);
+        expect(counterspellSection).toBeTruthy();
     });
 
     test('game.js isCounterspell only checks counterspell keyword', () => {
@@ -502,6 +508,13 @@ describe('Fix R6-11: counterspell_creature dead code removed', () => {
         expect(isCounterSection).toBeTruthy();
         expect(isCounterSection[0]).toContain("'counterspell'");
         expect(isCounterSection[0]).not.toContain('counterspell_creature');
+    });
+
+    test('game.js canCounterTarget supports counterspell_creature', () => {
+        const gameSource = fs.readFileSync('./js/game.js', 'utf-8');
+        // R9 fix: canCounterTarget now properly checks counterspell_creature
+        const canCounterSection = gameSource.match(/canCounterTarget[\s\S]*?counterspell_creature/);
+        expect(canCounterSection).toBeTruthy();
     });
 
     test('game.js shouldCounterspell has no counterspell_creature check', () => {
