@@ -1285,6 +1285,10 @@ class GameUI {
                             cardEl.addEventListener('click', () => this.toggleAttacker(card));
                         }
                         cardEl.style.cursor = 'pointer';
+                        // Highlight: criatura pode atacar (pulso verde sutil)
+                        if (!isSelected && !isConfirmed) {
+                            cardEl.classList.add('can-attack');
+                        }
                     }
                     // Verificar habilidades ativadas durante combate (Jazal, Ingenious Leonin)
                     if (hasAbility) {
@@ -1303,6 +1307,10 @@ class GameUI {
                 } else if (isPlayer && this.waitingForBlockers) {
                     cardEl.addEventListener('click', () => this.selectBlocker(card));
                     cardEl.style.cursor = 'pointer';
+                    // Highlight: criatura pode bloquear (pulso verde sutil)
+                    if (!isBlocking && this.game.rules.canBlock(card)) {
+                        cardEl.classList.add('can-block');
+                    }
                 } else if (canProduceMana) {
                     // Criatura que produz mana - permitir seleção para mana pool
                     cardEl.classList.add('mana-producer-selectable');
@@ -2517,6 +2525,28 @@ class GameUI {
         // Atualizar classe para indicador visual
         this.turnIndicator.classList.remove('player-turn', 'opponent-turn');
         this.turnIndicator.classList.add(isPlayerTurn ? 'player-turn' : 'opponent-turn');
+
+        // Phase pips: 5 groups — Begin(0) Main1(1) Combat(2) Main2(3) End(4)
+        const phaseToGroup = {
+            [PHASES.UNTAP]: 0, [PHASES.UPKEEP]: 0, [PHASES.DRAW]: 0,
+            [PHASES.MAIN1]: 1,
+            [PHASES.COMBAT_BEGIN]: 2, [PHASES.DECLARE_ATTACKERS]: 2,
+            [PHASES.DECLARE_BLOCKERS]: 2, [PHASES.COMBAT_DAMAGE]: 2, [PHASES.COMBAT_END]: 2,
+            [PHASES.MAIN2]: 3,
+            [PHASES.END]: 4, [PHASES.CLEANUP]: 4
+        };
+        const activeGroup = phaseToGroup[this.game.phase] ?? -1;
+        const pips = document.querySelectorAll('#phase-pips .phase-pip');
+        pips.forEach(pip => {
+            const g = parseInt(pip.dataset.group);
+            pip.classList.remove('active', 'passed', 'combat');
+            if (g === activeGroup) {
+                pip.classList.add('active');
+                if (g === 2) pip.classList.add('combat');
+            } else if (g < activeGroup) {
+                pip.classList.add('passed');
+            }
+        });
     }
 
     updateButtons() {
