@@ -6,10 +6,11 @@ Status: ✅ Implementado · 🔜 Próximo · 💡 Planejado
 
 ## Alto Impacto
 
-### 1. Feedback visual de "o que posso fazer agora" 💡
-- Highlight pulsante nas cartas jogáveis na mão (borda verde suave)
-- Criaturas que podem atacar/bloquear com indicador visual antes do clique
-- Lands que podem ser jogadas com brilho sutil
+### 1. Feedback visual de "o que posso fazer agora" ✅
+- **Mão**: cartas jogáveis já têm glow verde (`.playable` existente)
+- **Atacantes**: pulso verde sutil (`.can-attack`) em criaturas que podem atacar durante DECLARE_ATTACKERS
+- **Bloqueadores**: pulso verde sutil (`.can-block`) em criaturas que podem bloquear durante fase de bloqueio
+- Animação `pulse-can-act` (1.5s loop) — desaparece ao selecionar/confirmar
 
 ### 2. Animação de cartas entrando/saindo do campo ✅
 - **Entrada**: scale 0.3→1.08→1 com glow dourado (0.35s)
@@ -32,18 +33,20 @@ Status: ✅ Implementado · 🔜 Próximo · 💡 Planejado
 
 ## Médio Impacto
 
-### 5. Indicador de fase mais proeminente 💡
-- Timeline horizontal com as fases (estilo breadcrumb)
-- Mostra onde o jogador está no turno
-- Ajuda bastante jogadores novos a entender o fluxo
+### 5. Indicador de fase (pips minimalistas) ✅
+- **5 dots** no `#phase-indicator`: Begin · Main1 · Combat · Main2 · End
+- Dot ativo com glow amarelo (combate fica vermelho)
+- Dots passados ficam semi-transparentes
+- Ocupa ~30px, não polui a interface
 
 ### 6. Tooltip contextual no hover de cartas na mão 💡
 - Mostrar se o jogador tem mana suficiente
 - Indicar qual mana falta
 
-### 7. `prefers-reduced-motion` para acessibilidade 💡
-- Respeitar a preferência do sistema operacional para reduzir animações
-- Desabilitar `card-enter`, `card-exit`, `float-damage-up` quando ativado
+### 7. `prefers-reduced-motion` para acessibilidade ✅
+- `@media (prefers-reduced-motion: reduce)` desabilita todas as animações
+- Afeta: card-enter, card-exit, floating damage, combat summary, pulse-can-act
+- Cards acionáveis usam glow estático ao invés de pulso
 
 ### 8. Contador de dano no combate ✅
 - **Floating Damage Numbers**: números flutuantes (estilo RPG) sobre criaturas e vida
@@ -75,15 +78,15 @@ Status: ✅ Implementado · 🔜 Próximo · 💡 Planejado
 
 ## Implementação Técnica (referência)
 
-### Arquivos modificados (features 2, 3, 8)
+### Arquivos modificados
 
-| Arquivo | Mudanças |
-|---------|----------|
-| `css/style.css` | 6 `@keyframes` + classes CSS (~170 linhas) |
-| `js/ui.js` | 4 métodos + `renderBattlefield()` com detecção de novos cards + construtor |
-| `js/game.js` | Hooks em `resolveCombat()` + `notifyCardLeaving()` em 8 pontos de `splice` |
-| `js/rules.js` | `attackerObj`/`blockerObj` em `combatDetails` (4 locais) |
-| `index.html` | `<div id="combat-summary-overlay">` |
+| Arquivo | Features | Mudanças |
+|---------|----------|----------|
+| `css/style.css` | 1,2,3,5,7,8 | 7 `@keyframes` + classes CSS + `prefers-reduced-motion` (~250 linhas) |
+| `js/ui.js` | 1,2,3,5,8 | 4 métodos + `renderBattlefield()` + `renderPhase()` + construtor |
+| `js/game.js` | 2,3,8 | Hooks em `resolveCombat()` + `notifyCardLeaving()` em 8 pontos de `splice` |
+| `js/rules.js` | 8 | `attackerObj`/`blockerObj` em `combatDetails` (4 locais) |
+| `index.html` | 3,5 | `<div id="combat-summary-overlay">` + phase pips |
 
 ---
 

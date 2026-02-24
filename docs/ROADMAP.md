@@ -113,13 +113,13 @@ Melhorias visuais e de usabilidade planejadas. Ver `docs/UX_IMPROVEMENTS.md` par
 
 | # | Feature | Impacto | Status |
 |---|---------|---------|--------|
-| 1 | Feedback visual "o que posso fazer" | Alto | 💡 Planejado |
+| 1 | Feedback visual "o que posso fazer" | Alto | ✅ Fev 2026 |
 | 2 | Animações de entrada/saída de cartas | Alto | ✅ Fev 2026 |
 | 3 | Overlay de resumo de combate | Alto | ✅ Fev 2026 |
 | 4 | Tutorial/onboarding | Alto | 💡 Planejado |
-| 5 | Indicador de fase (breadcrumb) | Médio | 💡 Planejado |
+| 5 | Indicador de fase (pips) | Médio | ✅ Fev 2026 |
 | 6 | Tooltip de mana no hover | Médio | 💡 Planejado |
-| 7 | `prefers-reduced-motion` | Médio | 💡 Planejado |
+| 7 | `prefers-reduced-motion` | Médio | ✅ Fev 2026 |
 | 8 | Números de dano flutuantes | Médio | ✅ Fev 2026 |
 | 9 | Drag & drop mobile | Baixo | 💡 Planejado |
 | 10 | Atalhos de teclado | Baixo | 💡 Planejado |
@@ -143,10 +143,13 @@ Funcionalidades que podem ser consideradas após a versão estável:
 
 ### Fevereiro 2026 - UX Visual Feedback
 
-**3 melhorias visuais de combate:**
+**6 melhorias visuais implementadas (UX Roadmap #1,2,3,5,7,8):**
 - Floating damage numbers (vermelho/verde) em criaturas e vida
 - Combat summary overlay com detalhes de dano, mortes e mudanças de vida
 - Animações de entrada (glow dourado) e saída (shrink + fade) para permanentes
+- Pulso verde em criaturas que podem atacar/bloquear
+- Phase pips minimalistas (5 dots de progresso no turno)
+- `prefers-reduced-motion` para acessibilidade
 - Funciona para player e IA igualmente
 - 691 testes passando (20 suites)
 
