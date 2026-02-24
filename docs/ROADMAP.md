@@ -23,7 +23,7 @@ Todas as funcionalidades foram implementadas. O projeto está em fase de testes 
 | Wizards | U | ✅ | Fev 2026 |
 | Undead | B | ✅ | Fev 2026 |
 
-**Testes**: 615 testes unitários passando (16 suites) ✅
+**Testes**: 691 testes unitários passando (20 suites) ✅
 
 ---
 
@@ -100,6 +100,31 @@ Beta testers com acesso ao repositório podem:
 - ✅ Personalização do jogador (nome + avatar)
 - ✅ Modal de seleção de alvo com agrupamento
 - ✅ Sistema de som e música
+- ✅ Animações de entrada/saída de cartas no campo
+- ✅ Números de dano flutuantes no combate
+- ✅ Overlay de resumo de combate
+- ✅ Estatísticas do jogador por perfil
+
+---
+
+## UX Roadmap
+
+Melhorias visuais e de usabilidade planejadas. Ver `docs/UX_IMPROVEMENTS.md` para detalhes.
+
+| # | Feature | Impacto | Status |
+|---|---------|---------|--------|
+| 1 | Feedback visual "o que posso fazer" | Alto | 💡 Planejado |
+| 2 | Animações de entrada/saída de cartas | Alto | ✅ Fev 2026 |
+| 3 | Overlay de resumo de combate | Alto | ✅ Fev 2026 |
+| 4 | Tutorial/onboarding | Alto | 💡 Planejado |
+| 5 | Indicador de fase (breadcrumb) | Médio | 💡 Planejado |
+| 6 | Tooltip de mana no hover | Médio | 💡 Planejado |
+| 7 | `prefers-reduced-motion` | Médio | 💡 Planejado |
+| 8 | Números de dano flutuantes | Médio | ✅ Fev 2026 |
+| 9 | Drag & drop mobile | Baixo | 💡 Planejado |
+| 10 | Atalhos de teclado | Baixo | 💡 Planejado |
+| 11 | Tema claro | Baixo | 💡 Planejado |
+| 12 | Zoom no campo de batalha | Baixo | 💡 Planejado |
 
 ---
 
@@ -107,7 +132,6 @@ Beta testers com acesso ao repositório podem:
 
 Funcionalidades que podem ser consideradas após a versão estável:
 
-- Estatísticas (win rate, cartas mais jogadas)
 - Conquistas/Achievements
 - Torneio vs IA (melhor de 3/5)
 - Multiplayer local
@@ -117,13 +141,22 @@ Funcionalidades que podem ser consideradas após a versão estável:
 
 ## Histórico de Atualizações
 
+### Fevereiro 2026 - UX Visual Feedback
+
+**3 melhorias visuais de combate:**
+- Floating damage numbers (vermelho/verde) em criaturas e vida
+- Combat summary overlay com detalhes de dano, mortes e mudanças de vida
+- Animações de entrada (glow dourado) e saída (shrink + fade) para permanentes
+- Funciona para player e IA igualmente
+- 691 testes passando (20 suites)
+
 ### Fevereiro 2026 - Beta Release
 
 **Entrada em fase Beta:**
 - Todos os 10 decks validados contra listas oficiais do Beginner Box
 - Deck Undead completamente reescrito com cartas oficiais
 - UI de seleção de alvo melhorada (agrupamento + avatares)
-- 615 testes unitários passando (16 suites)
+- 691 testes unitários passando (20 suites)
 
 ### Fevereiro 2026 - Melhorias de IA
 
@@ -194,6 +227,9 @@ Funcionalidades que podem ser consideradas após a versão estável:
 - ✅ Tooltip de keywords
 - ✅ Animações de combate
 - ✅ Efeitos visuais de dano
+- ✅ Animações de entrada/saída de cartas
+- ✅ Números de dano flutuantes
+- ✅ Overlay de resumo de combate
 - ✅ Drag & drop para cartas
 - ✅ Zoom no cemitério (modal)
 - ✅ Linhas de conexão atacante-bloqueador
@@ -209,7 +245,7 @@ Funcionalidades que podem ser consideradas após a versão estável:
 - ✅ Priority stops configuráveis
 
 ### Técnico
-- ✅ Testes unitários (Jest) - 615 testes (16 suites)
+- ✅ Testes unitários (Jest) - 691 testes (20 suites)
 - ✅ Validação de cartas via Scryfall
 - ✅ Modo Debug completo
 - ✅ Sistema de logs exportável
