@@ -34,6 +34,8 @@ class GameUI {
         this.draggedCard = null;
         this.previousPlayerLife = 20;
         this.previousOpponentLife = 20;
+        this._previousBattlefieldIds = { player: new Set(), opponent: new Set() };
+        this._recentlyEnteredIds = new Set();
 
         this.initElements();
         this.bindEvents();
@@ -85,6 +87,7 @@ class GameUI {
         this.logPanelContent = document.getElementById('log-panel-content');
         this.keywordTooltip = document.getElementById('keyword-tooltip');
         this.gameContainer = document.getElementById('game-container');
+        this.combatSummaryOverlay = document.getElementById('combat-summary-overlay');
 
         // Mana icons
         this.manaIcons = {
@@ -1145,6 +1148,19 @@ class GameUI {
         landsContainer.innerHTML = '';
         otherContainer.innerHTML = '';
 
+        // Detect new cards for enter animation
+        const side = isPlayer ? 'player' : 'opponent';
+        const currentIds = new Set(player.battlefield.map(c => c.instanceId));
+        const previousIds = this._previousBattlefieldIds[side];
+        // Feed newly detected IDs into the persistent recently-entered set
+        for (const id of currentIds) {
+            if (!previousIds.has(id) && !this._recentlyEnteredIds.has(id)) {
+                this._recentlyEnteredIds.add(id);
+                setTimeout(() => this._recentlyEnteredIds.delete(id), 400);
+            }
+        }
+        this._previousBattlefieldIds[side] = currentIds;
+
         player.battlefield.forEach(card => {
             // Pular Auras e Equipamentos anexados - são renderizados junto com a criatura
             if ((card.subtype === 'Aura' || card.subtype === 'Equipment') && card.attachedTo) {
@@ -1155,6 +1171,11 @@ class GameUI {
 
             if (card.tapped) {
                 cardEl.classList.add('tapped');
+            }
+
+            // Card enter animation for new permanents (persists across multiple renders)
+            if (this._recentlyEnteredIds.has(card.instanceId)) {
+                cardEl.classList.add('card-enter-animation');
             }
 
             // Indicador de Summoning Sickness (não mostrar se tem haste de qualquer fonte)
@@ -4824,6 +4845,167 @@ class GameUI {
     closeStatsModal() {
         const modal = document.getElementById('stats-modal');
         if (modal) modal.classList.add('hidden');
+    }
+
+    // === Floating Damage Numbers ===
+
+    showFloatingDamageOnCard(instanceId, amount, type = 'damage') {
+        if (!this.gameContainer) return;
+        const cardEl = this.gameContainer.querySelector(`[data-instance-id="${instanceId}"]`);
+        if (!cardEl) return;
+
+        const rect = cardEl.getBoundingClientRect();
+        const numEl = document.createElement('div');
+        numEl.className = `floating-damage-number ${type}`;
+        numEl.textContent = type === 'damage' ? `-${amount}` : `+${amount}`;
+        numEl.style.left = `${rect.left + rect.width / 2}px`;
+        numEl.style.top = `${rect.top + rect.height * 0.3}px`;
+        numEl.style.position = 'fixed';
+        numEl.style.transform = 'translateX(-50%)';
+        document.body.appendChild(numEl);
+        numEl.addEventListener('animationend', () => numEl.remove());
+    }
+
+    showFloatingDamageOnPlayer(isPlayer, amount, type = 'damage') {
+        const lifeEl = isPlayer
+            ? document.getElementById('player-life')
+            : document.getElementById('opponent-life');
+        if (!lifeEl) return;
+
+        const rect = lifeEl.getBoundingClientRect();
+        const numEl = document.createElement('div');
+        numEl.className = `floating-damage-number ${type}`;
+        numEl.textContent = type === 'damage' ? `-${amount}` : `+${amount}`;
+        numEl.style.left = `${rect.left + rect.width / 2}px`;
+        numEl.style.top = `${rect.top}px`;
+        numEl.style.position = 'fixed';
+        numEl.style.transform = 'translateX(-50%)';
+        document.body.appendChild(numEl);
+        numEl.addEventListener('animationend', () => numEl.remove());
+    }
+
+    showCombatFloatingDamage(results, attackingPlayer, defendingPlayer) {
+        if (!results || !results.combatDetails) return;
+
+        for (const detail of results.combatDetails) {
+            if (detail.type === 'blocked') {
+                if (detail.damageToBlocker > 0 && detail.blockerObj) {
+                    this.showFloatingDamageOnCard(detail.blockerObj.instanceId, detail.damageToBlocker, 'damage');
+                }
+                if (detail.damageToAttacker > 0 && detail.attackerObj) {
+                    this.showFloatingDamageOnCard(detail.attackerObj.instanceId, detail.damageToAttacker, 'damage');
+                }
+            } else if (detail.type === 'direct' || detail.type === 'trample') {
+                const isDefenderPlayer = defendingPlayer === this.game.player;
+                this.showFloatingDamageOnPlayer(isDefenderPlayer, detail.damage, 'damage');
+            }
+        }
+
+        // Lifelink healing on attacking player
+        if (results.lifeGained.attacker > 0) {
+            const isAttackerPlayer = attackingPlayer === this.game.player;
+            this.showFloatingDamageOnPlayer(isAttackerPlayer, results.lifeGained.attacker, 'heal');
+        }
+        if (results.lifeGained.defender > 0) {
+            const isDefenderPlayer = defendingPlayer === this.game.player;
+            this.showFloatingDamageOnPlayer(isDefenderPlayer, results.lifeGained.defender, 'heal');
+        }
+    }
+
+    // === Combat Summary Overlay ===
+
+    showCombatSummary(results, attackerName, defenderName) {
+        if (!this.combatSummaryOverlay) return;
+        if (!results || results.combatDetails.length === 0) return;
+
+        let html = '<div class="combat-summary-title">Combate</div>';
+        html += '<div class="combat-summary-entries">';
+
+        for (const d of results.combatDetails) {
+            if (d.type === 'direct') {
+                html += `<div class="combat-summary-entry">${d.attacker} \u2192 ${defenderName}: <span class="dmg-value">${d.damage}</span></div>`;
+            } else if (d.type === 'blocked') {
+                if (d.damageToBlocker > 0) {
+                    html += `<div class="combat-summary-entry">${d.attacker} \u2192 ${d.blocker}: <span class="dmg-value">${d.damageToBlocker}</span></div>`;
+                }
+                if (d.damageToAttacker > 0) {
+                    html += `<div class="combat-summary-entry">${d.blocker} \u2192 ${d.attacker}: <span class="dmg-value">${d.damageToAttacker}</span></div>`;
+                }
+            } else if (d.type === 'trample') {
+                html += `<div class="combat-summary-entry">${d.attacker} \u2192 ${defenderName} (trample): <span class="dmg-value">${d.damage}</span></div>`;
+            }
+        }
+        html += '</div>';
+
+        // Deaths
+        if (results.creaturesDied.length > 0) {
+            html += '<div class="combat-summary-deaths">';
+            for (const c of results.creaturesDied) {
+                html += `<div class="combat-summary-death">\u2620 ${c.name}</div>`;
+            }
+            html += '</div>';
+        }
+
+        // Life changes
+        const lifeParts = [];
+        if (results.damageToPlayers.defender > 0) {
+            lifeParts.push(`<span class="life-damage">${defenderName} -${results.damageToPlayers.defender} HP</span>`);
+        }
+        if (results.lifeGained.attacker > 0) {
+            lifeParts.push(`<span class="life-heal">${attackerName} +${results.lifeGained.attacker} HP</span>`);
+        }
+        if (results.lifeGained.defender > 0) {
+            lifeParts.push(`<span class="life-heal">${defenderName} +${results.lifeGained.defender} HP</span>`);
+        }
+        if (lifeParts.length > 0) {
+            html += `<div class="combat-summary-life">${lifeParts.join(' · ')}</div>`;
+        }
+
+        html += '<div class="combat-summary-hint">clique para fechar</div>';
+
+        this.combatSummaryOverlay.innerHTML = html;
+        this.combatSummaryOverlay.classList.remove('hidden', 'dismissing');
+
+        // Click to dismiss
+        const dismiss = () => {
+            this.combatSummaryOverlay.classList.add('dismissing');
+            setTimeout(() => {
+                this.combatSummaryOverlay.classList.add('hidden');
+                this.combatSummaryOverlay.classList.remove('dismissing');
+            }, 200);
+            this.combatSummaryOverlay.removeEventListener('click', dismiss);
+        };
+        this.combatSummaryOverlay.addEventListener('click', dismiss);
+
+        // Auto-dismiss after 4s
+        if (this._combatSummaryTimeout) clearTimeout(this._combatSummaryTimeout);
+        this._combatSummaryTimeout = setTimeout(() => {
+            if (!this.combatSummaryOverlay.classList.contains('hidden')) {
+                dismiss();
+            }
+        }, 4000);
+    }
+
+    // === Card Exit Animation ===
+
+    notifyCardLeaving(card) {
+        if (!this.gameContainer) return;
+        const cardEl = this.gameContainer.querySelector(`[data-instance-id="${card.instanceId}"]`);
+        if (!cardEl) return;
+
+        const rect = cardEl.getBoundingClientRect();
+        const clone = cardEl.cloneNode(true);
+        clone.style.position = 'fixed';
+        clone.style.left = `${rect.left}px`;
+        clone.style.top = `${rect.top}px`;
+        clone.style.width = `${rect.width}px`;
+        clone.style.height = `${rect.height}px`;
+        clone.style.margin = '0';
+        clone.style.zIndex = '800';
+        clone.classList.add('card-exit-animation');
+
+        document.body.appendChild(clone);
+        clone.addEventListener('animationend', () => clone.remove());
     }
 }
 

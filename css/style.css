@@ -6104,3 +6104,170 @@ html {
 .stats-match-history::-webkit-scrollbar-thumb:hover {
     background: rgba(150, 120, 180, 0.7);
 }
+
+/* === Floating Damage Numbers === */
+@keyframes float-damage-up {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    20% { opacity: 1; transform: translateY(-8px) scale(1.15); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+.floating-damage-number {
+    position: absolute;
+    font-weight: 900;
+    font-size: 1.4em;
+    pointer-events: none;
+    z-index: 1000;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.6);
+    animation: float-damage-up 1.2s ease-out forwards;
+    white-space: nowrap;
+}
+
+.floating-damage-number.damage {
+    color: #ff4444;
+}
+
+.floating-damage-number.heal {
+    color: #44ff88;
+}
+
+/* === Combat Summary Overlay === */
+@keyframes combat-summary-appear {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes combat-summary-dismiss {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+.combat-summary-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(15, 5, 25, 0.92);
+    border: 1px solid rgba(200, 160, 255, 0.4);
+    border-radius: 10px;
+    padding: 14px 20px;
+    z-index: 900;
+    min-width: 260px;
+    max-width: 400px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(150, 80, 200, 0.15);
+    animation: combat-summary-appear 0.25s ease-out forwards;
+    cursor: pointer;
+    user-select: none;
+}
+
+.combat-summary-overlay.dismissing {
+    animation: combat-summary-dismiss 0.2s ease-in forwards;
+}
+
+.combat-summary-overlay.hidden {
+    display: none;
+}
+
+.combat-summary-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #d0a0ff;
+    margin-bottom: 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.combat-summary-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.combat-summary-entry {
+    font-size: 0.75em;
+    color: #ccc;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(150, 100, 200, 0.15);
+}
+
+.combat-summary-entry:last-child {
+    border-bottom: none;
+}
+
+.combat-summary-entry .dmg-value {
+    color: #ff6666;
+    font-weight: 700;
+}
+
+.combat-summary-entry .heal-value {
+    color: #66ffaa;
+    font-weight: 700;
+}
+
+.combat-summary-deaths {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(200, 100, 100, 0.3);
+}
+
+.combat-summary-death {
+    font-size: 0.75em;
+    color: #ff8888;
+    padding: 1px 0;
+}
+
+.combat-summary-life {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(100, 200, 100, 0.3);
+    font-size: 0.75em;
+}
+
+.combat-summary-life .life-damage {
+    color: #ff6666;
+}
+
+.combat-summary-life .life-heal {
+    color: #66ffaa;
+}
+
+.combat-summary-hint {
+    text-align: center;
+    font-size: 0.6em;
+    color: rgba(200, 180, 220, 0.4);
+    margin-top: 6px;
+}
+
+/* === Card Enter/Exit Animations === */
+@keyframes card-enter {
+    0% { opacity: 0; transform: scale(0.3); }
+    70% { opacity: 1; transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes card-enter-tapped {
+    0% { opacity: 0; transform: scale(0.3) rotate(90deg); }
+    70% { opacity: 1; transform: scale(1.08) rotate(90deg); }
+    100% { opacity: 1; transform: scale(1) rotate(90deg); }
+}
+
+@keyframes card-exit {
+    0% { opacity: 1; transform: scale(1); filter: saturate(1); }
+    100% { opacity: 0; transform: scale(0.4); filter: saturate(0); }
+}
+
+.card-enter-animation {
+    animation: card-enter 0.35s ease-out forwards;
+    box-shadow: 0 0 12px 3px rgba(255, 215, 0, 0.5) !important;
+}
+
+.card-enter-animation.tapped {
+    animation: card-enter-tapped 0.35s ease-out forwards;
+}
+
+.card-exit-animation {
+    animation: card-exit 0.4s ease-in forwards;
+    pointer-events: none;
+}

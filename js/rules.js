@@ -911,6 +911,7 @@ class RulesEngine {
                     results.combatDetails.push({
                         type: 'direct',
                         attacker: attacker.name,
+                        attackerObj: attacker,
                         damage: attackerPower
                     });
                     if (aKeywords.lifelink) {
@@ -978,7 +979,9 @@ class RulesEngine {
                         results.combatDetails.push({
                             type: 'blocked',
                             attacker: attacker.name,
+                            attackerObj: attacker,
                             blocker: blocker.name,
+                            blockerObj: blocker,
                             damageToBlocker,
                             damageToAttacker
                         });
@@ -1003,6 +1006,7 @@ class RulesEngine {
                             results.combatDetails.push({
                                 type: 'trample',
                                 attacker: attacker.name,
+                                attackerObj: attacker,
                                 damage: excess
                             });
                         }
@@ -1013,6 +1017,7 @@ class RulesEngine {
                         results.combatDetails.push({
                             type: 'trample',
                             attacker: attacker.name,
+                            attackerObj: attacker,
                             damage: attackerPower
                         });
                     }

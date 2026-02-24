@@ -2583,6 +2583,7 @@ class GameState {
             if (permanent.type === 'creature') {
                 await this.detachFromCreature(permanent, owner);
             }
+            this.ui.notifyCardLeaving(permanent);
             owner.battlefield.splice(index, 1);
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
@@ -2650,6 +2651,7 @@ class GameState {
         }
 
         // Remover do battlefield
+        this.ui.notifyCardLeaving(target);
         owner.battlefield.splice(index, 1);
 
         // Desregistrar efeitos especiais e trigger LTB
@@ -2699,6 +2701,7 @@ class GameState {
             if (item.pendingResolution) {
                 const bfIndex = stackTarget.controller.battlefield.indexOf(item);
                 if (bfIndex > -1) {
+                    this.ui.notifyCardLeaving(item);
                     stackTarget.controller.battlefield.splice(bfIndex, 1);
                 }
                 delete item.pendingResolution;
@@ -3031,6 +3034,7 @@ class GameState {
                 await this.detachFromCreature(permanent, owner);
             }
 
+            this.ui.notifyCardLeaving(permanent);
             owner.battlefield.splice(index, 1);
             // Desregistrar efeitos especiais
             this.unregisterSpecialEffect(permanent);
@@ -3071,6 +3075,7 @@ class GameState {
             // Desanexar equipamentos e auras
             await this.detachFromCreature(creature, owner);
 
+            this.ui.notifyCardLeaving(creature);
             owner.battlefield.splice(index, 1);
             this.unregisterSpecialEffect(creature);
             await this.triggers.onLeaveBattlefield(creature, owner);
@@ -3354,6 +3359,7 @@ class GameState {
             // Sacrificar o token (remover do battlefield)
             const tokenIndex = player.battlefield.findIndex(c => c.instanceId === card.instanceId);
             if (tokenIndex !== -1) {
+                this.ui.notifyCardLeaving(card);
                 player.battlefield.splice(tokenIndex, 1);
             }
 
@@ -4480,6 +4486,9 @@ class GameState {
             damageAssignments
         );
 
+        // Floating damage numbers (antes das mortes, enquanto cards estão no DOM)
+        this.ui.showCombatFloatingDamage(results, attackingPlayer, defendingPlayer);
+
         // Logar detalhes de combate
         results.combatDetails.forEach(detail => {
             if (detail.type === 'direct') {
@@ -4539,6 +4548,7 @@ class GameState {
                 if (creature.type === 'creature') {
                     await this.detachFromCreature(creature, owner);
                 }
+                this.ui.notifyCardLeaving(creature);
                 owner.battlefield.splice(index, 1);
                 this.unregisterSpecialEffect(creature);
                 await this.triggers.onLeaveBattlefield(creature, owner);
@@ -4583,6 +4593,7 @@ class GameState {
             const idx = owner.battlefield.indexOf(creature);
             if (idx > -1) {
                 await this.detachFromCreature(creature, owner);
+                this.ui.notifyCardLeaving(creature);
                 owner.battlefield.splice(idx, 1);
                 this.unregisterSpecialEffect(creature);
                 await this.triggers.onLeaveBattlefield(creature, owner);
@@ -4623,6 +4634,9 @@ class GameState {
 
         // Limpar seleção de atacantes da UI
         this.ui.selectedAttackers = [];
+
+        // Combat summary overlay
+        this.ui.showCombatSummary(results, attackingPlayer.name, defendingPlayer.name);
 
         // Verificar fim de jogo após processar todas as mortes
         this.checkGameOver();
