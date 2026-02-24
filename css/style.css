@@ -528,6 +528,8 @@ body {
     color: #ffcc00;
     text-shadow: 0 0 8px rgba(255, 200, 0, 0.4);
     white-space: nowrap;
+    width: 55px;
+    text-align: center;
 }
 
 #turn-indicator {
@@ -1860,6 +1862,8 @@ body {
     padding: 4px 12px;
     border-radius: 4px;
     transition: all 0.3s ease;
+    min-width: 70px;
+    text-align: center;
 }
 
 #turn-indicator.player-turn {
@@ -6353,5 +6357,9 @@ html {
     .card.can-block {
         animation: none;
         box-shadow: 0 0 10px 3px rgba(46, 204, 113, 0.45);
+    }
+    #turn-indicator.player-turn,
+    #turn-indicator.opponent-turn {
+        animation: none;
     }
 }

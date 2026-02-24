@@ -2519,7 +2519,7 @@ class GameUI {
         this.phaseIndicator.textContent = PHASE_NAMES[this.game.phase];
 
         const isPlayerTurn = this.game.isPlayerTurn();
-        this.turnIndicator.textContent = `T${this.game.turnNumber}`;
+        this.turnIndicator.textContent = isPlayerTurn ? 'Você' : 'Oponente';
         this.turnIndicator.title = `Turno ${this.game.turnNumber} - ${isPlayerTurn ? 'Seu turno' : 'Turno do oponente'}`;
 
         // Atualizar classe para indicador visual
