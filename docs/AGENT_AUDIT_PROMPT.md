@@ -34,6 +34,7 @@
 | R9 | Goblins vs Wizards, Cats vs Primal, Healing vs Vampires | Undead+Inferno, Cats+Wizards, Stack & Counterspells | Sim |
 | R10 | Elves vs Undead, Goblins vs Inferno, Pirates vs Wizards | Vampires+Primal (re-audit), Healing+Cats (lifegain/token synergies) | Sim |
 | R11 | Vampires vs Primal, Cats vs Pirates, Healing vs Inferno | Ward interactions (pós-R10), Cross-mechanic chains | Combat + death edge cases |
+| R12 | Undead vs Wizards, Elves vs Healing, Goblins vs Cats | Activated abilities (deep), Token & tribal synergies | Stack & counterspells |
 
 \* = agente bateu no rate limit (resultado parcial ou sem resultado)
 
@@ -62,4 +63,5 @@
 | R9 (6 agentes) | 4 | 4 |
 | R10 (6 agentes) | 5 | 16 |
 | R11 (6 agentes) | 7 | 15 |
-| **Total agentes** | **86** | **183** |
+| R12 (6 agentes) | 8 | 12 |
+| **Total agentes** | **94** | **195** |

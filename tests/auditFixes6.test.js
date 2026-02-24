@@ -501,13 +501,13 @@ describe('Fix R6-11: counterspell_creature properly supported', () => {
         expect(counterspellSection).toBeTruthy();
     });
 
-    test('game.js isCounterspell only checks counterspell keyword', () => {
+    test('game.js isCounterspell checks both counterspell and counterspell_creature keywords', () => {
         const gameSource = fs.readFileSync('./js/game.js', 'utf-8');
         // Match the isCounterspell method definition specifically
         const isCounterSection = gameSource.match(/isCounterspell\(card\)\s*\{[^}]*\}/);
         expect(isCounterSection).toBeTruthy();
         expect(isCounterSection[0]).toContain("'counterspell'");
-        expect(isCounterSection[0]).not.toContain('counterspell_creature');
+        expect(isCounterSection[0]).toContain("'counterspell_creature'");
     });
 
     test('game.js canCounterTarget supports counterspell_creature', () => {

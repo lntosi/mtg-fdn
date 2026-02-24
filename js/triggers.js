@@ -1345,6 +1345,8 @@ class TriggerManager {
             this.onCounterPlaced(creature, owner, 1);
             // Set flag so destroyPermanent doesn't remove the creature
             creature._returnedByUndying = true;
+            // MTG CR 400.7: zona mudou = novo objeto, ETBs devem disparar
+            await this.resolveETB(creature, owner);
             this.ui.render();
             return true; // Signal that creature was returned
         }

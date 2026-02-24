@@ -654,7 +654,7 @@ class GameState {
         // Se é uma Aura, precisa de alvo (já deve estar em stackItem.target)
         if (card.subtype === 'Aura' && stackItem.target) {
             // Verificar se alvo ainda é válido
-            if (!this.isTargetStillValid(stackItem.target)) {
+            if (!this.isTargetStillValid(stackItem.target, controller)) {
                 this.ui.log(`${card.name} foi anulado (alvo inválido)`);
                 controller.graveyard.push(card);
                 return;
@@ -1952,7 +1952,7 @@ class GameState {
 
     // Verifica se feitiço é um counterspell (mira na stack)
     isCounterspell(card) {
-        return card.keywords && card.keywords.includes('counterspell');
+        return card.keywords && (card.keywords.includes('counterspell') || card.keywords.includes('counterspell_creature'));
     }
 
     // Check if a counterspell can target a specific stack item
@@ -2812,6 +2812,8 @@ class GameState {
                         subtype: 'Goblin',
                         power: 1,
                         toughness: 1,
+                        keywords: [],
+                        cmc: 0,
                         summoningSickness: true,
                         isToken: true
                     };
@@ -3246,7 +3248,7 @@ class GameState {
                 const dropkickMana = this.rules.calculateAvailableMana(player);
                 const hasOtherGoblin = player.battlefield.some(c =>
                     c.type === 'creature' &&
-                    c.subtype && c.subtype.includes('Goblin') &&
+                    this.rules.getEffectiveSubtype(c).includes('Goblin') &&
                     c.instanceId !== card.instanceId
                 );
                 return dropkickMana.R >= 1 && hasOtherGoblin;
@@ -3534,7 +3536,7 @@ class GameState {
                 this.payColoredMana({ R: 1 }, player);
                 const goblinTargets = player.battlefield.filter(c =>
                     c.type === 'creature' &&
-                    c.subtype && c.subtype.includes('Goblin') &&
+                    this.rules.getEffectiveSubtype(c).includes('Goblin') &&
                     c.instanceId !== card.instanceId
                 );
                 if (goblinTargets.length > 0) {
@@ -3767,7 +3769,7 @@ class GameState {
 
                 // Pagar custo e sacrificar o Brontodon
                 this.payGenericMana(1, player);
-                await this.destroyPermanent(card, player);
+                await this.sacrificeCreature(card, player);
 
                 // Destruir o alvo
                 const brontoTargetOwner = this.player.battlefield.includes(brontoTarget) ? this.player : this.opponent;
@@ -4603,7 +4605,7 @@ class GameState {
         for (const attacker of this.currentAttackers) {
             if (attacker.sacrificeOnCombatDamage && !results.creaturesDied.includes(attacker) && results.attackersDealtDamage?.has(attacker)) {
                 const owner = this.player.battlefield.includes(attacker) ? this.player : this.opponent;
-                await this.destroyPermanent(attacker, owner);
+                await this.sacrificeCreature(attacker, owner);
                 this.ui.log(`${attacker.name} foi sacrificado após causar dano de combate`);
             }
         }

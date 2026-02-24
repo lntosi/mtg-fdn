@@ -496,7 +496,7 @@ class AIPlayer {
                 // Dar flying a um Goblin - só útil antes do combate (Main Phase 1)
                 if (this.game.phase !== PHASES.MAIN1) return false;
                 return controller.battlefield.some(c =>
-                    c.type === 'creature' && c.subtype?.includes('Goblin') &&
+                    c.type === 'creature' && this.rules.getEffectiveSubtype(c)?.includes('Goblin') &&
                     c.instanceId !== permanent.instanceId
                 );
 
