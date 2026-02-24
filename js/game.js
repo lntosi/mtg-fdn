@@ -2142,35 +2142,8 @@ class GameState {
         const targetOwner = this.player.battlefield.includes(target) ? this.player : this.opponent;
 
         // === WARD CHECK ===
-        // Ward só se aplica se o caster é oponente do dono do alvo
-        if (target.type === 'creature' && targetOwner !== caster) {
-            const wardCost = this.rules.getWardCost(target);
-            if (wardCost !== null) {
-                const canPay = this.rules.canPayWard(wardCost, caster);
-
-                let willPay = false;
-
-                if (caster === this.player) {
-                    // Jogador decide se paga Ward
-                    willPay = await this.ui.promptWardPayment(target, wardCost, canPay);
-                } else {
-                    // IA sempre tenta pagar se puder
-                    willPay = canPay;
-                    if (willPay) {
-                        this.ui.log(`IA paga ${wardCost} mana pelo Ward de ${target.name}`);
-                    }
-                }
-
-                if (!willPay || !canPay) {
-                    this.ui.log(`${card.name} foi anulado por Ward de ${target.name}!`);
-                    // Spell é anulado, mas mana já foi pago
-                    return;
-                }
-
-                // Pagar o custo de Ward
-                this.payGenericMana(wardCost, caster);
-                this.ui.log(`${caster.name} pagou ${wardCost} mana pelo Ward`);
-            }
+        if (!await this.checkAndPayWard(target, caster, card.name)) {
+            return; // Spell anulado por Ward
         }
 
         switch (card.id) {
@@ -3040,7 +3013,8 @@ class GameState {
             }
 
             // Chamar death triggers ANTES de mover para o cemitério (criatura ainda "vê" o campo)
-            if (permanent.type === 'creature' && this.triggers) {
+            // exileOnDeath: criatura é exilada em vez de morrer — "dies" = graveyard (CR 700.4)
+            if (permanent.type === 'creature' && this.triggers && !permanent.exileOnDeath) {
                 await this.triggers.onCreatureDeath(permanent, owner);
             }
 
@@ -3540,6 +3514,9 @@ class GameState {
                         firebombTarget = enemyPermanents.length > 0 ? enemyPermanents[0] : firebombValidTargets[0];
                     }
                 }
+
+                // Ward check antes de pagar custo
+                if (!await this.checkAndPayWard(firebombTarget, player, 'Goblin Firebomb')) return;
 
                 // Pagar custo e sacrificar
                 this.payGenericMana(7, player);
@@ -4540,9 +4517,10 @@ class GameState {
 
         // Fase 1: Disparar TODOS os death triggers enquanto todas as criaturas morrendo
         // ainda se veem no campo de batalha (MTG CR 603.10: mortes simultâneas)
+        // exileOnDeath: criatura é exilada em vez de morrer — "dies" = graveyard (CR 700.4)
         for (const creature of uniqueDeaths) {
             const owner = this.player.battlefield.includes(creature) ? this.player : this.opponent;
-            if (creature.type === 'creature' && this.triggers) {
+            if (creature.type === 'creature' && this.triggers && !creature.exileOnDeath) {
                 await this.triggers.onCreatureDeath(creature, owner);
             }
         }
@@ -4591,7 +4569,7 @@ class GameState {
             }
         }
         for (const { creature, owner } of sbaDeaths) {
-            if (creature.type === 'creature' && this.triggers) {
+            if (creature.type === 'creature' && this.triggers && !creature.exileOnDeath) {
                 await this.triggers.onCreatureDeath(creature, owner);
             }
         }
@@ -4606,10 +4584,15 @@ class GameState {
                 owner.battlefield.splice(idx, 1);
                 this.unregisterSpecialEffect(creature);
                 await this.triggers.onLeaveBattlefield(creature, owner);
-                owner.graveyard.push(creature);
+                if (creature.exileOnDeath) {
+                    owner.exile.push(creature);
+                } else {
+                    owner.graveyard.push(creature);
+                }
                 if (creature.isToken) {
-                    const tokenIdx = owner.graveyard.indexOf(creature);
-                    if (tokenIdx > -1) owner.graveyard.splice(tokenIdx, 1);
+                    const zone = creature.exileOnDeath ? owner.exile : owner.graveyard;
+                    const tokenIdx = zone.indexOf(creature);
+                    if (tokenIdx > -1) zone.splice(tokenIdx, 1);
                 }
                 this.ui.log(`${creature.name} morreu (perdeu bônus de lord)`);
             }

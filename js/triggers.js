@@ -1031,6 +1031,12 @@ class TriggerManager {
                 canSkip: true // "up to one target"
             });
             if (target) {
+                if (!await this.game.checkAndPayWard(target, controller, card.name)) {
+                    // Ward anulou, mas ainda ganha vida
+                    this.game.gainLife(controller, 2);
+                    this.ui.log(`Prayer of Binding: ${controller.name} ganhou 2 vidas`);
+                    return;
+                }
                 await exileTarget(target);
             } else {
                 // Escolheu não exilar, mas ainda ganha vida
@@ -1043,6 +1049,12 @@ class TriggerManager {
                 .filter(c => c.type === 'creature')
                 .sort((a, b) => this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a))[0]
                 || validTargets[0];
+            if (!await this.game.checkAndPayWard(target, controller, card.name)) {
+                // Ward anulou, mas ainda ganha vida
+                this.game.gainLife(controller, 2);
+                this.ui.log(`Prayer of Binding: ${controller.name} ganhou 2 vidas`);
+                return;
+            }
             await exileTarget(target);
         }
     }
@@ -1538,6 +1550,7 @@ class TriggerManager {
                     }
 
                     if (target) {
+                        if (!await this.game.checkAndPayWard(target, controller, 'Battle-Rattle Shaman')) continue;
                         target.powerModifier = (target.powerModifier || 0) + 2;
                         this.ui.log(`Battle-Rattle Shaman: ${target.name} ganhou +2/+0`);
                         this.ui.render();
@@ -1596,6 +1609,7 @@ class TriggerManager {
         if (attackingPlayer === this.player) {
             const shouldPay = await this.ui.promptFrenziedGoblin(potentialBlockers);
             if (shouldPay?.target) {
+                if (!await this.game.checkAndPayWard(shouldPay.target, attackingPlayer, 'Frenzied Goblin')) return;
                 this.game.payColoredMana({ R: 1 }, attackingPlayer);
                 this.game.cantBlockThisTurn.push(shouldPay.target.instanceId);
                 this.ui.log(`Frenzied Goblin: ${shouldPay.target.name} não pode bloquear neste turno`);
@@ -1605,6 +1619,7 @@ class TriggerManager {
                 this.rules.getCreaturePower(b) - this.rules.getCreaturePower(a)
             )[0];
             if (target) {
+                if (!await this.game.checkAndPayWard(target, attackingPlayer, 'Frenzied Goblin')) return;
                 this.game.payColoredMana({ R: 1 }, attackingPlayer);
                 this.game.cantBlockThisTurn.push(target.instanceId);
                 this.ui.log(`Frenzied Goblin: ${target.name} não pode bloquear neste turno`);
