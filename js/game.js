@@ -1257,7 +1257,7 @@ class GameState {
             const formattedKickerCost = card.kickerCost.split('').map(c => `{${c}}`).join('');
             const wantKicker = await this.ui.promptYesNo({
                 title: `${card.name} - Encostar`,
-                description: `Deseja pagar o custo de encostar ${formattedKickerCost}?`,
+                description: `Deseja pagar o custo de encostar <span style="white-space:nowrap">${formattedKickerCost}?</span>`,
                 yesText: 'Sim, encostar',
                 noText: 'Não'
             });
