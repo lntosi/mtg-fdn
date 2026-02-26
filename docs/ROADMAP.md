@@ -116,13 +116,13 @@ Melhorias visuais e de usabilidade planejadas. Ver `docs/UX_IMPROVEMENTS.md` par
 | 1 | Feedback visual "o que posso fazer" | Alto | ✅ Fev 2026 |
 | 2 | Animações de entrada/saída de cartas | Alto | ✅ Fev 2026 |
 | 3 | Overlay de resumo de combate | Alto | ✅ Fev 2026 |
-| 4 | Tutorial/onboarding | Alto | 💡 Planejado |
+| 4 | ~~Tutorial/onboarding~~ | Alto | ❌ Descartado |
 | 5 | Indicador de fase (pips) | Médio | ✅ Fev 2026 |
 | 6 | Tooltip de mana no hover | Médio | 💡 Planejado |
 | 7 | `prefers-reduced-motion` | Médio | ✅ Fev 2026 |
 | 8 | Números de dano flutuantes | Médio | ✅ Fev 2026 |
 | 9 | Drag & drop mobile | Baixo | 💡 Planejado |
-| 10 | Atalhos de teclado | Baixo | 💡 Planejado |
+| 10 | Atalhos de teclado (Espaço, E, G) | Baixo | ✅ Fev 2026 |
 | 11 | Tema claro | Baixo | 💡 Planejado |
 | 12 | Zoom no campo de batalha | Baixo | 💡 Planejado |
 

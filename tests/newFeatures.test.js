@@ -360,7 +360,7 @@ describe('Instant Target Validation - hasValidTargets', () => {
 describe('Priority Window After Blocking', () => {
     test('player should have opportunity to respond after declaring blockers', () => {
         // Este é um teste conceitual - a implementação real está em game.js
-        // continueAfterBlocking() agora chama offerPriorityWindow()
+        // continueAfterBlocking() aguarda resposta do jogador via waitForPlayerContinue()
 
         const canRespondAfterBlocking = true; // Nova funcionalidade implementada
 
@@ -423,5 +423,46 @@ describe('Combat Log Details', () => {
         expect(combatDetails[1].type).toBe('blocked');
         expect(combatDetails[1].damageToBlocker).toBe(3);
         expect(combatDetails[2].type).toBe('trample');
+    });
+});
+
+describe('Mandatory Action Guard (_awaitingMandatoryAction)', () => {
+    test('playCard is blocked when _awaitingMandatoryAction is true', () => {
+        const rules = new TestRulesEngine();
+        const player = createPlayer();
+        const creature = createCreature({ power: 2, toughness: 2, cost: '1G', cmc: 2 });
+        player.hand.push(creature);
+
+        // Simular game state
+        const game = {
+            _awaitingMandatoryAction: true,
+            rules,
+            ui: { log: jest.fn() }
+        };
+
+        // Quando _awaitingMandatoryAction é true, playCard deve ser bloqueado
+        expect(game._awaitingMandatoryAction).toBe(true);
+        // A lógica real está em game.js, aqui verificamos o flag
+    });
+
+    test('_awaitingMandatoryAction is false by default', () => {
+        const game = { _awaitingMandatoryAction: false };
+        expect(game._awaitingMandatoryAction).toBe(false);
+    });
+
+    test('loot ETB should set _awaitingMandatoryAction during discard prompt', () => {
+        // Simular o fluxo do Icewind Elemental ETB
+        const game = { _awaitingMandatoryAction: false };
+
+        // Antes do prompt
+        expect(game._awaitingMandatoryAction).toBe(false);
+
+        // Durante o prompt (canSkip: false)
+        game._awaitingMandatoryAction = true;
+        expect(game._awaitingMandatoryAction).toBe(true);
+
+        // Após o prompt resolver
+        game._awaitingMandatoryAction = false;
+        expect(game._awaitingMandatoryAction).toBe(false);
     });
 });

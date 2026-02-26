@@ -35,6 +35,8 @@
 | R10 | Elves vs Undead, Goblins vs Inferno, Pirates vs Wizards | Vampires+Primal (re-audit), Healing+Cats (lifegain/token synergies) | Sim |
 | R11 | Vampires vs Primal, Cats vs Pirates, Healing vs Inferno | Ward interactions (pós-R10), Cross-mechanic chains | Combat + death edge cases |
 | R12 | Undead vs Wizards, Elves vs Healing, Goblins vs Cats | Activated abilities (deep), Token & tribal synergies | Stack & counterspells |
+| R13 | Wizards vs Inferno, Primal vs Pirates, Vampires vs Goblins | Stack & Overlay (novo sistema), Instants & Targeting (31 cartas) | Sim |
+| R13b | — (foco em modais obrigatórios) | Mandatory modals (27 canSkip:false), ETB cascades (6 cenários), Multi-deck modals (30+ cartas), Modal reuse (11 conflitos) | — |
 
 \* = agente bateu no rate limit (resultado parcial ou sem resultado)
 
@@ -64,4 +66,6 @@
 | R10 (6 agentes) | 5 | 16 |
 | R11 (6 agentes) | 7 | 15 |
 | R12 (6 agentes) | 8 | 12 |
-| **Total agentes** | **94** | **195** |
+| R13 (6 agentes) | 5 | 3 |
+| R13b (4 agentes — modais) | 7 | 0 |
+| **Total agentes** | **106** | **198** |

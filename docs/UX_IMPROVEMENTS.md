@@ -24,10 +24,10 @@ Status: ✅ Implementado · 🔜 Próximo · 💡 Planejado
 - Auto-dismiss após 4s, clique para fechar imediatamente
 - Complementa o log textual com resumo visual
 
-### 4. Tutorial/onboarding para iniciantes 💡
-- Modo tutorial guiado nos primeiros turnos
-- Exemplos: "Clique na terra para jogá-la", "Agora selecione atacantes"
-- Importante pois o jogo é voltado para aprendizado
+### 4. ~~Tutorial/onboarding para iniciantes~~ ❌ Descartado
+- Exigiria partida scriptada com sequência fixa de cartas
+- Sem script, testar todas as combinações seria inviável
+- Custo/benefício não justifica a complexidade
 
 ---
 
@@ -61,10 +61,18 @@ Status: ✅ Implementado · 🔜 Próximo · 💡 Planejado
 ### 9. Drag & drop mais fluido (mobile-friendly) 💡
 - O drag & drop existe mas poderia ser mais fluido em touch screens
 
-### 10. Atalhos de teclado 💡
-- Espaço = passar prioridade/confirmar
-- A = declarar atacantes
-- Enter = confirmar ação
+### 10. Atalhos de teclado 🔜
+Teclas implementadas:
+- **Espaço** = ação principal (próxima fase / confirmar atacantes / confirmar bloqueadores / passar prioridade) — replica o botão central
+- **E** = End Turn (pular para o end step) — replica o botão "End Turn"
+- **G** = abrir/fechar cemitério do jogador
+
+Teclas sugeridas (não implementadas):
+- Enter = confirmar ação (redundante com Espaço)
+- Z = desfazer seleção de terrenos
+- 1-5 = selecionar carta da mão (esquerda para direita)
+
+Bloqueio: atalhos desabilitados quando um modal obrigatório está aberto (`_awaitingMandatoryAction`), durante o turno da IA, ou na tela de seleção de decks.
 
 ### 11. Tema claro alternativo 💡
 - Nem todos jogam no escuro

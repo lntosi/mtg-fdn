@@ -33,6 +33,8 @@ class GameState {
         this.cantBlockThisTurn = [];
         // Criaturas que não podem SER BLOQUEADAS neste turno (Goblin Smuggler)
         this.cantBeBlockedThisTurn = [];
+        // Bloqueia ações do jogador enquanto modal obrigatório está aberto (ex: descarte do Icewind Elemental)
+        this._awaitingMandatoryAction = false;
         // Rastrear se atacou neste turno (para Raid - Storm Fleet Spy, Skyship Buccaneer)
         this.attackedThisTurn = { player: false, opponent: false };
 
@@ -863,24 +865,19 @@ class GameState {
 
             // Mostrar overlay ao jogador
             const casterName = 'Oponente';
-            if (this.playerHasResponses()) {
-                const playableInstants = this.getPlayableInstants();
+            const playableInstants = this.getPlayableInstants();
+            if (playableInstants.length > 0) {
                 const response = await this.ui.showSpellAnnouncement(counterStackItem, casterName, 'response', playableInstants);
                 if (response === 'respond') {
                     await this.handlePlayerPriorityResponse();
-                    return true;
                 }
             } else {
                 await this.ui.showSpellAnnouncement(counterStackItem, casterName, 'brief');
             }
 
-            // Resolver o counterspell do topo da stack
-            if (!this.isStackEmpty()) {
-                const topItem = this.peekStack();
-                if (topItem && topItem.counterTarget) {
-                    this.stack.pop(); // Remover counterspell da stack
-                    this.resolveCounterspell(topItem.item, topItem.controller, topItem.counterTarget);
-                }
+            // Resolver spells restantes na stack (counterspell + spell original)
+            while (!this.isStackEmpty()) {
+                await this.resolveTopOfStack();
             }
             return true;
         }
@@ -918,14 +915,18 @@ class GameState {
             const stackTop = this.peekStack();
             if (stackTop) {
                 const casterName = 'Oponente';
-                if (this.playerHasResponses()) {
-                    const playableInstants = this.getPlayableInstants();
+                const playableInstants = this.getPlayableInstants();
+                if (playableInstants.length > 0) {
                     const response = await this.ui.showSpellAnnouncement(stackTop, casterName, 'response', playableInstants);
                     if (response === 'respond') {
                         await this.handlePlayerPriorityResponse();
                     }
                 } else {
                     await this.ui.showSpellAnnouncement(stackTop, casterName, 'brief');
+                }
+                // Resolver spells restantes na stack
+                while (!this.isStackEmpty()) {
+                    await this.resolveTopOfStack();
                 }
             }
 
@@ -1040,10 +1041,17 @@ class GameState {
             if (this.playerHasResponses()) {
                 // Jogador TEM respostas: overlay modo response
                 const playableInstants = this.getPlayableInstants();
-                const response = await this.ui.showSpellAnnouncement(stackTop, casterName, 'response', playableInstants);
+                const playableCount = playableInstants.length;
+                const response = playableCount > 0
+                    ? await this.ui.showSpellAnnouncement(stackTop, casterName, 'response', playableInstants)
+                    : await this.ui.showSpellAnnouncement(stackTop, casterName, 'brief');
                 if (response === 'respond') {
                     await this.handlePlayerPriorityResponse();
-                    return; // handlePlayerPriorityResponse cuida de resolver a stack
+                    // Após o jogador responder/passar, resolver spells restantes na stack
+                    while (!this.isStackEmpty()) {
+                        await this.resolveTopOfStack();
+                    }
+                    return;
                 }
             } else {
                 // Jogador SEM respostas: overlay modo brief (1.5s)
@@ -1374,6 +1382,11 @@ class GameState {
 
     // Jogar uma carta
     async playCard(card, player) {
+        // Bloquear jogadas enquanto ação obrigatória pendente (ex: descarte do Icewind Elemental)
+        if (this._awaitingMandatoryAction) {
+            return false;
+        }
+
         if (!this.rules.canPlayCard(card, player)) {
             this.ui.log(`Não pode jogar ${card.name} agora.`);
             return false;
@@ -3348,6 +3361,8 @@ class GameState {
 
     // Ativa habilidade de uma carta
     async activateAbility(card, player) {
+        if (this._awaitingMandatoryAction) return false;
+
         if (!this.canActivateAbility(card, player)) {
             this.ui.log(`Não pode ativar habilidade de ${card.name}`);
             return false;
@@ -4024,8 +4039,8 @@ class GameState {
 
     // Avançar para próxima fase
     async nextPhase() {
-        // Não continuar se o jogo acabou
-        if (this.gameOver) return;
+        // Não continuar se o jogo acabou ou ação obrigatória pendente
+        if (this.gameOver || this._awaitingMandatoryAction) return;
 
         const currentIndex = PHASE_ORDER.indexOf(this.phase);
         let nextIndex = currentIndex + 1;
@@ -4672,7 +4687,7 @@ class GameState {
 
     // Pular diretamente para End Step (botão "Encerrar Turno")
     async skipToEndStep() {
-        if (!this.isPlayerTurn()) {
+        if (!this.isPlayerTurn() || this._awaitingMandatoryAction) {
             return;
         }
 

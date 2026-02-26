@@ -651,7 +651,7 @@ class TriggerManager {
                 });
             } else {
                 // IA descarta o card de menor valor
-                discardTarget = controller.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
+                discardTarget = [...controller.hand].sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
             }
             if (discardTarget) {
                 const idx = controller.hand.indexOf(discardTarget);
@@ -832,7 +832,7 @@ class TriggerManager {
             });
         } else {
             // AI discards lowest CMC card
-            discardTarget = opponent.hand.sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
+            discardTarget = [...opponent.hand].sort((a, b) => (a.cmc || 0) - (b.cmc || 0))[0];
         }
 
         if (discardTarget) {
@@ -1192,7 +1192,7 @@ class TriggerManager {
         const drawCount = this.game.drawsThisTurn[playerKey];
         let triggered = false;
 
-        player.battlefield.forEach(card => {
+        [...player.battlefield].forEach(card => {
             // Ignorar criaturas pendentes de resolução (ainda na stack)
             if (card.pendingResolution) return;
 

@@ -241,6 +241,56 @@ class GameUI {
         if (btnCloseExile) {
             btnCloseExile.addEventListener('click', () => this.hideExileModal());
         }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', (e) => this.handleKeyboardShortcut(e));
+    }
+
+    /**
+     * Processa atalhos de teclado durante o jogo.
+     * Espaço = ação principal, E = end turn, G = cemitério
+     */
+    handleKeyboardShortcut(e) {
+        // Ignorar se input focado, jogo não iniciado, ou modal de settings aberto
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+        if (!this.game.phase || this.game.gameOver) return;
+        if (window.settingsManager?.isOpen()) return;
+
+        // Ignorar se ação obrigatória pendente (modal de descarte, etc.)
+        if (this.game._awaitingMandatoryAction) return;
+
+        // Ignorar se algum modal genérico está visível (cemitério, exílio, etc.)
+        const visibleModal = document.querySelector('.modal:not(.hidden)');
+
+        switch (e.key) {
+            case ' ':
+                // Espaço: ação principal (replica o botão central)
+                if (visibleModal) return;
+                e.preventDefault();
+                this.onMainActionClick();
+                break;
+
+            case 'e':
+            case 'E':
+                // E: End Turn (pular para end step)
+                if (visibleModal) return;
+                e.preventDefault();
+                this.game.skipToEndStep();
+                break;
+
+            case 'g':
+            case 'G':
+                // G: toggle cemitério do jogador
+                e.preventDefault();
+                const graveyardModal = document.getElementById('graveyard-modal');
+                if (graveyardModal && !graveyardModal.classList.contains('hidden')) {
+                    this.hideGraveyardModal();
+                } else {
+                    this.showGraveyardModal('player');
+                }
+                break;
+        }
     }
 
     // === Log Panel ===
@@ -2658,6 +2708,9 @@ class GameUI {
     }
 
     onMainActionClick() {
+        // Bloquear enquanto ação obrigatória pendente (modal de descarte, etc.)
+        if (this.game._awaitingMandatoryAction) return;
+
         // Ação contextual baseada no estado do jogo
         if (this.waitingForBlockers) {
             // Confirmar bloqueadores
@@ -3180,6 +3233,9 @@ class GameUI {
                 return;
             }
 
+            // Bloquear ações do jogo enquanto descarte obrigatório está aberto
+            if (this.game) this.game._awaitingMandatoryAction = true;
+
             text.textContent = `Você tem ${this.game.player.hand.length} cartas. Selecione ${cardsToDiscard} para descartar:`;
 
             let selectedCards = [];
@@ -3216,6 +3272,7 @@ class GameUI {
 
             btnConfirm.onclick = () => {
                 modal.classList.add('hidden');
+                if (this.game) this.game._awaitingMandatoryAction = false;
                 this.game.discardCards(selectedCards);
                 resolve();
             };
@@ -3286,6 +3343,20 @@ class GameUI {
                 return;
             }
 
+            // Bloquear ações do jogo enquanto modal obrigatório está aberto
+            const isMandatory = !options.canSkip;
+            if (isMandatory && this.game) {
+                this.game._awaitingMandatoryAction = true;
+            }
+
+            const cleanupAndResolve = (result) => {
+                if (isMandatory && this.game) {
+                    this.game._awaitingMandatoryAction = false;
+                }
+                modal.classList.add('hidden');
+                resolve(result);
+            };
+
             const title = document.getElementById('trigger-target-title');
             const description = document.getElementById('trigger-target-description');
             const groupsContainer = document.getElementById('trigger-target-groups');
@@ -3299,8 +3370,7 @@ class GameUI {
             if (options.canSkip) {
                 btnSkip.classList.remove('hidden');
                 btnSkip.onclick = () => {
-                    modal.classList.add('hidden');
-                    resolve(null);
+                    cleanupAndResolve(null);
                 };
             } else {
                 btnSkip.classList.add('hidden');
@@ -3317,26 +3387,26 @@ class GameUI {
 
             // Renderizar grupo de jogadores (se houver)
             if (playerTargets.length > 0) {
-                const playersGroup = this._createTargetGroup('Jogadores', playerTargets, resolve, modal, true);
+                const playersGroup = this._createTargetGroup('Jogadores', playerTargets, cleanupAndResolve, modal, true);
                 groupsContainer.appendChild(playersGroup);
             }
 
             // Renderizar criaturas do oponente
             if (opponentCreatures.length > 0) {
-                const opponentGroup = this._createTargetGroup('Criaturas do Oponente', opponentCreatures, resolve, modal, false);
+                const opponentGroup = this._createTargetGroup('Criaturas do Oponente', opponentCreatures, cleanupAndResolve, modal, false);
                 groupsContainer.appendChild(opponentGroup);
             }
 
             // Renderizar suas criaturas
             if (playerCreatures.length > 0) {
-                const yourGroup = this._createTargetGroup('Suas Criaturas', playerCreatures, resolve, modal, false);
+                const yourGroup = this._createTargetGroup('Suas Criaturas', playerCreatures, cleanupAndResolve, modal, false);
                 groupsContainer.appendChild(yourGroup);
             }
 
             // Renderizar alvos sem grupo (fallback para compatibilidade)
             if (ungroupedTargets.length > 0) {
                 const defaultLabel = options.groupLabel || 'Alvos Disponíveis';
-                const ungroupedGroup = this._createTargetGroup(defaultLabel, ungroupedTargets, resolve, modal, false);
+                const ungroupedGroup = this._createTargetGroup(defaultLabel, ungroupedTargets, cleanupAndResolve, modal, false);
                 groupsContainer.appendChild(ungroupedGroup);
             }
 
@@ -3441,6 +3511,9 @@ class GameUI {
                 return;
             }
 
+            // Bloquear ações do jogo enquanto escolha de cor está aberta
+            if (this.game) this.game._awaitingMandatoryAction = true;
+
             const title = document.getElementById('color-choice-title');
             const description = document.getElementById('color-choice-description');
             const optionsContainer = document.getElementById('color-choice-options');
@@ -3477,6 +3550,7 @@ class GameUI {
 
                 btn.addEventListener('click', () => {
                     modal.classList.add('hidden');
+                    if (this.game) this.game._awaitingMandatoryAction = false;
                     resolve(color);
                 });
 
@@ -3734,6 +3808,9 @@ class GameUI {
                 return;
             }
 
+            // Bloquear ações do jogo enquanto distribuição de contadores está aberta
+            if (this.game) this.game._awaitingMandatoryAction = true;
+
             const title = document.getElementById('distribute-counters-title');
             const description = document.getElementById('distribute-counters-description');
             const remainingDisplay = document.getElementById('counters-remaining-value');
@@ -3851,6 +3928,7 @@ class GameUI {
 
             btnConfirm.addEventListener('click', () => {
                 modal.classList.add('hidden');
+                if (this.game) this.game._awaitingMandatoryAction = false;
 
                 // Construir resultado
                 const result = [];
@@ -4823,6 +4901,8 @@ class GameUI {
     showCombatFloatingDamage(results, attackingPlayer, defendingPlayer) {
         if (!results || !results.combatDetails) return;
 
+        let directDamageToDefender = 0;
+
         for (const detail of results.combatDetails) {
             if (detail.type === 'blocked') {
                 if (detail.damageToBlocker > 0 && detail.blockerObj) {
@@ -4832,9 +4912,13 @@ class GameUI {
                     this.showFloatingDamageOnCard(detail.attackerObj.instanceId, detail.damageToAttacker, 'damage');
                 }
             } else if (detail.type === 'direct' || detail.type === 'trample') {
-                const isDefenderPlayer = defendingPlayer === this.game.player;
-                this.showFloatingDamageOnPlayer(isDefenderPlayer, detail.damage, 'damage');
+                directDamageToDefender += detail.damage;
             }
+        }
+
+        if (directDamageToDefender > 0) {
+            const isDefenderPlayer = defendingPlayer === this.game.player;
+            this.showFloatingDamageOnPlayer(isDefenderPlayer, directDamageToDefender, 'damage');
         }
 
         // Lifelink healing on attacking player
