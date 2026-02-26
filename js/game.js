@@ -42,8 +42,7 @@ class GameState {
         this.waitingForPriority = false;
         this.bothPlayersPassed = false; // Ambos passaram prioridade
         this.stackResolving = false; // Stack está resolvendo
-        this.waitingForPriorityResponse = false; // Aguardando resposta do jogador na janela de prioridade
-        this.priorityWindowReason = null; // Razão da janela de prioridade atual
+        this.waitingForPriorityResponse = false; // Aguardando resposta do jogador
 
         // === Arena-Style Priority (botão Continuar) ===
         this.awaitingPlayerContinue = false; // Aguardando jogador clicar "Continuar"
@@ -563,7 +562,12 @@ class GameState {
         await this.delay(800);
 
         // Resolver o item (feitiço ou habilidade)
-        if (stackItem.item.type === 'instant' || stackItem.item.type === 'sorcery') {
+        if (stackItem.counterTarget) {
+            // Counterspell na stack — resolver como anulação
+            this.resolveCounterspell(stackItem.item, stackItem.controller, stackItem.counterTarget);
+            this.stackResolving = false;
+            return stackItem;
+        } else if (stackItem.item.type === 'instant' || stackItem.item.type === 'sorcery') {
             // Resolver feitiço
             await this.resolveStackedSpell(stackItem);
         } else if (stackItem.item.type === 'creature') {
@@ -851,8 +855,33 @@ class GameState {
             this.rules.payMana(counterspell, this.opponent);
             window.soundManager?.playMagic();
 
-            // Anular o spell do topo da pilha
-            this.resolveCounterspell(counterspell, this.opponent, stackTop);
+            // Colocar counterspell na stack com referência ao alvo
+            const counterStackItem = this.addToStack(counterspell, this.opponent);
+            counterStackItem.counterTarget = stackTop;
+
+            this.ui.render();
+
+            // Mostrar overlay ao jogador
+            const casterName = 'Oponente';
+            if (this.playerHasResponses()) {
+                const playableInstants = this.getPlayableInstants();
+                const response = await this.ui.showSpellAnnouncement(counterStackItem, casterName, 'response', playableInstants);
+                if (response === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                    return true;
+                }
+            } else {
+                await this.ui.showSpellAnnouncement(counterStackItem, casterName, 'brief');
+            }
+
+            // Resolver o counterspell do topo da stack
+            if (!this.isStackEmpty()) {
+                const topItem = this.peekStack();
+                if (topItem && topItem.counterTarget) {
+                    this.stack.pop(); // Remover counterspell da stack
+                    this.resolveCounterspell(topItem.item, topItem.controller, topItem.counterTarget);
+                }
+            }
             return true;
         }
 
@@ -885,11 +914,18 @@ class GameState {
             this.ui.render();
             await this.delay(600);
 
-            // Bug fix R9: Give player priority to respond to AI's instant
-            if (this.playerHasResponses()) {
-                const response = await this.offerPriorityWindow(`IA jogou ${card.name} - deseja responder?`);
-                if (response === 'respond') {
-                    await this.handlePlayerPriorityResponse();
+            // Mostrar overlay ao jogador para a magia da IA
+            const stackTop = this.peekStack();
+            if (stackTop) {
+                const casterName = 'Oponente';
+                if (this.playerHasResponses()) {
+                    const playableInstants = this.getPlayableInstants();
+                    const response = await this.ui.showSpellAnnouncement(stackTop, casterName, 'response', playableInstants);
+                    if (response === 'respond') {
+                        await this.handlePlayerPriorityResponse();
+                    }
+                } else {
+                    await this.ui.showSpellAnnouncement(stackTop, casterName, 'brief');
                 }
             }
 
@@ -990,7 +1026,7 @@ class GameState {
 
     /**
      * Oferece janela de resposta ao oponente quando um spell é jogado
-     * Usa sistema Arena-style: pausa + botão Continuar
+     * Usa overlay de anúncio de magia estilo Arena
      */
     async offerResponseToOpponent(caster) {
         const responder = caster === this.player ? this.opponent : this.player;
@@ -1000,10 +1036,23 @@ class GameState {
 
         // Se o oponente é o jogador humano
         if (responder === this.player) {
-            // Arena-style: aguardar jogador clicar "Continuar" (ou usar instant)
-            await this.waitForPlayerContinue(`Oponente conjurou ${stackTop.item.name}`);
+            const casterName = 'Oponente';
+            if (this.playerHasResponses()) {
+                // Jogador TEM respostas: overlay modo response
+                const playableInstants = this.getPlayableInstants();
+                const response = await this.ui.showSpellAnnouncement(stackTop, casterName, 'response', playableInstants);
+                if (response === 'respond') {
+                    await this.handlePlayerPriorityResponse();
+                    return; // handlePlayerPriorityResponse cuida de resolver a stack
+                }
+            } else {
+                // Jogador SEM respostas: overlay modo brief (1.5s)
+                await this.ui.showSpellAnnouncement(stackTop, casterName, 'brief');
+            }
         } else {
-            // Oponente é a IA
+            // Oponente é a IA: overlay ai_thinking (0.5s) e IA avalia
+            const casterName = this.player.name || 'Você';
+            await this.ui.showSpellAnnouncement(stackTop, casterName, 'ai_thinking');
             await this.aiHandlePriority();
             return; // aiHandlePriority já resolve a pilha
         }
@@ -1078,36 +1127,6 @@ class GameState {
                 window.logManager.log(`[PRIORITY] ${phaseName}: ${activePlayerName} passou`, 'debug');
             }
         }
-    }
-
-    /**
-     * Oferece uma janela de prioridade ao jogador para responder
-     * Popup só aparece se houver instants jogáveis
-     * Habilidades ativadas são indicadas visualmente nas cartas (sem popup)
-     * @param {string} reason - Razão da janela (ex: "IA lançou Lightning Bolt")
-     * @param {Object} options - Opções adicionais
-     * @returns {Promise<string>} - 'pass' ou 'respond'
-     */
-    async offerPriorityWindow(reason, options = {}) {
-        const playableInstants = this.getPlayableInstants();
-
-        // Se não há instants jogáveis, não mostrar popup
-        // Habilidades ativadas são indicadas visualmente nas cartas
-        if (playableInstants.length === 0) {
-            return 'pass';
-        }
-
-        // Mostrar janela de prioridade apenas com instants
-        this.waitingForPriorityResponse = true;
-        this.priorityWindowReason = reason;
-        this.priorityPlayer = this.player;
-
-        const response = await this.ui.showPriorityWindow(reason, playableInstants);
-
-        this.waitingForPriorityResponse = false;
-        this.priorityWindowReason = null;
-
-        return response;
     }
 
     /**
@@ -4071,16 +4090,10 @@ class GameState {
 
             case PHASES.UPKEEP:
                 // CR 503: Upkeep triggers acontecem, depois ambos jogadores têm prioridade
-                // Por enquanto sem triggers de upkeep implementados, mas oferecemos a janela se configurado
                 if (this.shouldStopForPriority('upkeep') && this.playerHasResponses()) {
-                    const response = await this.offerPriorityWindow('Upkeep - você pode jogar instants');
-                    if (response === 'respond') {
-                        await this.handlePlayerPriorityResponse();
-                    } else {
-                        this.logPriorityPass('upkeep');
-                    }
+                    await this.waitForPlayerContinue('Upkeep');
                 } else {
-                    this.logPriorityPass('upkeep', true); // auto-pass
+                    this.logPriorityPass('upkeep', true);
                 }
                 await this.nextPhase();
                 break;
@@ -4102,15 +4115,9 @@ class GameState {
                 // CR 507: Beginning of combat triggers disparam, depois prioridade
                 await this.triggers.onBeginCombat(this.activePlayer);
 
-                // Janela de prioridade após triggers de início de combate
-                // Permite jogar instants antes de atacantes serem declarados
+                // Pausa antes de declarar atacantes — permite jogar instants
                 if (this.shouldStopForPriority('beginCombat') && this.playerHasResponses()) {
-                    const response = await this.offerPriorityWindow('Início do Combate - antes de declarar atacantes');
-                    if (response === 'respond') {
-                        await this.handlePlayerPriorityResponse();
-                    } else {
-                        this.logPriorityPass('beginCombat');
-                    }
+                    await this.waitForPlayerContinue('Início do Combate');
                 } else {
                     this.logPriorityPass('beginCombat', true);
                 }
@@ -4149,15 +4156,9 @@ class GameState {
                     await this.aiPlayInstantSpeedChain('end_step');
                 }
 
-                // Janela de prioridade no end step
-                // Última chance antes do cleanup (onde normalmente não há prioridade)
+                // Última chance antes do cleanup
                 if (this.shouldStopForPriority('endStep') && this.playerHasResponses()) {
-                    const response = await this.offerPriorityWindow('End Step - última chance antes do fim do turno');
-                    if (response === 'respond') {
-                        await this.handlePlayerPriorityResponse();
-                    } else {
-                        this.logPriorityPass('endStep');
-                    }
+                    await this.waitForPlayerContinue('End Step');
                 } else {
                     this.logPriorityPass('endStep', true);
                 }
@@ -4226,16 +4227,11 @@ class GameState {
         const attackerNames = attackers.map(a => a.name).join(', ');
         this.ui.log(`${attackingPlayer.name} ataca com: ${attackerNames}`);
 
-        // Janela de prioridade após declarar atacantes (para habilidades como Jazal Goldmane)
+        // Pausa após declarar atacantes — permite usar combat tricks e habilidades
         if (attackingPlayer === this.player) {
             if (this.shouldStopForPriority('afterAttackers') && this.playerHasResponses()) {
-                this.ui.render(); // Mostrar atacantes antes da janela de prioridade
-                const postAttackResponse = await this.offerPriorityWindow('Atacantes declarados - você pode ativar habilidades');
-                if (postAttackResponse === 'respond') {
-                    await this.handlePlayerPriorityResponse();
-                } else {
-                    this.logPriorityPass('afterAttackers');
-                }
+                this.ui.render();
+                await this.waitForPlayerContinue('Após Atacantes');
             } else {
                 this.logPriorityPass('afterAttackers', true);
             }
@@ -4255,13 +4251,8 @@ class GameState {
             // Esta é a janela para usar instants/habilidades ANTES de declarar bloqueadores
             if (this.shouldStopForPriority('afterAttackers') && this.playerHasResponses()) {
                 this.ui.render();
-                await this.delay(500); // Dar tempo para ver os atacantes
-                const response = await this.offerPriorityWindow('Oponente declarou atacantes - você pode responder antes de bloquear');
-                if (response === 'respond') {
-                    await this.handlePlayerPriorityResponse();
-                } else {
-                    this.logPriorityPass('afterAttackers');
-                }
+                await this.delay(500);
+                await this.waitForPlayerContinue('Antes de Bloquear');
             } else {
                 this.logPriorityPass('afterAttackers', true);
             }
@@ -4951,15 +4942,9 @@ class GameState {
         if (this.gameOver) return;
 
         try {
-            // IMPORTANTE: Janela de prioridade após jogador declarar bloqueadores
-            // Esta é a última chance de usar combat tricks (Moment of Triumph, etc.) antes do dano
+            // Última chance de usar combat tricks antes do dano
             if (this.shouldStopForPriority('afterBlockers') && this.playerHasResponses()) {
-                const priorityResponse = await this.offerPriorityWindow('Você declarou bloqueadores - última chance antes do dano');
-                if (priorityResponse === 'respond') {
-                    await this.handlePlayerPriorityResponse();
-                } else {
-                    this.logPriorityPass('afterBlockers');
-                }
+                await this.waitForPlayerContinue('Antes do Dano');
             } else {
                 this.logPriorityPass('afterBlockers', true);
             }

@@ -73,7 +73,6 @@
                     <!-- Controles de jogo -->
                     <div id="middle-zone">
                         <div id="phase-indicator">
-                            <span id="turn-indicator">Você</span>
                             <span id="phase-pips" class="phase-pips">
                                 <span class="phase-pip" data-group="0"></span>
                                 <span class="phase-pip" data-group="1"></span>
@@ -447,6 +446,24 @@
     <!-- Botão flutuante para reabrir o log (quando painel está escondido) -->
     <button id="btn-show-log" class="btn-show-log hidden" title="Mostrar Histórico">▶</button>
 
+    <!-- Overlay de Anúncio de Magia (Stack Visual) -->
+    <div id="spell-announcement-overlay" class="spell-announcement hidden">
+        <div class="spell-announcement-card-image"></div>
+        <div class="spell-announcement-info">
+            <div class="spell-announcement-caster"></div>
+            <div class="spell-announcement-name"></div>
+            <div class="spell-announcement-target"></div>
+        </div>
+        <div class="spell-announcement-response hidden">
+            <div class="spell-announcement-instants"></div>
+            <div class="spell-announcement-buttons">
+                <button class="btn-announcement-respond">Responder</button>
+                <button class="btn-announcement-pass">Passar</button>
+            </div>
+        </div>
+        <div class="spell-announcement-timer"><div class="spell-announcement-timer-bar"></div></div>
+    </div>
+
     <!-- Overlay de Resumo de Combate -->
     <div id="combat-summary-overlay" class="combat-summary-overlay hidden"></div>
 
@@ -634,42 +651,6 @@
         </div>
     </div>
 
-    <!-- Modal de Janela de Prioridade (Responder com Instant) -->
-    <div id="priority-window-modal" class="modal hidden">
-        <div class="modal-content priority-window-content">
-            <div class="priority-drag-handle" title="Arraste para mover"></div>
-            <div class="priority-header">
-                <span class="priority-icon">⚡</span>
-                <h2 id="priority-window-title">Responder?</h2>
-            </div>
-            <p id="priority-window-reason" class="priority-reason">Oponente lançou uma mágica</p>
-            <div class="priority-instants-section">
-                <p class="priority-instants-label">Seus Instants disponíveis:</p>
-                <div id="priority-instants" class="priority-instants"></div>
-            </div>
-            <div class="priority-buttons">
-                <button id="btn-priority-respond" class="btn-priority-respond">Responder</button>
-                <div class="stack-badge-wrapper">
-                    <button id="btn-priority-pass" class="btn-priority-pass">
-                        Passar
-                        <span id="stack-badge" class="stack-badge hidden">[0]</span>
-                    </button>
-                    <div id="stack-dropdown" class="stack-dropdown hidden">
-                        <div class="stack-dropdown-header">📚 Pilha</div>
-                        <div id="stack-dropdown-items" class="stack-dropdown-items"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Indicador de Prioridade Flutuante (aparece quando jogador pode responder) -->
-    <div id="priority-indicator" class="priority-indicator hidden">
-        <div class="priority-indicator-content">
-            <span class="priority-indicator-icon">⚡</span>
-            <span class="priority-indicator-text">Você pode responder!</span>
-        </div>
-    </div>
 
     <!-- Modal de Visualização de Cartas do Deck -->
     <div id="deck-preview-modal" class="modal hidden">

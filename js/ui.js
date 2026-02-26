@@ -68,7 +68,6 @@ class GameUI {
 
         // Zona central
         this.phaseIndicator = document.getElementById('current-phase');
-        this.turnIndicator = document.getElementById('turn-indicator');
 
         // Botões
         this.btnMainAction = document.getElementById('btn-main-action');
@@ -2518,13 +2517,12 @@ class GameUI {
     renderPhase() {
         this.phaseIndicator.textContent = PHASE_NAMES[this.game.phase];
 
+        // Glow no avatar do jogador ativo
         const isPlayerTurn = this.game.isPlayerTurn();
-        this.turnIndicator.textContent = isPlayerTurn ? 'Você' : 'Oponente';
-        this.turnIndicator.title = `Turno ${this.game.turnNumber} - ${isPlayerTurn ? 'Seu turno' : 'Turno do oponente'}`;
-
-        // Atualizar classe para indicador visual
-        this.turnIndicator.classList.remove('player-turn', 'opponent-turn');
-        this.turnIndicator.classList.add(isPlayerTurn ? 'player-turn' : 'opponent-turn');
+        const playerAv = document.getElementById('player-avatar');
+        const opponentAv = document.getElementById('opponent-avatar');
+        if (playerAv) playerAv.classList.toggle('active-turn', isPlayerTurn);
+        if (opponentAv) opponentAv.classList.toggle('active-turn', !isPlayerTurn);
 
         // Phase pips: 5 groups — Begin(0) Main1(1) Combat(2) Main2(3) End(4)
         const phaseToGroup = {
@@ -2926,7 +2924,6 @@ class GameUI {
         if (this.game.stack.length === 0) {
             stackEl.classList.add('empty');
             stackEl.innerHTML = '<span class="stack-empty-text">Pilha vazia</span>';
-            this.updateStackBadge(); // Update badge when stack changes
             return;
         }
 
@@ -2959,60 +2956,6 @@ class GameUI {
             stackEl.appendChild(itemEl);
         });
 
-        // Update the badge and dropdown
-        this.updateStackBadge();
-    }
-
-    // === STACK BADGE E DROPDOWN ===
-    updateStackBadge() {
-        const badge = document.getElementById('stack-badge');
-        const dropdown = document.getElementById('stack-dropdown');
-        const dropdownItems = document.getElementById('stack-dropdown-items');
-
-        if (!badge || !dropdown || !dropdownItems) return;
-
-        const stackCount = this.game.stack.length;
-
-        if (stackCount === 0) {
-            badge.classList.add('hidden');
-            dropdown.classList.add('hidden');
-            return;
-        }
-
-        // Show badge with count
-        badge.textContent = `[${stackCount}]`;
-        badge.classList.remove('hidden');
-        dropdown.classList.remove('hidden');
-
-        // Populate dropdown items (top to bottom = LIFO order)
-        dropdownItems.innerHTML = '';
-        const stackItems = [...this.game.stack].reverse();
-
-        stackItems.forEach((stackItem, index) => {
-            const itemEl = document.createElement('div');
-            itemEl.className = 'stack-dropdown-item';
-
-            if (index === 0) {
-                itemEl.classList.add('stack-top');
-            }
-
-            const item = stackItem.item;
-            const controllerName = stackItem.controller === this.game.player ? 'Você' : 'Oponente';
-            const displayIndex = stackCount - index; // Show as 3, 2, 1 (top first)
-
-            let itemHtml = `
-                <span class="stack-dropdown-item-index">${displayIndex}</span>
-                <span class="stack-dropdown-item-name">${item.name || 'Habilidade'}</span>
-                <div class="stack-dropdown-item-controller">${controllerName}</div>
-            `;
-
-            if (stackItem.target) {
-                itemHtml += `<div class="stack-dropdown-item-target">→ ${stackItem.target.name}</div>`;
-            }
-
-            itemEl.innerHTML = itemHtml;
-            dropdownItems.appendChild(itemEl);
-        });
     }
 
     // === SISTEMA DE MULLIGAN ===
@@ -4146,137 +4089,131 @@ class GameUI {
         this.showGameOverScreen(winner, reason);
     }
 
-    // === SISTEMA DE JANELA DE PRIORIDADE ===
+    // === SPELL ANNOUNCEMENT OVERLAY ===
 
     /**
-     * Mostra a janela de prioridade para o jogador responder com instants
-     * @param {string} reason - Razão da janela (ex: "IA lançou Lightning Bolt")
-     * @param {Array} playableInstants - Lista de instants jogáveis
-     * @returns {Promise<string>} - 'pass' ou 'respond'
+     * Mostra overlay de anúncio de magia estilo Arena
+     * @param {Object} stackItem - Item da stack { item, controller, target }
+     * @param {string} casterName - Nome do conjurador
+     * @param {string} mode - 'brief' (1.5s auto), 'response' (aguarda ação), 'ai_thinking' (0.5s)
+     * @param {Array} playableInstants - Instants jogáveis (para modo response)
+     * @returns {Promise<'respond'|'pass'>}
      */
-    showPriorityWindow(reason, playableInstants) {
+    showSpellAnnouncement(stackItem, casterName, mode, playableInstants = []) {
         return new Promise((resolve) => {
-            const modal = document.getElementById('priority-window-modal');
-            if (!modal) {
-                resolve('pass');
-                return;
+            const overlay = document.getElementById('spell-announcement-overlay');
+            if (!overlay) { resolve('pass'); return; }
+
+            const card = stackItem.item;
+            const imageEl = overlay.querySelector('.spell-announcement-card-image');
+            const casterEl = overlay.querySelector('.spell-announcement-caster');
+            const nameEl = overlay.querySelector('.spell-announcement-name');
+            const targetEl = overlay.querySelector('.spell-announcement-target');
+            const responseSection = overlay.querySelector('.spell-announcement-response');
+            const instantsContainer = overlay.querySelector('.spell-announcement-instants');
+            const btnRespond = overlay.querySelector('.btn-announcement-respond');
+            const btnPass = overlay.querySelector('.btn-announcement-pass');
+            const timerBar = overlay.querySelector('.spell-announcement-timer-bar');
+
+            // Preencher info
+            casterEl.textContent = `${casterName} conjurou`;
+            nameEl.textContent = card.name;
+
+            // Alvo
+            if (stackItem.target) {
+                const targetName = stackItem.target.item?.name || stackItem.target.name || 'alvo';
+                targetEl.textContent = `→ ${targetName}`;
+            } else {
+                targetEl.textContent = '';
             }
 
-            const reasonEl = document.getElementById('priority-window-reason');
-            const instantsContainer = document.getElementById('priority-instants');
-            const btnRespond = document.getElementById('btn-priority-respond');
-            const btnPass = document.getElementById('btn-priority-pass');
+            // Imagem da carta
+            imageEl.style.backgroundImage = '';
+            this.loadPreviewImage(card, imageEl);
 
-            // Verificar se todos os elementos existem
-            if (!reasonEl || !instantsContainer || !btnRespond || !btnPass) {
-                console.error('Priority window: missing DOM elements');
-                resolve('pass');
-                return;
-            }
+            // Limpar estado anterior
+            overlay.classList.remove('dismissing');
+            responseSection.classList.add('hidden');
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
 
-            // Configurar conteúdo
-            reasonEl.textContent = reason;
+            let resolved = false;
+            let timerId = null;
 
-            // Renderizar instants disponíveis (sempre há instants quando este popup é mostrado)
-            instantsContainer.innerHTML = '';
-            playableInstants.forEach(card => {
-                const cardEl = this.createCardElement(card, true);
-                cardEl.classList.add('priority-instant-card');
-                cardEl.addEventListener('mouseenter', () => this.showCardPreview(card));
-                cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
-                instantsContainer.appendChild(cardEl);
-            });
-
-            // Handlers dos botões
             const cleanup = () => {
-                modal.classList.add('hidden');
+                if (resolved) return;
+                resolved = true;
+                if (timerId) clearTimeout(timerId);
+                overlay.removeEventListener('click', clickDismiss);
                 btnRespond.onclick = null;
                 btnPass.onclick = null;
+                this.dismissSpellAnnouncement();
             };
 
-            btnRespond.onclick = () => {
-                cleanup();
-                this.log('Você escolheu responder');
-                resolve('respond');
+            const clickDismiss = () => {
+                if (mode === 'brief' || mode === 'ai_thinking') {
+                    cleanup();
+                    resolve('pass');
+                }
             };
 
-            btnPass.onclick = () => {
-                cleanup();
-                this.log('Você passou a prioridade');
-                resolve('pass');
-            };
+            if (mode === 'response' && playableInstants.length > 0) {
+                // Modo response: mostrar instants e botões
+                responseSection.classList.remove('hidden');
+                instantsContainer.innerHTML = '';
+                playableInstants.forEach(c => {
+                    const cardEl = this.createCardElement(c, true);
+                    cardEl.classList.add('priority-instant-card');
+                    cardEl.addEventListener('mouseenter', () => this.showCardPreview(c));
+                    cardEl.addEventListener('mouseleave', () => this.hideCardPreview());
+                    instantsContainer.appendChild(cardEl);
+                });
 
-            // Destacar cartas na mão que podem ser jogadas
-            this.highlightPlayableInstants(true);
+                btnRespond.onclick = () => { cleanup(); resolve('respond'); };
+                btnPass.onclick = () => { cleanup(); resolve('pass'); };
 
-            // Inicializar drag se ainda não foi feito
-            this.initPriorityWindowDrag();
+                // Sem timer — espera interação
+                timerBar.style.width = '0%';
 
-            modal.classList.remove('hidden');
+            } else if (mode === 'brief') {
+                // Modo brief: 1.5s com timer, click dispensa
+                overlay.addEventListener('click', clickDismiss);
+                // Animar timer
+                void timerBar.offsetWidth; // force reflow
+                timerBar.style.transition = 'width 1.5s linear';
+                timerBar.style.width = '0%';
+                timerId = setTimeout(() => {
+                    cleanup();
+                    resolve('pass');
+                }, 1500);
+
+            } else {
+                // Modo ai_thinking: 0.5s
+                void timerBar.offsetWidth;
+                timerBar.style.transition = 'width 0.5s linear';
+                timerBar.style.width = '0%';
+                timerId = setTimeout(() => {
+                    cleanup();
+                    resolve('pass');
+                }, 500);
+            }
+
+            overlay.classList.remove('hidden');
         });
     }
 
     /**
-     * Inicializa funcionalidade de arrastar a janela de prioridade
+     * Dispensa o overlay de anúncio com animação
      */
-    initPriorityWindowDrag() {
-        const modal = document.getElementById('priority-window-modal');
-        const content = modal?.querySelector('.priority-window-content');
-        const handle = modal?.querySelector('.priority-drag-handle');
+    dismissSpellAnnouncement() {
+        const overlay = document.getElementById('spell-announcement-overlay');
+        if (!overlay || overlay.classList.contains('hidden')) return;
 
-        if (!handle || !content || content._dragInitialized) return;
-
-        content._dragInitialized = true;
-
-        let isDragging = false;
-        let startX, startY, initialX, initialY;
-
-        handle.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            content.classList.add('dragging');
-
-            // Pegar posição atual (se já foi movido) ou calcular inicial
-            const rect = content.getBoundingClientRect();
-            initialX = rect.left;
-            initialY = rect.top;
-            startX = e.clientX;
-            startY = e.clientY;
-
-            // Mudar para position fixed para arrastar livremente
-            content.style.position = 'fixed';
-            content.style.left = initialX + 'px';
-            content.style.top = initialY + 'px';
-            content.style.margin = '0';
-
-            e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-
-            let newX = initialX + dx;
-            let newY = initialY + dy;
-
-            // Limitar aos bounds da janela
-            const maxX = window.innerWidth - content.offsetWidth - 10;
-            const maxY = window.innerHeight - content.offsetHeight - 10;
-
-            newX = Math.max(10, Math.min(newX, maxX));
-            newY = Math.max(10, Math.min(newY, maxY));
-
-            content.style.left = newX + 'px';
-            content.style.top = newY + 'px';
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                content.classList.remove('dragging');
-            }
-        });
+        overlay.classList.add('dismissing');
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('dismissing');
+        }, 200);
     }
 
     /**
@@ -4366,17 +4303,6 @@ class GameUI {
     }
 
     /**
-     * Esconde a janela de prioridade
-     */
-    hidePriorityWindow() {
-        const modal = document.getElementById('priority-window-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        this.highlightPlayableInstants(false);
-    }
-
-    /**
      * Destaca instants jogáveis na mão do jogador
      * @param {boolean} highlight - true para destacar, false para remover destaque
      */
@@ -4437,26 +4363,6 @@ class GameUI {
             return this.game.player.hand.find(c => c.instanceId === instanceId);
         }
         return null;
-    }
-
-    /**
-     * Mostra indicador flutuante de que o jogador pode responder
-     */
-    showPriorityIndicator() {
-        const indicator = document.getElementById('priority-indicator');
-        if (indicator) {
-            indicator.classList.remove('hidden');
-        }
-    }
-
-    /**
-     * Esconde indicador de prioridade
-     */
-    hidePriorityIndicator() {
-        const indicator = document.getElementById('priority-indicator');
-        if (indicator) {
-            indicator.classList.add('hidden');
-        }
     }
 
     /**
@@ -4991,13 +4897,23 @@ class GameUI {
             html += `<div class="combat-summary-life">${lifeParts.join(' · ')}</div>`;
         }
 
-        html += '<div class="combat-summary-hint">clique para fechar</div>';
+        html += '<div class="combat-summary-hint">arraste para mover \u00b7 clique para fechar</div>';
 
         this.combatSummaryOverlay.innerHTML = html;
         this.combatSummaryOverlay.classList.remove('hidden', 'dismissing');
 
-        // Click to dismiss
+        // Restaurar posição salva ou usar centro
+        this._applyCombatSummaryPosition();
+
+        // Inicializar drag
+        this._initCombatSummaryDrag();
+
+        // Click to dismiss (ignora se foi drag)
         const dismiss = () => {
+            if (this._combatSummaryWasDragged) {
+                this._combatSummaryWasDragged = false;
+                return;
+            }
             this.combatSummaryOverlay.classList.add('dismissing');
             setTimeout(() => {
                 this.combatSummaryOverlay.classList.add('hidden');
@@ -5014,6 +4930,102 @@ class GameUI {
                 dismiss();
             }
         }, 4000);
+    }
+
+    /**
+     * Aplica posição salva no localStorage ou centraliza
+     */
+    _applyCombatSummaryPosition() {
+        const el = this.combatSummaryOverlay;
+        const saved = localStorage.getItem('mtg_combat_summary_pos');
+        if (saved) {
+            try {
+                const pos = JSON.parse(saved);
+                // Validar que a posição ainda está na tela
+                const maxX = window.innerWidth - 100;
+                const maxY = window.innerHeight - 50;
+                if (pos.x >= 0 && pos.x <= maxX && pos.y >= 0 && pos.y <= maxY) {
+                    el.style.left = pos.x + 'px';
+                    el.style.top = pos.y + 'px';
+                    el.style.transform = 'none';
+                    return;
+                }
+            } catch (e) { /* posição inválida, usar padrão */ }
+        }
+        // Posição padrão: centro
+        el.style.left = '50%';
+        el.style.top = '50%';
+        el.style.transform = 'translate(-50%, -50%)';
+    }
+
+    /**
+     * Inicializa drag no combat summary overlay
+     */
+    _initCombatSummaryDrag() {
+        const el = this.combatSummaryOverlay;
+        if (el._dragBound) return; // Já tem listeners globais
+
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        el.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            this._combatSummaryWasDragged = false;
+            el.classList.add('dragging');
+
+            const rect = el.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            // Converter para position fixed sem transform
+            el.style.left = initialX + 'px';
+            el.style.top = initialY + 'px';
+            el.style.transform = 'none';
+
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            // Considerar drag se moveu mais de 4px
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                this._combatSummaryWasDragged = true;
+            }
+
+            let newX = initialX + dx;
+            let newY = initialY + dy;
+
+            const maxX = window.innerWidth - el.offsetWidth - 5;
+            const maxY = window.innerHeight - el.offsetHeight - 5;
+            newX = Math.max(5, Math.min(newX, maxX));
+            newY = Math.max(5, Math.min(newY, maxY));
+
+            el.style.left = newX + 'px';
+            el.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            el.classList.remove('dragging');
+
+            // Salvar posição no localStorage
+            if (this._combatSummaryWasDragged) {
+                const rect = el.getBoundingClientRect();
+                localStorage.setItem('mtg_combat_summary_pos', JSON.stringify({
+                    x: Math.round(rect.left),
+                    y: Math.round(rect.top)
+                }));
+            }
+        });
+
+        el._dragBound = true;
     }
 
     // === Card Exit Animation ===
