@@ -856,6 +856,17 @@ class RulesEngine {
         );
     }
 
+    // Verifica se criatura tem freeze_aura (Starlight Snare) - não desvira
+    hasFreezeAura(creature) {
+        if (!this.game?.player?.battlefield || !this.game?.opponent?.battlefield) {
+            return false;
+        }
+        const allBattlefields = [...this.game.player.battlefield, ...this.game.opponent.battlefield];
+        return allBattlefields.some(card =>
+            card.keywords?.includes('freeze_aura') && card.attachedTo === creature.instanceId
+        );
+    }
+
     // Verifica se criatura pode bloquear
     canBlock(blocker, attacker) {
         if (blocker.tapped) return false;

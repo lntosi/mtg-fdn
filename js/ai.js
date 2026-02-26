@@ -190,9 +190,13 @@ class AIPlayer {
             return player.battlefield.some(c => c.type === 'creature');
         }
 
-        // Auras positivas: precisa de criaturas próprias
+        // Auras positivas: precisa de criaturas próprias sem debuff auras
         if (card.id === 'untamed_hunger') {
-            return opponent.battlefield.some(c => c.type === 'creature');
+            return opponent.battlefield.some(c =>
+                c.type === 'creature' &&
+                !this.rules.hasPacifism(c) &&
+                !this.rules.hasFreezeAura(c)
+            );
         }
 
         // New Horizons enchants a land, not a creature
@@ -1602,9 +1606,11 @@ class AIPlayer {
             // Não há criaturas inimigas - não jogar aura negativa em si mesmo
             return null;
         } else if (aura.id === 'untamed_hunger') {
-            // Untamed Hunger: colocar na nossa melhor criatura
+            // Untamed Hunger: colocar na nossa melhor criatura (excluir criaturas com debuff auras)
             const ourCreatures = validTargets.filter(c =>
-                opponent.battlefield.includes(c)
+                opponent.battlefield.includes(c) &&
+                !this.rules.hasPacifism(c) &&
+                !this.rules.hasFreezeAura(c)
             );
 
             if (ourCreatures.length > 0) {
@@ -1614,6 +1620,8 @@ class AIPlayer {
                     return bPower - aPower;
                 })[0];
             }
+            // Todas as nossas criaturas estão debuffadas - não desperdiçar a aura
+            return null;
         }
 
         // Padrão: primeiro alvo válido
