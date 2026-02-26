@@ -206,8 +206,26 @@ class ImageManager {
             // Extrair o tipo do token (ex: "Goblin Token" -> "Goblin")
             const tokenType = tokenName.replace(/ Token$/i, '').trim();
 
-            // Buscar tokens pela API de busca do Scryfall
-            // t:token busca apenas tokens, e buscamos pelo tipo da criatura
+            // Tentar primeiro no set tfdn (Foundations tokens) para consistência visual
+            const fdnResponse = await fetch(
+                `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(tokenType)}&set=tfdn`,
+                { headers: { 'Accept': 'application/json' } }
+            );
+
+            if (fdnResponse.ok) {
+                const fdnData = await fdnResponse.json();
+                if (fdnData.image_uris && fdnData.image_uris[size]) {
+                    return fdnData.image_uris[size];
+                }
+                if (fdnData.card_faces && fdnData.card_faces[0].image_uris) {
+                    return fdnData.card_faces[0].image_uris[size];
+                }
+            }
+
+            // Fallback: busca genérica por tokens
+            await this.delay(this.requestDelay);
+            this.lastRequest = Date.now();
+
             const searchQuery = encodeURIComponent(`${tokenType} t:token`);
             const response = await fetch(
                 `https://api.scryfall.com/cards/search?q=${searchQuery}&order=released&dir=desc`,
@@ -223,7 +241,6 @@ class ImageManager {
 
             // Procurar o token mais apropriado (preferir 1/1 simples)
             if (data.data && data.data.length > 0) {
-                // Tentar encontrar um token básico 1/1 primeiro
                 const basicToken = data.data.find(t =>
                     t.power === '1' && t.toughness === '1' &&
                     (!t.oracle_text || t.oracle_text === '')
@@ -233,7 +250,6 @@ class ImageManager {
                     return basicToken.image_uris[size];
                 }
 
-                // Para tokens de duas faces
                 if (basicToken.card_faces && basicToken.card_faces[0].image_uris) {
                     return basicToken.card_faces[0].image_uris[size];
                 }
