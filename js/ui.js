@@ -736,6 +736,36 @@ class GameUI {
             }
         }
 
+        // Tooltip de mana (apenas para cartas na mão do jogador)
+        const previewMana = this.cardPreview.querySelector('.card-preview-mana');
+        if (previewMana) {
+            previewMana.innerHTML = '';
+            previewMana.className = 'card-preview-mana';
+
+            if (this.game?.player?.hand?.includes(card) && this.game.rules) {
+                const deficit = this.game.rules.getManaDeficit(card, this.game.player);
+                if (!deficit.isLand) {
+                    if (deficit.canPay) {
+                        previewMana.classList.add('can-pay');
+                        previewMana.textContent = '✓ Mana suficiente';
+                    } else {
+                        previewMana.classList.add('cannot-pay');
+                        // Montar string de mana faltante com ícones
+                        let missingStr = 'Falta: ';
+                        if (deficit.missing.generic > 0) {
+                            missingStr += `{${deficit.missing.generic}}`;
+                        }
+                        for (const color in deficit.missing.colored) {
+                            for (let i = 0; i < deficit.missing.colored[color]; i++) {
+                                missingStr += `{${color}}`;
+                            }
+                        }
+                        previewMana.innerHTML = this.formatManaInText(missingStr);
+                    }
+                }
+            }
+        }
+
         // Carregar imagem
         this.loadPreviewImage(card, previewImage);
 

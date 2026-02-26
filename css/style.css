@@ -2106,6 +2106,28 @@ body {
     50% { box-shadow: 0 0 15px rgba(255, 69, 0, 0.8); }
 }
 
+/* Tooltip de mana no preview */
+.card-preview-mana {
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+.card-preview-mana:empty {
+    display: none;
+}
+.card-preview-mana.can-pay {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+.card-preview-mana.cannot-pay {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
 /* Stats base vs atual no preview */
 .card-preview-stats .base-stats {
     color: #888;

@@ -518,6 +518,56 @@ class RulesEngine {
         }
     }
 
+    /**
+     * Calcula o déficit de mana para conjurar uma carta
+     * @returns {{ canPay: boolean, isLand: boolean, missing: { generic: number, colored: Object } }}
+     */
+    getManaDeficit(card, player) {
+        if (card.type === 'land') return { canPay: true, isLand: true, missing: { generic: 0, colored: {} } };
+        if (!card.cmc && !this.hasXCost(card)) return { canPay: true, isLand: false, missing: { generic: 0, colored: {} } };
+
+        const availableMana = this.calculateAvailableMana(player);
+        const cost = this.parseCost(card.cost);
+
+        if (cost.hasX) {
+            cost.generic += 1; // mínimo X=1
+        }
+
+        this.applyCostReductions(cost, card, player);
+
+        // Simular pagamento e calcular déficit
+        let remainingMana = { ...availableMana };
+        const missing = { generic: 0, colored: {} };
+
+        // Pagar custos coloridos
+        for (const color in cost.colored) {
+            const needed = cost.colored[color];
+            if (remainingMana[color] >= needed) {
+                remainingMana[color] -= needed;
+            } else if (remainingMana[color] + remainingMana.any >= needed) {
+                const fromColor = remainingMana[color];
+                remainingMana[color] = 0;
+                remainingMana.any -= (needed - fromColor);
+            } else {
+                const fromColor = remainingMana[color];
+                const fromAny = remainingMana.any;
+                const paid = fromColor + fromAny;
+                remainingMana[color] = 0;
+                remainingMana.any = 0;
+                missing.colored[color] = needed - paid;
+            }
+        }
+
+        // Pagar custo genérico
+        const totalRemaining = Object.values(remainingMana).reduce((a, b) => a + b, 0);
+        if (totalRemaining < cost.generic) {
+            missing.generic = cost.generic - totalRemaining;
+        }
+
+        const canPay = Object.keys(missing.colored).length === 0 && missing.generic === 0;
+        return { canPay, isLand: false, missing };
+    }
+
     canPayCost(cost, availableMana) {
         let remainingMana = { ...availableMana };
 
