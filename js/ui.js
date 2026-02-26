@@ -2228,53 +2228,55 @@ class GameUI {
 
     // === Sistema de Seleção de Alvo na Stack (Counterspell) ===
 
-    promptForStackTarget(counterSpell, stackTargets, callback) {
-        // Se só tem um alvo, seleciona automaticamente
-        if (stackTargets.length === 1) {
-            callback(stackTargets[0]);
-            return;
-        }
+    promptForStackTarget(counterSpell, stackTargets) {
+        return new Promise((resolve) => {
+            // Se só tem um alvo, seleciona automaticamente
+            if (stackTargets.length === 1) {
+                resolve(stackTargets[0]);
+                return;
+            }
 
-        // Usar o modal de trigger target para selecionar da stack
-        const modal = document.getElementById('trigger-target-modal');
-        if (!modal) {
-            // Fallback: seleciona o primeiro
-            callback(stackTargets[0]);
-            return;
-        }
+            // Usar o modal de trigger target para selecionar da stack
+            const modal = document.getElementById('trigger-target-modal');
+            if (!modal) {
+                // Fallback: seleciona o primeiro
+                resolve(stackTargets[0]);
+                return;
+            }
 
-        const title = document.getElementById('trigger-target-title');
-        const description = document.getElementById('trigger-target-description');
-        const creaturesContainer = document.getElementById('trigger-target-groups');
-        const skipBtn = document.getElementById('btn-trigger-skip');
+            const title = document.getElementById('trigger-target-title');
+            const description = document.getElementById('trigger-target-description');
+            const creaturesContainer = document.getElementById('trigger-target-groups');
+            const skipBtn = document.getElementById('btn-trigger-skip');
 
-        title.textContent = `${counterSpell.name} - Escolha uma Mágica`;
-        description.textContent = 'Selecione qual mágica anular:';
-        skipBtn.classList.add('hidden');
+            title.textContent = `${counterSpell.name} - Escolha uma Mágica`;
+            description.textContent = 'Selecione qual mágica anular:';
+            skipBtn.classList.add('hidden');
 
-        creaturesContainer.innerHTML = '';
+            creaturesContainer.innerHTML = '';
 
-        stackTargets.forEach(stackItem => {
-            const card = stackItem.item;
-            const cardElement = document.createElement('div');
-            cardElement.className = 'trigger-target-creature';
-            cardElement.innerHTML = `
-                <div class="card-mini">
-                    <div class="card-name">${card.name}</div>
-                    <div class="card-type">${card.type}</div>
-                    <div class="card-controller">Controlador: ${stackItem.controller.name}</div>
-                </div>
-            `;
+            stackTargets.forEach(stackItem => {
+                const card = stackItem.item;
+                const cardElement = document.createElement('div');
+                cardElement.className = 'trigger-target-creature';
+                cardElement.innerHTML = `
+                    <div class="card-mini">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-type">${card.type}</div>
+                        <div class="card-controller">Controlador: ${stackItem.controller.name}</div>
+                    </div>
+                `;
 
-            cardElement.addEventListener('click', () => {
-                modal.classList.add('hidden');
-                callback(stackItem);
+                cardElement.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    resolve(stackItem);
+                });
+
+                creaturesContainer.appendChild(cardElement);
             });
 
-            creaturesContainer.appendChild(cardElement);
+            modal.classList.remove('hidden');
         });
-
-        modal.classList.remove('hidden');
     }
 
     // === Modal de Cemitério ===

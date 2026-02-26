@@ -1456,19 +1456,29 @@ class GameState {
                 if (player === this.player) this.ui.clearLandSelection();
                 window.soundManager.playMagic();
 
-                if (player === this.player) {
-                    // Jogador escolhe qual mágica anular
-                    this.ui.promptForStackTarget(card, spellsOnStack, (stackTarget) => {
-                        this.resolveCounterspell(card, player, stackTarget);
-                    });
+                // Selecionar alvo na stack
+                let stackTarget;
+                if (spellsOnStack.length === 1) {
+                    stackTarget = spellsOnStack[0];
+                } else if (player === this.player) {
+                    stackTarget = await this.ui.promptForStackTarget(card, spellsOnStack);
                 } else {
-                    // IA anula a mágica mais impactante
-                    const target = spellsOnStack[spellsOnStack.length - 1]; // Anula a mais recente
-                    this.resolveCounterspell(card, player, target);
+                    // IA anula a mágica mais recente
+                    stackTarget = spellsOnStack[spellsOnStack.length - 1];
                 }
 
+                // Adicionar counterspell à stack (não resolver imediatamente)
+                const counterStackItem = this.addToStack(card, player);
+                counterStackItem.counterTarget = stackTarget;
+
+                this.ui.log(`${player.name} conjurou ${card.name} mirando ${stackTarget.item.name}`);
                 this.triggers.onSpellCast(player, card);
-                return true;
+
+                // Se NÃO estamos em resposta de prioridade, oferecer resposta ao oponente
+                if (!wasWaitingForResponse) {
+                    await this.offerResponseToOpponent(player);
+                }
+                // Se ESTAMOS em resposta, cai no completePriorityResponse() abaixo
             }
 
             // Verificar se precisa de alvo
