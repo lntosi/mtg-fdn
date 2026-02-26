@@ -372,10 +372,7 @@ body {
     min-height: 190px; /* Altura suficiente para carta (170px) + padding + margem atacante */
     padding: 10px 10px;
     position: relative;
-    overflow-x: auto;
-    overflow-y: visible;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
+    overflow: visible;
 }
 
 /* Scrollbar horizontal para criaturas (webkit) */
@@ -412,10 +409,7 @@ body {
     min-height: 130px; /* Altura suficiente para carta (117px) + padding + margem */
     padding: 6px 10px;
     position: relative;
-    overflow-x: auto;
-    overflow-y: visible;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(180, 100, 180, 0.3) transparent;
+    overflow: visible;
 }
 
 /* Scrollbar horizontal para terrenos (webkit) */
@@ -4575,7 +4569,7 @@ html {
 
 .battlefield {
     min-width: 0;
-    overflow-x: auto;
+    overflow: visible !important;
 }
 
 /* Suavizar transições durante redimensionamento */
