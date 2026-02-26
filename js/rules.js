@@ -652,6 +652,11 @@ class RulesEngine {
         const preSelectedCreatures = allManaCreatures.filter(c => selectedIds.has(c.instanceId));
         const manaCreatures = allManaCreatures.filter(c => !selectedIds.has(c.instanceId));
 
+        // Treasure tokens disponíveis para sacrifício
+        const treasures = player.battlefield.filter(c =>
+            c.canSacrificeForMana && c.keywords?.includes('sacrifice_for_mana')
+        );
+
         // Obter floating mana do jogador
         const playerKey = player === this.game.player ? 'player' : 'opponent';
         const floating = this.game.floatingMana ? this.game.floatingMana[playerKey] : null;
@@ -735,6 +740,18 @@ class RulesEngine {
                     needed--;
                 }
             }
+
+            // 6. Sacrificar Treasure tokens para pagar custo colorido restante
+            for (let i = treasures.length - 1; i >= 0 && needed > 0; i--) {
+                const idx = player.battlefield.findIndex(c => c.instanceId === treasures[i].instanceId);
+                if (idx !== -1) {
+                    if (this.game?.ui) this.game.ui.notifyCardLeaving(treasures[i]);
+                    player.battlefield.splice(idx, 1);
+                    treasures.splice(i, 1);
+                    needed--;
+                    if (this.game?.ui) this.game.ui.log(`Treasure Token sacrificado para mana`);
+                }
+            }
         }
 
         // Pagar custo genérico
@@ -790,6 +807,18 @@ class RulesEngine {
             if (!creature.tapped) {
                 creature.tapped = true;
                 genericNeeded--;
+            }
+        }
+
+        // Sacrificar Treasure tokens para pagar custo genérico restante
+        for (let i = treasures.length - 1; i >= 0 && genericNeeded > 0; i--) {
+            const idx = player.battlefield.findIndex(c => c.instanceId === treasures[i].instanceId);
+            if (idx !== -1) {
+                if (this.game?.ui) this.game.ui.notifyCardLeaving(treasures[i]);
+                player.battlefield.splice(idx, 1);
+                treasures.splice(i, 1);
+                genericNeeded--;
+                if (this.game?.ui) this.game.ui.log(`Treasure Token sacrificado para mana`);
             }
         }
 
