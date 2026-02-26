@@ -4846,6 +4846,10 @@ class GameState {
         this.ui.render();
         await this.delay(800);
 
+        // Verificar game over após draw (ex: grimório vazio)
+        this.checkGameOver();
+        if (this.gameOver) return;
+
         // Main Phase 1
         this.phase = PHASES.MAIN1;
         this.ui.log(`Fase: ${PHASE_NAMES[this.phase]}`);

@@ -1825,6 +1825,10 @@ class GameUI {
         if (playerGYCount) playerGYCount.textContent = this.game.player.graveyard.length;
         if (playerExileCount) playerExileCount.textContent = this.game.player.exile?.length || 0;
 
+        // Esconder pilha do grimório quando vazio
+        const playerLibStack = this.playerLibrary.querySelector('.library-stack');
+        if (playerLibStack) playerLibStack.style.visibility = this.game.player.library.length === 0 ? 'hidden' : '';
+
         // Oponente
         const oppLibCount = this.opponentLibrary.querySelector('.library-count');
         const oppGYCount = this.opponentGraveyard.querySelector('.graveyard-count');
@@ -1832,6 +1836,10 @@ class GameUI {
         if (oppLibCount) oppLibCount.textContent = this.game.opponent.library.length;
         if (oppGYCount) oppGYCount.textContent = this.game.opponent.graveyard.length;
         if (oppExileCount) oppExileCount.textContent = this.game.opponent.exile?.length || 0;
+
+        // Esconder pilha do grimório quando vazio
+        const oppLibStack = this.opponentLibrary.querySelector('.library-stack');
+        if (oppLibStack) oppLibStack.style.visibility = this.game.opponent.library.length === 0 ? 'hidden' : '';
 
         // Mostrar topo do cemitério se houver cartas
         this.updateGraveyardTop(this.playerGraveyard, this.game.player.graveyard);
