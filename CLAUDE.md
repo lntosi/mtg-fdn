@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Status
+
+**Finished and self-contained.** Developed December 2025 – February 2026, now frozen and public as an example of building a game with Claude Code. No new features or engine work are planned; changes here should be limited to documentation, presentation and small fixes the owner explicitly asks for.
+
 ## Development Principles
 
 1. **Prefer robust solutions** - Centralize logic, reuse existing methods
@@ -12,14 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Code is in the correct file according to the Architecture section below
 4. **Never commit or push automatically** - Always wait for user to request commit
 
-**Rules reference** (`docs/MagicCompRules 20251114.txt`): Consult only when implementing new game mechanics or fixing rules-related bugs. Not needed for UI, CSS, refactoring, or general code changes.
-
-**Detailed guides** (consult when needed):
-- `docs/07_CARD_IMPLEMENTATION_CHECKLIST.md` — Step-by-step guide for adding new cards
-- `docs/06_SPELL_TARGETING_CHECKLIST.md` — Instant/sorcery targeting validation
-- `docs/08_AURA_ENCHANTMENT_PLAN.md` — Aura/equipment visual system plan (partially implemented)
-- `docs/PITFALLS.md` — Common bugs and their fixes (library convention, counterspells, async/await, etc.)
-- `docs/AUDIT_REPORT.md` — Code audit findings and fix status
+**Rules reference**: for rules questions, consult the official [Magic Comprehensive Rules](https://magic.wizards.com/en/rules). Not needed for UI, CSS, refactoring, or general code changes.
 
 ## Project Overview
 
@@ -42,6 +39,8 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - `stats.js` - StatsManager: player statistics per profile (localStorage)
 - `sounds.js` - SoundManager (Pixabay audio)
 - `images.js` - ImageManager (Scryfall API for card images and avatars)
+- `logs.js` - Game log (exportable match history)
+- `settings.js` - Settings menu (sound, display, priority stops)
 
 **Key Classes:**
 - `GameState` - Central state: players, phase, turn number, combat state
@@ -61,7 +60,7 @@ Open `index.html` directly in a browser. No build system, server, or dependencie
 - AI responds via `aiDecideResponse()` → supports counterspells, protection spells, and combat tricks
 - AI plays instant-speed cards during player's turn via `getInstantSpeedAction()` (flash, removal, combat tricks)
 
-**Library Convention:** `player.library` uses END as top of deck. `pop()` draws, `unshift()` puts on bottom. See `docs/PITFALLS.md` for details.
+**Library Convention:** `player.library` uses END as top of deck. `pop()` draws, `unshift()` puts on bottom, `library[library.length - 1]` is the top card. See Pitfalls below.
 
 ## File Responsibilities
 
@@ -150,6 +149,30 @@ if (controller === this.player) {
 }
 ```
 
+## Pitfalls
+
+Bugs found during development; check these before touching the related code.
+
+- **Library order**: `shift()` removes the BOTTOM card and `push()` adds to the TOP. A scry "to bottom" with `push()` once made the player draw the same card.
+- **Counterspells** must be excluded from `needsPlayerTargeting` in `playCard()`, or the card stays in hand after resolving.
+- **Flash creatures** must be listed in `getValidInstantPlays()`, not only instants.
+- **Combat cleanup**: after damage, filter dead creatures out of `currentAttackers` and reset `blockerAssignments`, or combat highlights stay on screen.
+- **Aura effects** need a case in `rules.js` → `applyAuraEffects()`; the keyword alone does nothing.
+- **Treasure tokens** need `produces: 'any'` and `canSacrificeForMana: true` to count toward available mana.
+- **Spell keywords**: process generic keywords (`scry_N`, `draw_N`) in `resolveSpell()` before the card-specific `switch`.
+- **Targeted instants** need a `hasValidTargets()` entry, or priority windows open with nothing to target.
+- **Death triggers**: guard with `_deathProcessed` so a death triggers once.
+- **Async prompts**: spells with UI prompts (scry, targeting) must be awaited, or the next step runs before the choice.
+- **Cloned buttons**: clone the DOM button before defining closures that reference it.
+- **"One or more counters" triggers** fire once per event; every counter placement (including doubling) must call `onCounterPlaced()`.
+
+## Known Design Limitations (not bugs)
+
+- Non-targeted spells, Felling Blow and Bite Down resolve without using the stack.
+- Counter-wars go one level deep; the AI does not counter a counter of a counter.
+- Some spells only allow the useful side as targets (Giant Growth, Biogenic Upgrade, Adamant Will, Offer Immortality: own creatures; Scorching Dragonfire, Fiery Annihilation, Moment of Craving, Hero's Downfall, Incinerating Blast: opponent's creatures), although Oracle text allows any creature.
+- Eaten Alive's sacrifice is paid on resolution, not on cast.
+
 ## UI Notes
 
 - **Optimized for 70-80% browser zoom**
@@ -162,10 +185,10 @@ if (controller === this.player) {
 ## Testing
 
 ```bash
-npm test                           # Run all 615+ unit tests
-node tools/validate-cards.js       # Validate cards against Scryfall
-node tools/validate-cards.js --missing  # Check cards without tests
+npm test                           # Run all 694 unit tests (20 suites)
 ```
+
+`tools/validate-cards.js` no longer works: it reports every card as "Not found" on Scryfall. Don't rely on it.
 
 ## Debug Commands (browser console)
 

@@ -1,5 +1,5 @@
 {
-  "name": "mtg-jumpstart-foundations",
+  "name": "mtg-fdn",
   "version": "1.0.0",
   "description": "MTG Jumpstart Foundations - Browser-based Magic: The Gathering game",
   "main": "js/main.js",
